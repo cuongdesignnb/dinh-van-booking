@@ -60,9 +60,9 @@ export function BookingProvider({ stay, children }: { stay: Stay; children: Reac
       const p = writeSelection(sel, new URLSearchParams(params));
       if (nextRoom) p.set('room', nextRoom);
       else p.delete('room');
-      router.replace(`${pathname}?${p.toString()}`, { scroll: false });
+      window.history.replaceState(null, '', `${pathname}?${p.toString()}`);
     },
-    [params, pathname, router],
+    [params, pathname],
   );
 
   const value: Ctx = {

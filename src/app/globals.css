@@ -3556,3 +3556,10 @@ svg {
     translate: none !important;
   }
 }
+
+/* Horizontal slide-ins would briefly overflow narrow viewports: fade up instead. */
+@media (max-width: 1279px) {
+  .motion-ready [data-reveal='slide-left'].is-in {
+    animation-name: reveal-fade-up;
+  }
+}

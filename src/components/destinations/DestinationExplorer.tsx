@@ -113,8 +113,9 @@ export function DestinationExplorer() {
       else p.set(k, v);
     }
     const url = p.toString() ? `${pathname}?${p}` : pathname;
-    if (mode === 'push') router.push(url, { scroll: false });
-    else router.replace(url, { scroll: false });
+    // Shallow update: Next.js keeps useSearchParams in sync without a server round-trip.
+    if (mode === 'push') window.history.pushState(null, '', url);
+    else window.history.replaceState(null, '', url);
   };
   const openDest = (id: string) => {
     pushed.current = true;

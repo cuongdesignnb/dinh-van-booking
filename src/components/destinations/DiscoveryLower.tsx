@@ -3,7 +3,7 @@
 import { ArrowRight, BedDouble, Camera, Car, Leaf, Mountain, Sun, Utensils, Waves } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
 import { DemoNote, Modal } from '@/components/ui/Modal';
@@ -237,7 +237,6 @@ function MapIcon({ id }: { id: string }) {
 /** Illustrated map. Pins are placed from fixture percentages — not coordinates. */
 export function LocalMap() {
   const uid = useId();
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [big, setBig] = useState(false);
@@ -246,7 +245,7 @@ export function LocalMap() {
     setBig(false);
     const p = new URLSearchParams(params);
     p.set('d', id);
-    router.push(`${pathname}?${p}`, { scroll: false });
+    window.history.pushState(null, '', `${pathname}?${p}`);
   };
   const canvas = (large: boolean) => (
     <div className={`lmap${large ? ' lmap--large' : ''}`}>

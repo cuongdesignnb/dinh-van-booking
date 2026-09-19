@@ -1,7 +1,7 @@
 'use client';
 
 import { Info, LayoutGrid, List, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { Pagination } from '@/components/shared/Pagination';
 import { Modal } from '@/components/ui/Modal';
@@ -37,7 +37,6 @@ interface Slots {
  */
 export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
   const params = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
   const selection = useMemo(() => parseSelection(params), [params]);
   const filters = useMemo(() => parseFilters(params), [params]);
@@ -66,7 +65,7 @@ export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
     const base = new URLSearchParams(params);
     base.delete('demo');
     const next = writeFilters(f, writeSelection(sel, base));
-    router.push(`${pathname}?${next.toString()}`, { scroll: false });
+    window.history.pushState(null, '', `${pathname}?${next.toString()}`);
   };
   const patchFilters = (patch: Partial<StayFilters>) =>
     navigate(selection, { ...filters, ...patch, page: 'page' in patch ? patch.page! : 1 });

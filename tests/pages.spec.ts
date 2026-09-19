@@ -197,6 +197,9 @@ test.describe('desktop pages', () => {
     await expect(page.locator('dialog[open] h2')).toHaveText('Hang Múa');
     await expect(page.locator('dialog[open]')).toContainText('Liên hệ để được tư vấn thông tin phù hợp thời điểm đi');
     await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Xem chi tiết Hang Múa' })).toBeFocused();
+    await expect(page).not.toHaveURL(/d=hang-mua/);
 
     const tabs = page.getByRole('tab');
     await tabs.first().focus();
