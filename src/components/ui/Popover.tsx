@@ -19,7 +19,9 @@ interface PopoverProps {
  */
 export function Popover({ anchorRef, open, onClose, label, id, align = 'start', children }: PopoverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; fixed: boolean } | null>(null);
+  // Inside a modal <dialog> everything outside is inert, so render there.
+  const host = (open && anchorRef.current?.closest('dialog')) || null;
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -32,14 +34,15 @@ export function Popover({ anchorRef, open, onClose, label, id, align = 'start', 
       const vw = document.documentElement.clientWidth;
       let left = align === 'end' ? r.right - w : r.left;
       left = Math.max(12, Math.min(left, vw - w - 12));
-      setPos({ top: r.bottom + window.scrollY + 10, left: left + window.scrollX });
+      if (anchor.closest('dialog')) setPos({ top: r.bottom + 8, left, fixed: true });
+      else setPos({ top: r.bottom + window.scrollY + 10, left: left + window.scrollX, fixed: false });
     };
     place();
     window.addEventListener('resize', place);
-    window.addEventListener('scroll', place, { passive: true });
+    window.addEventListener('scroll', place, { passive: true, capture: true });
     return () => {
       window.removeEventListener('resize', place);
-      window.removeEventListener('scroll', place);
+      window.removeEventListener('scroll', place, { capture: true });
     };
   }, [open, anchorRef, align]);
 
@@ -47,6 +50,8 @@ export function Popover({ anchorRef, open, onClose, label, id, align = 'start', 
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Keep an enclosing modal <dialog> open: only the popover closes.
+        e.preventDefault();
         e.stopPropagation();
         onClose('escape');
       }
@@ -80,10 +85,10 @@ export function Popover({ anchorRef, open, onClose, label, id, align = 'start', 
       aria-label={label}
       className="popover"
       data-placed={pos ? 'true' : 'false'}
-      style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0 }}
+      style={pos ? { top: pos.top, left: pos.left, position: pos.fixed ? 'fixed' : 'absolute' } : { top: 0, left: 0 }}
     >
       {children}
     </div>,
-    document.body,
+    host ?? document.body,
   );
 }

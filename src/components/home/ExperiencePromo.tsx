@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import { ActionButton } from '@/components/ui/ActionButton';
+import Link from 'next/link';
 
 export function ExperiencePromo() {
   return (
@@ -19,9 +19,9 @@ export function ExperiencePromo() {
           <span>phòng nghỉ...</span>
         </h2>
         <p className="promo__text">Mà còn là những trải nghiệm đáng nhớ giữa thiên nhiên Cúc Phương.</p>
-        <ActionButton action={{ type: 'all-destinations' }} className="btn btn--primary btn--sm btn-arrow btn-shine">
+        <Link href="/combo-du-lich" className="btn btn--primary btn--sm btn-arrow btn-shine">
           Khám phá ngay <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
-        </ActionButton>
+        </Link>
       </div>
       <p className="promo__quote handwritten">
         <span>“Đi để thấy</span>

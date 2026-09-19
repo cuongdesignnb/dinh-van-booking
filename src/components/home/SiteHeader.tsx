@@ -1,42 +1,31 @@
 'use client';
 
 import { ArrowRight, Menu, Search, X } from 'lucide-react';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
-import { focusSearch, openDialog } from '@/lib/events';
+import { focusSearch } from '@/lib/events';
 
-type NavItem = { label: string; href: string } | { label: string; action: 'combo' };
-
-const NAV: NavItem[] = [
-  { label: 'Trang chủ', href: '#top' },
-  { label: 'Phòng nghỉ', href: '#phong-nghi' },
-  { label: 'Combo du lịch', action: 'combo' },
-  { label: 'Điểm đến', href: '#diem-den' },
-  { label: 'Liên hệ', href: '#lien-he' },
+const NAV = [
+  { label: 'Trang chủ', href: '/' },
+  { label: 'Phòng nghỉ', href: '/phong-nghi' },
+  { label: 'Combo du lịch', href: '/combo-du-lich' },
+  { label: 'Điểm đến', href: '/diem-den' },
+  { label: 'Liên hệ', href: '/lien-he' },
 ];
 
+const isActive = (path: string, href: string) =>
+  href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
+
 export function SiteHeader() {
+  const pathname = usePathname() ?? '/';
   const [menuOpen, setMenuOpen] = useState(false);
-  const [active, setActive] = useState('#top');
   const toggleRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll-spy for the underline indicator.
-  useEffect(() => {
-    const ids = ['phong-nghi', 'diem-den', 'lien-he'];
-    const onScroll = () => {
-      let current = '#top';
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top < window.innerHeight * 0.35) current = `#${id}`;
-      }
-      if (window.scrollY < 40) current = '#top';
-      setActive(current);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  useEffect(() => setMenuOpen(false), [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -67,56 +56,30 @@ export function SiteHeader() {
     };
   }, [menuOpen]);
 
-  const onNav = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
-    setMenuOpen(false);
-    if (href === '#top') {
-      e.preventDefault();
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
-      history.replaceState(null, '', ' ');
-    }
-  };
-
-  const renderItems = (inDrawer: boolean) =>
-    NAV.map((item) =>
-      'href' in item ? (
-        <li key={item.label}>
-          <a
-            href={item.href}
-            className="nav__link"
-            aria-current={active === item.href ? 'true' : undefined}
-            onClick={(e) => onNav(e, item.href)}
-          >
-            {item.label}
-          </a>
-        </li>
-      ) : (
-        <li key={item.label}>
-          <button
-            type="button"
-            className="nav__link"
-            aria-haspopup="dialog"
-            onClick={() => {
-              if (inDrawer) setMenuOpen(false);
-              openDialog({ type: 'combo' });
-            }}
-          >
-            {item.label}
-          </button>
-        </li>
-      ),
-    );
+  const renderItems = () =>
+    NAV.map((item) => (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          className="nav__link"
+          aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
+        >
+          {item.label}
+        </Link>
+      </li>
+    ));
 
   return (
     <header className="site-header" id="top">
       <LeafSprig className="site-header__decor" />
       <div className="site-header__inner">
-        <a href="#top" className="site-header__brand" aria-label="Đinh Vân Booking — Trang chủ" onClick={(e) => onNav(e, '#top')}>
+        <Link href="/" className="site-header__brand" aria-label="Đinh Vân Booking — Trang chủ">
           <BrandLogo />
-        </a>
+        </Link>
 
         <nav className="nav" aria-label="Điều hướng chính">
-          <ul className="nav__list">{renderItems(false)}</ul>
+          <ul className="nav__list">{renderItems()}</ul>
         </nav>
 
         <div className="site-header__aside">
@@ -131,9 +94,9 @@ export function SiteHeader() {
           <button type="button" className="round-btn" aria-label="Tìm phòng" onClick={() => focusSearch()}>
             <Search size={17} strokeWidth={2.1} aria-hidden="true" />
           </button>
-          <button type="button" className="btn btn--primary btn--header btn-shine" data-magnetic onClick={() => focusSearch()}>
+          <Link href="/phong-nghi" className="btn btn--primary btn--header btn-shine" data-magnetic>
             Đặt ngay <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
-          </button>
+          </Link>
           <button
             ref={toggleRef}
             type="button"
@@ -177,17 +140,10 @@ export function SiteHeader() {
               <X size={20} aria-hidden="true" />
             </button>
           </div>
-          <ul className="drawer__list">{renderItems(true)}</ul>
-          <button
-            type="button"
-            className="btn btn--primary drawer__cta"
-            onClick={() => {
-              setMenuOpen(false);
-              focusSearch();
-            }}
-          >
+          <ul className="drawer__list">{renderItems()}</ul>
+          <Link href="/phong-nghi" className="btn btn--primary drawer__cta" onClick={() => setMenuOpen(false)}>
             Đặt ngay <ArrowRight size={16} aria-hidden="true" />
-          </button>
+          </Link>
           <p className="drawer__motto handwritten">Du lịch bản địa — Kết nối những giá trị thật</p>
         </div>
       </div>

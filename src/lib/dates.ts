@@ -32,3 +32,8 @@ export const MONTHS_VI = [
   'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
 ];
 export const WEEKDAYS_VI = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+const WEEKDAY_LONG_VI = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+/** "Thứ 6, 13/11/2026" — deterministic (no Intl), identical on server and client. */
+export const formatDayLabel = (key: string) => `${WEEKDAY_LONG_VI[fromKey(key).getDay()]}, ${formatShort(key)}`;

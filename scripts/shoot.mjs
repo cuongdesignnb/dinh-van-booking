@@ -25,7 +25,8 @@ for (const [width, height] of viewports) {
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('requestfailed', (r) => errors.push(`FAILED ${r.url()}`));
-  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.goto(url, { waitUntil: 'load' });
+  await page.waitForTimeout(800);
   await page.evaluate(async () => {
     document.documentElement.style.scrollBehavior = 'auto';
     await document.fonts.ready;

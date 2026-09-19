@@ -1,8 +1,9 @@
 import { ArrowRight, Star } from 'lucide-react';
 import Image from 'next/image';
-import { ActionButton } from '@/components/ui/ActionButton';
+import Link from 'next/link';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
-import { formatVnd, type Stay } from '@/data/home-fixtures';
+import { fromPrice, type Stay } from '@/data/stays';
+import { formatVnd } from '@/lib/format';
 
 const PinCheck = () => (
   <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" className="stay__meta-icon">
@@ -19,6 +20,7 @@ const Sprig = () => (
 );
 
 export function StayCard({ stay, index }: { stay: Stay; index: number }) {
+  const home = stay.home ?? { image: stay.image, location: stay.location, tags: [stay.highlights[0], stay.highlights[1]] };
   return (
     <article
       className="stay"
@@ -29,12 +31,12 @@ export function StayCard({ stay, index }: { stay: Stay; index: number }) {
     >
       <div className="stay__media">
         <Image
-          src={stay.image.src}
-          alt={stay.image.alt}
+          src={home.image.src}
+          alt={home.image.alt}
           fill
           sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 264px"
           className="stay__img"
-          style={stay.image.position ? { objectPosition: stay.image.position } : undefined}
+          style={home.image.position ? { objectPosition: home.image.position } : undefined}
         />
         {stay.badge && <span className="stay__badge">{stay.badge}</span>}
         <FavoriteButton id={stay.id} name={stay.name} />
@@ -50,22 +52,22 @@ export function StayCard({ stay, index }: { stay: Stay; index: number }) {
         </p>
         <p className="stay__meta">
           <PinCheck />
-          {stay.location}
+          {home.location}
         </p>
         <p className="stay__meta stay__meta--tags">
           <Sprig />
-          <span>{stay.amenities[0]}</span>
+          <span>{home.tags[0]}</span>
           <i aria-hidden="true">•</i>
-          <span>{stay.amenities[1]}</span>
+          <span>{home.tags[1]}</span>
         </p>
         <div className="stay__foot">
           <p className="stay__price">
-            Từ <strong>{formatVnd(stay.pricePerNight)}</strong> <span>/ đêm</span>
+            Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span>
           </p>
-          <ActionButton action={{ type: 'stay', id: stay.id }} className="btn btn--primary btn--sm btn-arrow">
+          <Link href={`/phong-nghi/${stay.slug}`} className="btn btn--primary btn--sm btn-arrow">
             Xem chi tiết <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
             <span className="sr-only"> {stay.name}</span>
-          </ActionButton>
+          </Link>
         </div>
       </div>
     </article>

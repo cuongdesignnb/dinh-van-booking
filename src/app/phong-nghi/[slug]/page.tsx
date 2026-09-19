@@ -1,0 +1,265 @@
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarCheck,
+  Clock3,
+  Coffee,
+  Compass,
+  Leaf,
+  MapPin,
+  Mountain,
+  Sprout,
+  Star,
+  UserRoundCheck,
+} from 'lucide-react';
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { PageShell } from '@/components/layout/PageShell';
+import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import { BookingCard, MobileBookingBar } from '@/components/stay-detail/BookingCard';
+import { BookingProvider } from '@/components/stay-detail/BookingContext';
+import { Amenities, HostCard, ReviewCards, ShareSave, SupportCard } from '@/components/stay-detail/DetailWidgets';
+import { HouseRules, NotesPaper } from '@/components/stay-detail/InfoBlocks';
+import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
+import { RoomTypes } from '@/components/stay-detail/RoomTypes';
+import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
+import { destinationsById } from '@/data/destinations';
+import { stayDetailReviews } from '@/data/reviews';
+import { CHECK_IN_FACTS, galleryFor, getStay, stays } from '@/data/stays';
+import { formatRating } from '@/lib/format';
+import '@/styles/stay-detail.css';
+
+export function generateStaticParams() {
+  return stays.map((s) => ({ slug: s.slug }));
+}
+
+type Params = {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const stay = getStay((await params).slug);
+  return stay
+    ? { title: `${stay.name} — Đinh Vân Booking`, description: stay.tagline }
+    : { title: 'Không tìm thấy chỗ nghỉ — Đinh Vân Booking' };
+}
+
+const HIGHLIGHT_ICONS = [Mountain, Sprout, Coffee, Leaf];
+
+export default async function StayDetailPage({ params, searchParams }: Params) {
+  // Reading the query makes this route render per request, so the selection
+  // (dates/guests/room) is server-rendered instead of bailing out to the client.
+  await searchParams;
+  const stay = getStay((await params).slug);
+  if (!stay) notFound();
+  const nearby = stay.nearby.map((id) => destinationsById.get(id)).filter((d) => !!d);
+
+  const content = (
+    <>
+      <div className="detail-shell detail-crumbs">
+        <Breadcrumb
+          variant="plain"
+          home
+          items={[
+            { label: 'Trang chủ', href: '/' },
+            { label: 'Phòng nghỉ', href: '/phong-nghi' },
+            { label: stay.name },
+          ]}
+        />
+        <p className="detail-demo">
+          <BadgeCheck size={14} aria-hidden="true" /> Thông tin phòng, giá, khoảng cách và đánh giá là dữ liệu minh họa.
+        </p>
+      </div>
+
+      <div className="detail-top detail-shell">
+        <header className="detail-head">
+          {stay.badge && (
+            <p className="detail-head__badge">
+              <span className="detail-head__pill">
+                <Leaf size={12} aria-hidden="true" fill="currentColor" /> {stay.badge}
+              </span>
+              <SmallLeaf className="detail-head__leaf" />
+            </p>
+          )}
+          <h1 className="detail-head__title">{stay.name}</h1>
+          <p className="detail-head__meta">
+            <span>
+              <MapPin size={16} aria-hidden="true" /> {stay.address}
+            </span>
+            <span className="detail-head__rating">
+              <Star size={17} className="star" aria-hidden="true" />
+              <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
+            </span>
+          </p>
+          <p className="detail-head__tagline">“{stay.tagline}”</p>
+          <ul className="detail-head__hl">
+            {stay.highlights.map((h, i) => {
+              const Icon = HIGHLIGHT_ICONS[i % HIGHLIGHT_ICONS.length];
+              return (
+                <li key={h}>
+                  <span aria-hidden="true">
+                    <Icon size={16} />
+                  </span>
+                  {h}
+                </li>
+              );
+            })}
+          </ul>
+          <ShareSave id={stay.id} name={stay.name} />
+          <p className="detail-head__note handwritten" aria-hidden="true">
+            Nơi mỗi chuyến đi
+            <br /> đều là một câu chuyện
+            <br /> đáng nhớ!
+          </p>
+          <LeafSprig className="detail-head__sprig" />
+        </header>
+
+        <div className="detail-top__gallery">
+          <PropertyGallery images={galleryFor(stay)} note={stay.galleryNote} name={stay.name} />
+        </div>
+
+        <aside className="detail-top__book" aria-label="Đặt phòng">
+          <BookingCard />
+        </aside>
+
+        <div className="detail-top__host">
+          {stay.host ? (
+            <HostCard host={stay.host} />
+          ) : (
+            <section className="host host--none" aria-label="Chủ nhà">
+              <p>Thông tin chủ nhà đang được cập nhật. Đinh Vân sẽ kết nối bạn khi cần.</p>
+            </section>
+          )}
+        </div>
+
+        <div className="detail-top__info">
+          <section className="intro" aria-labelledby="intro-t">
+            <h2 className="dsec-title" id="intro-t">
+              Giới thiệu phòng nghỉ <SmallLeaf className="section-title__leaf" />
+            </h2>
+            <p className="intro__text">{stay.description}</p>
+            <figure className="intro__quote">
+              <blockquote>
+                “Không chỉ là một nơi lưu trú, mà là nơi bạn tìm lại sự kết nối
+                <br /> với thiên nhiên và chính mình.”
+              </blockquote>
+              <figcaption>Đinh Vân Booking</figcaption>
+            </figure>
+          </section>
+          <Amenities />
+        </div>
+      </div>
+
+      <div className="detail-lower detail-shell">
+        <div className="detail-lower__left">
+          <RoomTypes />
+          <ReviewCards reviews={stayDetailReviews} total={stay.reviewCount} />
+        </div>
+        <div className="detail-lower__right">
+          <div className="facts-row">
+            <section className="facts" aria-labelledby="facts-t">
+              <h2 className="dsec-title" id="facts-t">
+                Lịch nhận phòng &amp; thông tin cần biết <SmallLeaf className="section-title__leaf" />
+              </h2>
+              <ul className="facts__list">
+                <li className="facts__pair">
+                  <span className="facts__ic" aria-hidden="true">
+                    <Clock3 size={18} />
+                  </span>
+                  <span>
+                    <b>Giờ nhận phòng:</b> {CHECK_IN_FACTS.checkIn}
+                  </span>
+                  <span className="facts__ic" aria-hidden="true">
+                    <CalendarCheck size={17} />
+                  </span>
+                  <span>
+                    <b>Giờ trả phòng:</b> {CHECK_IN_FACTS.checkOut}
+                  </span>
+                </li>
+                <li>
+                  <span className="facts__ic" aria-hidden="true">
+                    <UserRoundCheck size={18} />
+                  </span>
+                  <span>
+                    {CHECK_IN_FACTS.earlyCheckIn}
+                    <br />
+                    {CHECK_IN_FACTS.luggage}
+                  </span>
+                </li>
+                <li>
+                  <span className="facts__ic" aria-hidden="true">
+                    <Coffee size={17} />
+                  </span>
+                  <span>
+                    <b>Bữa sáng:</b> {CHECK_IN_FACTS.breakfast.replace('Bữa sáng: ', '')}
+                  </span>
+                </li>
+                <li>
+                  <span className="facts__ic" aria-hidden="true">
+                    <Compass size={18} />
+                  </span>
+                  <span>{CHECK_IN_FACTS.tours}</span>
+                </li>
+              </ul>
+            </section>
+            <NotesPaper />
+          </div>
+
+          <section className="nearby" aria-labelledby="nearby-t">
+            <div className="dsec-head">
+              <h2 className="dsec-title" id="nearby-t">
+                Địa điểm xung quanh <SmallLeaf className="section-title__leaf" />
+              </h2>
+              <Link href="/diem-den" className="link-more">
+                Xem tất cả <span className="sr-only">điểm đến</span> <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </div>
+            <ul className="nearby__list">
+              {nearby.map((d) => {
+                const img = d.nearbyImage ?? d.image;
+                return (
+                  <li key={d.id}>
+                    <Link href={`/diem-den?d=${d.id}`} className="nearby__card">
+                      <span className="nearby__media">
+                        <Image src={img.src} alt={img.alt} fill sizes="(max-width: 767px) 45vw, 145px" />
+                      </span>
+                      <span className="nearby__name">{d.name}</span>
+                      {d.fromStay && (
+                        <span className="nearby__meta">
+                          <span>
+                            <MapPin size={11} aria-hidden="true" /> {d.fromStay.distance}
+                          </span>
+                          <span>
+                            <Clock3 size={11} aria-hidden="true" /> {d.fromStay.time}
+                          </span>
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <div className="rules-row">
+            <HouseRules />
+            <SupportCard />
+          </div>
+        </div>
+      </div>
+      <MobileBookingBar />
+    </>
+  );
+
+  return (
+    <PageShell className="page-detail">
+      <Suspense fallback={<div className="detail-shell detail-loading">Đang tải…</div>}>
+        <BookingProvider stay={stay}>{content}</BookingProvider>
+      </Suspense>
+    </PageShell>
+  );
+}

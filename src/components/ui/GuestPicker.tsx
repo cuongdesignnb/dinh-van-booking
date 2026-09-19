@@ -2,16 +2,18 @@
 
 import { Minus, Plus } from 'lucide-react';
 
-export const GUEST_LIMITS = { adults: { min: 1, max: 10 }, children: { min: 0, max: 6 }, total: 12 };
+export const GUEST_LIMITS = { adults: { min: 1, max: 10 }, children: { min: 0, max: 6 }, rooms: { min: 1, max: 5 }, total: 12 };
 
 interface Props {
   adults: number;
   childCount: number;
-  onChange: (adults: number, children: number) => void;
-  onDone: () => void;
+  /** When provided, a "Số phòng" stepper is shown. */
+  rooms?: number;
+  onChange: (adults: number, children: number, rooms?: number) => void;
+  onDone?: () => void;
 }
 
-export function GuestPicker({ adults, childCount: children, onChange, onDone }: Props) {
+export function GuestPicker({ adults, childCount: children, rooms, onChange, onDone }: Props) {
   const total = adults + children;
   const rows = [
     {
@@ -21,7 +23,7 @@ export function GuestPicker({ adults, childCount: children, onChange, onDone }: 
       value: adults,
       canDec: adults > GUEST_LIMITS.adults.min,
       canInc: adults < GUEST_LIMITS.adults.max && total < GUEST_LIMITS.total,
-      set: (v: number) => onChange(v, children),
+      set: (v: number) => onChange(v, children, rooms === undefined ? undefined : Math.min(rooms, v)),
     },
     {
       key: 'children',
@@ -30,8 +32,21 @@ export function GuestPicker({ adults, childCount: children, onChange, onDone }: 
       value: children,
       canDec: children > GUEST_LIMITS.children.min,
       canInc: children < GUEST_LIMITS.children.max && total < GUEST_LIMITS.total,
-      set: (v: number) => onChange(adults, v),
+      set: (v: number) => onChange(adults, v, rooms),
     },
+    ...(rooms === undefined
+      ? []
+      : [
+          {
+            key: 'rooms',
+            label: 'Số phòng',
+            hint: 'Tối thiểu 1 phòng',
+            value: rooms,
+            canDec: rooms > GUEST_LIMITS.rooms.min,
+            canInc: rooms < GUEST_LIMITS.rooms.max && rooms < adults,
+            set: (v: number) => onChange(adults, children, v),
+          },
+        ]),
   ];
   return (
     <div className="guests">
@@ -69,12 +84,14 @@ export function GuestPicker({ adults, childCount: children, onChange, onDone }: 
         </div>
       ))}
       <p className="guests__note">Tối đa {GUEST_LIMITS.total} khách cho mỗi lần tìm.</p>
-      <div className="calendar__foot">
-        <span />
-        <button type="button" className="text-btn text-btn--strong" onClick={onDone}>
-          Xong
-        </button>
-      </div>
+      {onDone && (
+        <div className="calendar__foot">
+          <span />
+          <button type="button" className="text-btn text-btn--strong" onClick={onDone}>
+            Xong
+          </button>
+        </div>
+      )}
     </div>
   );
 }

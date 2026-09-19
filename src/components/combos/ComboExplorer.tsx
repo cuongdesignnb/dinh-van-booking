@@ -1,0 +1,422 @@
+'use client';
+
+import {
+  ArrowRight,
+  Binoculars,
+  CalendarDays,
+  ChevronDown,
+  Church,
+  Flame,
+  Heart,
+  House,
+  Info,
+  Landmark,
+  Leaf,
+  Map as MapIcon,
+  Minus,
+  Mountain,
+  PawPrint,
+  Plus,
+  Sailboat,
+  Users,
+  UsersRound,
+} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useId, useMemo, useRef, useState } from 'react';
+import { DateRangePicker } from '@/components/ui/DateRangePicker';
+import { FavoriteButton } from '@/components/ui/FavoriteButton';
+import { DemoNote, Modal } from '@/components/ui/Modal';
+import { Popover } from '@/components/ui/Popover';
+import {
+  COMBO_CATEGORIES,
+  comboMatches,
+  combos,
+  combosById,
+  sortCombos,
+  type Combo,
+  type ComboCategory,
+  type ComboLine,
+  type ComboSort,
+} from '@/data/combos';
+import { formatShort } from '@/lib/dates';
+import { setPendingNote } from '@/lib/draft-store';
+import { formatVnd } from '@/lib/format';
+import { readParam } from '@/lib/selection';
+
+const LINE_ICON: Record<ComboLine['icon'], typeof Leaf> = {
+  leaf: Leaf,
+  binoculars: Binoculars,
+  food: MapIcon,
+  pagoda: Landmark,
+  boat: Sailboat,
+  tent: House,
+  paw: PawPrint,
+  bbq: Flame,
+  culture: Church,
+  family: Users,
+  child: UsersRound,
+  home: MapIcon,
+  team: Leaf,
+  mountain: Mountain,
+  route: MapIcon,
+};
+
+function ChipIcon({ icon }: { icon: string }) {
+  const p = { size: 20, 'aria-hidden': true as const };
+  if (icon === 'family') return <Users {...p} fill="currentColor" strokeWidth={1.2} />;
+  if (icon === 'heart') return <Heart {...p} fill="currentColor" strokeWidth={0} />;
+  if (icon === 'team') return <UsersRound {...p} fill="currentColor" strokeWidth={1.2} />;
+  if (icon === 'leaf') return <Leaf {...p} fill="currentColor" strokeWidth={1.2} />;
+  return <CalendarDays {...p} strokeWidth={1.8} />;
+}
+
+const SORTS: { id: ComboSort; label: string }[] = [
+  { id: 'popular', label: 'Phổ biến nhất' },
+  { id: 'price-asc', label: 'Giá tăng dần' },
+  { id: 'price-desc', label: 'Giá giảm dần' },
+];
+
+export function ComboExplorer() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const catRaw = readParam(params, 'loai');
+  const category: ComboCategory = COMBO_CATEGORIES.some((c) => c.id === catRaw) ? (catRaw as ComboCategory) : 'all';
+  const sortRaw = readParam(params, 'sort');
+  const sort: ComboSort = SORTS.some((s) => s.id === sortRaw) ? (sortRaw as ComboSort) : 'popular';
+  const openId = readParam(params, 'combo');
+  const open = openId ? (combosById.get(openId) ?? null) : null;
+  const demo = readParam(params, 'demo');
+  const pushed = useRef(false);
+
+  const list = useMemo(() => sortCombos(combos.filter((c) => comboMatches(c, category)), sort), [category, sort]);
+
+  const setQuery = (patch: Record<string, string | null>, mode: 'push' | 'replace' = 'push') => {
+    const p = new URLSearchParams(params);
+    p.delete('demo');
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null) p.delete(k);
+      else p.set(k, v);
+    }
+    const url = p.toString() ? `${pathname}?${p}` : pathname;
+    if (mode === 'push') router.push(url, { scroll: false });
+    else router.replace(url, { scroll: false });
+  };
+
+  const openCombo = (id: string) => {
+    pushed.current = true;
+    setQuery({ combo: id });
+  };
+  const closeCombo = () => {
+    if (!open) return;
+    if (pushed.current) {
+      pushed.current = false;
+      router.back();
+    } else setQuery({ combo: null }, 'replace');
+  };
+
+  let body;
+  if (demo === 'loading')
+    body = (
+      <ul className="combo-grid" aria-hidden="true">
+        {Array.from({ length: 6 }, (_, i) => (
+          <li key={i} className="ccard ccard--skeleton">
+            <div className="ccard__media skeleton" />
+            <div className="ccard__body">
+              <span className="skeleton skeleton--line" />
+              <span className="skeleton skeleton--line skeleton--short" />
+              <span className="skeleton skeleton--block" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  else if (demo === 'error')
+    body = (
+      <div className="state-box" role="alert">
+        <p>
+          <strong>Chưa tải được danh sách combo.</strong> Vui lòng thử lại.
+        </p>
+        <button type="button" className="btn btn--primary" onClick={() => setQuery({}, 'replace')}>
+          Thử lại
+        </button>
+      </div>
+    );
+  else if (!list.length)
+    body = (
+      <div className="state-box" role="status">
+        <p>
+          <strong>Chưa có combo phù hợp với lựa chọn này.</strong> Đinh Vân có thể thiết kế hành trình riêng cho bạn.
+        </p>
+        <div className="state-box__actions">
+          <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>
+            Xem tất cả combo
+          </button>
+          <Link className="btn btn--primary" href="/lien-he?intent=combo">
+            Nhận tư vấn riêng
+          </Link>
+        </div>
+      </div>
+    );
+  else
+    body = (
+      <ul className="combo-grid">
+        {list.map((c, i) => (
+          <li key={c.id} className="ccard" data-reveal="card" data-tilt style={{ '--d': `${i * 70}ms` } as React.CSSProperties}>
+            <div className="ccard__media">
+              <Image src={c.image.src} alt={c.image.alt} fill sizes="(max-width: 767px) 92vw, (max-width: 1279px) 30vw, 220px" className="ccard__img" />
+              <span className="ccard__badge">
+                <ChipIcon icon={c.badge.icon} />
+                {c.badge.label}
+              </span>
+              <FavoriteButton ns="combo" id={c.id} name={c.title} className="fav ccard__fav" />
+            </div>
+            <div className="ccard__body">
+              <h3 className="ccard__title">{c.title}</h3>
+              <p className="ccard__sub">{c.subtitle}</p>
+              <ul className="ccard__lines">
+                {c.includedHighlights.map((l) => {
+                  const Icon = LINE_ICON[l.icon];
+                  return (
+                    <li key={l.text}>
+                      <Icon size={15} aria-hidden="true" fill={l.icon === 'leaf' ? 'currentColor' : 'none'} />
+                      {l.text}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="ccard__price">
+                Từ <strong>{formatVnd(c.fromPriceVnd)}</strong> <span>/ {c.priceUnit}</span>
+              </p>
+              <button type="button" className="btn btn--primary ccard__cta btn-arrow" aria-haspopup="dialog" onClick={() => openCombo(c.id)}>
+                Xem chi tiết <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
+                <span className="sr-only"> {c.title}</span>
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+
+  return (
+    <>
+      <div className="combo-filters">
+        <div className="combo-filters__inner content-shell">
+          <nav className="crumbs crumbs--plain combo-crumbs" aria-label="Đường dẫn">
+            <ol>
+              <li>
+                <Link href="/">Trang chủ</Link>
+              </li>
+              <li>
+                <span aria-hidden="true">&gt;</span>
+                <span aria-current="page">Combo du lịch</span>
+              </li>
+            </ol>
+          </nav>
+          <div className="combo-chips" role="group" aria-label="Lọc combo theo loại">
+            {COMBO_CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="combo-chip"
+                aria-pressed={category === c.id}
+                onClick={() => setQuery({ loai: c.id === 'all' ? null : c.id })}
+              >
+                <ChipIcon icon={c.icon} />
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <p className="combo-filters__note handwritten" aria-hidden="true">
+            Chọn hành trình phù hợp
+            <br /> với bạn nhé!
+          </p>
+        </div>
+      </div>
+
+      <section className="combo-list content-shell" aria-labelledby="combo-title">
+        <div className="combo-list__head">
+          <h2 className="section-title" id="combo-title">
+            Các combo nổi bật <Leaf className="section-title__leaf" fill="currentColor" strokeWidth={1} aria-hidden="true" />
+          </h2>
+          <p className="combo-list__sub">Những hành trình được yêu thích nhất, kết hợp tinh hoa của Cúc Phương và Ninh Bình</p>
+          <label className="combo-sort">
+            <span>Sắp xếp theo</span>
+            <span className="combo-sort__select">
+              <select value={sort} onChange={(e) => setQuery({ sort: e.target.value === 'popular' ? null : e.target.value })}>
+                {SORTS.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden="true" />
+            </span>
+          </label>
+        </div>
+        <p className="sr-only" aria-live="polite">
+          {list.length} combo phù hợp
+        </p>
+        {body}
+      </section>
+
+      <ComboDetailDialog combo={open} onClose={closeCombo} />
+    </>
+  );
+}
+
+function ComboDetailDialog({ combo, onClose }: { combo: Combo | null; onClose: () => void }) {
+  const id = useId();
+  return (
+    <Modal open={!!combo} onClose={onClose} labelledBy={id} size="lg" className="dialog--combo">
+      {combo && <ComboDetail key={combo.id} combo={combo} titleId={id} />}
+    </Modal>
+  );
+}
+
+function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
+  const router = useRouter();
+  const [date, setDate] = useState<string | null>(null);
+  const [guests, setGuests] = useState(2);
+  const [note, setNote] = useState('');
+  const [openDay, setOpenDay] = useState(0);
+  const [pick, setPick] = useState(false);
+  const dateRef = useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <div className="dialog__media">
+        <Image src={combo.image.src} alt={combo.image.alt} fill sizes="(max-width: 820px) 100vw, 820px" />
+      </div>
+      <p className="combo-d__badge">
+        {combo.durationDays} ngày {combo.durationNights} đêm · {combo.badge.label}
+      </p>
+      <h2 id={titleId} className="dialog__title">
+        {combo.title}
+      </h2>
+      <p className="dialog__lead">{combo.subtitle}</p>
+      <p className="dialog__price">
+        Từ <strong>{formatVnd(combo.fromPriceVnd)}</strong> / {combo.priceUnit} (giá tham khảo)
+      </p>
+
+      <h3 className="combo-d__h">Lịch trình gợi ý</h3>
+      <ul className="combo-d__days">
+        {combo.itinerary.map((d, i) => (
+          <li key={d.day}>
+            <button type="button" aria-expanded={openDay === i} onClick={() => setOpenDay(openDay === i ? -1 : i)}>
+              {d.day}
+              <ChevronDown size={16} aria-hidden="true" />
+            </button>
+            {openDay === i && (
+              <ul className="combo-d__items">
+                {d.items.map((it) => (
+                  <li key={it}>{it}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <div className="combo-d__incl">
+        <section>
+          <h3 className="combo-d__h">Bao gồm</h3>
+          <ul>
+            {combo.included.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <h3 className="combo-d__h">Chưa bao gồm</h3>
+          <ul>
+            {combo.excluded.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+      <DemoNote>
+        Lịch trình, dịch vụ và giá là nội dung mẫu. Chính sách đặt cọc, hoàn/hủy tùy từng combo và sẽ được xác nhận khi tư
+        vấn.
+      </DemoNote>
+
+      <div className="combo-d__form">
+        <div className="field">
+          <span className="field__label" id={`${titleId}-date`}>
+            Ngày dự kiến
+          </span>
+          <button
+            ref={dateRef}
+            type="button"
+            className="field__input combo-d__date"
+            aria-labelledby={`${titleId}-date ${titleId}-datev`}
+            aria-haspopup="dialog"
+            aria-expanded={pick}
+            onClick={() => setPick((v) => !v)}
+          >
+            <CalendarDays size={16} aria-hidden="true" />
+            <span id={`${titleId}-datev`}>{date ? formatShort(date) : 'Chọn ngày'}</span>
+          </button>
+          <Popover id={`${titleId}-cal`} label="Chọn ngày dự kiến" anchorRef={dateRef} open={pick} onClose={() => setPick(false)}>
+            <DateRangePicker
+              checkIn={date}
+              checkOut={null}
+              field="in"
+              onFieldChange={() => undefined}
+              onChange={(d) => {
+                setDate(d);
+                if (d) setPick(false);
+              }}
+              onDone={() => setPick(false)}
+            />
+          </Popover>
+        </div>
+        <div className="field">
+          <span className="field__label" id={`${titleId}-g`}>
+            Số khách
+          </span>
+          <div className="stepper combo-d__stepper" role="group" aria-labelledby={`${titleId}-g`}>
+            <button type="button" className="stepper__btn" onClick={() => setGuests((g) => Math.max(1, g - 1))} disabled={guests <= 1} aria-label="Giảm số khách">
+              <Minus size={14} aria-hidden="true" />
+            </button>
+            <output className="stepper__value">{guests}</output>
+            <button type="button" className="stepper__btn" onClick={() => setGuests((g) => Math.min(40, g + 1))} disabled={guests >= 40} aria-label="Tăng số khách">
+              <Plus size={14} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <label className="field combo-d__note">
+          <span className="field__label">Ghi chú ngắn (không bắt buộc)</span>
+          <textarea
+            className="field__input"
+            rows={2}
+            maxLength={300}
+            value={note}
+            placeholder="Ví dụ: có 2 bé nhỏ, muốn lịch trình nhẹ nhàng…"
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="dialog__actions">
+        <button
+          type="button"
+          className="btn btn--primary"
+          data-autofocus
+          onClick={() => {
+            setPendingNote(note);
+            const p = new URLSearchParams({ intent: 'combo', item: combo.slug, adults: String(guests) });
+            if (date) p.set('checkIn', date);
+            router.push(`/lien-he?${p}`);
+          }}
+        >
+          Nhờ Đinh Vân tư vấn combo này <ArrowRight size={16} aria-hidden="true" />
+        </button>
+        <p className="combo-d__hint">
+          <Info size={14} aria-hidden="true" /> Chưa đặt chỗ hay thanh toán — chỉ gửi nhu cầu sang trang tư vấn.
+        </p>
+      </div>
+    </>
+  );
+}

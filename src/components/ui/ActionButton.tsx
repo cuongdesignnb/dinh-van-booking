@@ -13,7 +13,7 @@ interface Props {
   magnetic?: boolean;
 }
 
-/** Button that opens a dialog (or focuses the search form) from server-rendered markup. */
+/** Button that opens a global dialog (or focuses the search form) from server-rendered markup. */
 export function ActionButton({ action, className, children, label, magnetic }: Props) {
   return (
     <button

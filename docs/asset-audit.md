@@ -39,3 +39,36 @@ layers** — they are reconstructions at the reference's 1× resolution.
 4. Real room data, prices, ratings and reviews (currently demo fixtures in
    `src/data/home-fixtures.ts`, flagged `demo: true`).
 5. Confirmation of the commercial claims in the trust strip ("Giá tốt, không qua trung gian"…).
+
+---
+
+# Inner pages (screens 01–06)
+
+References: `docs/reference/01-phong-nghi.png` … `06-dat-phong.png` (all 1448 × 1086, copied from
+`references/1.png` … `6.png`). Assets are extracted by `scripts/extract-pages.py`
+(`python scripts/extract-pages.py [01..06]`) with the same approach: crop the photo region and
+inpaint baked-in text/UI. **None are clean source layers**; they are 1× reconstructions.
+
+| Screen | Files (`public/images/dinh-van-booking/…`) | Remaining difference |
+|---|---|---|
+| 01 | `pages/stays-hero.webp`, `stays/*.webp` (8), `pages/map-stays.webp`, `pages/advisor-stays.webp`, `people/review-stays-*.webp` | Hero text areas smudged; search-bar strip mirrored from the rows above; wooden sign text removed and re-set as DOM (font differs); map pins/labels inpainted and redrawn as SVG/DOM; advisor background behind the copy is a flat gradient fill; card images 200×100 px (soft on mobile) |
+| 02 | `detail/forest-*.webp`, `rooms/*.webp`, `nearby/*.webp`, `people/host-anh-nam.webp`, `people/advisor-support.webp`, `people/review-detail-*.webp`, `reviews/r*-*.webp` | Gallery main image 530×318 px (soft when enlarged in the gallery dialog); "+25" and caption areas inpainted; the other 7 stays have no gallery/room photos in the mockups, so their detail pages reuse listing and generic room images |
+| 03 | `pages/combo-hero.webp`, `combos/*.webp` (6), `people/review-combo-*.webp` | Hero copy area smudged; badge + heart areas inpainted (visible blur when enlarged) |
+| 04 | `pages/destinations-hero.webp`, `destinations/*.webp` (6), `seasons/*.webp` (4), `pages/itinerary-photo.webp`, `pages/map-destinations.webp`, `people/advisor-note.webp` | Map labels/icons removed and redrawn; route dashes redrawn as SVG approximations |
+| 05 | `pages/contact-hero.webp`, `people/advisor-profile.webp`, `pages/map-contact.webp`, `pages/contact-scenic.webp` | Map roads kept, labels/pin/pop-up redrawn; scenic CTA area inpainted |
+| 06 | `pages/checkout-hero.webp`, `pages/checkout-stay.webp`, `addons/*.webp` (4) | Wooden sign blanked and re-set as DOM; checkbox areas on add-on photos inpainted |
+
+People in the mockups (advisor Đinh Vân, host Anh Nam, reviewers) are **illustrations**, labelled
+as such in alt text and dialogs; they are not photos of real people. Brand/social marks come from
+`simple-icons` (CC0). Maps are illustrations labelled "Bản đồ minh họa".
+
+## Additional content the owner must confirm (inner pages)
+
+- All prices, room types, capacities, areas, amenities, ratings, review counts, reviews, host
+  profile, distances/times, itineraries, seasons, combo inclusions and FAQ answers (fixtures, `isDemo`).
+- Commercial claims in the mockups that were **not** rendered as facts: "Hỗ trợ 24/7", "Phản hồi
+  trong 30 phút", "Không phát sinh chi phí ẩn", "1.000+ du khách", "SSL 256-bit", "Xác nhận qua
+  SMS", "Xác nhận nhanh trong 5 phút", "Không qua trung gian" (still shown as a badge — confirm).
+- Deposit policy (30%), coupon `DVAN10`, payment methods and bank details, cancellation/terms/
+  privacy/payment policy texts (dialogs currently say "đang được cập nhật").
+- Contact phone, Zalo, e-mail, address, map location/directions URL, social URLs (all `null`).

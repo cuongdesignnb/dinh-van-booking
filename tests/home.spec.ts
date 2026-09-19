@@ -4,7 +4,7 @@ const collectErrors = (page: Page) => {
   const errors: string[] = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
-  page.on('requestfailed', (r) => errors.push(`failed: ${r.url()}`));
+  page.on('requestfailed', (r) => !r.url().includes('_rsc=') && errors.push(`failed: ${r.url()}`));
   return errors;
 };
 
@@ -50,7 +50,7 @@ test.describe('desktop 1448', () => {
     expect(errors).toEqual([]);
   });
 
-  test('date range, guests and search dialog', async ({ page }) => {
+  test('home search hands the selection to the listing', async ({ page }) => {
     await page.goto('/');
     await page.locator('.search__submit').click();
     await expect(page.locator('.search__error')).toHaveText('Vui lòng chọn ngày nhận phòng.');
@@ -63,7 +63,6 @@ test.describe('desktop 1448', () => {
     await expect(page.locator('.calendar__error')).toContainText('Ngày trả phòng phải sau ngày nhận phòng');
     await days.nth(5).click();
     await expect(page.locator('.popover')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Ngày trả phòng/ })).not.toContainText('Chọn ngày');
 
     await page.getByRole('button', { name: /Số khách/ }).click();
     await page.getByRole('button', { name: 'Tăng trẻ em' }).click();
@@ -71,41 +70,28 @@ test.describe('desktop 1448', () => {
     await expect(page.getByRole('button', { name: /Số khách/ })).toContainText('3 khách');
 
     await page.locator('.search__submit').click();
-    const dialog = page.locator('dialog.dialog[open]');
-    await expect(dialog).toContainText('Gợi ý phòng nghỉ cho bạn');
-    await expect(dialog).toContainText('tình trạng phòng sẽ được xác nhận khi tư vấn');
-    await page.keyboard.press('Escape');
-    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/\/phong-nghi\?checkIn=\d{4}-\d{2}-\d{2}&checkOut=.*adults=2&children=1/);
+    await expect(page.locator('.stays-note')).toContainText('tình trạng phòng sẽ được xác nhận khi tư vấn');
   });
 
-  test('favorites, details, contact and header actions', async ({ page }) => {
+  test('favorites, detail links, contact and header', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Lưu An Nhiên Retreat' }).click();
-    await expect(page.getByRole('button', { name: 'Bỏ lưu An Nhiên Retreat' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('button', { name: 'Bỏ lưu An Nhiên Retreat' })).toHaveAttribute('aria-pressed', 'true');
     await page.reload();
     await expect(page.getByRole('button', { name: 'Bỏ lưu An Nhiên Retreat' })).toBeVisible();
-
-    await page.getByRole('button', { name: /Xem chi tiết Mộc Sơn Homestay/ }).click();
-    await expect(page.locator('dialog[open] h2')).toHaveText('Mộc Sơn Homestay');
-    await page.getByRole('button', { name: 'Đóng hộp thoại' }).click();
-    await expect(page.locator('dialog[open]')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Nhắn Zalo ngay' }).click();
     await expect(page.locator('dialog[open]')).toContainText('Thông tin liên hệ đang được cập nhật');
     await page.keyboard.press('Escape');
-
-    await page.locator('.nav').getByRole('button', { name: 'Combo du lịch' }).click();
-    await expect(page.locator('dialog[open] h2')).toHaveText('Tư vấn combo du lịch');
-    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Nhận xét tiếp theo' }).click();
     await expect(page.locator('.review-card__author')).not.toHaveText('Nguyễn Thu Hà');
 
-    await page.locator('.btn--header').click();
-    await expect(page.getByRole('button', { name: /Ngày nhận phòng/ })).toBeFocused();
+    await page.getByRole('link', { name: /Xem chi tiết Mộc Sơn Homestay/ }).click();
+    await expect(page).toHaveURL(/\/phong-nghi\/moc-son-homestay/);
+    await expect(page.locator('h1')).toHaveText('Mộc Sơn Homestay');
   });
 });
 

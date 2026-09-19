@@ -1,16 +1,18 @@
 import { Mail, MapPin, Phone } from 'lucide-react';
+import Link from 'next/link';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BrandIcon, brandTitle, type BrandName } from '@/components/ui/BrandIcons';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { ForestSilhouette, LeafSprig } from '@/components/ui/Decor';
 import { siteConfig } from '@/config/site';
+import { PolicyLink } from '@/components/ui/PolicyLink';
 
 const SOCIAL = ['facebook', 'instagram', 'youtube', 'tiktok'] as const satisfies readonly BrandName[];
 
-export function SiteFooter() {
+export function SiteFooter({ variant = 'default' }: { variant?: 'default' | 'checkout' }) {
   const { previewLabels: p, social } = siteConfig;
   return (
-    <footer className="footer">
+    <footer className={`footer footer--${variant}`}>
       <ForestSilhouette className="footer__forest" />
       <LeafSprig className="footer__leaf" />
       <div className="footer__inner">
@@ -25,29 +27,40 @@ export function SiteFooter() {
           </h2>
           <ul className="footer__links">
             <li>
-              <a href="#top">Trang chủ</a>
+              <Link href="/">Trang chủ</Link>
             </li>
             <li>
-              <a href="#phong-nghi">Phòng nghỉ</a>
+              <Link href="/phong-nghi">Phòng nghỉ</Link>
             </li>
             <li>
-              <ActionButton action={{ type: 'combo' }} className="footer__linkbtn">
-                Combo du lịch
-              </ActionButton>
+              <Link href="/combo-du-lich">Combo du lịch</Link>
             </li>
             <li>
-              <a href="#diem-den">Điểm đến</a>
+              <Link href="/diem-den">Điểm đến</Link>
             </li>
             <li>
-              <a href="#lien-he">Liên hệ</a>
+              <Link href="/lien-he">Liên hệ</Link>
             </li>
             <li>
-              <ActionButton action={{ type: 'all-destinations' }} className="footer__linkbtn">
-                Blog du lịch
-              </ActionButton>
+              <Link href="/diem-den">Blog du lịch</Link>
             </li>
           </ul>
         </nav>
+
+        {variant === 'checkout' && (
+          <nav className="footer__col" aria-labelledby="f-support">
+            <h2 className="footer__title" id="f-support">
+              Hỗ trợ
+            </h2>
+            <ul className="footer__support">
+              {(['terms', 'cancel', 'privacy'] as const).map((k) => (
+                <li key={k}>
+                  <PolicyLink policy={k} className="footer__linkbtn" />
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
 
         <div className="footer__col">
           <h2 className="footer__title">Thông tin liên hệ</h2>

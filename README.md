@@ -19,6 +19,21 @@ npm run shoot        # screenshots → docs/screenshots (server must be running)
 npm run assets:extract   # re-create images from the reference (Python + OpenCV)
 ```
 
+## Routes
+
+| Route | Screen |
+|---|---|
+| `/` | Homepage |
+| `/phong-nghi` | Stay listing (filters in the URL; `?demo=loading|error`, `?fixture=extended` for states) |
+| `/phong-nghi/[slug]` | Stay detail (8 slugs) |
+| `/combo-du-lich` | Combos (`?combo=<slug>` opens the detail dialog) |
+| `/diem-den` | Destinations (`?d=<id>` opens the detail dialog) |
+| `/lien-he` | Consultation form (`?intent=stay|combo|destination&item=…`; `?demo=adapter-error`) |
+| `/dat-phong` | Booking draft (needs `stay`, `room`, dates, guests; `?scenario=baseline` = brief fixture) |
+
+Screen status and verification: `docs/implementation-status.md`, `docs/ui-verification.md`.
+`node scripts/shoot-all.mjs artifacts/ui 1448 390` regenerates screenshots (server on :3100).
+
 ## Structure
 
 - `src/components/home/*` — page sections (server components except `SiteHeader`,

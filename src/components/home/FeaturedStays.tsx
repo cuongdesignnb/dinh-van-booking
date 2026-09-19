@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
-import { ActionButton } from '@/components/ui/ActionButton';
+import Link from 'next/link';
 import { SmallLeaf } from '@/components/ui/Decor';
-import { stays } from '@/data/home-fixtures';
+import { HOME_STAY_IDS, staysById } from '@/data/stays';
 import { ExperiencePromo } from './ExperiencePromo';
 import { StayCard } from './StayCard';
 
@@ -16,12 +16,12 @@ export function FeaturedStays() {
             </h2>
             <p className="section-sub">Những nơi lưu trú được yêu thích nhất tại Cúc Phương</p>
           </div>
-          <ActionButton action={{ type: 'all-stays' }} className="link-more">
+          <Link href="/phong-nghi" className="link-more">
             Xem tất cả <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
-          </ActionButton>
+          </Link>
         </div>
         <div className="stay-grid">
-          {stays.map((s, i) => (
+          {HOME_STAY_IDS.map((id) => staysById.get(id)!).map((s, i) => (
             <StayCard key={s.id} stay={s} index={i} />
           ))}
         </div>

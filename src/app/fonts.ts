@@ -11,7 +11,8 @@ export const displayFont = Playfair_Display({
 export const uiFont = Roboto_Condensed({
   subsets: ['latin', 'latin-ext', 'vietnamese'],
   weight: ['400', '500', '600', '700'],
-  style: 'normal',
+  // Real italic face for quotes (no synthetic slant).
+  style: ['normal', 'italic'],
   display: 'swap',
   variable: '--font-dvb-ui',
 });

@@ -52,3 +52,52 @@ ring and check strokes), hero Ken Burns + scroll parallax, lantern flicker, sun 
 mist, falling leaves, 3D card tilt with glare, magnetic CTAs, shine sweeps, heart burst,
 animated dialogs/drawer/popovers. Start states only apply under `html.motion-ready` (set before
 paint, with a 4 s failsafe if JS never mounts); `prefers-reduced-motion: reduce` disables it all.
+
+
+---
+
+# Inner pages verification — 2026-09-19
+
+Environment: Windows 11, Playwright Chromium headless, deviceScaleFactor 1, `next build && next start -p 3100`.
+
+## Checks
+
+| Check | Result |
+|---|---|
+| `npm run lint` | pass, 0 problems |
+| `npm run typecheck` | pass |
+| `npm run build` | pass (see route table in the final report) |
+| `npm test` | 37 Playwright tests pass: 11 pure price calculations, homepage, 6 routes × structure/active menu/fonts/icons/no-errors, listing filters/URL/back-forward/loading/error/pagination, listing → detail → checkout selection hand-off, capacity, gallery keyboard, host dialog, 404, combos, destinations tabs/dialogs, contact validation + preview-only + no PII in URL/storage, checkout totals/coupon/plans/review/no "success", empty checkout, header search dialog, overflow at 1024/768/390, mobile filter drawer |
+| Console / page errors | none on all routes (a hydration error on `/dat-phong` — `<dialog>` inside `<p>` — was found and fixed by portalling modals to `<body>`) |
+| Horizontal overflow | 0 px on all 7 routes at 1448, 1024, 768 and 390 px |
+| Homepage regression | 0.2 % of pixels differ from the previous homepage capture (animated lanterns/leaves/Ken Burns); layout unchanged |
+
+## Screenshots — `artifacts/ui/<screen>/`
+
+`desktop.png` (1448 × 1086), `desktop-full.png`, `w1024(-full).png`, `mobile(-full).png` (390 × 844),
+`overlay.png` (50 % blend with the reference), `diff.png`.
+
+Mean absolute luminance difference vs. reference (not a similarity claim; dominated by substitute
+fonts, anti-aliasing and inpainted photos): 01 = 25.6, 02 = 23.8, 03 = 24.1, 04 = 28.8, 05 = 24.2,
+06 = 28.5 (/255). 06 is captured with `?scenario=baseline`.
+
+## Remaining differences (not mockup corrections)
+
+- **Fonts:** substitutes (Playfair Display / Roboto Condensed / Dancing Script); line breaks differ
+  by a few px in places. The mockups' handwriting is more calligraphic.
+- **Images:** all are 1× crops with inpainted areas (see `asset-audit.md`); soft on retina and in
+  enlarged mobile/dialog views.
+- **01:** card text rows sit ±3 px from the mockup; the wooden-sign text is DOM over a blanked sign.
+- **02:** the hero-less layout matches; the handwritten note on the gallery is DOM, positioned by eye.
+- **03:** process band arrows are Lucide `MoveRight`, slightly lighter than the mockup's.
+- **04:** map route dashes are approximations of the illustration.
+- **05:** map pop-up and labels are DOM over an inpainted map.
+- **06:** add-on cards grow when a quantity control is shown (tour participants), so the page is
+  ~30 px taller than the mockup in the baseline scenario.
+
+## Mockup inconsistencies corrected on purpose
+
+Active menu by route; counts/pagination/gallery count from data; "Đinh Văn" → "Đinh Vân";
+checkout uses Standard Garden 650.000đ with breakfast + tour ticked (the mockup charged an unticked
+tour and showed a different room); weekday computed from the date; unverifiable claims replaced by
+neutral copy (listed in `asset-audit.md`); payment plan separated from payment method.

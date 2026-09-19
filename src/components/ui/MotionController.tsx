@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 /**
@@ -14,6 +15,7 @@ import { useEffect } from 'react';
  * Everything is skipped under prefers-reduced-motion.
  */
 export function MotionController() {
+  const pathname = usePathname();
   useEffect(() => {
     const root = document.documentElement;
     (window as unknown as { __dvbMotion?: boolean }).__dvbMotion = true;
@@ -40,7 +42,19 @@ export function MotionController() {
       },
       { rootMargin: '0px 0px -6% 0px', threshold: 0.12 },
     );
-    document.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
+    const watch = (scope: ParentNode) =>
+      scope.querySelectorAll('[data-reveal]:not(.is-in)').forEach((el) => io.observe(el));
+    watch(document);
+    // Elements rendered later (filters, tabs, dialogs) must be revealed too.
+    const mo = new MutationObserver((records) => {
+      for (const r of records)
+        r.addedNodes.forEach((n) => {
+          if (!(n instanceof Element)) return;
+          if (n.matches('[data-reveal]:not(.is-in)')) io.observe(n);
+          watch(n);
+        });
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
     root.classList.add('motion-live');
 
     // Scroll-linked parallax (one rAF per frame)
@@ -59,27 +73,26 @@ export function MotionController() {
     const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const cleanups: Array<() => void> = [];
     if (fine) {
-      document.querySelectorAll<HTMLElement>('[data-tilt]').forEach((el) => {
-        const move = (ev: PointerEvent) => {
-          const r = el.getBoundingClientRect();
-          const x = (ev.clientX - r.left) / r.width;
-          const y = (ev.clientY - r.top) / r.height;
-          el.style.setProperty('--ry', `${(x - 0.5) * 7}deg`);
-          el.style.setProperty('--rx', `${(0.5 - y) * 6}deg`);
-          el.style.setProperty('--gx', `${x * 100}%`);
-          el.style.setProperty('--gy', `${y * 100}%`);
-        };
-        const leave = () => {
-          el.style.setProperty('--ry', '0deg');
-          el.style.setProperty('--rx', '0deg');
-        };
-        el.addEventListener('pointermove', move);
-        el.addEventListener('pointerleave', leave);
-        cleanups.push(() => {
-          el.removeEventListener('pointermove', move);
-          el.removeEventListener('pointerleave', leave);
-        });
-      });
+      // Delegated so cards rendered after mount (filters, pagination) tilt too.
+      let tilted: HTMLElement | null = null;
+      const onTilt = (ev: PointerEvent) => {
+        const el = (ev.target as Element | null)?.closest<HTMLElement>('[data-tilt]') ?? null;
+        if (tilted && tilted !== el) {
+          tilted.style.setProperty('--ry', '0deg');
+          tilted.style.setProperty('--rx', '0deg');
+        }
+        tilted = el;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const x = (ev.clientX - r.left) / r.width;
+        const y = (ev.clientY - r.top) / r.height;
+        el.style.setProperty('--ry', `${(x - 0.5) * 7}deg`);
+        el.style.setProperty('--rx', `${(0.5 - y) * 6}deg`);
+        el.style.setProperty('--gx', `${x * 100}%`);
+        el.style.setProperty('--gy', `${y * 100}%`);
+      };
+      document.addEventListener('pointermove', onTilt, { passive: true });
+      cleanups.push(() => document.removeEventListener('pointermove', onTilt));
 
       const onMagnet = (ev: PointerEvent) => {
         const el = (ev.target as Element | null)?.closest<HTMLElement>('[data-magnetic]');
@@ -110,12 +123,13 @@ export function MotionController() {
 
     return () => {
       io.disconnect();
+      mo.disconnect();
       window.removeEventListener('scroll', onScroll);
       reduce.removeEventListener('change', onReduce);
       cleanups.forEach((c) => c());
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }

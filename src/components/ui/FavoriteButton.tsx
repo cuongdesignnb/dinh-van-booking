@@ -1,52 +1,33 @@
 'use client';
 
 import { Heart } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useFavorite, type FavoriteNs } from '@/lib/favorites';
 
-const KEY = 'dvb:favorites';
-
-const read = (): string[] => {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
-    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-};
-
-export function FavoriteButton({ id, name }: { id: string; name: string }) {
-  // Always start unselected so server and client markup match; sync after hydration.
-  const [saved, setSaved] = useState(false);
+export function FavoriteButton({
+  id,
+  name,
+  ns = 'stay',
+  className = 'fav',
+}: {
+  id: string;
+  name: string;
+  ns?: FavoriteNs;
+  className?: string;
+}) {
+  const [saved, toggle] = useFavorite(ns, id);
   const [burst, setBurst] = useState(0);
-
-  useEffect(() => {
-    setSaved(read().includes(id));
-    const sync = (e: StorageEvent) => e.key === KEY && setSaved(read().includes(id));
-    window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
-  }, [id]);
-
-  const toggle = () => {
-    const next = !saved;
-    setSaved(next);
-    if (next) setBurst((b) => b + 1);
-    try {
-      const list = new Set(read());
-      if (next) list.add(id);
-      else list.delete(id);
-      localStorage.setItem(KEY, JSON.stringify([...list]));
-    } catch {
-      /* storage unavailable: keep in-memory state only */
-    }
-  };
 
   return (
     <button
       type="button"
-      className="fav"
+      className={className}
       aria-pressed={saved}
       aria-label={saved ? `Bỏ lưu ${name}` : `Lưu ${name}`}
-      onClick={toggle}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (toggle()) setBurst((b) => b + 1);
+      }}
     >
       <Heart size={22} strokeWidth={2} aria-hidden="true" className="fav__icon" />
       {burst > 0 && (

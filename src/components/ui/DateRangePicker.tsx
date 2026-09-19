@@ -11,17 +11,30 @@ interface Props {
   onFieldChange: (field: 'in' | 'out') => void;
   onChange: (checkIn: string | null, checkOut: string | null) => void;
   onDone: () => void;
+  /** Move focus into the grid on mount (popover use). */
+  autoFocus?: boolean;
+  /** Earliest selectable day (defaults to today). */
+  minDate?: Date;
 }
 
 /** Month grid with roving focus: arrows, Home/End, PageUp/PageDown, Enter. */
-export function DateRangePicker({ checkIn, checkOut, field, onFieldChange, onChange, onDone }: Props) {
-  const today = useMemo(() => startOfToday(), []);
+export function DateRangePicker({
+  checkIn,
+  checkOut,
+  field,
+  onFieldChange,
+  onChange,
+  onDone,
+  autoFocus = true,
+  minDate,
+}: Props) {
+  const today = useMemo(() => minDate ?? startOfToday(), [minDate]);
   const initial = field === 'out' && checkOut ? fromKey(checkOut) : checkIn ? fromKey(checkIn) : today;
   const [month, setMonth] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1));
   const [focusKey, setFocusKey] = useState(() => toKey(initial < today ? today : initial));
   const [error, setError] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const shouldFocus = useRef(true);
+  const shouldFocus = useRef(autoFocus);
 
   useEffect(() => {
     if (!shouldFocus.current) return;

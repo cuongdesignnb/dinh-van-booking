@@ -1,17 +1,20 @@
 'use client';
 
 import { CalendarDays, ChevronDown, Search, UserRound } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { GuestPicker } from '@/components/ui/GuestPicker';
 import { Popover } from '@/components/ui/Popover';
 import { formatShort } from '@/lib/dates';
-import { onFocusSearch, openDialog } from '@/lib/events';
+import { onFocusSearch } from '@/lib/events';
+import { selectionQuery } from '@/lib/selection';
 
 type Open = null | 'in' | 'out' | 'guests';
 
 export function BookingSearch() {
   const uid = useId();
+  const router = useRouter();
   const [checkIn, setCheckIn] = useState<string | null>(null);
   const [checkOut, setCheckOut] = useState<string | null>(null);
   const [adults, setAdults] = useState(2);
@@ -70,7 +73,7 @@ export function BookingSearch() {
       return;
     }
     setError(null);
-    openDialog({ type: 'search-results', checkIn, checkOut, adults, children });
+    router.push(`/phong-nghi?${selectionQuery({ checkIn, checkOut, adults, children, rooms: 1 })}`);
   };
 
   const errId = `${uid}-err`;

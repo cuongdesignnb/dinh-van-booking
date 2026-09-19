@@ -3,6 +3,7 @@ import { siteConfig, isPreview } from '@/config/site';
 import { motionBootScript } from '@/components/ui/MotionController';
 import { displayFont, scriptFont, uiFont } from './fonts';
 import './globals.css';
+import '@/styles/pages.css';
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} — Đặt phòng Cúc Phương, Ninh Bình`,
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${displayFont.variable} ${uiFont.variable} ${scriptFont.variable}`}
     >
       <head>

@@ -1,25 +1,16 @@
 /**
  * Tiny window-event bus so server-rendered sections can trigger client UI
- * (dialogs, focusing the search form) without becoming client components.
+ * (global dialogs, focusing a page's search form) without becoming client
+ * components themselves.
  */
 export type DialogRequest =
-  | { type: 'stay'; id: string }
-  | { type: 'all-stays' }
-  | { type: 'destination'; id: string }
-  | { type: 'all-destinations' }
   | { type: 'reviews' }
-  | { type: 'combo' }
-  | { type: 'contact'; channel: 'zalo' | 'phone' | 'social' | 'email'; need?: string }
-  | {
-      type: 'search-results';
-      checkIn: string;
-      checkOut: string;
-      adults: number;
-      children: number;
-    };
+  | { type: 'search' }
+  | { type: 'contact'; channel: 'zalo' | 'phone' | 'social' | 'email' | 'chat'; need?: string };
 
 const DIALOG_EVENT = 'dvb:dialog';
 const FOCUS_SEARCH_EVENT = 'dvb:focus-search';
+let searchTargets = 0;
 
 export function openDialog(request: DialogRequest) {
   window.dispatchEvent(new CustomEvent<DialogRequest>(DIALOG_EVENT, { detail: request }));
@@ -31,11 +22,17 @@ export function onDialogRequest(handler: (request: DialogRequest) => void) {
   return () => window.removeEventListener(DIALOG_EVENT, listener);
 }
 
+/** Focus the page's own search form, or open the global search dialog. */
 export function focusSearch() {
-  window.dispatchEvent(new Event(FOCUS_SEARCH_EVENT));
+  if (searchTargets > 0) window.dispatchEvent(new Event(FOCUS_SEARCH_EVENT));
+  else openDialog({ type: 'search' });
 }
 
 export function onFocusSearch(handler: () => void) {
+  searchTargets += 1;
   window.addEventListener(FOCUS_SEARCH_EVENT, handler);
-  return () => window.removeEventListener(FOCUS_SEARCH_EVENT, handler);
+  return () => {
+    searchTargets -= 1;
+    window.removeEventListener(FOCUS_SEARCH_EVENT, handler);
+  };
 }
