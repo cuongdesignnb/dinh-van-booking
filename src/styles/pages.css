@@ -173,6 +173,9 @@
 
 .rstrip {
   position: relative;
+  /* the slide-in animation of the list must not widen the page */
+  overflow-x: clip;
+  overflow-clip-margin: 12px;
 }
 
 .rstrip__list {
