@@ -1,0 +1,73 @@
+import { ArrowRight, Star } from 'lucide-react';
+import Image from 'next/image';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { FavoriteButton } from '@/components/ui/FavoriteButton';
+import { formatVnd, type Stay } from '@/data/home-fixtures';
+
+const PinCheck = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" className="stay__meta-icon">
+    <circle cx="8" cy="8" r="7" fill="currentColor" />
+    <path d="m4.8 8.2 2.2 2.2 4.2-4.4" stroke="#fff" strokeWidth="1.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const Sprig = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" className="stay__meta-icon">
+    <path d="M13.8 2.2C8 2 3.6 5 3.2 10.2c0 .8 0 1.6.2 2.4.7-2.4 2.4-4.4 4.9-5.6-2 1.5-3.3 3.5-3.8 5.9.8.3 1.7.4 2.5.4 4.8-.4 7-5 6.8-11.1Z" fill="currentColor" />
+    <path d="M2 14.5c.9-2.8 2.5-5 5-6.8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+export function StayCard({ stay, index }: { stay: Stay; index: number }) {
+  return (
+    <article
+      className="stay"
+      data-reveal="card"
+      data-tilt
+      style={{ '--d': `${1200 + index * 120}ms` } as React.CSSProperties}
+      aria-labelledby={`${stay.id}-name`}
+    >
+      <div className="stay__media">
+        <Image
+          src={stay.image.src}
+          alt={stay.image.alt}
+          fill
+          sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 264px"
+          className="stay__img"
+          style={stay.image.position ? { objectPosition: stay.image.position } : undefined}
+        />
+        {stay.badge && <span className="stay__badge">{stay.badge}</span>}
+        <FavoriteButton id={stay.id} name={stay.name} />
+      </div>
+      <div className="stay__body">
+        <h3 className="stay__name" id={`${stay.id}-name`}>
+          {stay.name}
+        </h3>
+        <p className="stay__rating">
+          <Star size={14} className="star" aria-hidden="true" />
+          <strong>{stay.rating.toFixed(1)}</strong>
+          <span>({stay.reviewCount} đánh giá)</span>
+        </p>
+        <p className="stay__meta">
+          <PinCheck />
+          {stay.location}
+        </p>
+        <p className="stay__meta stay__meta--tags">
+          <Sprig />
+          <span>{stay.amenities[0]}</span>
+          <i aria-hidden="true">•</i>
+          <span>{stay.amenities[1]}</span>
+        </p>
+        <div className="stay__foot">
+          <p className="stay__price">
+            Từ <strong>{formatVnd(stay.pricePerNight)}</strong> <span>/ đêm</span>
+          </p>
+          <ActionButton action={{ type: 'stay', id: stay.id }} className="btn btn--primary btn--sm btn-arrow">
+            Xem chi tiết <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
+            <span className="sr-only"> {stay.name}</span>
+          </ActionButton>
+        </div>
+      </div>
+    </article>
+  );
+}
