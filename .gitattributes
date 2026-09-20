@@ -1,0 +1,10 @@
+* text=auto
+
+# These are read by Linux containers; CRLF would break the shebang or the parser.
+*.sh text eol=lf
+*.mjs text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf
+*.Dockerfile text eol=lf
+compose.yaml text eol=lf
+.env.*.example text eol=lf

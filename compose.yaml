@@ -1,0 +1,146 @@
+name: ${COMPOSE_PROJECT_NAME:-dvb-booking}
+
+# One gateway on the host, everything else stays on the project network.
+# Ports are decided by scripts/preflight-ports.py and written to .env.ports.
+
+x-runtime-env: &runtime-env
+  env_file:
+    - .env.runtime
+  environment:
+    TZ: ${BUSINESS_TIMEZONE:-Asia/Ho_Chi_Minh}
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18-bookworm}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-dvb_booking}
+      POSTGRES_USER: ${DB_SUPERUSER:-dvb_admin}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_superuser_password
+      APP_DB_USER: ${DB_USER:-dvb_app}
+      APP_DB_NAME: ${DB_NAME:-dvb_booking}
+      TZ: UTC
+    secrets:
+      - db_superuser_password
+      - db_app_password
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_SUPERUSER:-dvb_admin} -d ${DB_NAME:-dvb_booking}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.4-alpine}
+    restart: unless-stopped
+    command: ['redis-server', '--save', '60', '1', '--appendonly', 'no']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+      target: migrator
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+    <<: *runtime-env
+    secrets:
+      - db_app_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+      target: runtime
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+    <<: *runtime-env
+    secrets:
+      - db_app_password
+      - session_secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - media-data:/var/lib/dvb/media
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+      target: runtime
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+    command: ['node', 'dist/worker.js']
+    <<: *runtime-env
+    secrets:
+      - db_app_password
+      - session_secret
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - media-data:/var/lib/dvb/media
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/web.Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+    environment:
+      NODE_ENV: production
+      TZ: ${BUSINESS_TIMEZONE:-Asia/Ho_Chi_Minh}
+      INTERNAL_API_BASE_URL: http://api:3001/api/v1
+      NEXT_PUBLIC_API_BASE_PATH: /api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway:
+    image: ${NGINX_IMAGE:-nginx:stable-alpine}
+    depends_on:
+      - web
+      - api
+    ports:
+      - '127.0.0.1:${DVB_HTTP_PORT:-18473}:80'
+    volumes:
+      - ./infra/gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  media-data:
+
+secrets:
+  db_superuser_password:
+    file: ./.secrets/db_superuser_password
+  db_app_password:
+    file: ./.secrets/db_app_password
+  session_secret:
+    file: ./.secrets/session_secret

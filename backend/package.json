@@ -1,0 +1,50 @@
+{
+  "name": "dvb-booking-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Đinh Vân Booking — API, worker and database layer",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "worker": "node dist/worker.js",
+    "prisma": "node scripts/run-with-db-url.mjs npx prisma",
+    "migrate:dev": "node scripts/run-with-db-url.mjs npx prisma migrate dev",
+    "migrate:deploy": "node scripts/run-with-db-url.mjs npx prisma migrate deploy",
+    "seed": "node scripts/run-with-db-url.mjs node dist/scripts/seed.js",
+    "test": "node --test dist/**/*.spec.js",
+    "create-owner": "node scripts/run-with-db-url.mjs node dist/scripts/create-owner.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.0.2",
+    "@fastify/multipart": "10.1.1",
+    "@fastify/static": "10.1.4",
+    "@nestjs/common": "11.2.5",
+    "@nestjs/config": "4.0.2",
+    "@nestjs/core": "11.2.5",
+    "@nestjs/platform-fastify": "11.2.5",
+    "@nestjs/swagger": "11.4.7",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "bullmq": "6.3.8",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.14.2",
+    "ioredis": "5.9.0",
+    "pg": "8.16.3",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "11.0.10",
+    "@nestjs/schematics": "11.0.9",
+    "@types/node": "24.10.1",
+    "prisma": "7.10.0",
+    "typescript": "5.9.3"
+  },
+  "allowScripts": {
+    "prisma@7.10.0": true,
+    "@prisma/engines@7.10.0": true,
+    "msgpackr-extract@3.0.4": true
+  }
+}

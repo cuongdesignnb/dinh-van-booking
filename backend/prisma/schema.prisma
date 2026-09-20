@@ -1,0 +1,1273 @@
+// Đinh Vân Booking — physical schema.
+// Money is bigint VND, rates are basis points, stay ranges are [check_in, check_out).
+// Every editable row carries `version` for optimistic concurrency.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/* ------------------------------------------------------------------ auth */
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  fullName     String    @map("full_name")
+  passwordHash String    @map("password_hash")
+  disabledAt   DateTime? @map("disabled_at") @db.Timestamptz(3)
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(3)
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  roles         UserRole[]
+  sessions      AuthSession[]
+  customers     Customer[]
+  inquiries     Inquiry[]
+  followUps     FollowUp[]
+  interactions  Interaction[]
+  auditLogs     AuditLog[]
+  revisions     ContentRevision[]
+  pins          UserPin[]
+  inquiryReads  InquiryRead[]
+  bookingEvents BookingEvent[]
+  payments      Payment[]     @relation("PaymentVerifier")
+  refunds       Refund[]      @relation("RefundApprover")
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  description String
+  module      String
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String @map("user_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model AuthSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  csrfHash   String    @map("csrf_hash")
+  userAgent  String?   @map("user_agent")
+  ipHash     String?   @map("ip_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  idleUntil  DateTime  @map("idle_until") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+/// Public visitors get their own opaque session so a quote can be owned without
+/// creating a staff account.
+model GuestSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  csrfHash  String    @map("csrf_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  quotes BookingQuote[]
+
+  @@map("guest_sessions")
+}
+
+/* -------------------------------------------------------------- settings */
+
+/// Typed key/value configuration: brand, contact, booking rules, SEO, homepage
+/// toggles. Nothing about the business is hardcoded in the frontend.
+model Setting {
+  key           String   @id
+  value         Json
+  schemaVersion Int      @default(1) @map("schema_version")
+  isPublic      Boolean  @default(false) @map("is_public")
+  version       Int      @default(1)
+  updatedById   String?  @map("updated_by") @db.Uuid
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}
+
+/* ----------------------------------------------------------------- media */
+
+model MediaAsset {
+  id               String   @id @default(uuid()) @db.Uuid
+  storageKey       String   @unique @map("storage_key")
+  originalFilename String   @map("original_filename")
+  mimeType         String   @map("mime_type")
+  byteSize         BigInt   @map("byte_size")
+  width            Int?
+  height           Int?
+  altText          String?  @map("alt_text")
+  caption          String?
+  visibility       String   @default("public")
+  processingStatus String   @default("ready") @map("processing_status")
+  sha256           String
+  /// Derived renditions (thumbnails) keyed by name.
+  renditions       Json     @default("{}")
+  isDemo           Boolean  @default(false) @map("is_demo")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  contentMedia ContentMedia[]
+  ogForContent ContentNode[]  @relation("ContentOgMedia")
+
+  @@index([sha256])
+  @@map("media_assets")
+}
+
+/* ---------------------------------------------------------------- content */
+
+model ContentNode {
+  id                  String    @id @default(uuid()) @db.Uuid
+  kind                String
+  title               String
+  slugSource          String?   @map("slug_source")
+  excerpt             String?
+  bodyDocument        Json?     @map("body_document")
+  publicationStatus   String    @default("draft") @map("publication_status")
+  publishAt           DateTime? @map("publish_at") @db.Timestamptz(3)
+  metaTitle           String?   @map("meta_title")
+  metaDescription     String?   @map("meta_description")
+  noindex             Boolean   @default(false)
+  ogMediaId           String?   @map("og_media_id") @db.Uuid
+  publishedRevisionId String?   @map("published_revision_id") @db.Uuid
+  featured            Boolean   @default(false)
+  isDemo              Boolean   @default(false) @map("is_demo")
+  version             Int       @default(1)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  ogMedia     MediaAsset?       @relation("ContentOgMedia", fields: [ogMediaId], references: [id])
+  revisions   ContentRevision[] @relation("ContentRevisions")
+  media       ContentMedia[]
+  categories  ContentCategory[]
+  routes      PublicRoute[]
+  property    Property?
+  combo       Combo?
+  destination Destination?
+  article     Article?
+  page        Page?
+  reviews     Review[]
+  navItems    NavigationItem[]
+  sectionRefs SectionItem[]
+  pins        UserPin[]
+
+  @@index([kind, publicationStatus])
+  @@map("content_nodes")
+}
+
+model ContentRevision {
+  id               String   @id @default(uuid()) @db.Uuid
+  contentId        String   @map("content_id") @db.Uuid
+  documentSnapshot Json     @map("document_snapshot")
+  note             String?
+  authorId         String?  @map("author_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  content ContentNode @relation("ContentRevisions", fields: [contentId], references: [id], onDelete: Cascade)
+  author  User?       @relation(fields: [authorId], references: [id])
+
+  @@index([contentId, createdAt])
+  @@map("content_revisions")
+}
+
+model ContentMedia {
+  contentId String @map("content_id") @db.Uuid
+  mediaId   String @map("media_id") @db.Uuid
+  role      String
+  position  Int    @default(0)
+
+  content ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  media   MediaAsset  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@id([contentId, mediaId, role])
+  @@index([mediaId])
+  @@map("content_media")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  taxonomy  String
+  slug      String
+  name      String
+  parentId  String?  @map("parent_id") @db.Uuid
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  parent   Category?         @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[]        @relation("CategoryTree")
+  contents ContentCategory[]
+
+  @@unique([taxonomy, slug])
+  @@map("categories")
+}
+
+model ContentCategory {
+  contentId  String @map("content_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  content  ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  category Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, categoryId])
+  @@map("content_categories")
+}
+
+model PublicRoute {
+  id             String   @id @default(uuid()) @db.Uuid
+  contentId      String   @map("content_id") @db.Uuid
+  path           String   @unique
+  isCurrent      Boolean  @default(true) @map("is_current")
+  redirectStatus Int      @default(301) @map("redirect_status")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  content ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId, isCurrent])
+  @@map("public_routes")
+}
+
+model NavigationMenu {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  items NavigationItem[]
+
+  @@map("navigation_menus")
+}
+
+model NavigationItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  menuId      String   @map("menu_id") @db.Uuid
+  parentId    String?  @map("parent_id") @db.Uuid
+  label       String
+  contentId   String?  @map("content_id") @db.Uuid
+  externalUrl String?  @map("external_url")
+  position    Int      @default(0)
+  enabled     Boolean  @default(true)
+
+  menu     NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   NavigationItem?  @relation("NavTree", fields: [parentId], references: [id])
+  children NavigationItem[] @relation("NavTree")
+  content  ContentNode?     @relation(fields: [contentId], references: [id])
+
+  @@index([menuId, position])
+  @@map("navigation_items")
+}
+
+model Page {
+  contentId String @id @map("content_id") @db.Uuid
+  pageKey   String @unique @map("page_key")
+
+  content  ContentNode   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  sections PageSection[]
+
+  @@map("pages")
+}
+
+model PageSection {
+  id           String  @id @default(uuid()) @db.Uuid
+  pageId       String  @map("page_id") @db.Uuid
+  sectionKey   String  @map("section_key")
+  blockType    String  @map("block_type")
+  schemaVersion Int    @default(1) @map("schema_version")
+  settings     Json    @default("{}")
+  position     Int     @default(0)
+  enabled      Boolean @default(true)
+
+  page  Page          @relation(fields: [pageId], references: [contentId], onDelete: Cascade)
+  items SectionItem[]
+
+  @@unique([pageId, sectionKey])
+  @@map("page_sections")
+}
+
+model SectionItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  sectionId String  @map("section_id") @db.Uuid
+  contentId String? @map("content_id") @db.Uuid
+  position  Int     @default(0)
+  settings  Json    @default("{}")
+
+  section PageSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  content ContentNode? @relation(fields: [contentId], references: [id])
+
+  @@index([sectionId, position])
+  @@map("section_items")
+}
+
+model Destination {
+  contentId String  @id @map("content_id") @db.Uuid
+  category  String
+  location  String?
+  mapX      Decimal? @map("map_x") @db.Decimal(6, 3)
+  mapY      Decimal? @map("map_y") @db.Decimal(6, 3)
+
+  content       ContentNode        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  comboLinks    ComboDestination[]
+
+  @@map("destinations")
+}
+
+model Article {
+  contentId    String  @id @map("content_id") @db.Uuid
+  authorName   String? @map("author_name")
+  readMinutes  Int?    @map("read_minutes")
+
+  content ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@map("articles")
+}
+
+model Review {
+  id          String    @id @default(uuid()) @db.Uuid
+  contentId   String    @map("content_id") @db.Uuid
+  customerId  String?   @map("customer_id") @db.Uuid
+  bookingId   String?   @map("booking_id") @db.Uuid
+  authorName  String    @map("author_name")
+  rating      Int
+  body        String
+  stayedAt    DateTime? @map("stayed_at") @db.Date
+  moderation  String    @default("pending")
+  isVerified  Boolean   @default(false) @map("is_verified")
+  isDemo      Boolean   @default(false) @map("is_demo")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  content  ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  customer Customer?   @relation(fields: [customerId], references: [id])
+  booking  Booking?    @relation(fields: [bookingId], references: [id])
+
+  @@index([contentId, moderation])
+  @@map("reviews")
+}
+
+/* ---------------------------------------------------------------- catalog */
+
+model Supplier {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  contactName  String?  @map("contact_name")
+  contactPhone String?  @map("contact_phone")
+  note         String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  properties Property[]
+
+  @@map("suppliers")
+}
+
+model Property {
+  id              String   @id @default(uuid()) @db.Uuid
+  contentId       String   @unique @map("content_id") @db.Uuid
+  supplierId      String?  @map("supplier_id") @db.Uuid
+  code            String   @unique
+  kind            String
+  area            String
+  address         String
+  latitude        Decimal? @db.Decimal(9, 6)
+  longitude       Decimal? @db.Decimal(9, 6)
+  inventoryMode   String   @default("allotment") @map("inventory_mode")
+  operatingStatus String   @default("active") @map("operating_status")
+  checkInTime     String   @default("14:00") @map("check_in_time")
+  checkOutTime    String   @default("12:00") @map("check_out_time")
+  approvedPolicies Json    @default("{}") @map("approved_policies")
+  ratingAverage   Decimal? @map("rating_average") @db.Decimal(3, 2)
+  ratingCount     Int      @default(0) @map("rating_count")
+  version         Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  content   ContentNode        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  supplier  Supplier?          @relation(fields: [supplierId], references: [id])
+  roomTypes RoomType[]
+  amenities PropertyAmenity[]
+  addons    AddonPropertyScope[]
+
+  @@map("properties")
+}
+
+model Amenity {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique
+  label     String
+  iconKey   String   @map("icon_key")
+  scope     String   @default("property")
+  position  Int      @default(0)
+
+  properties PropertyAmenity[]
+  roomTypes  RoomTypeAmenity[]
+
+  @@map("amenities")
+}
+
+model PropertyAmenity {
+  propertyId String @map("property_id") @db.Uuid
+  amenityId  String @map("amenity_id") @db.Uuid
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+  @@map("property_amenities")
+}
+
+model RoomType {
+  id           String   @id @default(uuid()) @db.Uuid
+  propertyId   String   @map("property_id") @db.Uuid
+  code         String
+  name         String
+  description  String?
+  maxAdults    Int      @map("max_adults")
+  maxChildren  Int      @default(0) @map("max_children")
+  maxOccupancy Int      @map("max_occupancy")
+  bedSummary   String?  @map("bed_summary")
+  areaSqm      Int?     @map("area_sqm")
+  status       String   @default("active")
+  position     Int      @default(0)
+  version      Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  property      Property                 @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  units         RoomUnit[]
+  ratePlans     RatePlan[]
+  amenities     RoomTypeAmenity[]
+  inventoryDays InventoryDay[]
+  bookingLines  BookingLine[]
+  comboNeeds    ComboRoomRequirement[]
+  blockNights   InventoryBlockNight[]
+  resNights     InventoryReservationNight[]
+
+  @@unique([propertyId, code])
+  @@map("room_types")
+}
+
+model RoomTypeAmenity {
+  roomTypeId String @map("room_type_id") @db.Uuid
+  amenityId  String @map("amenity_id") @db.Uuid
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([roomTypeId, amenityId])
+  @@map("room_type_amenities")
+}
+
+model RoomUnit {
+  id         String   @id @default(uuid()) @db.Uuid
+  roomTypeId String   @map("room_type_id") @db.Uuid
+  code       String
+  label      String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([roomTypeId, code])
+  @@map("room_units")
+}
+
+model RatePlan {
+  id                 String   @id @default(uuid()) @db.Uuid
+  roomTypeId         String   @map("room_type_id") @db.Uuid
+  code               String
+  name               String
+  baseRateVnd        BigInt   @map("base_rate_vnd")
+  weekendRateVnd     BigInt?  @map("weekend_rate_vnd")
+  breakfastIncluded  Boolean  @default(false) @map("breakfast_included")
+  minStayNights      Int      @default(1) @map("min_stay_nights")
+  maxStayNights      Int?     @map("max_stay_nights")
+  taxMode            String   @default("inclusive") @map("tax_mode")
+  inclusions         Json     @default("[]")
+  cancellationPolicy Json     @default("{}") @map("cancellation_policy")
+  depositBps         Int      @default(3000) @map("deposit_bps")
+  active             Boolean  @default(true)
+  version            Int      @default(1)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  roomType RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  rules    RateRule[]
+
+  @@unique([roomTypeId, code])
+  @@map("rate_plans")
+}
+
+model RateRule {
+  id               String   @id @default(uuid()) @db.Uuid
+  ratePlanId       String   @map("rate_plan_id") @db.Uuid
+  name             String
+  dateFrom         DateTime @map("date_from") @db.Date
+  dateToExclusive  DateTime @map("date_to_exclusive") @db.Date
+  weekdayMask      Int      @default(127) @map("weekday_mask")
+  ruleType         String   @map("rule_type")
+  fixedRateVnd     BigInt?  @map("fixed_rate_vnd")
+  adjustmentBps    Int?     @map("adjustment_bps")
+  priority         Int      @default(0)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  ratePlan RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+
+  @@index([ratePlanId, dateFrom, dateToExclusive])
+  @@map("rate_rules")
+}
+
+/* -------------------------------------------------------------- inventory */
+
+/// One row per room type and stay night. A missing row means "not on sale",
+/// which is different from zero availability.
+model InventoryDay {
+  roomTypeId    String   @map("room_type_id") @db.Uuid
+  stayDate      DateTime @map("stay_date") @db.Date
+  capacity      Int
+  blockedCount  Int      @default(0) @map("blocked_count")
+  heldCount     Int      @default(0) @map("held_count")
+  reservedCount Int      @default(0) @map("reserved_count")
+  stopSell      Boolean  @default(false) @map("stop_sell")
+  version       Int      @default(1)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  roomType    RoomType                    @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  blockNights InventoryBlockNight[]
+  resNights   InventoryReservationNight[]
+
+  @@id([roomTypeId, stayDate])
+  @@map("inventory_days")
+}
+
+model InventoryBlock {
+  id        String    @id @default(uuid()) @db.Uuid
+  kind      String
+  reason    String
+  status    String    @default("active")
+  createdBy String?   @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(3)
+
+  nights InventoryBlockNight[]
+
+  @@map("inventory_blocks")
+}
+
+model InventoryBlockNight {
+  blockId    String   @map("block_id") @db.Uuid
+  roomTypeId String   @map("room_type_id") @db.Uuid
+  stayDate   DateTime @map("stay_date") @db.Date
+  quantity   Int
+
+  block     InventoryBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  day       InventoryDay   @relation(fields: [roomTypeId, stayDate], references: [roomTypeId, stayDate], onDelete: Restrict)
+  roomType  RoomType       @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@id([blockId, roomTypeId, stayDate])
+  @@map("inventory_block_nights")
+}
+
+model InventoryReservation {
+  id            String    @id @default(uuid()) @db.Uuid
+  bookingLineId String    @map("booking_line_id") @db.Uuid
+  status        String    @default("held")
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(3)
+  releasedAt    DateTime? @map("released_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  bookingLine BookingLine                 @relation(fields: [bookingLineId], references: [id], onDelete: Cascade)
+  nights      InventoryReservationNight[]
+
+  @@index([status, expiresAt])
+  @@map("inventory_reservations")
+}
+
+model InventoryReservationNight {
+  reservationId String   @map("reservation_id") @db.Uuid
+  roomTypeId    String   @map("room_type_id") @db.Uuid
+  stayDate      DateTime @map("stay_date") @db.Date
+  quantity      Int
+
+  reservation InventoryReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  day         InventoryDay         @relation(fields: [roomTypeId, stayDate], references: [roomTypeId, stayDate], onDelete: Restrict)
+  roomType    RoomType             @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@id([reservationId, roomTypeId, stayDate])
+  @@map("inventory_reservation_nights")
+}
+
+/* ------------------------------------------------------------------ combo */
+
+model Combo {
+  id              String   @id @default(uuid()) @db.Uuid
+  contentId       String   @unique @map("content_id") @db.Uuid
+  code            String   @unique
+  durationDays    Int      @map("duration_days")
+  durationNights  Int      @map("duration_nights")
+  pricingUnit     String   @default("person") @map("pricing_unit")
+  fulfillmentMode String   @default("scheduled") @map("fulfillment_mode")
+  area            String?
+  audienceTags    Json     @default("[]") @map("audience_tags")
+  inclusions      Json     @default("[]")
+  exclusions      Json     @default("[]")
+  terms           Json     @default("[]")
+  version         Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  content      ContentNode        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  days         ComboDay[]
+  destinations ComboDestination[]
+  departures   ComboDeparture[]
+  addonScopes  AddonComboScope[]
+
+  @@map("combos")
+}
+
+model ComboDay {
+  id        String   @id @default(uuid()) @db.Uuid
+  comboId   String   @map("combo_id") @db.Uuid
+  dayNo     Int      @map("day_no")
+  title     String
+  timeRange String?  @map("time_range")
+
+  combo      Combo           @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  activities ComboActivity[]
+
+  @@unique([comboId, dayNo])
+  @@map("combo_days")
+}
+
+model ComboActivity {
+  id       String @id @default(uuid()) @db.Uuid
+  dayId    String @map("day_id") @db.Uuid
+  position Int    @default(0)
+  timeText String? @map("time_text")
+  text     String
+
+  day ComboDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId, position])
+  @@map("combo_activities")
+}
+
+model ComboDestination {
+  comboId       String @map("combo_id") @db.Uuid
+  destinationId String @map("destination_id") @db.Uuid
+  position      Int    @default(0)
+
+  combo       Combo       @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [contentId], onDelete: Cascade)
+
+  @@id([comboId, destinationId])
+  @@map("combo_destinations")
+}
+
+model ComboDeparture {
+  id            String    @id @default(uuid()) @db.Uuid
+  comboId       String    @map("combo_id") @db.Uuid
+  departureDate DateTime  @map("departure_date") @db.Date
+  returnDate    DateTime  @map("return_date") @db.Date
+  capacity      Int
+  heldCount     Int       @default(0) @map("held_count")
+  reservedCount Int       @default(0) @map("reserved_count")
+  adultPriceVnd BigInt    @map("adult_price_vnd")
+  childPriceVnd BigInt?   @map("child_price_vnd")
+  bookingCutoff DateTime? @map("booking_cutoff") @db.Timestamptz(3)
+  status        String    @default("open")
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  combo        Combo                  @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  requirements ComboRoomRequirement[]
+  reservations ComboReservation[]
+  bookingLines BookingLine[]
+
+  @@unique([comboId, departureDate])
+  @@map("combo_departures")
+}
+
+model ComboRoomRequirement {
+  id                   String @id @default(uuid()) @db.Uuid
+  departureId          String @map("departure_id") @db.Uuid
+  roomTypeId           String @map("room_type_id") @db.Uuid
+  nightOffset          Int    @default(0) @map("night_offset")
+  nights               Int
+  personsPerRoom       Int    @default(2) @map("persons_per_room")
+  fixedRoomsPerBooking Int?   @map("fixed_rooms_per_booking")
+
+  departure ComboDeparture @relation(fields: [departureId], references: [id], onDelete: Cascade)
+  roomType  RoomType       @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([departureId, roomTypeId, nightOffset])
+  @@map("combo_room_requirements")
+}
+
+model ComboReservation {
+  id            String    @id @default(uuid()) @db.Uuid
+  departureId   String    @map("departure_id") @db.Uuid
+  bookingLineId String    @map("booking_line_id") @db.Uuid
+  quantity      Int
+  status        String    @default("held")
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(3)
+  releasedAt    DateTime? @map("released_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  departure   ComboDeparture @relation(fields: [departureId], references: [id], onDelete: Restrict)
+  bookingLine BookingLine    @relation(fields: [bookingLineId], references: [id], onDelete: Cascade)
+
+  @@index([status, expiresAt])
+  @@map("combo_reservations")
+}
+
+/* ------------------------------------------------------------- add-on svc */
+
+model AddonService {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  description String?
+  unit        String
+  amountVnd   BigInt   @map("amount_vnd")
+  maxQuantity Int?     @map("max_quantity")
+  active      Boolean  @default(true)
+  position    Int      @default(0)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  propertyScopes AddonPropertyScope[]
+  comboScopes    AddonComboScope[]
+  bookingLines   BookingLine[]
+
+  @@map("addon_services")
+}
+
+model AddonPropertyScope {
+  addonServiceId String @map("addon_service_id") @db.Uuid
+  propertyId     String @map("property_id") @db.Uuid
+
+  addon    AddonService @relation(fields: [addonServiceId], references: [id], onDelete: Cascade)
+  property Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@id([addonServiceId, propertyId])
+  @@map("addon_property_scopes")
+}
+
+model AddonComboScope {
+  addonServiceId String @map("addon_service_id") @db.Uuid
+  comboId        String @map("combo_id") @db.Uuid
+
+  addon AddonService @relation(fields: [addonServiceId], references: [id], onDelete: Cascade)
+  combo Combo        @relation(fields: [comboId], references: [id], onDelete: Cascade)
+
+  @@id([addonServiceId, comboId])
+  @@map("addon_combo_scopes")
+}
+
+/* ---------------------------------------------------------------- booking */
+
+model BookingQuote {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String?   @map("customer_id") @db.Uuid
+  ownerGuestSessionId String?   @map("owner_guest_session_id") @db.Uuid
+  ownerUserId         String?   @map("owner_user_id") @db.Uuid
+  requestSnapshot     Json      @map("request_snapshot")
+  pricedSnapshot      Json      @map("priced_snapshot")
+  pricingVersion      String    @map("pricing_version")
+  currency            String    @default("VND")
+  subtotalVnd         BigInt    @map("subtotal_vnd")
+  discountVnd         BigInt    @default(0) @map("discount_vnd")
+  totalVnd            BigInt    @map("total_vnd")
+  dueNowVnd           BigInt    @map("due_now_vnd")
+  expiresAt           DateTime  @map("expires_at") @db.Timestamptz(3)
+  consumedAt          DateTime? @map("consumed_at") @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  guestSession GuestSession? @relation(fields: [ownerGuestSessionId], references: [id])
+  customer     Customer?     @relation(fields: [customerId], references: [id])
+  booking      Booking?
+
+  @@index([expiresAt])
+  @@map("booking_quotes")
+}
+
+model Booking {
+  id              String    @id @default(uuid()) @db.Uuid
+  publicCode      String    @unique @map("public_code")
+  quoteId         String?   @unique @map("quote_id") @db.Uuid
+  customerId      String    @map("customer_id") @db.Uuid
+  inquiryId       String?   @map("inquiry_id") @db.Uuid
+  bookingStatus   String    @default("pending_confirmation") @map("booking_status")
+  paymentPlan     String    @default("deposit") @map("payment_plan")
+  paymentMethod   String?   @map("payment_method")
+  channel         String    @default("website")
+  checkIn         DateTime? @map("check_in") @db.Date
+  checkOut        DateTime? @map("check_out") @db.Date
+  adults          Int       @default(1)
+  children        Int       @default(0)
+  subtotalVnd     BigInt    @map("subtotal_vnd")
+  discountVnd     BigInt    @default(0) @map("discount_vnd")
+  totalVnd        BigInt    @map("total_vnd")
+  dueNowVnd       BigInt    @map("due_now_vnd")
+  contactSnapshot Json      @map("contact_snapshot")
+  policySnapshot  Json      @map("policy_snapshot")
+  note            String?
+  cancelReason    String?   @map("cancel_reason")
+  confirmedAt     DateTime? @map("confirmed_at") @db.Timestamptz(3)
+  checkedInAt     DateTime? @map("checked_in_at") @db.Timestamptz(3)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(3)
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(3)
+  expiresAt       DateTime? @map("expires_at") @db.Timestamptz(3)
+  isDemo          Boolean   @default(false) @map("is_demo")
+  version         Int       @default(1)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  quote        BookingQuote?        @relation(fields: [quoteId], references: [id])
+  customer     Customer             @relation(fields: [customerId], references: [id])
+  inquiry      Inquiry?             @relation(fields: [inquiryId], references: [id])
+  lines        BookingLine[]
+  events       BookingEvent[]
+  payments     Payment[]
+  redemptions  CouponRedemption[]
+  accessTokens BookingAccessToken[]
+  reviews      Review[]
+  notes        BookingNote[]
+
+  @@index([bookingStatus, checkIn])
+  @@index([createdAt])
+  @@map("bookings")
+}
+
+model BookingLine {
+  id               String    @id @default(uuid()) @db.Uuid
+  bookingId        String    @map("booking_id") @db.Uuid
+  kind             String
+  roomTypeId       String?   @map("room_type_id") @db.Uuid
+  comboDepartureId String?   @map("combo_departure_id") @db.Uuid
+  addonServiceId   String?   @map("addon_service_id") @db.Uuid
+  label            String
+  unit             String
+  quantity         Int
+  unitPriceVnd     BigInt    @map("unit_price_vnd")
+  grossVnd         BigInt    @map("gross_vnd")
+  discountVnd      BigInt    @default(0) @map("discount_vnd")
+  taxVnd           BigInt    @default(0) @map("tax_vnd")
+  netVnd           BigInt    @map("net_vnd")
+  serviceDateFrom  DateTime? @map("service_date_from") @db.Date
+  serviceDateTo    DateTime? @map("service_date_to") @db.Date
+  priceBreakdown   Json      @default("{}") @map("price_breakdown")
+  serviceSnapshot  Json      @default("{}") @map("service_snapshot")
+
+  booking      Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  roomType     RoomType?              @relation(fields: [roomTypeId], references: [id])
+  departure    ComboDeparture?        @relation(fields: [comboDepartureId], references: [id])
+  addonService AddonService?          @relation(fields: [addonServiceId], references: [id])
+  reservations InventoryReservation[]
+  comboSeats   ComboReservation[]
+
+  @@index([bookingId])
+  @@map("booking_lines")
+}
+
+model BookingEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  bookingId  String   @map("booking_id") @db.Uuid
+  fromStatus String?  @map("from_status")
+  toStatus   String?  @map("to_status")
+  eventType  String   @map("event_type")
+  detail     String?
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorLabel String   @default("Hệ thống") @map("actor_label")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  @@index([bookingId, createdAt])
+  @@map("booking_events")
+}
+
+model BookingNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  bookingId String   @map("booking_id") @db.Uuid
+  authorId  String?  @map("author_id") @db.Uuid
+  body      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_notes")
+}
+
+model BookingAccessToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  bookingId String    @map("booking_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  scope     String    @default("view")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_access_tokens")
+}
+
+model Payment {
+  id                String    @id @default(uuid()) @db.Uuid
+  bookingId         String    @map("booking_id") @db.Uuid
+  method            String
+  provider          String?
+  externalReference String?   @map("external_reference")
+  status            String    @default("posted")
+  amountVnd         BigInt    @map("amount_vnd")
+  postedAt          DateTime  @default(now()) @map("posted_at") @db.Timestamptz(3)
+  verifiedById      String?   @map("verified_by") @db.Uuid
+  note              String?
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  verifiedBy User?    @relation("PaymentVerifier", fields: [verifiedById], references: [id])
+  refunds    Refund[]
+
+  @@unique([provider, externalReference])
+  @@index([bookingId])
+  @@map("payments")
+}
+
+model Refund {
+  id                String    @id @default(uuid()) @db.Uuid
+  paymentId         String    @map("payment_id") @db.Uuid
+  status            String    @default("requested")
+  amountVnd         BigInt    @map("amount_vnd")
+  reason            String
+  externalReference String?   @map("external_reference")
+  approvedById      String?   @map("approved_by") @db.Uuid
+  settledAt         DateTime? @map("settled_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  payment    Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  approvedBy User?   @relation("RefundApprover", fields: [approvedById], references: [id])
+
+  @@map("refunds")
+}
+
+model Coupon {
+  id              String    @id @default(uuid()) @db.Uuid
+  code            String    @unique
+  name            String
+  discountType    String    @map("discount_type")
+  percentBps      Int?      @map("percent_bps")
+  amountVnd       BigInt?   @map("amount_vnd")
+  maxDiscountVnd  BigInt?   @map("max_discount_vnd")
+  minSubtotalVnd  BigInt?   @map("min_subtotal_vnd")
+  usageLimit      Int?      @map("usage_limit")
+  perCustomerLimit Int?     @map("per_customer_limit")
+  reservedUses    Int       @default(0) @map("reserved_uses")
+  committedUses   Int       @default(0) @map("committed_uses")
+  startsAt        DateTime? @map("starts_at") @db.Timestamptz(3)
+  endsAt          DateTime? @map("ends_at") @db.Timestamptz(3)
+  active          Boolean   @default(true)
+  version         Int       @default(1)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  redemptions CouponRedemption[]
+
+  @@map("coupons")
+}
+
+model CouponRedemption {
+  id           String    @id @default(uuid()) @db.Uuid
+  couponId     String    @map("coupon_id") @db.Uuid
+  bookingId    String    @map("booking_id") @db.Uuid
+  status       String    @default("reserved")
+  savingsVnd   BigInt    @map("savings_vnd")
+  committedAt  DateTime? @map("committed_at") @db.Timestamptz(3)
+  releasedAt   DateTime? @map("released_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  coupon  Coupon  @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, bookingId])
+  @@map("coupon_redemptions")
+}
+
+/* -------------------------------------------------------------------- CRM */
+
+model Customer {
+  id              String   @id @default(uuid()) @db.Uuid
+  fullName        String   @map("full_name")
+  phone           String?
+  phoneNormalized String?  @map("phone_normalized")
+  email           String?
+  emailNormalized String?  @map("email_normalized")
+  city            String?
+  source          String   @default("website")
+  groupKind       String   @default("family") @map("group_kind")
+  need            String?
+  note            String?
+  preferences     Json     @default("[]")
+  assignedUserId  String?  @map("assigned_user_id") @db.Uuid
+  isDemo          Boolean  @default(false) @map("is_demo")
+  version         Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assignedUser User?          @relation(fields: [assignedUserId], references: [id])
+  inquiries    Inquiry[]
+  bookings     Booking[]
+  quotes       BookingQuote[]
+  tags         CustomerTag[]
+  reviews      Review[]
+
+  @@index([phoneNormalized])
+  @@index([emailNormalized])
+  @@map("customers")
+}
+
+model Tag {
+  id    String @id @default(uuid()) @db.Uuid
+  slug  String @unique
+  label String
+
+  customers CustomerTag[]
+
+  @@map("tags")
+}
+
+model CustomerTag {
+  customerId String @map("customer_id") @db.Uuid
+  tagId      String @map("tag_id") @db.Uuid
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, tagId])
+  @@map("customer_tags")
+}
+
+model Inquiry {
+  id               String    @id @default(uuid()) @db.Uuid
+  customerId       String    @map("customer_id") @db.Uuid
+  ownerUserId      String?   @map("owner_user_id") @db.Uuid
+  stage            String    @default("new")
+  source           String    @default("website")
+  intent           String?
+  relatedContentId String?   @map("related_content_id") @db.Uuid
+  desiredCheckIn   DateTime? @map("desired_check_in") @db.Date
+  desiredCheckOut  DateTime? @map("desired_check_out") @db.Date
+  adults           Int       @default(2)
+  children         Int       @default(0)
+  message          String?
+  priority         Boolean   @default(false)
+  resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz(3)
+  isDemo           Boolean   @default(false) @map("is_demo")
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  owner        User?                @relation(fields: [ownerUserId], references: [id])
+  interactions Interaction[]
+  followUps    FollowUp[]
+  stages       InquiryStageHistory[]
+  bookings     Booking[]
+  reads        InquiryRead[]
+
+  @@index([stage, createdAt])
+  @@map("inquiries")
+}
+
+model InquiryStageHistory {
+  id         String   @id @default(uuid()) @db.Uuid
+  inquiryId  String   @map("inquiry_id") @db.Uuid
+  fromStage  String?  @map("from_stage")
+  toStage    String   @map("to_stage")
+  actorId    String?  @map("actor_id") @db.Uuid
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@index([inquiryId, createdAt])
+  @@map("inquiry_stage_history")
+}
+
+model Interaction {
+  id             String   @id @default(uuid()) @db.Uuid
+  inquiryId      String   @map("inquiry_id") @db.Uuid
+  authorUserId   String?  @map("author_user_id") @db.Uuid
+  channel        String
+  visibility     String   @default("internal")
+  deliveryStatus String   @default("not_sent") @map("delivery_status")
+  body           String
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  author  User?   @relation(fields: [authorUserId], references: [id])
+
+  @@index([inquiryId, occurredAt])
+  @@map("interactions")
+}
+
+model FollowUp {
+  id             String    @id @default(uuid()) @db.Uuid
+  inquiryId      String    @map("inquiry_id") @db.Uuid
+  assignedUserId String?   @map("assigned_user_id") @db.Uuid
+  dueAt          DateTime  @map("due_at") @db.Timestamptz(3)
+  purpose        String
+  status         String    @default("open")
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  inquiry  Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  assignee User?   @relation(fields: [assignedUserId], references: [id])
+
+  @@index([status, dueAt])
+  @@map("follow_ups")
+}
+
+model UserPin {
+  userId    String   @map("user_id") @db.Uuid
+  contentId String   @map("content_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contentId])
+  @@map("user_pins")
+}
+
+model InquiryRead {
+  userId    String   @map("user_id") @db.Uuid
+  inquiryId String   @map("inquiry_id") @db.Uuid
+  readAt    DateTime @default(now()) @map("read_at") @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, inquiryId])
+  @@map("inquiry_reads")
+}
+
+/* --------------------------------------------------------------- plumbing */
+
+model OutboxEvent {
+  id            String    @id @default(uuid()) @db.Uuid
+  eventType     String    @map("event_type")
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  payload       Json
+  dedupeKey     String    @unique @map("dedupe_key")
+  availableAt   DateTime  @default(now()) @map("available_at") @db.Timestamptz(3)
+  processedAt   DateTime? @map("processed_at") @db.Timestamptz(3)
+  attemptCount  Int       @default(0) @map("attempt_count")
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([processedAt, availableAt])
+  @@map("outbox_events")
+}
+
+model IdempotencyKey {
+  id               String   @id @default(uuid()) @db.Uuid
+  principalScope   String   @map("principal_scope")
+  operation        String
+  key              String
+  requestHash      String   @map("request_hash")
+  responseSnapshot Json?    @map("response_snapshot")
+  expiresAt        DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([principalScope, operation, key])
+  @@map("idempotency_keys")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  diff       Json?
+  requestId  String?  @map("request_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model JobRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  jobKind    String    @map("job_kind")
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(3)
+  status     String    @default("running")
+  processed  Int       @default(0)
+  errors     Int       @default(0)
+  detail     String?
+
+  @@index([jobKind, startedAt])
+  @@map("job_runs")
+}

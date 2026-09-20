@@ -54,3 +54,10 @@ next-env.d.ts
 # duplicated under docs/reference
 /references/
 /.next-dev/
+.secrets/
+.env.docker
+.env.runtime
+.env.ports
+backend/node_modules/
+backend/dist/
+backend/src/generated/
