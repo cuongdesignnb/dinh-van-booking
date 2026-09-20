@@ -1,0 +1,375 @@
+/* ==========================================================================
+   Admin responsive behaviour
+   1448 is the reference width; below that the shell keeps every control
+   reachable instead of scaling the artboard down.
+   ========================================================================== */
+
+@media (max-width: 1360px) {
+  .ovw__row--charts,
+  .ovw__row--lists,
+  .ovw__row--bottom {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .pr__bottom {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (max-width: 1280px) {
+  .dvb-admin {
+    --dvb-admin-sidebar-width: 182px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kpi {
+    height: auto;
+    min-height: 130px;
+  }
+
+  .kpi__icon {
+    margin-bottom: 10px;
+  }
+
+  .bk__grid,
+  .cb__grid,
+  .ct__grid,
+  .crm__grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  }
+
+  .bk__table-wrap,
+  .crm__table {
+    overflow-x: auto;
+  }
+
+  .bk__table {
+    min-width: 860px;
+  }
+
+  .pcards--grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .toplist {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .ashell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .asidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: 264px;
+    translate: -100% 0;
+    transition: translate 0.2s ease;
+    box-shadow: 0 0 30px rgb(12 30 18 / 25%);
+  }
+
+  .asidebar--open {
+    translate: 0 0;
+  }
+
+  .asidebar__close {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 80%);
+    cursor: pointer;
+  }
+
+  .ashell__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    border: 0;
+    background: rgb(18 34 24 / 35%);
+  }
+
+  .ashell__main {
+    padding: 0 14px;
+  }
+
+  .dvb-admin .atop .atop__menu {
+    display: grid;
+  }
+
+  .atop__search {
+    width: 280px;
+  }
+
+  .ovw__row--charts,
+  .ovw__row--lists,
+  .ovw__row--bottom,
+  .pr__bottom,
+  .bk__widgets {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .ovw__row--charts > *:first-child,
+  .ovw__row--lists > *:first-child,
+  .ovw__row--bottom > *:first-child,
+  .pr__bottom > *:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .bk__grid,
+  .cb__grid,
+  .ct__grid,
+  .crm__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bk__right,
+  .cb__detail,
+  .ct__editor,
+  .crm__profile {
+    order: 2;
+  }
+
+  .pipe {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pr__filter-grid,
+  .bk__filter-grid,
+  .cb__filter-grid,
+  .crm__filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bk__filter-actions,
+  .pr__filter-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .crm__filter-grid .afield:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .kpis,
+  .kpis--5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .atop__row {
+    flex-wrap: wrap;
+  }
+
+  .atop__search {
+    order: 4;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .atop__title {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .atop__leaf {
+    margin-left: 0;
+  }
+
+  .atop__script {
+    display: none;
+  }
+
+  .pcards--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toplist,
+  .ct__strip,
+  .mgrid,
+  .mpicker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cb__hero,
+  .bform,
+  .pr__form2,
+  .ct__form2,
+  .cb__incl-editor,
+  .pr__amenities {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .afooter {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    text-align: left;
+  }
+
+  .afooter__script,
+  .afooter__copy {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .dvb-admin {
+    font-size: 14px;
+  }
+
+  .kpis,
+  .kpis--5,
+  .pcards--grid,
+  .quick,
+  .bk__summary,
+  .bk__actions,
+  .crm__actions,
+  .pipe,
+  .cb__incl,
+  .cb__gallery,
+  .ovw__row--charts,
+  .ovw__row--lists,
+  .ovw__row--bottom,
+  .pr__bottom,
+  .bk__widgets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bk__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ashell__main {
+    padding: 0 12px;
+  }
+
+  .atop {
+    padding-top: 12px;
+  }
+
+  .atop__user-text {
+    display: none;
+  }
+
+  .atop__row--second {
+    justify-content: flex-start;
+  }
+
+  .atop__range {
+    width: 100%;
+  }
+
+  /* Touch targets stay at least 44 px on phones. */
+  .abtn,
+  .icon-btn,
+  .ct__tabs button,
+  .bk__tabs button,
+  .cb__tabs button,
+  .ct__etabs button,
+  .ptabs button {
+    min-height: 44px;
+  }
+
+  .apager {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .apager button {
+    min-width: 40px;
+    height: 40px;
+  }
+
+  .bk__table-foot,
+  .pr__list-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .atable {
+    font-size: 13px;
+  }
+
+  .bk__table,
+  .crm__table,
+  .ct__table,
+  .pr__inv {
+    min-width: 720px;
+  }
+
+  .bk__table-wrap,
+  .crm__left,
+  .ct__left {
+    overflow-x: auto;
+  }
+
+  /* The date range wraps instead of pushing the filter card wider. */
+  .bk__range {
+    flex-wrap: wrap;
+  }
+
+  .bk__range .ainput {
+    flex: 1 1 130px;
+    min-width: 0;
+  }
+
+  .bk__filter-grid .afield > span:first-child {
+    flex-wrap: wrap;
+  }
+
+  .ct__tabs {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .crm__follow-form,
+  .ct__list-tools,
+  .pr__list-tools {
+    grid-template-columns: minmax(0, 1fr);
+    display: grid;
+    gap: 6px;
+  }
+
+  .ct__search .ainput {
+    width: 100%;
+  }
+
+  .ct__drawer {
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+
+  .dialog--drawer-right .dialog__panel {
+    max-width: 100%;
+  }
+}
+
+/* The follow-up composer wraps onto two rows as soon as the rail narrows. */
+@media (max-width: 1440px) {
+  .crm__follow-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .crm__follow-form input:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .crm__follow-form .abtn {
+    grid-column: 1 / -1;
+  }
+}

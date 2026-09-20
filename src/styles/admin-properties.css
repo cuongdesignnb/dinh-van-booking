@@ -1,0 +1,674 @@
+/* ==========================================================================
+   Màn C — Quản lý phòng nghỉ (/admin/phong-nghi)
+   Tuned against docs/reference/admin-C-phong-nghi.png
+   ========================================================================== */
+
+.kpis--5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.kpis--5 .kpi {
+  height: 143px;
+}
+
+.pr__filters {
+  margin-bottom: 10px;
+}
+
+.pr__filters .acard__head {
+  margin: 0;
+}
+
+.pr__filter-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 8px 12px;
+  align-items: end;
+}
+
+.pr__filter-grid .afield {
+  margin: 0;
+  gap: 5px;
+}
+
+.pr__filter-grid .afield > span:first-child {
+  font-size: 12px;
+  font-weight: 600;
+  color: #33423a;
+}
+
+.pr__filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pr__list-card {
+  margin-bottom: 10px;
+}
+
+.pr__list-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pr__tool {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.8px;
+  color: var(--dvb-admin-muted);
+}
+
+.pr__tool .ainput {
+  height: 28px;
+  min-height: 28px;
+  padding: 0 26px 0 9px;
+  font-size: 12px;
+}
+
+.pr__view {
+  display: inline-flex;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pr__view button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  border: 0;
+  background: #fff;
+  color: #56635a;
+  cursor: pointer;
+}
+
+.pr__view button[aria-pressed='true'] {
+  background: linear-gradient(180deg, #2a6f3e, #1a5330);
+  color: #fff;
+}
+
+/* ---------------------------------------------------------------- cards */
+
+.pcards {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pcards--grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.pcards--list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pcard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  transition:
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.pcards li.is-selected .pcard {
+  border-color: var(--dvb-admin-green-700);
+  box-shadow: 0 0 0 1px rgb(40 119 71 / 25%);
+}
+
+.pcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--dvb-admin-sage);
+}
+
+.pcard__media {
+  position: relative;
+}
+
+.pcard__img {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+  display: block;
+}
+
+.pcard__media .abadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgb(255 255 255 / 92%);
+}
+
+.pcard__pin {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 88%);
+  color: #56635a;
+  cursor: pointer;
+}
+
+.pcard__pin.is-on {
+  color: #cf4a4a;
+}
+
+.pcard__body {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px 10px;
+}
+
+.pcard__body h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-family: var(--font-dvb-display), Georgia, serif;
+  color: #16301f;
+}
+
+.pcard__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--dvb-admin-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pcard__code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #f1f3ec;
+  color: #46524b;
+  font-weight: 600;
+}
+
+.pcard__rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 11.4px;
+  color: var(--dvb-admin-muted);
+}
+
+.pcard__rating svg {
+  color: #e0a32a;
+}
+
+.pcard__rating strong {
+  color: #1b2b25;
+}
+
+.pcard__price {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-dvb-display), Georgia, serif;
+  color: #1c6236;
+}
+
+.pcard__price span {
+  font-size: 11px;
+  font-weight: 400;
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  color: var(--dvb-admin-muted);
+}
+
+.pcard__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pcard__tags li {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #f4f6f0;
+  font-size: 10.6px;
+  color: #46524b;
+}
+
+.pcard__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 2px 0 4px;
+  font-size: 11px;
+  color: var(--dvb-admin-muted);
+}
+
+.pcard__facts .is-low {
+  color: #9a5800;
+  font-weight: 600;
+}
+
+.pcard__facts .is-full {
+  color: var(--dvb-admin-danger);
+  font-weight: 600;
+}
+
+.pcard__actions {
+  display: flex;
+  gap: 5px;
+}
+
+.pcard__actions .abtn {
+  flex: 1;
+  padding: 0 7px;
+  font-size: 11.2px;
+}
+
+.pcards--list .pcard {
+  flex-direction: row;
+}
+
+.pcards--list .pcard__media {
+  width: 210px;
+  flex-shrink: 0;
+}
+
+.pcards--list .pcard__img {
+  height: 100%;
+}
+
+.pcards--list .pcard__body {
+  flex: 1;
+}
+
+.pr__list-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #f0f2ec;
+  font-size: 11.6px;
+  color: var(--dvb-admin-muted);
+}
+
+/* -------------------------------------------------------------- bottom row */
+
+.pr__bottom {
+  display: grid;
+  grid-template-columns: 548fr 279fr 404fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.pr__scope .ainput {
+  height: 26px;
+  min-height: 26px;
+  padding: 0 24px 0 8px;
+  font-size: 11.6px;
+  max-width: 190px;
+}
+
+.pr__note {
+  margin: 8px 0 0;
+  font-size: 10.9px;
+  color: var(--dvb-admin-muted);
+}
+
+.pr__toggles {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pr__season-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.pr__season-head h3 {
+  margin: 0;
+  font-size: 12.6px;
+  font-weight: 600;
+}
+
+.pr__seasons {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pr__seasons li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: #f7f8f3;
+}
+
+.pr__season-name {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.pr__season-name strong {
+  font-size: 12px;
+}
+
+.pr__season-name small {
+  font-size: 10.8px;
+  color: var(--dvb-admin-muted);
+}
+
+.pr__season-value {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--dvb-admin-warning-bg);
+  color: var(--dvb-admin-warning);
+  font-size: 11.4px;
+  font-weight: 700;
+}
+
+.pr__season-value.is-off {
+  background: #f0f1ec;
+  color: var(--dvb-admin-muted);
+}
+
+/* ------------------------------------------------------------- inventory */
+
+.pr__inv-wrap {
+  overflow-x: auto;
+}
+
+.pr__inv th,
+.pr__inv td {
+  text-align: center;
+  padding: 5px 3px;
+}
+
+.pr__inv thead th small {
+  display: block;
+  font-size: 9.6px;
+  font-weight: 400;
+  color: var(--dvb-admin-muted);
+}
+
+.pr__inv tbody th {
+  text-align: left;
+  font-size: 11.4px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pr__cell {
+  width: 100%;
+  min-width: 28px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 11.6px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pr__cell--ok {
+  background: #e4f2e2;
+  color: #1c6236;
+}
+
+.pr__cell--low {
+  background: #fdf1d5;
+  color: #8a5300;
+}
+
+.pr__cell--full {
+  background: #fbe3e1;
+  color: #97303a;
+}
+
+.pr__inv-legend {
+  display: flex;
+  gap: 12px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10.9px;
+  color: var(--dvb-admin-muted);
+}
+
+.pr__inv-legend li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pr__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.pr__dot--ok {
+  background: #4c9a5e;
+}
+
+.pr__dot--low {
+  background: #e5b94e;
+}
+
+.pr__dot--full {
+  background: #d9534f;
+}
+
+.pr__inv-detail {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 12.4px;
+}
+
+.pr__inv-detail li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ------------------------------------------------------------------ forms */
+
+.pr__form2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 14px;
+}
+
+.pr__full {
+  grid-column: 1 / -1;
+}
+
+.afield--check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.afield--check span {
+  font-weight: 400;
+  font-size: 12.4px;
+}
+
+.ptabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--dvb-admin-border);
+}
+
+.ptabs button {
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 12.4px;
+  color: #56635a;
+  cursor: pointer;
+}
+
+.ptabs button.is-active {
+  border-color: var(--dvb-admin-green-700);
+  color: var(--dvb-admin-green-800);
+  font-weight: 600;
+}
+
+.pr__preview {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 9px;
+  background: #f7f8f3;
+}
+
+.pr__preview h3 {
+  margin: 0 0 6px;
+  font-size: 12.6px;
+}
+
+.pr__preview ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11.8px;
+}
+
+.pr__preview li {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr;
+  gap: 8px;
+}
+
+.pr__preview strong {
+  text-align: right;
+  color: #1c6236;
+}
+
+.pr__room-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pr__room-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f7f8f3;
+  font-size: 12.2px;
+}
+
+.pr__media-tab {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.pr__cover img {
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.pr__amenities {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px 12px;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 9px;
+}
+
+.pr__amenities legend {
+  padding: 0 4px;
+  font-size: 11.8px;
+  color: var(--dvb-admin-muted);
+}
+
+.pr__amenities label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.2px;
+}
+
+.mpicker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.mpicker__item {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 5px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 10.6px;
+  color: var(--dvb-admin-muted);
+  text-align: left;
+}
+
+.mpicker__item.is-active {
+  border-color: var(--dvb-admin-green-700);
+  box-shadow: 0 0 0 1px rgb(40 119 71 / 30%);
+}
+
+.mpicker__item img {
+  width: 100%;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.mpicker__item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

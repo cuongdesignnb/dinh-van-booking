@@ -1,0 +1,389 @@
+/* ==========================================================================
+   Màn F — Khách hàng & yêu cầu tư vấn (/admin/khach-hang, /admin/yeu-cau-tu-van)
+   Tuned against docs/reference/admin-F-khach-hang.png
+   ========================================================================== */
+
+.crm__grid {
+  display: grid;
+  grid-template-columns: 69fr 31fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.crm__left {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.crm__filters .acard__head {
+  margin: 0;
+}
+
+.crm__filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 150px 170px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.crm__filter-grid .afield {
+  margin: 0;
+}
+
+.crm__table {
+  font-size: 11.8px;
+}
+
+.crm__name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.crm__name .avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10.4px;
+}
+
+.crm__tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.crm__tags span {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #f1f3ec;
+  font-size: 10.4px;
+  color: #46524b;
+}
+
+/* -------------------------------------------------------------- pipeline */
+
+.pipe {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.pipe__col {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 9px;
+  border-radius: 10px;
+  background: #f7f8f3;
+  min-width: 0;
+}
+
+.pipe__col--new {
+  background: #eef4fb;
+}
+
+.pipe__col--consulting {
+  background: #fdf6e6;
+}
+
+.pipe__col--waiting {
+  background: #fdeeed;
+}
+
+.pipe__col--won {
+  background: #eaf5ea;
+}
+
+.pipe__col header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pipe__col h3 {
+  margin: 0;
+  font-size: 12.4px;
+  font-weight: 600;
+}
+
+.pipe__count {
+  color: var(--dvb-admin-muted);
+  font-size: 11.4px;
+}
+
+.pipe__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.pipe__dot--new {
+  background: #3b82c4;
+}
+
+.pipe__dot--consulting {
+  background: #e0a32a;
+}
+
+.pipe__dot--waiting {
+  background: #d9534f;
+}
+
+.pipe__dot--won {
+  background: #3d9155;
+}
+
+.pipe__col ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pipe__card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: 7px 26px 7px 8px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 9px;
+  background: #fff;
+  cursor: grab;
+}
+
+.pipe__card.is-selected {
+  border-color: var(--dvb-admin-green-700);
+}
+
+.pipe__open {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pipe__open > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.pipe__open strong {
+  font-size: 11.8px;
+}
+
+.pipe__open small {
+  font-size: 10.6px;
+  color: var(--dvb-admin-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipe__open time {
+  font-size: 10.2px;
+  color: var(--dvb-admin-muted);
+}
+
+.pipe__card .arowmenu {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+}
+
+.pipe__card .avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+.pipe__more {
+  justify-self: start;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--dvb-admin-green-800);
+  font-size: 11.2px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pipe__empty {
+  margin: 0;
+  font-size: 11.2px;
+  color: var(--dvb-admin-muted);
+}
+
+/* --------------------------------------------------------------- profile */
+
+.crm__profile-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.crm__profile-title span {
+  display: grid;
+}
+
+.crm__profile-title strong {
+  font-size: 15.5px;
+  font-family: var(--font-dvb-display), Georgia, serif;
+}
+
+.crm__profile-title small {
+  font-size: 11px;
+  color: var(--dvb-admin-muted);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-weight: 400;
+}
+
+.avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: 13px;
+}
+
+.crm__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+  font-size: 11.4px;
+  color: #46524b;
+}
+
+.crm__contact span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.crm__info h3 {
+  margin: 0 0 7px;
+  font-size: 12.6px;
+  font-weight: 600;
+}
+
+.crm__note {
+  margin: 9px 0 0;
+  padding: 9px 10px;
+  border-left: 3px solid var(--dvb-admin-sage);
+  border-radius: 0 8px 8px 0;
+  background: #f7f8f3;
+  font-size: 11.8px;
+  font-style: italic;
+  color: #46524b;
+}
+
+.crm__history ul {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.crm__history li {
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: #f7f8f3;
+  font-size: 11.6px;
+}
+
+.crm__history li.is-out {
+  background: var(--dvb-admin-mint);
+}
+
+.crm__history li.is-internal {
+  background: #fdf6e6;
+}
+
+.crm__hmeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.crm__history p {
+  margin: 3px 0 2px;
+  color: #33423a;
+}
+
+.crm__history small {
+  font-size: 10.4px;
+  color: var(--dvb-admin-muted);
+}
+
+.crm__follow {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f2ec;
+}
+
+.crm__follow h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 7px;
+  font-size: 12.4px;
+  font-weight: 600;
+}
+
+.crm__follow ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 11.4px;
+}
+
+.crm__follow li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.crm__follow li.is-late {
+  color: var(--dvb-admin-danger);
+}
+
+.crm__follow-form {
+  display: grid;
+  grid-template-columns: 120px 84px minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.crm__follow-form .ainput {
+  height: 30px;
+  min-height: 30px;
+  font-size: 11.8px;
+}
+
+.crm__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.crm__actions .abtn {
+  width: 100%;
+  height: 32px;
+  font-size: 12px;
+}

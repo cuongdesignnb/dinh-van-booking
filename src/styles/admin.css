@@ -1,0 +1,814 @@
+/* ==========================================================================
+   Đinh Vân Booking — admin (scoped to .dvb-admin)
+   Desktop geometry is tuned against docs/reference/admin-*.png (1448 × 1086).
+   ========================================================================== */
+
+.dvb-admin {
+  --dvb-admin-bg: #f6f7f0;
+  --dvb-admin-surface: #ffffff;
+  --dvb-admin-cream: #f7f4e9;
+  --dvb-admin-green-950: #123b29;
+  --dvb-admin-green-900: #164b30;
+  --dvb-admin-green-800: #1e623b;
+  --dvb-admin-green-700: #287747;
+  --dvb-admin-sage: #a6bc9c;
+  --dvb-admin-mint: #e7f4e9;
+  --dvb-admin-text: #1b2b25;
+  --dvb-admin-muted: #697487;
+  --dvb-admin-border: #e8ece6;
+  --dvb-admin-warning: #9a5800;
+  --dvb-admin-warning-bg: #fff3d6;
+  --dvb-admin-danger: #be3442;
+  --dvb-admin-danger-bg: #fff0f1;
+  --dvb-admin-info: #226bb4;
+  --dvb-admin-info-bg: #edf5ff;
+  --dvb-admin-radius: 10px;
+  --dvb-admin-shadow: 0 3px 16px rgb(19 53 31 / 5%);
+  --dvb-admin-sidebar-width: 200px;
+
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--dvb-admin-text);
+  background: var(--dvb-admin-bg);
+  min-height: 100vh;
+}
+
+.dvb-admin h1,
+.dvb-admin h2,
+.dvb-admin .panel-heading,
+.dvb-admin .brand-wordmark,
+.dvb-admin .kpi__value strong {
+  font-family: var(--font-dvb-display), Georgia, serif;
+}
+
+.dvb-admin .handwritten {
+  font-family: var(--font-dvb-script), cursive;
+  line-height: 1.3;
+  padding-block: 0.1em;
+  overflow: visible;
+}
+
+.dvb-admin .numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.dvb-admin *,
+.dvb-admin *::before,
+.dvb-admin *::after {
+  box-sizing: border-box;
+}
+
+.dvb-admin button {
+  font: inherit;
+  color: inherit;
+}
+
+.dvb-admin :focus-visible {
+  outline: 2px solid var(--dvb-admin-green-700);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.dvb-admin .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.ashell {
+  display: grid;
+  grid-template-columns: var(--dvb-admin-sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 92% 4%, rgb(215 231 208 / 55%), transparent 26%),
+    var(--dvb-admin-bg);
+}
+
+.ashell__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 17px 0 14px;
+}
+
+.ashell__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ashell__scrim {
+  display: none;
+}
+
+/* -------------------------------------------------------------- sidebar */
+
+.asidebar {
+  position: relative;
+  background: linear-gradient(180deg, #fbfbf4 0%, #f7f8ef 55%, #f3f5ea 100%);
+  border-right: 1px solid #e9ece2;
+}
+
+.asidebar__inner {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 26px 8px 12px;
+  overflow: hidden;
+}
+
+.asidebar__leaf {
+  position: absolute;
+  color: #8fae7c;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.asidebar__leaf--a {
+  top: -26px;
+  left: -34px;
+  width: 120px;
+  rotate: 24deg;
+}
+
+.asidebar__leaf--b {
+  top: 4px;
+  right: -8px;
+  width: 58px;
+  rotate: -18deg;
+}
+
+.asidebar__brand {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding-bottom: 14px;
+}
+
+.asidebar__mark {
+  width: 86px;
+  height: 50px;
+}
+
+.asidebar__word {
+  font-size: 21.5px;
+  font-weight: 700;
+  color: #16301f;
+  letter-spacing: 0.1px;
+}
+
+.asidebar__tagline {
+  font-size: 8.2px;
+  letter-spacing: 0.9px;
+  color: #4d5a4f;
+  text-transform: uppercase;
+}
+
+.asidebar__close {
+  display: none;
+}
+
+.asidebar__nav {
+  position: relative;
+  flex: 0 1 auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.asidebar__nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.anav {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  height: 38px;
+  white-space: nowrap;
+  margin-bottom: 5px;
+  padding: 0 12px 0 14px;
+  border-radius: 10px;
+  color: #1b2b25;
+  font-size: 13.8px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.anav svg {
+  flex-shrink: 0;
+  color: #1c4a2c;
+}
+
+.anav:hover {
+  background: rgb(214 231 208 / 45%);
+}
+
+.anav--active {
+  background: linear-gradient(180deg, #2a6f3e 0%, #16482b 100%);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgb(166 188 156 / 35%);
+}
+
+.anav--active svg {
+  color: #fff;
+}
+
+.anav__badge {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: #e5564f;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.asidebar__decor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 88px;
+  height: 210px;
+  background: url('/images/dinh-van-booking/hero-cuc-phuong.webp') center 30% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%);
+  mask-image: linear-gradient(180deg, transparent, #000 45%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.asidebar__script {
+  position: relative;
+  margin: auto 0 0;
+  padding: 0 0 6px 14px;
+  font-size: 19px;
+  color: #1f4b2c;
+}
+
+.asidebar__script span {
+  display: block;
+}
+
+.asidebar__quote {
+  position: relative;
+  margin: 0;
+  padding: 10px 12px 4px;
+  border-top: 1px solid rgb(255 255 255 / 55%);
+  color: #33413a;
+  font-size: 10.6px;
+  font-style: italic;
+  text-align: center;
+}
+
+.asidebar__quote p {
+  margin: 0 0 3px;
+}
+
+.asidebar__quote cite {
+  font-size: 10px;
+  font-style: normal;
+  color: #55635a;
+}
+
+/* --------------------------------------------------------------- topbar */
+
+.atop {
+  position: relative;
+  padding: 18px 0 10px;
+}
+
+.atop__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.atop .atop__menu {
+  display: none;
+}
+
+.atop__titles {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.atop__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  color: #13291c;
+}
+
+.atop__leaf {
+  flex-shrink: 0;
+  margin-left: -28px;
+}
+
+.atop__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--dvb-admin-muted);
+}
+
+.atop__search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 391px;
+  height: 38px;
+  padding: 0 10px 0 16px;
+  border: 1px solid #e4e8df;
+  border-radius: 19px;
+  background: #fff;
+  box-shadow: var(--dvb-admin-shadow);
+  color: var(--dvb-admin-muted);
+  cursor: pointer;
+  transition: border-color 0.16s ease;
+}
+
+.atop__search:hover {
+  border-color: var(--dvb-admin-sage);
+}
+
+.atop__search svg {
+  color: #6f7a70;
+}
+
+.atop__search-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 13px;
+}
+
+.atop__search kbd,
+.apalette kbd {
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #f1f3ec;
+  color: #5d6a60;
+  font: inherit;
+  font-size: 11px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #1f3a28;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: rgb(214 231 208 / 45%);
+}
+
+.atop__bell {
+  position: relative;
+  margin-left: 2px;
+}
+
+.atop__dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #f6f7f0;
+  border-radius: 50%;
+  background: #e5564f;
+}
+
+.atop__user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 2px 6px 2px 2px;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.atop__user:hover {
+  background: rgb(214 231 208 / 40%);
+}
+
+.atop__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 6px rgb(19 53 31 / 18%);
+}
+
+.atop__user-text {
+  display: grid;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.atop__user-text strong {
+  font-size: 14.5px;
+}
+
+.atop__user-text small {
+  font-size: 11.5px;
+  color: var(--dvb-admin-muted);
+}
+
+.atop__row--second {
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-top: 4px;
+  min-height: 40px;
+}
+
+.atop__script {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.35;
+  color: #2c5a37;
+  text-align: right;
+  rotate: -4deg;
+}
+
+.atop__script span {
+  display: block;
+}
+
+.atop__range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 196px;
+  height: 35px;
+  padding: 0 10px;
+  border: 1px solid #e4e8df;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--dvb-admin-shadow);
+  font-size: 12.6px;
+  cursor: pointer;
+}
+
+.atop__range span {
+  flex: 1;
+  text-align: left;
+}
+
+.atop__range svg {
+  color: #3d6b48;
+}
+
+/* ------------------------------------------------------- command palette */
+
+.apalette {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  justify-items: center;
+  padding-top: 12vh;
+  background: rgb(18 34 24 / 35%);
+  backdrop-filter: blur(2px);
+}
+
+.apalette__panel {
+  width: min(560px, calc(100% - 32px));
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgb(12 30 18 / 28%);
+  overflow: hidden;
+}
+
+.apalette__field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--dvb-admin-border);
+}
+
+.apalette__field input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.apalette__list {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.apalette__hint {
+  padding: 14px;
+  color: var(--dvb-admin-muted);
+}
+
+.apalette__hit {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.apalette__hit:hover,
+.apalette__hit.is-cursor {
+  background: var(--dvb-admin-mint);
+}
+
+.apalette__kind {
+  font-size: 11px;
+  color: var(--dvb-admin-green-800);
+  background: #eef5ea;
+  border-radius: 6px;
+  padding: 2px 6px;
+  text-align: center;
+}
+
+.apalette__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apalette__meta {
+  font-size: 11.6px;
+  color: var(--dvb-admin-muted);
+}
+
+/* -------------------------------------------------------------- popovers */
+
+.dvb-admin .popover,
+.apop {
+  font-size: 13px;
+}
+
+.apop {
+  width: 280px;
+  padding: 4px;
+}
+
+.apop__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.apop__muted {
+  font-size: 11.5px;
+  color: var(--dvb-admin-muted);
+}
+
+.apop__link {
+  border: 0;
+  background: none;
+  color: var(--dvb-admin-green-800);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.apop__list,
+.apop__ranges {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.apop__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apop__badge {
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--dvb-admin-mint);
+  color: var(--dvb-admin-green-800);
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.apop__badge--warn {
+  background: var(--dvb-admin-warning-bg);
+  color: var(--dvb-admin-warning);
+}
+
+.apop__badge--info {
+  background: var(--dvb-admin-info-bg);
+  color: var(--dvb-admin-info);
+}
+
+.apop__range {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.apop__range.is-active {
+  border-color: var(--dvb-admin-green-700);
+  background: var(--dvb-admin-mint);
+}
+
+.apop__roles {
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.apop__roles legend {
+  padding: 0 0 4px;
+  font-size: 11.6px;
+  color: var(--dvb-admin-muted);
+}
+
+.apop__roles label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.apop__note {
+  margin: 0 0 6px;
+  font-size: 11.4px;
+  color: var(--dvb-admin-muted);
+}
+
+.apop__reset {
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.afooter {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 26px;
+  margin-top: 14px;
+  padding: 14px 6px 16px;
+  border-top: 1px solid #e6eade;
+  color: var(--dvb-admin-muted);
+  font-size: 11.6px;
+}
+
+.afooter__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.afooter__mark {
+  width: 40px;
+  height: 24px;
+}
+
+.afooter__brand span {
+  display: grid;
+}
+
+.afooter__brand strong {
+  font-size: 15px;
+  color: #16301f;
+}
+
+.afooter__brand small {
+  font-size: 7.6px;
+  letter-spacing: 0.8px;
+  color: #5d6a60;
+}
+
+.afooter__mid {
+  margin: 0;
+}
+
+.afooter__script {
+  margin: 0;
+  justify-self: center;
+  font-size: 15px;
+  color: #2c5a37;
+  rotate: -3deg;
+}
+
+.afooter__copy {
+  margin: 0;
+  justify-self: end;
+}
+
+/* ---------------------------------------------------------------- toasts */
+
+.atoasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  display: grid;
+  gap: 8px;
+  max-width: 340px;
+}
+
+.atoast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #16482b;
+  color: #fff;
+  box-shadow: 0 10px 24px rgb(12 30 18 / 22%);
+  animation: atoast-in 0.18s ease;
+}
+
+.atoast--error {
+  background: #8d2a35;
+}
+
+.atoast--info {
+  background: #1f4f7a;
+}
+
+.atoast button {
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+@keyframes atoast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dvb-admin *,
+  .atoast {
+    animation: none !important;
+    transition: none !important;
+  }
+}
