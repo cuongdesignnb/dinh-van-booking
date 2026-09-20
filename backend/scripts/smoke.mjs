@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 
 const BASE = process.env.API_BASE ?? 'http://api:3001/api/v1';
+// Where /media/** is served from — the same host as the API, minus the prefix.
+const MEDIA_BASE = process.env.MEDIA_BASE ?? BASE.replace(/\/api\/v1\/?$/, '');
 const EMAIL = process.env.OWNER_EMAIL ?? 'halabcreative@gmail.com';
 const PASSWORD = readFileSync(process.env.OWNER_PASSWORD_FILE ?? '/run/secrets/owner_password', 'utf8').trim();
 
@@ -137,7 +139,7 @@ async function main() {
   check('renditions were generated', Object.keys(upload.body?.renditions ?? {}).length >= 2, JSON.stringify(upload.body?.renditions));
   check('alt text kept', upload.body?.altText === 'Ảnh kiểm thử');
 
-  const served = await fetch(`http://api:3001${upload.body.url}`);
+  const served = await fetch(`${MEDIA_BASE}${upload.body.url}`);
   const servedBytes = Buffer.from(await served.arrayBuffer());
   check('file is served back over /media', served.status === 200, `got ${served.status}`);
   check('served bytes are a real WebP', servedBytes.subarray(8, 12).toString('ascii') === 'WEBP');
@@ -155,7 +157,7 @@ async function main() {
 
   const removed = await call(`/media/${upload.body.id}`, { method: 'DELETE' });
   check('unused asset can be deleted', removed.status === 204, `got ${removed.status}`);
-  const goneFile = await fetch(`http://api:3001${upload.body.url}`);
+  const goneFile = await fetch(`${MEDIA_BASE}${upload.body.url}`);
   check('deleted file is gone from the volume', goneFile.status === 404, `got ${goneFile.status}`);
 
   console.log('\ncontent');
@@ -251,6 +253,17 @@ async function main() {
 
   const cleanup = await call(`/content/${created.body.id}`, { method: 'DELETE' });
   check('published content cannot be deleted outright', cleanup.status === 409, `got ${cleanup.status}`);
+
+  // Leave nothing behind, so a second run starts from the same state.
+  await call(`/content/${created.body.id}/status`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'draft' }),
+  });
+  const removedContent = await call(`/content/${created.body.id}`, { method: 'DELETE' });
+  check('unpublished content can be deleted', removedContent.status === 204, `got ${removedContent.status}`);
+  const removedCover = await call(`/media/${coverAsset.body.id}`, { method: 'DELETE' });
+  check('cover image freed once content is gone', removedCover.status === 204, `got ${removedCover.status}`);
 
   console.log('\nlogout');
   const logout = await call('/auth/logout', { method: 'POST' });

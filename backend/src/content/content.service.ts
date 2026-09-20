@@ -174,10 +174,14 @@ export class ContentService {
         // The old path keeps working as a redirect instead of turning into a 404.
         await tx.publicRoute.updateMany({ where: { contentId: id, isCurrent: true }, data: { isCurrent: false } });
         const path = pathForContent(current.kind, nextSlug);
+        const existing = await tx.publicRoute.findUnique({ where: { path } });
+        if (existing && existing.contentId !== id) {
+          throw new ConflictException('Đường dẫn này đã thuộc về nội dung khác');
+        }
         await tx.publicRoute.upsert({
           where: { path },
           create: { contentId: id, path, isCurrent: true },
-          update: { isCurrent: true, contentId: id },
+          update: { isCurrent: true },
         });
       }
 
@@ -302,11 +306,27 @@ export class ContentService {
   }
 
   private async reserveSlug(kind: string, desired: string, ignoreId?: string): Promise<string> {
-    const siblings = await this.prisma.contentNode.findMany({
-      where: { kind, ...(ignoreId ? { id: { not: ignoreId } } : {}) },
-      select: { slugSource: true },
-    });
+    const [siblings, routes] = await Promise.all([
+      this.prisma.contentNode.findMany({
+        where: { kind, ...(ignoreId ? { id: { not: ignoreId } } : {}) },
+        select: { slugSource: true },
+      }),
+      // Renaming a node leaves its old path behind as a redirect, and that row
+      // still owns the path. Reusing the freed slug would collide with it.
+      this.prisma.publicRoute.findMany({
+        where: { path: { startsWith: `${pathForContent(kind, '')}` }, ...(ignoreId ? { contentId: { not: ignoreId } } : {}) },
+        select: { path: true },
+      }),
+    ]);
+
     const taken = new Set(siblings.map((s) => s.slugSource).filter((s): s is string => !!s));
+    const prefix = pathForContent(kind, '');
+    for (const route of routes) {
+      const rest = route.path.slice(prefix.length);
+      // Pages live at the root, where the prefix is just "/" and would match
+      // every other section's paths too. Only single-segment ones are slugs.
+      if (rest && !rest.includes('/')) taken.add(rest);
+    }
     return uniqueSlug(desired, taken);
   }
 

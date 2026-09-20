@@ -12,6 +12,7 @@ import { enableBigIntJson } from './common/bigint';
 import { loadConfig } from './common/config/env';
 import { SessionGuard } from './common/guards/session.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 async function bootstrap(): Promise<void> {
   enableBigIntJson();
@@ -43,6 +44,8 @@ async function bootstrap(): Promise<void> {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
+
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   const reflector = app.get(Reflector);
   app.useGlobalGuards(
