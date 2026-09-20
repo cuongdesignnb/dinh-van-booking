@@ -22,7 +22,7 @@ const isActive = (path: string, href: string) =>
 export function SiteHeader() {
   const pathname = usePathname() ?? '/';
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleRef = useRef<HTMLButtonElement>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -97,18 +97,33 @@ export function SiteHeader() {
           <Link href="/phong-nghi" className="btn btn--primary btn--header btn-shine" data-magnetic>
             Đặt ngay <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
           </Link>
+          <button
+            type="button"
+            className="round-btn menu-toggle"
+            aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-drawer"
+            onClick={(e) => {
+              toggleRef.current = e.currentTarget;
+              setMenuOpen((v) => !v);
+            }}
+          >
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          </button>
         </div>
       </div>
 
       <button
-        ref={toggleRef}
         type="button"
         className="menu-float"
         data-open={menuOpen || undefined}
         aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
         aria-expanded={menuOpen}
         aria-controls="mobile-drawer"
-        onClick={() => setMenuOpen((v) => !v)}
+        onClick={(e) => {
+          toggleRef.current = e.currentTarget;
+          setMenuOpen((v) => !v);
+        }}
       >
         {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
         <span className="menu-float__label">Menu</span>

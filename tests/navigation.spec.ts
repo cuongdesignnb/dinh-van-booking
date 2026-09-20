@@ -77,20 +77,27 @@ test.describe('mobile navigation', () => {
     expect(overlap).toBeLessThanOrEqual(0);
   });
 
-  test('floating menu sits above the bar and steps aside while the drawer is open', async ({ page }) => {
+  test('the hamburger lives in the header and opens the drawer', async ({ page }) => {
     await page.goto('/');
-    const button = page.locator('.menu-float');
-    await expect(button).toBeVisible();
-    const bar = await page.locator('.mobilebar').boundingBox();
-    const box = await button.boundingBox();
-    expect(box!.y + box!.height).toBeLessThanOrEqual(bar!.y);
+    const toggle = page.locator('.menu-toggle');
+    await expect(toggle).toBeVisible();
+    // The floating pill is a desktop-only affordance.
+    await expect(page.locator('.menu-float')).toBeHidden();
 
-    await button.click();
+    // It sits in the header row, next to the search button.
+    const header = await page.locator('.site-header__inner').boundingBox();
+    const box = await toggle.boundingBox();
+    expect(box!.y).toBeLessThan(header!.y + header!.height);
+    expect(box!.x + box!.width).toBeGreaterThan(page.viewportSize()!.width - 60);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+
+    await toggle.click();
     await expect(page.locator('.drawer[data-open]')).toHaveCount(1);
-    await expect(button).toHaveCSS('opacity', '0');
     await expect(page.locator('.mobilebar')).toBeHidden();
 
-    await page.locator('.drawer__panel').getByRole('button', { name: 'Đóng menu' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.drawer[data-open]')).toHaveCount(0);
+    await expect(toggle).toBeFocused();
     await expect(page.locator('.mobilebar')).toBeVisible();
   });
 

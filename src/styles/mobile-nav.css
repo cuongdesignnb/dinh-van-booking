@@ -43,27 +43,21 @@
   scale: 0.97;
 }
 
+/* Below 1024 the header shows the hamburger instead, so the floating pill is
+   only a desktop affordance. */
 @media (max-width: 1023px) {
   .menu-float {
-    bottom: calc(var(--dvb-mobilebar-h) + 16px + env(safe-area-inset-bottom));
-    width: 52px;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .menu-float__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    display: none;
   }
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
-  .menu-float {
-    bottom: 24px;
+.menu-toggle {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .menu-toggle {
+    display: inline-grid;
   }
 }
 
