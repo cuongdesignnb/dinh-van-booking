@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Suspense } from 'react';
 import { DestinationExplorer } from '@/components/destinations/DestinationExplorer';
 import { ItineraryTabs, LocalMap, Seasons } from '@/components/destinations/DiscoveryLower';
 import { PageShell } from '@/components/layout/PageShell';
@@ -63,17 +62,13 @@ export default async function DestinationsPage({
         </div>
       </section>
 
-      <Suspense fallback={<div className="dest-list content-shell">Đang tải điểm đến…</div>}>
         <DestinationExplorer />
-      </Suspense>
 
       <div className="discovery-lower content-shell">
         <ItineraryTabs />
         <Seasons />
         <div className="discovery-lower__right">
-          <Suspense fallback={null}>
             <LocalMap />
-          </Suspense>
           <section className="note-card" aria-labelledby="note-t">
             <div className="note-card__body">
               <h2 className="note-card__title" id="note-t">

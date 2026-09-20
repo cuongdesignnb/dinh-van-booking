@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { FaqCard } from '@/components/shared/FaqCard';
 import { ReviewsStrip } from '@/components/shared/ReviewsStrip';
 import { PageShell } from '@/components/layout/PageShell';
 import { AdvisorCard } from '@/components/stays/AdvisorCard';
 import { NotFoundCard } from '@/components/stays/NotFoundCard';
-import { ResultsSkeleton } from '@/components/stays/StaysExplorer';
 import { StaysExplorer } from '@/components/stays/StaysExplorer';
 import { StaysHero } from '@/components/stays/StaysHero';
 import { SmallLeaf } from '@/components/ui/Decor';
@@ -32,26 +30,6 @@ function Reviews() {
   );
 }
 
-function Fallback() {
-  return (
-    <>
-      <div className="stays-search content-shell">
-        <div className="sbar sbar--skeleton" aria-hidden="true" />
-      </div>
-      <div className="stays-layout content-shell">
-        <div className="stays-side stays-side--left">
-          <div className="side-card filters-card skeleton" />
-        </div>
-        <div className="stays-main">
-          <p className="stays-toolbar__count">Đang tải kết quả…</p>
-          <ResultsSkeleton />
-        </div>
-        <div className="stays-side stays-side--right" />
-      </div>
-    </>
-  );
-}
-
 export default async function StaysPage({
   searchParams,
 }: {
@@ -62,7 +40,6 @@ export default async function StaysPage({
   return (
     <PageShell className="page-stays">
       <StaysHero />
-      <Suspense fallback={<Fallback />}>
         <StaysExplorer
           advisor={<AdvisorCard />}
           notFound={<NotFoundCard />}
@@ -80,7 +57,6 @@ export default async function StaysPage({
             />
           }
         />
-      </Suspense>
     </PageShell>
   );
 }

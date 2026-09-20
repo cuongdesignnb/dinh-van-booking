@@ -1,7 +1,6 @@
 import { ArrowRight, Globe, Heart, Leaf, MapPin, Phone, ShieldCheck, Sprout, Star, Users, Zap } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Suspense } from 'react';
 import { ConsultationForm } from '@/components/contact/ConsultationForm';
 import { ContactMap, FocusFormButton, ScriptNote } from '@/components/contact/ContactWidgets';
 import { PageShell } from '@/components/layout/PageShell';
@@ -90,9 +89,7 @@ export default async function ContactPage({
       <div className="contact-grid content-shell">
         <div className="contact-col contact-col--form">
           <LeafSprig className="contact-col__leaf" />
-          <Suspense fallback={<div className="cform">Đang tải biểu mẫu…</div>}>
             <ConsultationForm />
-          </Suspense>
           <FaqCard
             className="contact-faq"
             title="Câu hỏi thường gặp"

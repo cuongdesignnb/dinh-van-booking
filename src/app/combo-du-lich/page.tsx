@@ -1,7 +1,6 @@
 import { Gem, Heart, Leaf, MoveRight, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Suspense } from 'react';
 import { ComboExplorer } from '@/components/combos/ComboExplorer';
 import { ComboReviews } from '@/components/combos/ComboReviews';
 import { PageShell } from '@/components/layout/PageShell';
@@ -79,9 +78,7 @@ export default async function CombosPage({
         </div>
       </section>
 
-      <Suspense fallback={<div className="combo-list content-shell">Đang tải combo…</div>}>
         <ComboExplorer />
-      </Suspense>
 
       <section className="combo-why content-shell" aria-labelledby="combo-why-t">
         <figure className="combo-quote combo-quote--left" data-reveal="fade-up">

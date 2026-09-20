@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Suspense } from 'react';
 import { Checkout } from '@/components/booking/Checkout';
 import { PageShell } from '@/components/layout/PageShell';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
@@ -73,9 +72,7 @@ export default async function CheckoutPage({
       </div>
 
       <div className="co-shell">
-        <Suspense fallback={<p className="co-loading">Đang tải thông tin đặt phòng…</p>}>
           <Checkout />
-        </Suspense>
       </div>
     </PageShell>
   );
