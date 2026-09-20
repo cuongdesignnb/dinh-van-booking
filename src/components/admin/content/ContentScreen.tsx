@@ -21,6 +21,8 @@ import { DEST_CATEGORY_LABEL, PUBLISHING, formatDate, num, searchKey } from '@/l
 import { contentStats, seoChecklist } from '@/lib/admin/selectors';
 import type { AdminDestination, Article } from '@/lib/admin/types';
 import { useAdmin } from '../AdminStore';
+import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
+import { documentToPlainText, plainTextToDocument } from '@/lib/admin/rich-text';
 import { ConfirmDialog, EmptyState, Panel, RowMenu, StatCard, StatusBadge } from '../shared/ui';
 import { DestinationEditor } from './DestinationEditor';
 import { MediaLibrary } from './MediaLibrary';
@@ -469,7 +471,16 @@ function ArticlesTab() {
 
 function ArticleEditor({ article, onClose }: { article: Article; onClose: () => void }) {
   const { commit, busy } = useAdmin();
-  const [form, setForm] = useState({ title: article.title, excerpt: article.excerpt, content: article.content, seo: article.seo.description });
+  const [form, setForm] = useState({
+    title: article.title,
+    excerpt: article.excerpt,
+    content: article.content,
+    seo: article.seo.description,
+  });
+  // Older fixtures only carry plain text; it is lifted into a document once.
+  const [document, setDocument] = useState<RichDocument>(
+    (article.contentDocument as RichDocument | undefined) ?? plainTextToDocument(article.content) ?? EMPTY_DOCUMENT,
+  );
   const [dirty, setDirty] = useState(false);
 
   return (
@@ -497,18 +508,16 @@ function ArticleEditor({ article, onClose }: { article: Article; onClose: () => 
           }}
         />
       </label>
-      <label className="afield">
-        <span>Nội dung</span>
-        <textarea
-          className="ainput"
-          rows={8}
-          value={form.content}
-          onChange={(e) => {
-            setForm({ ...form, content: e.target.value });
-            setDirty(true);
-          }}
-        />
-      </label>
+      <RichTextEditor
+        label="Nội dung"
+        hint="Định dạng, danh sách, trích dẫn và liên kết. Nội dung được lưu dạng tài liệu có cấu trúc."
+        value={document}
+        onChange={(next, plainText) => {
+          setDocument(next);
+          setForm((current) => ({ ...current, content: plainText }));
+          setDirty(true);
+        }}
+      />
       <label className="afield">
         <span>Meta description</span>
         <textarea
@@ -539,7 +548,8 @@ function ArticleEditor({ article, onClose }: { article: Article; onClose: () => 
                 if (!a) return 'Không tìm thấy bài viết.';
                 a.title = form.title;
                 a.excerpt = form.excerpt;
-                a.content = form.content;
+                a.content = documentToPlainText(document);
+                a.contentDocument = document;
                 a.seo.description = form.seo;
               },
               'Đã lưu bài viết trong bản demo',

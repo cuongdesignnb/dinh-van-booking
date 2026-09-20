@@ -158,6 +158,100 @@ async function main() {
   const goneFile = await fetch(`http://api:3001${upload.body.url}`);
   check('deleted file is gone from the volume', goneFile.status === 404, `got ${goneFile.status}`);
 
+  console.log('\ncontent');
+  const hostile = {
+    type: 'doc',
+    content: [
+      { type: 'heading', attrs: { level: 9 }, content: [{ type: 'text', text: 'Giới thiệu Cúc Phương' }] },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Rừng quốc gia lâu đời nhất Việt Nam, cách Hà Nội chừng 120 km.', marks: [{ type: 'bold' }] },
+          { type: 'text', text: ' Xem thêm', marks: [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }] },
+          { type: 'text', text: ' hoặc trang chủ', marks: [{ type: 'link', attrs: { href: 'https://vietnam.test/a' } }] },
+        ],
+      },
+      { type: 'script', content: [{ type: 'text', text: 'alert(1)' }] },
+      { type: 'paragraph', attrs: { onclick: 'steal()' }, content: [{ type: 'text', text: 'Đoạn cuối.' }] },
+    ],
+  };
+
+  const created = await call('/content', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      kind: 'article',
+      title: 'Giới thiệu Vườn quốc gia Cúc Phương',
+      body: hostile,
+      metaTitle: 'Vườn quốc gia Cúc Phương',
+      metaDescription: 'Giới thiệu rừng quốc gia lâu đời nhất Việt Nam.',
+    }),
+  });
+  check('content created', created.status === 201 || created.status === 200, JSON.stringify(created.body).slice(0, 200));
+  check('slug is Vietnamese-aware', created.body?.slug === 'gioi-thieu-vuon-quoc-gia-cuc-phuong', created.body?.slug);
+  check('public route was reserved', created.body?.path === '/bai-viet/gioi-thieu-vuon-quoc-gia-cuc-phuong', created.body?.path);
+
+  const serialized = JSON.stringify(created.body?.body ?? {});
+  check('script node dropped', !serialized.includes('script'));
+  check('javascript: link dropped', !serialized.includes('javascript:'));
+  check('event-handler attribute dropped', !serialized.includes('onclick'));
+  check('heading level clamped to 2-4', created.body?.body?.content?.[0]?.attrs?.level === 4, JSON.stringify(created.body?.body?.content?.[0]?.attrs));
+  check('safe external link kept with rel', serialized.includes('noopener noreferrer'));
+  check('excerpt derived from the body', (created.body?.excerpt ?? '').includes('Cúc Phương'));
+
+  const publishTooEarly = await call(`/content/${created.body.id}/status`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'published' }),
+  });
+  check('publish blocked while the checklist fails', publishTooEarly.status === 400, `got ${publishTooEarly.status}`);
+  check('checklist names the missing cover image', JSON.stringify(publishTooEarly.body).includes('ảnh đại diện'));
+
+  const cover = new FormData();
+  cover.append('altText', 'Rừng Cúc Phương');
+  cover.append('file', new Blob([jpeg], { type: 'image/jpeg' }), 'bia.jpg');
+  const coverAsset = await call('/media/upload', { method: 'POST', body: cover });
+
+  const withCover = await call(`/content/${created.body.id}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      media: [{ mediaId: coverAsset.body.id, role: 'cover', position: 0 }],
+      expectedVersion: created.body.version,
+    }),
+  });
+  check('cover image attached', withCover.body?.media?.length === 1, JSON.stringify(withCover.body?.media));
+
+  const published = await call(`/content/${created.body.id}/status`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'published' }),
+  });
+  check('publish succeeds once the checklist passes', published.body?.publicationStatus === 'published', JSON.stringify(published.body).slice(0, 160));
+
+  const renamed = await call(`/content/${created.body.id}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ slug: 'rung-cuc-phuong', expectedVersion: published.body.version }),
+  });
+  check('slug change moves the public path', renamed.body?.path === '/bai-viet/rung-cuc-phuong', renamed.body?.path);
+
+  const revisions = await call(`/content/${created.body.id}/revisions`);
+  check('revisions are recorded', Array.isArray(revisions.body) && revisions.body.length >= 1, String(revisions.body?.length));
+
+  const staleContent = await call(`/content/${created.body.id}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ title: 'Đổi tên', expectedVersion: 1 }),
+  });
+  check('stale content version is rejected', staleContent.status === 409, `got ${staleContent.status}`);
+
+  const inUse = await call(`/media/${coverAsset.body.id}`, { method: 'DELETE' });
+  check('image in use cannot be deleted', inUse.status === 409, `got ${inUse.status}`);
+
+  const cleanup = await call(`/content/${created.body.id}`, { method: 'DELETE' });
+  check('published content cannot be deleted outright', cleanup.status === 409, `got ${cleanup.status}`);
+
   console.log('\nlogout');
   const logout = await call('/auth/logout', { method: 'POST' });
   check('logout is 204', logout.status === 204, `got ${logout.status}`);

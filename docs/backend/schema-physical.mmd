@@ -1,0 +1,120 @@
+%% Đinh Vân Booking — sơ đồ quan hệ chính (71 bảng, đây là các trục chính).
+%% Bảng nối nhiều-nhiều và bảng phụ trợ lược bớt cho dễ đọc; nguồn đầy đủ:
+%% backend/prisma/schema.prisma
+erDiagram
+    users ||--o{ user_roles : "giữ"
+    roles ||--o{ user_roles : "gán cho"
+    roles ||--o{ role_permissions : "được cấp"
+    permissions ||--o{ role_permissions : "thuộc"
+    users ||--o{ auth_sessions : "đăng nhập"
+    users ||--o{ audit_logs : "thao tác"
+
+    content_nodes ||--o{ content_revisions : "lịch sử"
+    content_nodes ||--o{ public_routes : "đường dẫn"
+    content_nodes ||--o{ content_media : "ảnh"
+    media_assets ||--o{ content_media : "dùng ở"
+    content_nodes ||--o| properties : "là"
+    content_nodes ||--o| combos : "là"
+    content_nodes ||--o| destinations : "là"
+    content_nodes ||--o| articles : "là"
+    content_nodes ||--o| pages : "là"
+    pages ||--o{ page_sections : "khối"
+    page_sections ||--o{ section_items : "mục"
+    navigation_menus ||--o{ navigation_items : "mục menu"
+
+    properties ||--o{ room_types : "có"
+    room_types ||--o{ room_units : "gồm"
+    room_types ||--o{ rate_plans : "bán theo"
+    rate_plans ||--o{ rate_rules : "điều chỉnh"
+    room_types ||--o{ inventory_days : "tồn theo đêm"
+    inventory_days ||--o{ inventory_block_nights : "bị khoá"
+    inventory_blocks ||--o{ inventory_block_nights : "khoá"
+    inventory_days ||--o{ inventory_reservation_nights : "bị chiếm"
+    inventory_reservations ||--o{ inventory_reservation_nights : "chiếm"
+
+    combos ||--o{ combo_days : "lịch trình"
+    combo_days ||--o{ combo_activities : "hoạt động"
+    combos ||--o{ combo_departures : "khởi hành"
+    combo_departures ||--o{ combo_room_requirements : "cần phòng"
+    combo_departures ||--o{ combo_reservations : "giữ chỗ"
+
+    customers ||--o{ inquiries : "gửi"
+    inquiries ||--o{ interactions : "trao đổi"
+    inquiries ||--o{ follow_ups : "nhắc việc"
+    inquiries ||--o{ inquiry_stage_history : "chuyển giai đoạn"
+
+    customers ||--o{ bookings : "đặt"
+    booking_quotes ||--o| bookings : "chốt thành"
+    bookings ||--o{ booking_lines : "dòng"
+    booking_lines ||--o{ inventory_reservations : "giữ phòng"
+    booking_lines ||--o{ combo_reservations : "giữ chỗ combo"
+    bookings ||--o{ payments : "thu"
+    payments ||--o{ refunds : "hoàn"
+    bookings ||--o{ booking_events : "nhật ký"
+    bookings ||--o{ booking_access_tokens : "tra cứu"
+    coupons ||--o{ coupon_redemptions : "áp dụng"
+    bookings ||--o{ coupon_redemptions : "hưởng"
+
+    users {
+        uuid id PK
+        text email UK
+        text password_hash
+        timestamptz disabled_at
+        int version
+    }
+
+    settings {
+        text key PK
+        jsonb value
+        bool is_public
+        int version
+    }
+
+    media_assets {
+        uuid id PK
+        text storage_key UK "luôn .webp"
+        text mime_type "luôn image/webp"
+        text sha256 "khử trùng lặp"
+        jsonb renditions
+        bigint byte_size
+    }
+
+    content_nodes {
+        uuid id PK
+        text kind "stay|combo|destination|article|page"
+        text title
+        text slug_source
+        jsonb body_document "TipTap JSON"
+        text publication_status
+        int version
+    }
+
+    inventory_days {
+        uuid room_type_id PK,FK
+        date stay_date PK
+        int capacity
+        int blocked_count
+        int held_count
+        int reserved_count
+        bool stop_sell
+        int version
+    }
+
+    bookings {
+        uuid id PK
+        text public_code UK
+        text booking_status
+        date check_in "[check_in, check_out)"
+        date check_out
+        bigint total_vnd "VND, trả ra dạng chuỗi"
+        bigint due_now_vnd
+        int version
+    }
+
+    coupons {
+        uuid id PK
+        text code UK
+        int percent_bps "điểm cơ bản"
+        int reserved_uses
+        int committed_uses
+    }

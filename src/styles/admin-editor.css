@@ -1,0 +1,244 @@
+/* Rich text editor (TipTap). Scoped to the admin so it never touches the site. */
+
+.dvb-admin .rte {
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 12px;
+  background: var(--dvb-admin-surface);
+  overflow: hidden;
+}
+
+.dvb-admin .rte--loading {
+  min-height: 220px;
+}
+
+.dvb-admin .rte.is-disabled {
+  opacity: 0.6;
+}
+
+.dvb-admin .rte__bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dvb-admin-border);
+  background: var(--dvb-admin-cream);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.dvb-admin .rte__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 6px;
+  margin-right: 2px;
+  border-right: 1px solid var(--dvb-admin-border);
+}
+
+.dvb-admin .rte__group:last-child,
+.dvb-admin .rte__group--end {
+  border-right: 0;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+.dvb-admin .rte__group--end {
+  margin-left: auto;
+}
+
+.dvb-admin .rte__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dvb-admin-muted);
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.dvb-admin .rte__btn:hover:not(:disabled) {
+  background: var(--dvb-admin-surface);
+  border-color: var(--dvb-admin-border);
+}
+
+.dvb-admin .rte__btn:focus-visible {
+  outline: 2px solid var(--dvb-admin-green-800);
+  outline-offset: 1px;
+}
+
+/* Beats the :hover rule above, which is otherwise more specific and would
+   leave a white icon on a white background. */
+.dvb-admin .rte__btn.is-active,
+.dvb-admin .rte__btn.is-active:hover:not(:disabled) {
+  background: var(--dvb-admin-green-800);
+  border-color: var(--dvb-admin-green-800);
+  color: #fff;
+}
+
+.dvb-admin .rte__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dvb-admin .rte__body {
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.dvb-admin .rte__body .tiptap {
+  min-height: 200px;
+  padding: 14px 16px;
+  outline: none;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--dvb-admin-text);
+}
+
+.dvb-admin .rte__body .tiptap > * + * {
+  margin-top: 0.75em;
+}
+
+.dvb-admin .rte__body .tiptap h2 {
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.dvb-admin .rte__body .tiptap h3 {
+  font-size: 16.5px;
+  line-height: 1.4;
+}
+
+.dvb-admin .rte__body .tiptap h4 {
+  font-size: 15px;
+}
+
+/* The site resets `ul { list-style: none }`; editor content needs its markers. */
+.dvb-admin .rte__body .tiptap ul,
+.dvb-admin .rte__body .tiptap ol {
+  padding-left: 1.4em;
+  margin-left: 0;
+}
+
+.dvb-admin .rte__body .tiptap ul {
+  list-style: disc outside;
+}
+
+.dvb-admin .rte__body .tiptap ol {
+  list-style: decimal outside;
+}
+
+.dvb-admin .rte__body .tiptap li::marker {
+  color: var(--dvb-admin-green-800);
+}
+
+.dvb-admin .rte__body .tiptap li > p {
+  margin: 0;
+}
+
+.dvb-admin .rte__body .tiptap li + li {
+  margin-top: 0.3em;
+}
+
+.dvb-admin .rte__body .tiptap blockquote {
+  border-left: 3px solid var(--dvb-admin-green-800);
+  padding-left: 12px;
+  color: var(--dvb-admin-muted);
+  font-style: italic;
+}
+
+.dvb-admin .rte__body .tiptap a {
+  color: var(--dvb-admin-green-800);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dvb-admin .rte__body .tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+}
+
+.dvb-admin .rte__body .tiptap img.ProseMirror-selectednode {
+  outline: 2px solid var(--dvb-admin-green-800);
+  outline-offset: 2px;
+}
+
+/* Placeholder comes from the extension as a data attribute on the first node. */
+.dvb-admin .rte__body .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--dvb-admin-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.dvb-admin .rte__meta {
+  margin: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--dvb-admin-border);
+  background: var(--dvb-admin-cream);
+  font-size: 12px;
+  color: var(--dvb-admin-muted);
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .dvb-admin .rte__bar {
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 5px 6px;
+  }
+
+  .dvb-admin .rte__group {
+    padding-right: 4px;
+    margin-right: 0;
+  }
+
+  .dvb-admin .rte__group--end {
+    margin-left: 0;
+  }
+
+  .dvb-admin .rte__btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dvb-admin .rte__body .tiptap {
+    padding: 12px;
+  }
+}
+
+/* Inline link form: replaces window.prompt so the editor never blocks the page. */
+.dvb-admin .rte__link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--dvb-admin-border);
+  background: var(--dvb-admin-mint);
+}
+
+.dvb-admin .rte__link-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dvb-admin-green-900);
+}
+
+.dvb-admin .rte__link-input {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.dvb-admin .rte__link-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--dvb-admin-danger);
+}

@@ -252,7 +252,10 @@ export interface Article {
   author: string;
   cover: string;
   excerpt: string;
+  /** Plain-text projection of `contentDocument`, kept for search and previews. */
   content: string;
+  /** TipTap/ProseMirror document — the shape the API stores and sanitises. */
+  contentDocument?: unknown;
   publication: PublishingStatus;
   updatedAt: string;
   views: number;

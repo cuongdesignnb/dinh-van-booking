@@ -181,7 +181,7 @@ test.describe('màn E — Nội dung', () => {
     await page.goto('/admin/noi-dung');
     await expect(page.locator('.ct__tabs .is-active')).toHaveText('Bài viết');
     await page.locator('.acard tbody tr').first().click();
-    await page.getByLabel('Tiêu đề').fill('Cẩm nang 48 giờ ở Cúc Phương (bản cập nhật)');
+    await page.getByRole('textbox', { name: 'Tiêu đề', exact: true }).fill('Cẩm nang 48 giờ ở Cúc Phương (bản cập nhật)');
     await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
     await expect(page.locator('.atoast')).toContainText('Đã lưu bài viết trong bản demo');
   });

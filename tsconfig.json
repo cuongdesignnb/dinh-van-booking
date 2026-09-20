@@ -37,6 +37,10 @@
     ".next-devbuild/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "backend",
+    ".next",
+    ".next-dev",
+    ".next-devbuild"
   ]
 }

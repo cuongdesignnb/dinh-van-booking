@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
 import { MediaModule } from './media/media.module';
+import { ContentModule } from './content/content.module';
 import { HealthModule } from './health/health.module';
 import { loadConfig } from './common/config/env';
 
@@ -14,6 +15,7 @@ import { loadConfig } from './common/config/env';
     AuthModule,
     SettingsModule,
     MediaModule,
+    ContentModule,
     HealthModule,
   ],
 })
