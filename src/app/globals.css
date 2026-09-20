@@ -503,10 +503,6 @@ svg {
   gap: 10px;
 }
 
-.menu-toggle {
-  display: none;
-}
-
 /* ---------- Hero ---------- */
 
 .hero {
@@ -2713,6 +2709,9 @@ svg {
   position: fixed;
   inset: 0;
   z-index: 50;
+  /* The closed panel sits off-screen to the right; clip it so it never widens
+     the document. */
+  overflow: clip;
   background: rgb(12 28 16 / 0%);
   pointer-events: none;
   transition: background-color 0.35s;
@@ -2937,6 +2936,14 @@ svg {
   }
 }
 
+/* A horizontal slide-in must not widen the page while it runs. */
+.featured,
+.rstrip,
+.promo-wrap {
+  overflow-x: clip;
+  overflow-clip-margin: 24px;
+}
+
 @keyframes reveal-slide-left {
   from {
     opacity: 0;
@@ -3121,9 +3128,6 @@ svg {
   .nav {
     display: none;
   }
-  .menu-toggle {
-    display: inline-grid;
-  }
   .site-header__inner {
     transform: none;
   }
@@ -3250,8 +3254,7 @@ svg {
   .btn--header {
     display: none;
   }
-  .round-btn,
-  .menu-toggle {
+  .round-btn {
     width: 44px;
     height: 44px;
   }

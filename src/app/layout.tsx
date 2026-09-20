@@ -4,6 +4,7 @@ import { motionBootScript } from '@/components/ui/MotionController';
 import { displayFont, scriptFont, uiFont } from './fonts';
 import './globals.css';
 import '@/styles/pages.css';
+import '@/styles/mobile-nav.css';
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} — Đặt phòng Cúc Phương, Ninh Bình`,

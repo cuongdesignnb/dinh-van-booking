@@ -1513,6 +1513,13 @@
   .phero--stays {
     height: 230px;
   }
+  /* Four fields per row leave no room for the Vietnamese labels on a tablet. */
+  .sbar__fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .sbar__field {
+    height: 58px;
+  }
 }
 
 @media (max-width: 767px) {

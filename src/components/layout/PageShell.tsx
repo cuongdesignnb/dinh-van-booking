@@ -3,6 +3,7 @@ import { SiteFooter } from '@/components/home/SiteFooter';
 import { SiteHeader } from '@/components/home/SiteHeader';
 import { DialogHost } from '@/components/ui/DialogHost';
 import { MotionController } from '@/components/ui/MotionController';
+import { MobileBottomBar } from './MobileBottomBar';
 
 /** Header + footer + global dialogs shared by every page. */
 export function PageShell({
@@ -19,6 +20,7 @@ export function PageShell({
       <SiteHeader />
       <main className={className}>{children}</main>
       <SiteFooter variant={footer} />
+      <MobileBottomBar />
       <DialogHost />
       <MotionController />
     </>

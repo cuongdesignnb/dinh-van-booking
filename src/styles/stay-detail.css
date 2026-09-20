@@ -43,6 +43,8 @@
 }
 
 .detail-head {
+  overflow-x: clip;
+  overflow-clip-margin: 20px;
   grid-area: head;
   position: relative;
   margin-left: 17px;
@@ -508,6 +510,7 @@
 
 .detail-head__sprig {
   position: absolute;
+  /* Decorative only: clipped by the header so it never widens the page. */
   right: -30px;
   top: 30px;
   width: 90px;
