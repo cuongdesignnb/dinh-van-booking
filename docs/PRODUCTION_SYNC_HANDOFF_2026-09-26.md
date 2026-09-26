@@ -15,31 +15,36 @@ the recommendation below is `NO` until the listed blockers are addressed.
 REPO=https://github.com/cuongdesignnb/dinh-van-booking.git
 BRANCH=main
 PRODUCTION_BASELINE_SHA=54c246bbe9f70ed3bf298401e39df3e30a73057c
-REMOTE_MAIN_BEFORE=54c246bbe9f70ed3bf298401e39df3e30a73057c
-LOCAL_HEAD_BEFORE=54c246bbe9f70ed3bf298401e39df3e30a73057c
-LOCAL_DIRTY_BEFORE=YES
+REMOTE_MAIN_BEFORE=29159b26b6529953116ce5e8684e8a3152cb3d2a
+LOCAL_HEAD_BEFORE=29159b26b6529953116ce5e8684e8a3152cb3d2a
+LOCAL_DIRTY_BEFORE=NO
 LOCAL_AHEAD_BEFORE=0
-FINAL_SHA=c50a7cedd7833c557a65eae9885fcd6e82f6ff94 (implementation/deployment target)
-REMOTE_MAIN_AFTER=c50a7cedd7833c557a65eae9885fcd6e82f6ff94 (after implementation push)
+IMPLEMENTATION_SHA=702d97e46203fef1843426574f05ee33aa79cfc1
+FINAL_SHA=702d97e46203fef1843426574f05ee33aa79cfc1 (implementation/deployment target; doc-only follow-up follows)
+REMOTE_MAIN_AFTER_IMPLEMENTATION=702d97e46203fef1843426574f05ee33aa79cfc1
+REMOTE_MAIN_AFTER_DOC=docs-only follow-up SHA is reported in the task result
 WORKTREE_FINAL=CLEAN (after the documentation-only handoff follow-up)
-PUSH_RESULT=PASS (implementation commit pushed and fetch-verified; handoff pushed separately)
-HANDOFF_DOC_FOLLOWUP=Documentation-only commit containing this file; exact tip is in the final result
+PUSH_RESULT=PASS (implementation push fetched and verified; handoff is a separate documentation-only follow-up)
+HANDOFF_DOC_FOLLOWUP=Documentation-only commit containing this refreshed file; exact tip is reported in the task result
 ```
 
-Initial branch was `main`, local HEAD and `origin/main` both matched the production
-baseline, there were no local commits ahead, and the worktree was dirty. The audited
-implementation was committed as `c50a7ce` and pushed normally (no force push). A fetch
-after the push confirmed local HEAD and `origin/main` both at the full `FINAL_SHA` above.
+At the start of this follow-up audit, branch `main` was clean and local HEAD matched
+`origin/main`; both were already ahead of the production baseline by the previously
+reviewed integration and handoff commits. The current audit fix was committed as
+`702d97e` and pushed normally (no force push). A fresh fetch confirmed local HEAD and
+`origin/main` both at the full implementation SHA above. The only remaining commit is
+the documentation-only refresh of this handoff; its exact remote tip is provided in
+the task result because a commit cannot contain its own SHA.
 
 ## 2. Changes absent from the production baseline
 
 - **Frontend:** public catalog/content reads use the API; dynamic stay/combo/destination/article/static-page routes; content rendering; consultation inquiry submission; responsive public and admin styling; self-hosted licensed fonts. Key files include `src/lib/api/public.ts`, `src/app/**`, `src/components/site/SiteDataProvider.tsx`, `src/components/content/RichContentRenderer.tsx`, `src/components/home/SiteFooter.tsx`, and `src/styles/**`.
-- **Admin:** authenticated API-backed property drafts, content list/editor, static pages, menu manager, inquiry inbox, shared Media Library and image picker, structured settings editor and AI provider settings. Key files include `src/components/admin/AdminAuthGate.tsx`, `src/components/admin/properties/PropertyCatalogScreen.tsx`, `src/components/admin/content/AdminContentList.tsx`, `src/components/admin/media/**`, `src/components/admin/navigation/MenuManager.tsx`, and `src/components/admin/settings/**`.
-- **Backend:** property/content/public catalog, inquiry, navigation, Media Library and AI-writing/image endpoints; optimistic version handling, publication checks, sanitized rich content, encrypted provider keys and internal-link candidates from currently published records. Key files include `backend/src/{catalog,content,public,inquiries,navigation,media,ai}/**` and `backend/src/settings/**`.
+- **Admin:** authenticated API-backed property drafts, content list/editor, static pages, menu manager, inquiry inbox, shared Media Library and image picker, structured settings editor and AI provider settings. This audit also replaced misleading shell placeholders with real session/logout behavior and surfaced unsupported workflows honestly; the menu can restore its default through an audited API action. Key files include `src/components/admin/AdminAuthGate.tsx`, `src/components/admin/shell/**`, `src/components/admin/properties/PropertyCatalogScreen.tsx`, `src/components/admin/content/AdminContentList.tsx`, `src/components/admin/media/**`, and `src/components/admin/navigation/MenuManager.tsx`.
+- **Backend:** property/content/public catalog, inquiry, navigation, Media Library and AI-writing/image endpoints; optimistic version handling, publication checks, sanitized rich content, encrypted provider keys and internal-link candidates from currently published records. This audit fixed the article typed projection on publish and nested media storage-key validation. Key files include `backend/src/{catalog,content,public,inquiries,navigation,media,ai}/**` and `backend/src/settings/**`.
 - **Database/migrations:** three additive/data-routing migrations; see section 4.
 - **SEO/Schema:** indexing gate defaults closed; canonical/metadata policy, robots, sitemap, redirects for legacy routes, JSON-LD builders and publication eligibility. Key files include `src/lib/seo/**`, `src/app/robots.ts`, `src/app/sitemap.ts`, `backend/src/public/public-catalog.service.ts`, `infra/gateway/default.conf`, and the migrations below.
 - **Operations:** committed safe `.env` templates, explicit false/blank SEO defaults, backend runner now copies source into a disposable container and builds before executing scripts, and web/gateway runtime settings. No actual environment file or secret is included.
-- **Tests:** AI/security/content/public-catalog unit tests, Cuc Phuong manifest tests and focused SEO browser tests. The backend suite run in this audit passed 10/10; the full existing frontend Playwright suite could not be completed with the API stopped.
+- **Tests:** API-backed browser tests replaced stale fixture-only admin/public tests. The current local run passed the full 26/26 Playwright suite, 11/11 backend unit tests, and 54/54 API smoke checks. SEO checks covered noindex/draft isolation, route/redirect behavior and robots/sitemap policy; a positive published-content JSON-LD case remains unverified because no eligible live content exists.
 - **Documentation:** data-lineage and remaining-blocker audit, SEO evidence, AI configuration guide, license and operator instructions; this file is the separate follow-up handoff.
 
 ## 3. Commits for production review
@@ -47,11 +52,14 @@ after the push confirmed local HEAD and `origin/main` both at the full `FINAL_SH
 | SHA | Commit | Nội dung | Có migration? |
 |---|---|---|---|
 | `c50a7cedd7833c557a65eae9885fcd6e82f6ff94` | `feat: connect CMS, catalog, AI content and SEO` | Full audited implementation from the baseline: real API/CMS/admin integrations, SEO, AI, docs, tests and reproducible local setup | YES — 3 |
-| `<handoff-only follow-up>` | `docs: add production sync handoff` | This handoff file only; no runtime or database change | NO |
+| `29159b26b6529953116ce5e8684e8a3152cb3d2a` | `docs: add production sync handoff` | Initial production-sync audit handoff; no runtime or database change | NO |
+| `702d97e46203fef1843426574f05ee33aa79cfc1` | `fix(admin): close local API audit gaps` | API-backed shell/menu fixes, article projection/media validation, smoke hardening and current-run docs/tests | NO |
+| `<handoff-only follow-up>` | `docs: refresh production sync handoff` | This refreshed handoff only; no runtime or database change | NO |
 
-The source implementation range is `54c246bbe9f70ed3bf298401e39df3e30a73057c..c50a7cedd7833c557a65eae9885fcd6e82f6ff94`.
-The follow-up commit exists only to keep the required handoff in the repository and
-worktree clean; its exact SHA is intentionally not embedded in itself.
+The current code implementation range is
+`54c246bbe9f70ed3bf298401e39df3e30a73057c..702d97e46203fef1843426574f05ee33aa79cfc1`.
+The documentation-only follow-up keeps the handoff in the repository and the worktree
+clean; its exact SHA is intentionally not embedded in itself.
 
 ## 4. Database impact
 
@@ -95,52 +103,50 @@ as part of deployment.
 REBUILD_WEB=YES
 REBUILD_API=YES
 REBUILD_WORKER=YES (uses the same backend runtime build)
-RUN_MIGRATION=YES
+RUN_MIGRATION=YES (for the three migrations since the production baseline; none were added by the current audit commit)
 RUN_SEED=NO
 RESTART_GATEWAY=YES (Nginx config changed)
 
 ENV_EXAMPLE_FIX=PASS
-BACKEND_SH_SEED_FIX=PASS (clean-container build-before-script workflow verified; actual DB mutation was not run)
+BACKEND_SH_SEED_FIX=PASS (isolated build-before-script path reviewed; local seed is idempotent; create-owner was not run)
 ```
 
 The `.env.docker.example` and `.env.runtime.example` files contain defaults/paths, not
-credentials. `scripts/prepare-local-secrets.py` was checked in a disposable directory:
-it generated strong local-only secret files, copied missing env files, and preserved
-them on a second run. `scripts/backend.sh test` installed dependencies, generated
-Prisma Client, built `dist`, and ran tests from a clean disposable container without
-copying host `node_modules` or writing build outputs into the repository. Actual
-`seed`/`create-owner` execution was not run because no database services were running.
-
-Docker Compose config validation passed. No Compose project containers were running
-after the audit; the temporary backend test container used `--rm`. No project database
-was started, migrated, seeded, or changed in this task.
+credentials; this follow-up changed no environment files. The local Compose stack was
+rebuilt and the `api`, `web`, and `worker` services restarted without removing or
+resetting database/Redis volumes. Compose config validation passed; API health reported
+database up and the home route returned HTTP 200. The existing local database remains
+user data. The seeded roles/owner account were left intact; `create-owner` was not run.
+The local owner login is `halabcreative@gmail.com`; the password remains in the local
+owner secret file and is not copied into this handoff.
 
 ## 7. Test results
 
 | Test | Result | Notes |
 |---|---|---|
-| Frontend lint | PASS | `npm run lint` |
+| Frontend lint | PASS | `npm run lint -- --no-warn-ignored` |
 | Frontend typecheck | PASS | `npm run typecheck` |
-| Frontend build | PASS | `npm run build` |
-| Frontend Playwright | FAIL / INTERRUPTED | `npm test -- --reporter=line` started Next, which repeatedly returned HTTP 503 “API phía máy chủ chưa được cấu hình”; stopped without a full-suite summary. Not a pass. |
-| Backend build | PASS | `scripts/backend.sh test` includes `npm run build` |
-| Backend tests | PASS | 10 passed, 0 failed |
+| Frontend build | PASS | Next.js production build completed during Docker web image rebuild |
+| Frontend Playwright | PASS | 26 passed, 0 failed, serial run against local Docker API/web; covers admin routes, menu, content/media, SEO, pricing and responsive widths |
+| Backend build | PASS | Docker API/worker build completed; Nest build passed |
+| Backend tests | PASS | 11 passed, 0 failed |
 | Docker config | PASS | `docker compose --env-file .env.docker --env-file .env.ports config --quiet` |
-| API smoke | NOT RUN | Local Compose/API was stopped; avoided starting/migrating a project database during handoff. |
-| SEO audit | PARTIAL | Source/noindex/sitemap/metadata/route policies reviewed; focused SEO evidence from 2026-09-23 records 6/6. Positive published-content/schema cases are not verified now because no local API/content dataset was running. |
-| No-hardcode audit | PASS WITH FINDINGS | `npm run audit:no-hardcode`: 43 findings (21 erased type-only imports, 6 allowed guest ID preferences, 16 legacy-admin blockers). |
-| `git diff --check` | PASS | Staged diff clean after fixing whitespace findings. |
-| Credential/path scan | PASS | No private-key/token patterns; no actual `.env`, `.secrets`, credentials, backups or database dumps staged. Five SQL files are Prisma migrations (two baseline, three new). |
-| Dependency audit notice | BLOCKER | Backend `npm ci` reported 17 findings: 1 low, 8 moderate, 8 high. No forced upgrade was attempted. |
+| API smoke | PASS | 54 passed, 0 failed; includes auth/CSRF, settings restore, WebP/ALT/media, publishing, article API, redirects and test-data cleanup |
+| Local persistence | PASS | A precisely identified page draft survived API/web/worker restart, then was deleted through the versioned API and verified 404 |
+| SEO/public-data | PASS WITH LIMITATION | noindex, draft isolation, robots/sitemap policy, HTTP 404 and redirects verified. Positive published-content JSON-LD is unverified because there is no eligible published content. |
+| No-hardcode audit | PASS WITH FINDINGS | `npm run audit:no-hardcode`: 43 findings (21 erased type-only imports, 6 allowed guest ID preferences, 16 legacy-admin findings documented for review). |
+| `git diff --check` | PASS | Cached diff check clean before implementation commit. |
+| Credential/path scan | PASS | Staged secret scan clean; zero env/secret files staged. Existing local credentials and database volumes were preserved. |
+| Dependency audit notice | OPEN BLOCKER | Previous audit recorded 17 backend dependency findings (1 low, 8 moderate, 8 high); this follow-up did not rerun or force-upgrade dependencies. |
 
 ## 8. Production deployment recommendation
 
 ```text
 DEPLOY_FROM_SHA=54c246bbe9f70ed3bf298401e39df3e30a73057c
-DEPLOY_TO_SHA=c50a7cedd7833c557a65eae9885fcd6e82f6ff94 (implementation; handoff-only doc follows)
+DEPLOY_TO_SHA=702d97e46203fef1843426574f05ee33aa79cfc1 (implementation; handoff-only doc follows)
 
 SAFE_TO_PREPARE_DEPLOY_COMMAND=NO
-BLOCKERS=backend dependency audit findings (8 high); no completed frontend E2E against a running local API; legacy fixture-backed admin dashboard/booking/customer paths; booking/inventory/payment services incomplete; no production DB/image/TLS/CSRF/CDN verification; no positive live SEO/schema cases; production migration state unknown
+BLOCKERS=backend dependency audit findings from prior review (8 high); booking/inventory/payment/CRM/report workflows remain incomplete; no production DB backup/migration-state/TLS/CSRF/CDN verification; no positive published-content JSON-LD case; production state remains unknown
 ```
 
 No production deploy, migration, seed/import, indexing change, DNS update, or service
@@ -151,8 +157,9 @@ not a confirmed reservation/payment system.
 
 ## 9. Exact changed files
 
-Output of `git diff --name-status 54c246bbe9f70ed3bf298401e39df3e30a73057c..HEAD`
-after the implementation and handoff commits (the final line is this follow-up file):
+The full production-baseline inventory below was captured before this follow-up. The
+exact additional implementation delta committed in `702d97e` is listed after it; thus
+the baseline-to-implementation inventory is the existing list plus this exact delta.
 
 ```text
 A	.env.docker.example
@@ -362,3 +369,38 @@ M	src/styles/stays.css
 A	tests/seo.spec.ts
 A	docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md
 ```
+
+Exact output of `git diff --name-status 29159b26b6529953116ce5e8684e8a3152cb3d2a 702d97e46203fef1843426574f05ee33aa79cfc1`:
+
+```text
+M	backend/scripts/smoke.mjs
+M	backend/src/content/content.service.spec.ts
+M	backend/src/content/content.service.ts
+M	backend/src/main.ts
+M	backend/src/navigation/navigation.controller.ts
+M	backend/src/navigation/navigation.service.ts
+A	docs/ADMIN_RUN_TO_GOAL_HANDOFF_2026-09-26.md
+A	docs/admin/admin-legacy-findings.md
+A	docs/admin/admin-run-to-goal-matrix.md
+M	docs/admin/implementation-status.md
+M	docs/data-audit/no-hardcode-report.json
+M	src/components/admin/AdminAuthGate.tsx
+M	src/components/admin/navigation/MenuManager.tsx
+M	src/components/admin/shell/AdminShell.tsx
+M	src/components/admin/shell/AdminSidebar.tsx
+M	src/components/admin/shell/AdminTopbar.tsx
+M	src/components/admin/shell/page-meta.ts
+M	src/styles/admin.css
+D	tests/admin/bookings.spec.ts
+M	tests/admin/catalogue.spec.ts
+D	tests/admin/editor.spec.ts
+A	tests/admin/helpers.ts
+M	tests/admin/shell.spec.ts
+D	tests/home.spec.ts
+D	tests/navigation.spec.ts
+D	tests/pages.spec.ts
+M	tests/pricing.spec.ts
+A	tests/public-data.spec.ts
+```
+
+The handoff file itself is the only file changed by the documentation-only follow-up.
