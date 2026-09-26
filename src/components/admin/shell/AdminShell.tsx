@@ -1,10 +1,9 @@
 'use client';
 
-import { Info, X } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { DinhVanMark } from '@/components/ui/BrandLogo';
-import { useAdmin } from '../AdminStore';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminTopbar } from './AdminTopbar';
 import { pageMeta } from './page-meta';
@@ -13,7 +12,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const meta = pageMeta(pathname);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { toasts, dismissToast } = useAdmin();
 
   return (
     <div className="ashell">
@@ -23,16 +21,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <AdminTopbar meta={meta} onMenu={() => setMenuOpen(true)} />
         <main className="ashell__content">{children}</main>
         <AdminFooter />
-      </div>
-      <div className="atoasts" role="status" aria-live="polite">
-        {toasts.map((t) => (
-          <div key={t.id} className={`atoast atoast--${t.tone}`}>
-            <span>{t.text}</span>
-            <button type="button" onClick={() => dismissToast(t.id)} aria-label="Đóng thông báo">
-              <X size={14} aria-hidden="true" />
-            </button>
-          </div>
-        ))}
       </div>
     </div>
   );

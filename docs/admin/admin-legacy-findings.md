@@ -1,53 +1,76 @@
 # Admin legacy findings — 2026-09-27
 
-## Kết luận ngắn
+Audit scope: active route import graph under `src/app/admin/**`, source findings from `npm run audit:no-hardcode`, and `localStorage` use. `Reachable?` means reachable from a current `/admin` route, not merely importable by a legacy file. No source was deleted during this audit.
 
-Các URL admin hiện không còn render những màn demo cũ. Route mapping ở `src/app/admin/**/page.tsx`
-chỉ dùng CMS/property/inquiry/media/menu/settings API mới hoặc `PendingModule` trung thực. Tuy vậy,
-repo vẫn giữ một lượng source demo cũ chưa được xoá; không được nối lại các component đó như một thay
-thế nhanh cho API thật.
+## Result
 
-## Đã xác nhận
+- Current `/admin` pages import API-backed screens or `PendingModule`. `src/app/admin/layout.tsx` mounts `AdminAuthGate` and `AdminShell`, not `AdminStoreProvider`; the shell no longer reads local role/toast state.
+- The 16 `legacy-admin-review` findings below are source-level blockers only if those dead screens are reconnected. They are not 16 live admin routes. Keep these modules isolated until their own API/workflow replaces fixtures.
+- The scanner also reports 21 type-only imports (erased by TypeScript) and six guest-favorite local-storage reads/writes. These are itemized below and are not business-data fallbacks.
+- Local-storage business-data findings: **0**. `src/lib/favorites.ts` stores only guest preference IDs; server-side content, price, property, user, inquiry, and settings state is API/PostgreSQL backed.
 
-1. `src/app/admin/page.tsx`, `dat-phong`, `khach-hang`, `khuyen-mai`, `thanh-toan`, `bao-cao` dùng
-   `PendingModule`; không hiển thị fixture/KPI hoặc báo lưu giả.
-2. Các route hoạt động import `PropertyCatalogScreen`, `AdminContentList`, `InquiryInbox`,
-   `MenuManager`, `MediaLibrary` hoặc `SettingsScreen`; router không import các màn fixture cũ.
-3. `AdminStore` còn làm compatibility/toast shell, nhưng dữ liệu khởi tạo là rỗng, không ghi business
-   state vào localStorage và `commit()` luôn trả lỗi “chưa có endpoint API”. Auth gate và server API
-   mới là nơi xác thực/kiểm quyền.
-4. `src/lib/favorites.ts` lưu ID yêu thích phía khách; đây là preference UI, không phải hồ sơ/booking
-   hoặc dữ liệu CRM.
-5. `npm run audit:no-hardcode` tạo 43 finding: 21 type-only import đã bị erase khi build, 6 finding
-   guest preference được cho phép, 16 finding thuộc nhóm review legacy admin. 16 là số finding, không
-   phải 16 route đang hoạt động. Báo cáo máy đọc được: `docs/data-audit/no-hardcode-report.json`.
+## Scanner findings — type-only imports (21)
 
-## Source legacy chưa dọn
+| File | Line | Category | Reachable? | Action | Result |
+|---|---:|---|---|---|---|
+| `src/app/phong-nghi/[slug]/page.tsx` | 37 | Fixture type import | Yes, public route; import type only | Keep `import type`; do not convert to runtime import | Erased at build; no fixture runtime fallback |
+| `src/components/booking/Checkout.tsx` | 27 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/components/combos/ComboExplorer.tsx` | 36 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; API supplies records |
+| `src/components/destinations/DestinationExplorer.tsx` | 35 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; API supplies records |
+| `src/components/destinations/DiscoveryLower.tsx` | 10 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/components/home/DestinationGrid.tsx` | 5 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; API supplies records |
+| `src/components/home/FeaturedStays.tsx` | 4 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; API supplies records |
+| `src/components/home/StayCard.tsx` | 5 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/components/stay-detail/BookingContext.tsx` | 5 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/components/stays/ListingCard.tsx` | 6 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/components/stays/StayMap.tsx` | 8 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/components/stays/StaysExplorer.tsx` | 9 | Fixture type import | Yes, public UI; import type only | Keep type-only | Erased at build; API supplies records |
+| `src/lib/api/public.ts` | 2 | Fixture type import | Yes, public API adapter; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/lib/api/public.ts` | 3 | Fixture type import | Yes, public API adapter; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/lib/api/public.ts` | 5 | Fixture type import | Yes, public API adapter; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/lib/catalog/constants.ts` | 1 | Fixture type import | Yes, public API adapter; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/lib/catalog/constants.ts` | 3 | Fixture type import | Yes, public API adapter; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
+| `src/lib/catalog/pricing.ts` | 1 | Fixture type import | Yes, public pricing; import type only | Keep type-only | Erased at build; no commercial fixture values |
+| `src/lib/seo/schema.ts` | 3 | Fixture type import | Yes, public SEO; import type only | Keep type-only | Erased at build; schema reads published API projections |
+| `src/lib/seo/schema.ts` | 4 | Fixture type import | Yes, public SEO; import type only | Keep type-only | Erased at build; schema reads published API projections |
+| `src/lib/stay-filters.ts` | 5 | Fixture type import | Yes, public filter utility; import type only | Keep type-only | Erased at build; no fixture runtime fallback |
 
-Các file dưới đây còn code fixture hoặc gọi compatibility store nhưng không được các page hiện hành
-import trực tiếp:
+## Scanner findings — guest preference storage (6)
 
-- Booking/overview: `src/components/admin/bookings/**`, `src/components/admin/overview/OverviewScreen.tsx`.
-- Catalogue cũ: `src/components/admin/combos/CombosScreen.tsx`,
-  `src/components/admin/properties/PropertiesScreen.tsx`, `RatePanels.tsx`,
-  `src/components/admin/content/DestinationEditor.tsx`, `ContentScreen.tsx`.
-- CRM cũ: `src/components/admin/crm/CrmScreen.tsx`, `CustomerPanel.tsx`.
-- Bộ dữ liệu và tính toán cũ: `src/lib/admin/data.ts`, `selectors.ts`, `formatters.ts`,
-  `src/data/admin/**`.
+| File | Line(s) | Category | Reachable? | Action | Result |
+|---|---|---|---|---|---|
+| `src/lib/favorites.ts` | 4, 29, 31, 34, 35, 78 | `browser-admin-store` rule match; guest favorite IDs only | Yes, guest/public UI; not admin business state | Keep guest preference behavior; do not use it for bookings, customers, inventory, or staff sessions | Allowed by policy; these six matches explain the scanner count |
 
-Các test admin/public trước đây cũng kiểm tra nội dung mẫu và thông báo demo. Trong nhánh audit này,
-chúng đã được thay bằng test API-backed và test public/SEO. Trước khi xoá source legacy, cần kiểm tra
-toàn bộ import graph, screenshot/spec còn dùng hay không, rồi xoá theo phạm vi riêng; hiện tại giữ lại
-để tránh xoá nhầm tài sản người dùng.
+## Scanner findings — legacy admin fixtures (16)
 
-## Rủi ro vận hành còn lại
+| File | Line | Category | Reachable? | Action | Result |
+|---|---:|---|---|---|---|
+| `src/components/admin/bookings/BookingDetail.tsx` | 7 | Fixture import | No; old booking screen only | Leave isolated; replace with authorized booking API before connecting | Legacy finding retained; current route is pending |
+| `src/components/admin/bookings/BookingForm.tsx` | 4 | Fixture import | No; old booking screen only | Leave isolated; implement booking workflow separately | Legacy finding retained; current route is pending |
+| `src/components/admin/bookings/BookingsScreen.tsx` | 7 | Fixture import | No; old booking screen only | Leave isolated; implement booking workflow separately | Legacy finding retained; current route is pending |
+| `src/components/admin/combos/CombosScreen.tsx` | 24 | Fixture import | No; superseded by `AdminContentList` route | Keep old screen disconnected; remove after import-graph review | Current combo route uses CMS API |
+| `src/components/admin/content/DestinationEditor.tsx` | 6 | Fixture import | No; superseded by `AdminContentList` route | Keep old editor disconnected; remove after import-graph review | Current destination route uses CMS API |
+| `src/components/admin/crm/CrmScreen.tsx` | 17 | Fixture import | No; old CRM screen only | Keep disconnected; customer workflow remains pending | No fake CRM displayed by route |
+| `src/components/admin/crm/CustomerPanel.tsx` | 7 | Fixture import | No; old CRM screen only | Keep disconnected; customer workflow remains pending | No fake customer panel displayed |
+| `src/components/admin/overview/OverviewScreen.tsx` | 22 | Fixture import | No; superseded by pending overview route | Keep disconnected until real reporting API exists | No demo KPI displayed by route |
+| `src/components/admin/properties/PropertiesScreen.tsx` | 24 | Fixture import | No; superseded by `PropertyCatalogScreen` | Keep old screen disconnected; remove after import-graph review | Current stay route uses properties API |
+| `src/components/admin/properties/RatePanels.tsx` | 6 | Fixture import | No; only referenced by legacy property modules | Keep disconnected; inventory/rate editor remains incomplete | No fixture rates reach the active route |
+| `src/components/admin/shared/charts.tsx` | 5 | Fixture import | No; only legacy dashboard consumer | Keep disconnected until reporting API exists | No fixture chart reaches the active route |
+| `src/lib/admin/data.ts` | 6 | Fixture import | No; legacy store/screens only | Keep isolated; do not add a route import | No live route reads this fixture data |
+| `src/lib/admin/data.ts` | 18 | Fixture import | No; legacy store/screens only | Keep isolated; do not add a route import | No live route reads this fixture data |
+| `src/lib/admin/data.ts` | 33 | Demo runtime branch | No; legacy compatibility layer only | Keep isolated; remove with the obsolete data module in a reviewed cleanup | Not a current fallback path |
+| `src/lib/admin/formatters.ts` | 1 | Fixture import | No; legacy admin consumers only | Keep isolated; remove with obsolete consumer graph | Not imported by current routes |
+| `src/lib/admin/selectors.ts` | 5 | Fixture import | No; legacy admin consumers only | Keep isolated; remove with obsolete consumer graph | Not imported by current routes |
 
-- Booking, khách hàng, khuyến mãi, thanh toán và báo cáo vẫn chưa có quản trị workflow/API đầy đủ.
-- Nơi lưu trú có thể tạo/sửa hồ sơ, nhưng màn hiện không quản lý đầy đủ hạng phòng, đơn vị, inventory
-  và lịch giá đã có. Không quảng bá các bản ghi `pending_verification` thành hàng đang bán.
-- Add-on/coupon không có dữ liệu giá thương mại hợp lệ thì không được tự bịa giá; calculator hiện từ
-  chối add-on thiếu giá và không tự tính khoản đặt cọc/đã thu.
-- Local CMS có 11 nơi lưu trú dạng draft, chưa có dữ liệu public được phê duyệt. Không bật index hoặc
-  publish thay chủ sở hữu.
-- Tệp `docs/admin/implementation-status.md` vẫn còn chi tiết thiết kế fixture cũ; đã gắn nhãn rõ là
-  tài liệu lưu trữ, không phải bảng trạng thái hiện hành.
+## Compatibility store and remaining risks
+
+| File | Line | Category | Reachable? | Action | Result |
+|---|---:|---|---|---|---|
+| `src/components/admin/AdminStore.tsx` | 57, 116 | Legacy compatibility provider/hook | No; active layout no longer mounts provider | Leave for old source consumers until dedicated cleanup; do not restore it to layout | Owner role/toast state no longer feeds active route; `commit()` does not fake API success |
+| `src/app/admin/layout.tsx` | 2–3 | Authenticated route shell | Yes | Keep `AdminAuthGate` + `AdminShell`; no provider | Session and role come from the API |
+| `src/components/admin/shell/AdminShell.tsx` | 1 | Authenticated shell | Yes | Keep local menu UI state only | No compatibility store/toast dependency |
+
+- `npm run audit:no-hardcode` completed with 43 findings: 21 type-only, 6 allowed guest preferences, 16 isolated legacy findings. Full machine report: `docs/data-audit/no-hardcode-report.json`.
+- Pending routes: dashboard/reports, admin bookings, customers, promotions, and payment operations. Their placeholder state is intentional and honest.
+- The stay editor creates and deletes a test/local property transactionally, but does not yet manage existing room/inventory/rate schedules. Do not market draft Cúc Phương imports as live inventory.
+- Local DB currently has 11 draft/unverified properties and no room units/rate plans; no public stay records. Search indexing remains closed.

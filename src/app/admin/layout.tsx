@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
-import { AdminStoreProvider } from '@/components/admin/AdminStore';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
 import '@/styles/admin.css';
 import '@/styles/admin-ui.css';
@@ -25,9 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="dvb-admin">
       <AdminAuthGate>
-        <AdminStoreProvider>
-          <AdminShell>{children}</AdminShell>
-        </AdminStoreProvider>
+        <AdminShell>{children}</AdminShell>
       </AdminAuthGate>
     </div>
   );

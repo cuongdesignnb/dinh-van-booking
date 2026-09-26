@@ -1,68 +1,50 @@
 # Đinh Vân Booking — Admin run-to-goal handoff
 
-**Audit cập nhật:** 2026-09-27 (local Windows + Docker Compose). Đây là bàn giao trạng thái kiểm thử,
-không phải xác nhận sẵn sàng deploy. Production không được truy cập hoặc thay đổi.
+**Cập nhật:** 2026-09-27 · local Windows + Docker Compose. Đây là biên bản audit/local test, không phải phê duyệt deploy. Production không được truy cập hay thay đổi.
 
-## Local test
+## Runtime và dữ liệu local
 
-- URL: `http://127.0.0.1:18473`
-- Admin email: `halabcreative@gmail.com`
-- Mật khẩu không ghi vào tài liệu/commit; dùng file local `.secrets/owner_password`.
-- Docker Compose: API, web, worker, gateway, PostgreSQL và Redis đều được khởi động; PostgreSQL/API
-  healthcheck đã báo healthy. Build/restart chỉ nhắm app services; PostgreSQL/Redis volumes không bị
-  reset hoặc xoá.
-- Persistence check: draft có ID cụ thể còn đọc được sau restart `api/web/worker`, rồi được xoá đúng
-  ID qua API và xác minh GET trả 404. Menu được phục hồi về trạng thái ban đầu trong test.
+- URL: `http://127.0.0.1:18473`; tài khoản quản trị `halabcreative@gmail.com`. Mật khẩu chỉ lưu ở `.secrets/owner_password`, không ghi trong repo.
+- Compose local: API, web, worker, gateway, PostgreSQL, Redis đang chạy; API/PostgreSQL healthcheck healthy; `GET /`, `/api/v1/health`, `/robots.txt` đều 200. Local app services được build/restart, không xoá/reset volume PostgreSQL, Redis hoặc media.
+- PostgreSQL sau cleanup: 11 `content_nodes`, 11 `properties`, 5 `room_types`, 0 `room_units`, 0 `rate_plans`, 0 `media_assets`, 0 `inquiries`, 0 `customers`, 1 menu/5 items, 0 settings, 2 users, 5 roles, 21 permissions. 11 property đều draft/chờ xác minh.
+- Migration history có 5 migration áp dụng; một lần chạy init cũ được ghi `rolled_back` và có lần áp dụng thành công. Không có migration pending.
+- Một draft kiểm thử trước đó đã sống qua restart `api/web/worker`, đọc lại đúng ID rồi được xoá qua API/version. Menu được restore. Test mới tạo/xoá đúng bản ghi destination/combo/property; DB không còn `ATG-*` fixture.
 
-## Thay đổi trong lượt audit
+## Tình trạng route quản trị
 
-- `/media/YYYY/MM/...` trước đây bị hook bảo vệ ảnh từ chối vì mọi `/` trong storage key đều bị chặn.
-  Hook nay cho nested segment hợp lệ nhưng vẫn chặn segment rỗng, `.`/`..` và backslash.
-- CMS article thiếu quan hệ projection `Article` vẫn có thể publish nhưng public API trả 404. Khi tạo
-  article, backend nay luôn tạo projection với metadata null nếu không được cung cấp; unit + API smoke
-  kiểm chứng luồng này.
-- Menu quản trị có thao tác xác nhận “Khôi phục mặc định”, gọi endpoint `DELETE /navigation/primary`
-  và ghi AuditLog.
-- Admin session/topbar lấy danh tính/role thật và logout qua API; bỏ controls tĩnh không có tác vụ.
-  Màn chưa có API hiện báo pending thay vì sinh demo success.
-- Test fixture-backed cũ được thay bằng browser/API assertions; calculator test nay khóa hành vi không
-  tự bịa giá add-on/coupon hoặc tiền cọc.
-- Ma trận admin và danh sách source legacy: xem `docs/admin/admin-run-to-goal-matrix.md` và
-  `docs/admin/admin-legacy-findings.md`.
+Ma trận chi tiết gồm component, API, bảng DB, mutation, browser test và trạng thái tại [`docs/admin/admin-run-to-goal-matrix.md`](admin/admin-run-to-goal-matrix.md). Nguồn fixture/store legacy từng file và line ở [`docs/admin/admin-legacy-findings.md`](admin/admin-legacy-findings.md).
 
-## Kết quả đã chạy
+- `REAL_API`: phòng nghỉ, combo, điểm đến, yêu cầu tư vấn, bài viết/CMS, chuyên trang, menu, Media Library và cài đặt.
+- `PENDING`: tổng quan/báo cáo, quản trị đặt phòng, hồ sơ khách hàng, khuyến mãi và thanh toán; giao diện báo pending, không dựng form/KPI thành công giả.
+- Layout quản trị dùng `AdminAuthGate` + `AdminShell`; bỏ `AdminStoreProvider` khỏi cây route và bỏ shell dependency vào local role/toast. API session/cookie/CSRF và permissions là nguồn xác thực.
+- Nội dung công khai lấy từ API/PostgreSQL; draft không xuất hiện public. SEO indexing gate vẫn đóng.
+
+## Kiểm thử chạy trong lượt audit
 
 | Kiểm tra | Kết quả | Bằng chứng |
 |---|---|---|
 | Frontend lint | PASS | `npm run lint -- --no-warn-ignored` |
 | Frontend typecheck | PASS | `npm run typecheck` |
-| Frontend build | PASS | Next production build bên trong Docker web image |
-| Frontend Playwright | PASS | 26/26; base URL là gateway local, workers=1 do test dùng chung DB |
-| Backend build | PASS | Nest build qua Docker image |
-| Backend unit | PASS | 11/11 qua `docker compose run ... api npm test` |
-| API smoke | PASS | 54/54; auth/CSRF, settings versioning, upload WebP/ALT, CMS publish/SEO/redirect, cleanup |
-| Public/SEO browser checks | PASS | Bao gồm robots/noindex, sitemap, canonical, draft isolation, 404 và route cũ |
-| No-hardcode scan | PASS WITH FINDINGS | 43 finding: 21 type-only, 6 guest preference, 16 legacy-admin-review; xem JSON report |
-| Persistence sau app restart | PASS | Draft test giữ nguyên trong PostgreSQL; exact draft sau đó đã được dọn |
+| Frontend build | PASS | `npm run build` và Docker web production build |
+| Playwright | PASS | 28/28, workers=1 trên gateway local; admin shell, responsive 1440/1024/768/390, catalogue lifecycle, public data, pricing, robots/sitemap/noindex/404 |
+| Admin lifecycle mới | PASS | `tests/admin/run-to-goal.spec.ts`: destination + combo tạo/sửa/xoá draft, public draft 404; property tạo/sửa/xoá kèm room/unit/rate thật, public draft 404; dữ liệu test được dọn |
+| Backend build/unit | PASS | `scripts/backend.sh test`: runner tự cài deps, generate Prisma, build source rồi chạy 11/11 unit test |
+| API smoke | PASS | 54/54: auth/CSRF/permissions, settings version conflict/restore, WebP/ALT/media, CMS publish/slug redirect/revision/version guard/cleanup |
+| Docker config | PASS | `scripts/compose.sh config --quiet` |
+| Env examples | PASS | Fresh temp clone tạo env/secrets và chạy lại idempotent; hash file không đổi; repo thật chỉ `kept`, không overwrite |
+| Backend runner seed | PASS | `scripts/backend.sh seed` chạy 2 lần; mỗi lần 21 quyền/5 vai trò/2 tài khoản; source được build từ đầu trong container |
+| Owner workflow | PASS, no-op guard | `scripts/backend.sh create-owner` build source và từ chối email Owner đã tồn tại; không tạo/sửa/xoá user |
+| No-hardcode scan | PASS WITH FINDINGS | 43: 21 type-only imports, 6 guest preference matches, 16 legacy-admin source findings; chi tiết đã phân loại reachability |
+| Git whitespace/secret audit | PASS WITH TEST FIXTURE | `git diff --check` sạch; không có env/secret tracked; chuỗi `sk-…` duy nhất là fixture unit test đã mã hoá, không phải API key |
 
-## Phạm vi chưa hoàn tất — không che giấu
+Backend runner có cảnh báo 17 advisory dependency hiện có (1 low, 8 moderate, 8 high); không force-upgrade hoặc thay version trong task này. Các browser flow chưa có: UI đổi stage inquiry (API không có delete test record), UI settings save, UI content article rich-format/version-conflict, positive published JSON-LD. Không đánh dấu các nội dung đó là đã browser-test.
 
-- Dashboard, đặt phòng, hồ sơ khách hàng, khuyến mãi, thanh toán và báo cáo chưa có admin API/workflow;
-  các route tương ứng hiển thị pending state.
-- Màn lưu trú chưa sửa toàn bộ hạng phòng/đơn vị/inventory/rate hiện có. Không có booking/thu tiền
-  thật; inquiry không đồng nghĩa booking được xác nhận.
-- Có 11 bản ghi lưu trú Cúc Phương dạng `draft`/`pending_verification`; không tự publish/index.
-- Legacy fixture source vẫn tồn tại nhưng route admin hiện không import các screen đó. Giữ lại thay vì
-  xoá hàng loạt; cần xử lý bằng task riêng sau import-graph review.
-- Local indexing gate đang đóng. Không bật SEO index cho production trong bước sync này.
+## Còn lại / không được suy diễn
 
-## Git/deploy
+- Chưa có booking lifecycle/availability hold/payment, customer CRM quản trị, coupon/promotion, dashboard/reporting hoặc cổng thanh toán thật. Inquiry không phải booking đã xác nhận.
+- Màn stay chưa sửa inventory/rate/unit hiện hữu; publish yêu cầu ảnh hợp lệ, room type, unit và rate dương. Không coi 11 property Cúc Phương chờ xác minh là hàng bán.
+- Không bật SEO index, không migrate/seed/import production, không đổi DNS, không restart production. Production DB state, backup/restore, TLS/CSRF/CDN và deployment runtime chưa kiểm chứng.
 
-Production baseline là `54c246bbe9f70ed3bf298401e39df3e30a73057c`. Trước commit lượt audit,
-local/`origin/main` cùng ở `29159b26b6529953116ce5e8684a3152cb3d2a`; hai commit trước đó (gồm CMS,
-SEO và handoff ban đầu) đã nằm trên remote. Audit/push hiện tại được ghi đầy đủ ở
-`docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md`.
+## Git
 
-Không deploy, migrate production, seed production, bật index, sửa DNS hoặc restart production. Dù
-code đã build/test trên local, quyết định triển khai vẫn cần review owner, sao lưu/restore plan, xác
-nhận migration state và kiểm tra backup/media/HTTPS/CSRF trên hạ tầng thật.
+Production baseline: `54c246bbe9f70ed3bf298401e39df3e30a73057c`. Khi bắt đầu lượt này `LOCAL_HEAD=ORIGIN_MAIN=093cb06a83dc4ff4bfd2795a348a74248fc5b861`, `LOCAL_AHEAD=0`, `LOCAL_DIRTY=YES` (hai thay đổi bỏ legacy store khỏi admin shell). Commit/push mới và SHA cuối được ghi trong [`docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md`](PRODUCTION_SYNC_HANDOFF_2026-09-26.md) sau khi xác minh.
