@@ -1,167 +1,129 @@
-# Production sync handoff — 2026-09-26
+# Production sync handoff — 2026-09-27
 
-This is a review handoff only. No production host, database, DNS, production settings,
-or production service was accessed or changed. **Do not deploy based on this document yet**:
-the recommendation below is `NO` until the listed blockers are addressed.
-
-> Git cannot store a commit's own full SHA inside a file in that same commit without
-> changing that SHA. Therefore `FINAL_SHA` below is the implementation commit; this
-> handoff is a separate documentation-only follow-up commit. The exact current remote
-> tip (which includes this file) is reported in the task's final result.
+This is a review handoff only. No production host, database, DNS, environment, indexing setting, or service was accessed or changed. The deploy target is the implementation SHA below; a documentation-only follow-up commit will update this handoff after the target push.
 
 ## 1. Git state
 
-```text
+<pre>
 REPO=https://github.com/cuongdesignnb/dinh-van-booking.git
 BRANCH=main
 PRODUCTION_BASELINE_SHA=54c246bbe9f70ed3bf298401e39df3e30a73057c
-REMOTE_MAIN_BEFORE=29159b26b6529953116ce5e8684e8a3152cb3d2a
-LOCAL_HEAD_BEFORE=29159b26b6529953116ce5e8684e8a3152cb3d2a
-LOCAL_DIRTY_BEFORE=NO
+REMOTE_MAIN_BEFORE=093cb06a83dc4ff4bfd2795a348a74248fc5b861
+LOCAL_HEAD_BEFORE=093cb06a83dc4ff4bfd2795a348a74248fc5b861
+LOCAL_DIRTY_BEFORE=YES (two modified admin shell/layout files at task start)
 LOCAL_AHEAD_BEFORE=0
-IMPLEMENTATION_SHA=702d97e46203fef1843426574f05ee33aa79cfc1
-FINAL_SHA=702d97e46203fef1843426574f05ee33aa79cfc1 (implementation/deployment target; doc-only follow-up follows)
-REMOTE_MAIN_AFTER_IMPLEMENTATION=702d97e46203fef1843426574f05ee33aa79cfc1
-REMOTE_MAIN_AFTER_DOC=docs-only follow-up SHA is reported in the task result
-WORKTREE_FINAL=CLEAN (after the documentation-only handoff follow-up)
-PUSH_RESULT=PASS (implementation push fetched and verified; handoff is a separate documentation-only follow-up)
-HANDOFF_DOC_FOLLOWUP=Documentation-only commit containing this refreshed file; exact tip is reported in the task result
-```
+FINAL_SHA=30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f (implementation/deployment target; this file's doc-only follow-up SHA is reported in the final result)
+REMOTE_MAIN_AFTER=30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f (implementation push verified; documentation-only follow-up follows)
+WORKTREE_FINAL=CLEAN after documentation-only follow-up commit
+PUSH_RESULT=PASS for implementation push; follow-up push is verified separately
+</pre>
 
-At the start of this follow-up audit, branch `main` was clean and local HEAD matched
-`origin/main`; both were already ahead of the production baseline by the previously
-reviewed integration and handoff commits. The current audit fix was committed as
-`702d97e` and pushed normally (no force push). A fresh fetch confirmed local HEAD and
-`origin/main` both at the full implementation SHA above. The only remaining commit is
-the documentation-only refresh of this handoff; its exact remote tip is provided in
-the task result because a commit cannot contain its own SHA.
+At task start, a fetch showed local main and origin/main both at 093cb06; there were no local-only commits. That remote tip was already four commits ahead of the supplied production baseline. The current implementation/audit commit is 30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f. The handoff file existed before this task and is being refreshed in a separate docs-only commit so its SHA does not alter the code deploy target.
 
-## 2. Changes absent from the production baseline
+## 2. Changes present after the production baseline
 
-- **Frontend:** public catalog/content reads use the API; dynamic stay/combo/destination/article/static-page routes; content rendering; consultation inquiry submission; responsive public and admin styling; self-hosted licensed fonts. Key files include `src/lib/api/public.ts`, `src/app/**`, `src/components/site/SiteDataProvider.tsx`, `src/components/content/RichContentRenderer.tsx`, `src/components/home/SiteFooter.tsx`, and `src/styles/**`.
-- **Admin:** authenticated API-backed property drafts, content list/editor, static pages, menu manager, inquiry inbox, shared Media Library and image picker, structured settings editor and AI provider settings. This audit also replaced misleading shell placeholders with real session/logout behavior and surfaced unsupported workflows honestly; the menu can restore its default through an audited API action. Key files include `src/components/admin/AdminAuthGate.tsx`, `src/components/admin/shell/**`, `src/components/admin/properties/PropertyCatalogScreen.tsx`, `src/components/admin/content/AdminContentList.tsx`, `src/components/admin/media/**`, and `src/components/admin/navigation/MenuManager.tsx`.
-- **Backend:** property/content/public catalog, inquiry, navigation, Media Library and AI-writing/image endpoints; optimistic version handling, publication checks, sanitized rich content, encrypted provider keys and internal-link candidates from currently published records. This audit fixed the article typed projection on publish and nested media storage-key validation. Key files include `backend/src/{catalog,content,public,inquiries,navigation,media,ai}/**` and `backend/src/settings/**`.
-- **Database/migrations:** three additive/data-routing migrations; see section 4.
-- **SEO/Schema:** indexing gate defaults closed; canonical/metadata policy, robots, sitemap, redirects for legacy routes, JSON-LD builders and publication eligibility. Key files include `src/lib/seo/**`, `src/app/robots.ts`, `src/app/sitemap.ts`, `backend/src/public/public-catalog.service.ts`, `infra/gateway/default.conf`, and the migrations below.
-- **Operations:** committed safe `.env` templates, explicit false/blank SEO defaults, backend runner now copies source into a disposable container and builds before executing scripts, and web/gateway runtime settings. No actual environment file or secret is included.
-- **Tests:** API-backed browser tests replaced stale fixture-only admin/public tests. The current local run passed the full 26/26 Playwright suite, 11/11 backend unit tests, and 54/54 API smoke checks. SEO checks covered noindex/draft isolation, route/redirect behavior and robots/sitemap policy; a positive published-content JSON-LD case remains unverified because no eligible live content exists.
-- **Documentation:** data-lineage and remaining-blocker audit, SEO evidence, AI configuration guide, license and operator instructions; this file is the separate follow-up handoff.
+- **Frontend:** API-backed public catalogue/content, detail/list routes for stays/combos/destinations/articles/static pages, consultation form, responsive layout, metadata/canonical/JSON-LD, robots/sitemap, self-hosted licensed fonts. Primary areas: src/app/**, src/components/site/**, src/components/home/**, src/lib/api/public.ts, src/lib/seo/**, src/styles/**.
+- **Admin:** authenticated API shell; property catalog; CMS article/destination/combo/static-page editors; TipTap; Media Library; settings and AI provider UI; menu; inquiry inbox. Current-turn fix removes the unused local AdminStoreProvider and shell toast dependency from live routes. New CRUD lifecycle browser tests cover drafts for destinations/combos/stays. Primary areas: src/app/admin/**, src/components/admin/**, tests/admin/**.
+- **Backend/API:** session auth/CSRF/permissions; content/catalog/public APIs; AI content/image integration; media conversion/storage; inquiry and navigation; settings; audit/version/publication checks. Primary areas: backend/src/**.
+- **Database/migrations:** 3 migrations since baseline, listed in section 4. No migration was added in 30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f.
+- **SEO/Schema:** index gate defaults closed; canonical and metadata policy; server-rendered JSON-LD builders; robots/sitemap; public route/redirect resolution; draft isolation. Primary areas: src/lib/seo/**, src/app/robots.ts, src/app/sitemap.ts, backend/src/public/**, infra/gateway/default.conf.
+- **Operations:** safe .env.docker.example and .env.runtime.example; compose wiring; backend runner builds from source in a disposable Node container before seed/create-owner/test; no actual environment or secret file is tracked.
+- **Tests:** Playwright public/admin/SEO/pricing and lifecycle tests; backend unit tests; API smoke; no-hardcode scanner and data audit docs.
+- **Documentation:** data lineage, AI guide, technical SEO, admin route matrix and legacy findings, local/production handoffs.
 
-## 3. Commits for production review
+## 3. Commits since production baseline
 
-| SHA | Commit | Nội dung | Có migration? |
+| SHA | Commit | Summary | Migration? |
 |---|---|---|---|
-| `c50a7cedd7833c557a65eae9885fcd6e82f6ff94` | `feat: connect CMS, catalog, AI content and SEO` | Full audited implementation from the baseline: real API/CMS/admin integrations, SEO, AI, docs, tests and reproducible local setup | YES — 3 |
-| `29159b26b6529953116ce5e8684e8a3152cb3d2a` | `docs: add production sync handoff` | Initial production-sync audit handoff; no runtime or database change | NO |
-| `702d97e46203fef1843426574f05ee33aa79cfc1` | `fix(admin): close local API audit gaps` | API-backed shell/menu fixes, article projection/media validation, smoke hardening and current-run docs/tests | NO |
-| `<handoff-only follow-up>` | `docs: refresh production sync handoff` | This refreshed handoff only; no runtime or database change | NO |
+| c50a7cedd7833c557a65eae9885fcd6e82f6ff94 | feat: connect CMS, catalog, AI content and SEO | API/CMS/catalog integration, AI, public SEO, tests and docs | YES — 3 |
+| 29159b26b6529953116ce5e8684e8a3152cb3d2a | docs: add production sync handoff | Initial production handoff | NO |
+| 702d97e46203fef1843426574f05ee33aa79cfc1 | fix(admin): close local API audit gaps | Authenticated shell/menu, article projection/media guard, API smoke hardening and admin audit | NO |
+| 093cb06a83dc4ff4bfd2795a348a74248fc5b861 | docs: refresh production sync handoff | Handoff refresh | NO |
+| 30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f | test(admin): verify API-backed catalogue workflows | Remove live AdminStore shell dependency, exercise real stay/combo/destination CRUD lifecycle, refresh admin evidence | NO |
+| docs-only follow-up SHA in final result | docs: finalize production sync handoff | This file and scanner report only | NO |
 
-The current code implementation range is
-`54c246bbe9f70ed3bf298401e39df3e30a73057c..702d97e46203fef1843426574f05ee33aa79cfc1`.
-The documentation-only follow-up keeps the handoff in the repository and the worktree
-clean; its exact SHA is intentionally not embedded in itself.
+Production should review/deploy the code range 54c246bbe9f70ed3bf298401e39df3e30a73057c..30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f. The final remote tip also includes the docs-only follow-up and is stated in the task result.
 
 ## 4. Database impact
 
-```text
+<pre>
 NEW_MIGRATIONS=3
 MIGRATION_FILES=backend/prisma/migrations/20260923110000_public_seo_snapshots/migration.sql; backend/prisma/migrations/20260923113000_static_pages_root_routes/migration.sql; backend/prisma/migrations/20260923120000_protect_root_reserved_pages/migration.sql
-DESTRUCTIVE_MIGRATION=NO
-DATA_BACKFILL_REQUIRED=YES (automatic route transition for eligible static pages)
-SEED_REQUIRED=NO
+DESTRUCTIVE_MIGRATION=NO (no tables/columns dropped; route data is transformed)
+DATA_BACKFILL_REQUIRED=YES (eligible static pages move to root routes; old section paths remain redirects)
+SEED_REQUIRED=NO for an upgrade from the stated baseline (role/permission seed source is unchanged)
 SETTINGS_MIGRATION_REQUIRED=NO
-```
+</pre>
 
-`public_seo_snapshots` adds nullable publication timestamps and a nullable content
-revision snapshot. The two static-page migrations move eligible CMS pages to root
-routes, preserve section routes as redirects, and protect reserved application paths.
-They do not drop tables or columns. The route data changes have no automatic down
-migration; take verified database/media backups and use a reviewed forward-fix or
-restore plan if rollback is needed. Production migration state was not inspected.
+The first migration adds nullable publication/SEO snapshot fields. The static-page migrations transform route assignments and reserve application paths. No migration drops tables or columns. The route backfill has no automatic down migration; before a production rollout, require a verified database and media backup plus a reviewed restore/forward-fix plan. Production migration state was not inspected.
 
-The optional Cúc Phương importer is a separate explicit command; it was not run and is
-not required for deployment. It is not wired into startup or migrations.
+Local migration status after rebuilding the app stack: all 5 unique migrations applied. One earlier init attempt is recorded as rolled back, followed by a successful application. scripts/backend.sh seed was run twice locally after confirming exact built-in grants; it remained at 21 permissions, 5 roles and 2 users. Production seed is not required for this code upgrade and must not be run unless separately justified.
 
 ## 5. Environment/config impact
 
-```text
-NEW_ENV_VARS=SEO_INDEXING_ALLOWED (default false); SEO_APPROVED_CANONICAL_ORIGIN (default blank); optional AI_CONTENT_*, AI_IMAGE_*, AI_SETTINGS_ENCRYPTION_KEY[_FILE] fallbacks
+<pre>
+NEW_ENV_VARS=SEO_INDEXING_ALLOWED (default false); SEO_APPROVED_CANONICAL_ORIGIN (default blank); optional AI_CONTENT_*, AI_IMAGE_*, AI_SETTINGS_ENCRYPTION_KEY[_FILE]
 REMOVED_ENV_VARS=NONE
-CHANGED_ENV_VARS=Compose passes the SEO indexing gate and approved origin to web/API; indexing stays closed by default
-NEW_SECRET_REQUIRED=NO (AI provider keys are owner-supplied optional configuration; encryption defaults to the existing SESSION_SECRET)
-```
+CHANGED_ENV_VARS=Compose forwards SEO gate/canonical origin to web and API; default keeps indexing closed
+NEW_SECRET_REQUIRED=NO (provider keys are optional; AI key encryption falls back to the existing SESSION_SECRET)
+</pre>
 
-If `AI_SETTINGS_ENCRYPTION_KEY` or its file variant is chosen, preserve it unchanged;
-otherwise stored provider keys are encrypted using the existing session secret. Do
-not rotate existing session/encryption secrets as part of this source sync. The owner
-must separately approve any provider/key and canonical origin. Do not open indexing
-as part of deployment.
+If a dedicated AI_SETTINGS_ENCRYPTION_KEY is configured, persist the same key across restarts; do not rotate SESSION_SECRET during this source sync. AI provider keys and canonical origin require owner approval. Never enable indexing as part of this deploy. Both example files were tested in a disposable fresh-clone fixture: first run created the env/secrets, second run preserved every file byte-for-byte. The real local env/secret files were kept and are not tracked.
 
 ## 6. Docker/operations impact
 
-```text
+<pre>
 REBUILD_WEB=YES
 REBUILD_API=YES
-REBUILD_WORKER=YES (uses the same backend runtime build)
-RUN_MIGRATION=YES (for the three migrations since the production baseline; none were added by the current audit commit)
-RUN_SEED=NO
-RESTART_GATEWAY=YES (Nginx config changed)
+REBUILD_WORKER=YES
+RUN_MIGRATION=YES
+RUN_SEED=NO (baseline upgrade; current role/permission seed definitions did not change)
+RESTART_GATEWAY=YES (gateway config changed)
 
 ENV_EXAMPLE_FIX=PASS
-BACKEND_SH_SEED_FIX=PASS (isolated build-before-script path reviewed; local seed is idempotent; create-owner was not run)
-```
+BACKEND_SH_SEED_FIX=PASS
+</pre>
 
-The `.env.docker.example` and `.env.runtime.example` files contain defaults/paths, not
-credentials; this follow-up changed no environment files. The local Compose stack was
-rebuilt and the `api`, `web`, and `worker` services restarted without removing or
-resetting database/Redis volumes. Compose config validation passed; API health reported
-database up and the home route returned HTTP 200. The existing local database remains
-user data. The seeded roles/owner account were left intact; `create-owner` was not run.
-The local owner login is `halabcreative@gmail.com`; the password remains in the local
-owner secret file and is not copied into this handoff.
+The Compose command built images for api, web and worker. Backend image layers were unchanged/cached and those containers stayed up; the changed web image was recreated, and the migration job completed. PostgreSQL, Redis and media volumes were not removed or reset. API health and local homepage/robots returned HTTP 200. The preflight --write mode was not run because the existing local stack owns port 18473 and rewriting .env.ports would interrupt the active test URL.
+
+scripts/backend.sh seed and the existing-owner create-owner guard were exercised through the wrapper. The wrapper copies checked-in source to a fresh container filesystem, runs npm ci, Prisma generate and Nest build, then executes the command; it does not depend on host backend/dist. Seed completed twice with unchanged counts. create-owner built successfully and safely refused the already-existing email; no Owner account was changed or created. The actual password was never printed or committed.
 
 ## 7. Test results
 
 | Test | Result | Notes |
 |---|---|---|
-| Frontend lint | PASS | `npm run lint -- --no-warn-ignored` |
-| Frontend typecheck | PASS | `npm run typecheck` |
-| Frontend build | PASS | Next.js production build completed during Docker web image rebuild |
-| Frontend Playwright | PASS | 26 passed, 0 failed, serial run against local Docker API/web; covers admin routes, menu, content/media, SEO, pricing and responsive widths |
-| Backend build | PASS | Docker API/worker build completed; Nest build passed |
-| Backend tests | PASS | 11 passed, 0 failed |
-| Docker config | PASS | `docker compose --env-file .env.docker --env-file .env.ports config --quiet` |
-| API smoke | PASS | 54 passed, 0 failed; includes auth/CSRF, settings restore, WebP/ALT/media, publishing, article API, redirects and test-data cleanup |
-| Local persistence | PASS | A precisely identified page draft survived API/web/worker restart, then was deleted through the versioned API and verified 404 |
-| SEO/public-data | PASS WITH LIMITATION | noindex, draft isolation, robots/sitemap policy, HTTP 404 and redirects verified. Positive published-content JSON-LD is unverified because there is no eligible published content. |
-| No-hardcode audit | PASS WITH FINDINGS | `npm run audit:no-hardcode`: 43 findings (21 erased type-only imports, 6 allowed guest ID preferences, 16 legacy-admin findings documented for review). |
-| `git diff --check` | PASS | Cached diff check clean before implementation commit. |
-| Credential/path scan | PASS | Staged secret scan clean; zero env/secret files staged. Existing local credentials and database volumes were preserved. |
-| Dependency audit notice | OPEN BLOCKER | Previous audit recorded 17 backend dependency findings (1 low, 8 moderate, 8 high); this follow-up did not rerun or force-upgrade dependencies. |
+| Frontend lint | PASS | npm run lint -- --no-warn-ignored |
+| Frontend typecheck | PASS | npm run typecheck |
+| Frontend build | PASS | Host Next production build and Docker web image build |
+| Frontend Playwright | PASS | 28/28, serial against local gateway; includes admin route shells, CRUD lifecycle, public draft isolation, responsiveness, robots/sitemap/noindex/404 and pricing |
+| Backend build | PASS | Source build inside Node 24 Docker runner and Compose API build |
+| Backend tests | PASS | 11/11 |
+| Docker config | PASS | scripts/compose.sh config --quiet |
+| API smoke | PASS | 54/54: auth/CSRF/permissions, settings/version conflict, media/WebP/ALT, article publish/redirect/revision and cleanup |
+| SEO audit | PASS WITH LIMITATION | Robots, sitemap, canonical/noindex/draft isolation, redirects and true 404 pass; positive published-content JSON-LD was not exercised because there is no approved public content |
+| Env examples | PASS | Fresh-clone creation + idempotent rerun, no overwrite |
+| Backend seed/owner wrapper | PASS | Seed twice; duplicate-owner guard rejected without DB mutation |
+| No-hardcode audit | PASS WITH FINDINGS | 43: 21 erased type-only imports, 6 allowed guest preference matches, 16 disconnected legacy-admin findings; see docs/data-audit/no-hardcode-report.json and docs/admin/admin-legacy-findings.md |
+| Dependency audit notice | OPEN | Backend install reports 17 existing advisories (1 low, 8 moderate, 8 high); no forced dependency changes |
+
+The new browser tests use unique ATG-* records and remove them; final local aggregate confirms 0 test properties/content and the original 2 users remain. A separate prior persistence check confirmed an identified draft survives local API/web/worker restart and was then deleted by exact ID.
 
 ## 8. Production deployment recommendation
 
-```text
+<pre>
 DEPLOY_FROM_SHA=54c246bbe9f70ed3bf298401e39df3e30a73057c
-DEPLOY_TO_SHA=702d97e46203fef1843426574f05ee33aa79cfc1 (implementation; handoff-only doc follows)
-
+DEPLOY_TO_SHA=30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f
 SAFE_TO_PREPARE_DEPLOY_COMMAND=NO
-BLOCKERS=backend dependency audit findings from prior review (8 high); booking/inventory/payment/CRM/report workflows remain incomplete; no production DB backup/migration-state/TLS/CSRF/CDN verification; no positive published-content JSON-LD case; production state remains unknown
-```
+BLOCKERS=17 backend dependency advisories (8 high); booking/inventory/customer/promotion/payment/report workflows incomplete; production DB migration state, backup/restore, HTTPS/TLS, CSRF and CDN not inspected; no approved live content for positive JSON-LD verification
+</pre>
 
-No production deploy, migration, seed/import, indexing change, DNS update, or service
-restart was performed. The database-backed public surface intentionally does not use
-demo catalog fallback. Keep `SEO_INDEXING_ALLOWED=false` until the owner approves an
-HTTPS origin and real content has been reviewed. Checkout remains an inquiry flow,
-not a confirmed reservation/payment system.
+No production deploy, migration, seed/import, index opening, DNS update or service restart occurred. Keep SEO_INDEXING_ALLOWED=false until the owner explicitly approves the HTTPS canonical origin and real published content. Checkout is consultation, not a confirmed booking/payment system.
 
-## 9. Exact changed files
+## 9. Exact changed-file output
 
-The full production-baseline inventory below was captured before this follow-up. The
-exact additional implementation delta committed in `702d97e` is listed after it; thus
-the baseline-to-implementation inventory is the existing list plus this exact delta.
+Exact git diff --name-status 54c246bbe9f70ed3bf298401e39df3e30a73057c 30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f captured after the implementation commit (222 tracked paths). The documentation-only follow-up changes no file set in this production-baseline range.
 
-```text
+<pre>
 A	.env.docker.example
 A	.env.runtime.example
 M	.gitignore
@@ -179,6 +141,7 @@ A	backend/prisma/migrations/20260923110000_public_seo_snapshots/migration.sql
 A	backend/prisma/migrations/20260923113000_static_pages_root_routes/migration.sql
 A	backend/prisma/migrations/20260923120000_protect_root_reserved_pages/migration.sql
 M	backend/prisma/schema.prisma
+M	backend/scripts/smoke.mjs
 A	backend/src/ai/ai.controller.ts
 A	backend/src/ai/ai.dto.ts
 A	backend/src/ai/ai.module.ts
@@ -217,6 +180,11 @@ M	backend/src/settings/settings.controller.ts
 M	backend/src/settings/settings.registry.ts
 M	backend/src/settings/settings.service.ts
 M	compose.yaml
+A	docs/ADMIN_RUN_TO_GOAL_HANDOFF_2026-09-26.md
+A	docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md
+A	docs/admin/admin-legacy-findings.md
+A	docs/admin/admin-run-to-goal-matrix.md
+M	docs/admin/implementation-status.md
 A	docs/ai-content-and-images.md
 A	docs/data-audit/README.md
 A	docs/data-audit/allowed-static-values.md
@@ -366,41 +334,16 @@ M	src/styles/pages.css
 A	src/styles/rich-content.css
 A	src/styles/static-pages.css
 M	src/styles/stays.css
-A	tests/seo.spec.ts
-A	docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md
-```
-
-Exact output of `git diff --name-status 29159b26b6529953116ce5e8684e8a3152cb3d2a 702d97e46203fef1843426574f05ee33aa79cfc1`:
-
-```text
-M	backend/scripts/smoke.mjs
-M	backend/src/content/content.service.spec.ts
-M	backend/src/content/content.service.ts
-M	backend/src/main.ts
-M	backend/src/navigation/navigation.controller.ts
-M	backend/src/navigation/navigation.service.ts
-A	docs/ADMIN_RUN_TO_GOAL_HANDOFF_2026-09-26.md
-A	docs/admin/admin-legacy-findings.md
-A	docs/admin/admin-run-to-goal-matrix.md
-M	docs/admin/implementation-status.md
-M	docs/data-audit/no-hardcode-report.json
-M	src/components/admin/AdminAuthGate.tsx
-M	src/components/admin/navigation/MenuManager.tsx
-M	src/components/admin/shell/AdminShell.tsx
-M	src/components/admin/shell/AdminSidebar.tsx
-M	src/components/admin/shell/AdminTopbar.tsx
-M	src/components/admin/shell/page-meta.ts
-M	src/styles/admin.css
 D	tests/admin/bookings.spec.ts
 M	tests/admin/catalogue.spec.ts
 D	tests/admin/editor.spec.ts
 A	tests/admin/helpers.ts
+A	tests/admin/run-to-goal.spec.ts
 M	tests/admin/shell.spec.ts
 D	tests/home.spec.ts
 D	tests/navigation.spec.ts
 D	tests/pages.spec.ts
 M	tests/pricing.spec.ts
 A	tests/public-data.spec.ts
-```
-
-The handoff file itself is the only file changed by the documentation-only follow-up.
+A	tests/seo.spec.ts
+</pre>
