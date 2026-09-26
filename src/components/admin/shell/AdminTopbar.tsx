@@ -1,82 +1,44 @@
 'use client';
 
-import { Bell, CalendarDays, ChevronDown, Menu, Search } from 'lucide-react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState } from 'react';
+import { ChevronDown, LogOut, Menu } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { Popover } from '@/components/ui/Popover';
-import { apiRequest } from '@/lib/api/client';
-import { formatDate } from '@/lib/admin/formatters';
-import { pendingBookings, searchAll, type SearchHit } from '@/lib/admin/selectors';
-import { useAdmin } from '../AdminStore';
+import { useAdminSession } from '../AdminAuthGate';
 import type { AdminPageMeta } from './page-meta';
 
-const dateKey = (date: Date) => date.toISOString().slice(0, 10);
-const shiftDate = (date: Date, days: number) => {
-  const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + days);
-  return dateKey(next);
-};
-
-const HIT_LABEL: Record<SearchHit['kind'], string> = {
-  booking: 'Đặt phòng',
-  customer: 'Khách hàng',
-  property: 'Phòng nghỉ',
-  combo: 'Combo',
-  destination: 'Điểm đến',
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Quản trị viên',
+  operator: 'Điều hành',
+  editor: 'Biên tập viên',
+  accountant: 'Kế toán',
+  viewer: 'Chỉ xem',
 };
 
 export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () => void }) {
-  const { data, range, setRange, role, commit, reset, persisted } = useAdmin();
-  const router = useRouter();
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [cursor, setCursor] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const searchBtn = useRef<HTMLButtonElement>(null);
-  const bellRef = useRef<HTMLButtonElement>(null);
+  const { user, logout } = useAdminSession();
   const userRef = useRef<HTMLButtonElement>(null);
-  const rangeRef = useRef<HTMLButtonElement>(null);
-  const [bellOpen, setBellOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-  const [rangeOpen, setRangeOpen] = useState(false);
-  const listId = useId();
-  const today = dateKey(new Date());
-  const rangePresets: { id: string; label: string; from: string; to: string }[] = [
-    { id: 'month', label: '30 ngày gần nhất', from: shiftDate(new Date(), -29), to: today },
-    { id: 'week', label: '7 ngày gần nhất', from: shiftDate(new Date(), -6), to: today },
-    { id: 'today', label: 'Hôm nay', from: today, to: today },
-  ];
+  const [busy, setBusy] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const initials = user.fullName
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((part) => part[0])
+    .join('')
+    .toLocaleUpperCase('vi-VN');
+  const roles = user.roles.map((role) => ROLE_LABELS[role] ?? role).join(' · ') || 'Tài khoản quản trị';
 
-  const hits = searchAll(data, query);
-  const unread = data.inquiries.filter((i) => !i.read);
-  const pending = pendingBookings(data);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen(true);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  useEffect(() => {
-    if (paletteOpen) requestAnimationFrame(() => inputRef.current?.focus());
-  }, [paletteOpen]);
-
-  const closePalette = () => {
-    setPaletteOpen(false);
-    setQuery('');
-    setCursor(0);
-    searchBtn.current?.focus();
-  };
-
-  const go = (hit: SearchHit) => {
-    closePalette();
-    router.push(hit.href);
+  const handleLogout = async () => {
+    setBusy(true);
+    setLogoutError(null);
+    try {
+      await logout();
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : 'Không thể đăng xuất. Vui lòng thử lại.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -93,37 +55,18 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
           <p className="atop__subtitle">{meta.subtitle}</p>
         </div>
 
-        <button type="button" className="atop__search" ref={searchBtn} onClick={() => setPaletteOpen(true)}>
-          <Search size={17} aria-hidden="true" />
-          <span className="atop__search-text">{meta.placeholder}</span>
-          <kbd>Ctrl + K</kbd>
-        </button>
-
-        <button
-          type="button"
-          className="atop__bell icon-btn"
-          ref={bellRef}
-          aria-haspopup="dialog"
-          aria-expanded={bellOpen}
-          onClick={() => setBellOpen((v) => !v)}
-          aria-label={`Thông báo${unread.length ? `, ${unread.length} chưa đọc` : ''}`}
-        >
-          <Bell size={19} aria-hidden="true" />
-          {unread.length > 0 && <span className="atop__dot" />}
-        </button>
-
         <button
           type="button"
           className="atop__user"
           ref={userRef}
-          aria-haspopup="menu"
+          aria-haspopup="dialog"
           aria-expanded={userOpen}
-          onClick={() => setUserOpen((v) => !v)}
+          onClick={() => setUserOpen((value) => !value)}
         >
-          <Image src="/images/dinh-van-booking/people/admin-avatar.webp" alt="" width={40} height={40} className="atop__avatar" />
+          <span className="atop__avatar" aria-hidden="true">{initials}</span>
           <span className="atop__user-text">
-            <strong>Tài khoản quản trị</strong>
-            <small>{role === 'viewer' ? 'Chỉ xem' : role === 'editor' ? 'Biên tập viên' : 'Quản trị viên'}</small>
+            <strong>{user.fullName}</strong>
+            <small>{roles}</small>
           </span>
           <ChevronDown size={16} aria-hidden="true" />
         </button>
@@ -135,150 +78,20 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
             <span key={line}>{line}</span>
           ))}
         </p>
-        <button
-          type="button"
-          className="atop__range"
-          ref={rangeRef}
-          aria-haspopup="dialog"
-          aria-expanded={rangeOpen}
-          onClick={() => setRangeOpen((v) => !v)}
-        >
-          <CalendarDays size={16} aria-hidden="true" />
-          <span>
-            {formatDate(range.from)} - {formatDate(range.to)}
-          </span>
-          <ChevronDown size={16} aria-hidden="true" />
-        </button>
       </div>
-
-      {paletteOpen && (
-        <div className="apalette" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && closePalette()}>
-          <div className="apalette__panel" role="dialog" aria-modal="true" aria-label="Tìm kiếm toàn hệ thống">
-            <div className="apalette__field">
-              <Search size={18} aria-hidden="true" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setCursor(0);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') closePalette();
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setCursor((c) => Math.min(hits.length - 1, c + 1));
-                  }
-                  if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setCursor((c) => Math.max(0, c - 1));
-                  }
-                  if (e.key === 'Enter' && hits[cursor]) go(hits[cursor]);
-                }}
-                placeholder="Nhập mã đơn, tên khách, phòng nghỉ, combo…"
-                aria-controls={listId}
-                aria-label="Từ khóa tìm kiếm"
-              />
-              <kbd>Esc</kbd>
-            </div>
-            <ul className="apalette__list" id={listId}>
-              {query.trim().length < 2 && <li className="apalette__hint">Nhập ít nhất 2 ký tự. Hỗ trợ tìm không dấu.</li>}
-              {query.trim().length >= 2 && !hits.length && <li className="apalette__hint">Không tìm thấy kết quả phù hợp.</li>}
-              {hits.map((hit, i) => (
-                <li key={`${hit.kind}-${hit.id}`}>
-                  <button type="button" className={`apalette__hit${i === cursor ? ' is-cursor' : ''}`} onClick={() => go(hit)}>
-                    <span className="apalette__kind">{HIT_LABEL[hit.kind]}</span>
-                    <span className="apalette__title">{hit.title}</span>
-                    <span className="apalette__meta">{hit.meta}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      <Popover anchorRef={bellRef} open={bellOpen} onClose={() => setBellOpen(false)} label="Thông báo" id="admin-bell" align="end">
-        <div className="apop">
-          <div className="apop__head">
-            <strong>Thông báo</strong>
-            <button
-              type="button"
-              className="apop__link"
-              onClick={() =>
-                commit('bell', (draft) => {
-                  draft.inquiries.forEach((i) => {
-                    i.read = true;
-                  });
-                }, 'Đã đánh dấu tất cả là đã đọc')
-              }
-            >
-              Đánh dấu đã đọc
-            </button>
-          </div>
-          <ul className="apop__list">
-            <li>
-              <span className="apop__badge">{unread.length}</span> yêu cầu tư vấn chưa đọc
-            </li>
-            <li>
-              <span className="apop__badge apop__badge--warn">{pending.length}</span> đơn đặt phòng chờ xác nhận
-            </li>
-            <li>
-              <span className="apop__badge apop__badge--info">{data.followUps.filter((f) => !f.done).length}</span> hẹn chăm sóc
-              khách chưa hoàn tất
-            </li>
-          </ul>
-          <p className="apop__note">Thông báo chỉ hiển thị các bản ghi đã được API quản trị trả về.</p>
-        </div>
-      </Popover>
 
       <Popover anchorRef={userRef} open={userOpen} onClose={() => setUserOpen(false)} label="Tài khoản" id="admin-user" align="end">
         <div className="apop">
           <div className="apop__head">
-            <strong>Tài khoản quản trị</strong>
-            <span className="apop__muted">Phiên đăng nhập được API xác thực</span>
+            <strong>{user.fullName}</strong>
           </div>
-          <p className="apop__note">Vai trò và quyền thao tác được kiểm tra ở backend cho từng endpoint.</p>
-          <button type="button" className="abtn abtn--ghost apop__reset" onClick={reset}>
-            Làm mới dữ liệu từ API
+          <p className="apop__muted">{user.email}</p>
+          <p className="apop__note">{roles}. Quyền thao tác được backend kiểm tra cho từng yêu cầu.</p>
+          {logoutError && <p className="field__error" role="alert">{logoutError}</p>}
+          <button type="button" className="abtn abtn--ghost apop__reset" onClick={() => void handleLogout()} disabled={busy}>
+            <LogOut size={16} aria-hidden="true" />
+            {busy ? 'Đang đăng xuất…' : 'Đăng xuất'}
           </button>
-          {persisted && <p className="apop__note">Không lưu dữ liệu quản trị trong trình duyệt.</p>}
-          <button
-            type="button"
-            className="abtn abtn--ghost apop__reset"
-            onClick={async () => {
-              await apiRequest('/auth/logout', { method: 'POST' });
-              window.location.reload();
-            }}
-          >
-            Đăng xuất
-          </button>
-        </div>
-      </Popover>
-
-      <Popover anchorRef={rangeRef} open={rangeOpen} onClose={() => setRangeOpen(false)} label="Khoảng thời gian" id="admin-range" align="end">
-        <div className="apop">
-          <div className="apop__head">
-            <strong>Khoảng thời gian báo cáo</strong>
-          </div>
-          <ul className="apop__ranges">
-            {rangePresets.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className={`apop__range${range.from === p.from && range.to === p.to ? ' is-active' : ''}`}
-                  onClick={() => {
-                    setRange({ from: p.from, to: p.to });
-                    setRangeOpen(false);
-                    rangeRef.current?.focus();
-                  }}
-                >
-                  {p.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="apop__note">Khoảng thời gian chỉ lọc dữ liệu đã được API trả về.</p>
         </div>
       </Popover>
     </header>

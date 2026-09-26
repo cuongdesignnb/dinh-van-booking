@@ -204,4 +204,27 @@ export class NavigationService {
 
     return this.adminPrimaryMenu();
   }
+
+  async resetPrimaryMenu(user: AuthenticatedUser) {
+    await this.prisma.$transaction(async (tx) => {
+      const menu = await tx.navigationMenu.findUnique({
+        where: { key: PRIMARY_MENU_KEY },
+        select: { id: true, items: { select: { id: true } } },
+      });
+      if (!menu) return;
+
+      await tx.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: 'navigation.primary.reset',
+          entityType: 'navigation_menu',
+          entityId: menu.id,
+          diff: { resetToDefault: true, removedItems: menu.items.length },
+        },
+      });
+      await tx.navigationMenu.delete({ where: { id: menu.id } });
+    });
+
+    return this.adminPrimaryMenu();
+  }
 }

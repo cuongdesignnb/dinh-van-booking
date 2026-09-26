@@ -48,7 +48,12 @@ async function bootstrap(): Promise<void> {
       reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex').code(404).send();
       return;
     }
-    if (!storageKey || storageKey.includes('/') || storageKey.includes('\\') || storageKey.includes('..')) {
+    const pathSegments = storageKey.split('/');
+    if (
+      !storageKey ||
+      storageKey.includes('\\') ||
+      pathSegments.some((segment) => !segment || segment === '.' || segment === '..')
+    ) {
       reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex').code(404).send();
       return;
     }

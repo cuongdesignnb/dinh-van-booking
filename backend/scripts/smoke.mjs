@@ -14,6 +14,10 @@ const PASSWORD = readFileSync(process.env.OWNER_PASSWORD_FILE ?? '/run/secrets/o
 
 let passed = 0;
 let failed = 0;
+let testContentId = null;
+let testContactBaseline = null;
+let testContactVersion = null;
+const testMediaIds = new Set();
 const check = (label, ok, detail = '') => {
   if (ok) {
     passed += 1;
@@ -53,7 +57,51 @@ async function call(path, init = {}) {
   return { status: response.status, body };
 }
 
+async function cleanup() {
+  if (testContentId) {
+    const current = await call(`/content/${testContentId}`);
+    if (current.status === 200) {
+      let node = current.body;
+      if (node.publicationStatus === 'published') {
+        const draft = await call(`/content/${testContentId}/status`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status: 'draft', expectedVersion: node.version }),
+        });
+        if (draft.status === 200) node = draft.body;
+      }
+      const removed = await call(`/content/${testContentId}?expectedVersion=${node.version}`, { method: 'DELETE' });
+      check('test content is cleaned up', removed.status === 204, `got ${removed.status}`);
+    } else {
+      check('test content is already absent', current.status === 404, `got ${current.status}`);
+    }
+    testContentId = null;
+  }
+
+  if (testContactBaseline && testContactVersion !== null) {
+    const restored = testContactBaseline.body.isDefault
+      ? await call(`/settings/brand.contact?expectedVersion=${testContactVersion}`, { method: 'DELETE' })
+      : await call('/settings/brand.contact', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ value: testContactBaseline.body.value, expectedVersion: testContactVersion }),
+        });
+    const baselineRestored = testContactBaseline.body.isDefault
+      ? restored.body?.isDefault === true
+      : JSON.stringify(restored.body?.value) === JSON.stringify(testContactBaseline.body.value);
+    check('test setting restored to its original value', restored.status === 200 && baselineRestored, `got ${restored.status}`);
+    testContactVersion = null;
+  }
+
+  for (const id of testMediaIds) {
+    const removed = await call(`/media/${id}`, { method: 'DELETE' });
+    check('test media is cleaned up', removed.status === 204 || removed.status === 404, `got ${removed.status}`);
+  }
+  testMediaIds.clear();
+}
+
 async function main() {
+  try {
   console.log('health');
   const health = await call('/health');
   check('GET /health is 200 and database up', health.status === 200 && health.body?.database === 'up', JSON.stringify(health.body));
@@ -101,26 +149,38 @@ async function main() {
   check('public snapshot hides private keys', !('media.processing' in (publicBefore.body ?? {})));
   check('public snapshot exposes brand keys', 'brand.identity' in (publicBefore.body ?? {}));
 
+  testContactBaseline = await call('/settings/brand.contact');
   const write = await call('/settings/brand.contact', {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ value: { phone: '0961234567', email: 'lienhe@dinhvan.test' }, expectedVersion: 0 }),
+    body: JSON.stringify({ value: { phone: '0961234567', email: 'lienhe@dinhvan.test' }, expectedVersion: testContactBaseline.body?.version ?? 0 }),
   });
+  if (write.status === 200) testContactVersion = write.body.version;
   check('settings write succeeds', write.status === 200, JSON.stringify(write.body));
   check('written value is merged with the default shape', write.body?.value?.phone === '0961234567' && write.body?.value?.zaloUrl === null);
 
   const stale = await call('/settings/brand.contact', {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ value: { phone: '0000' }, expectedVersion: 0 }),
+    body: JSON.stringify({ value: { phone: '0000' }, expectedVersion: testContactBaseline.body?.version ?? 0 }),
   });
   check('stale expectedVersion is rejected with 409', stale.status === 409, `got ${stale.status}`);
 
   const publicAfter = await call('/settings/public');
   check('public snapshot reflects the new contact', publicAfter.body?.['brand.contact']?.phone === '0961234567');
 
-  const reset = await call('/settings/brand.contact', { method: 'DELETE' });
-  check('reset puts the key back to its default', reset.body?.value?.phone === null && reset.body?.isDefault === true);
+  const reset = testContactBaseline.body.isDefault
+    ? await call(`/settings/brand.contact?expectedVersion=${write.body.version}`, { method: 'DELETE' })
+    : await call('/settings/brand.contact', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ value: testContactBaseline.body.value, expectedVersion: write.body.version }),
+      });
+  const resetMatchesBaseline = testContactBaseline.body.isDefault
+    ? reset.body?.isDefault === true
+    : JSON.stringify(reset.body?.value) === JSON.stringify(testContactBaseline.body.value);
+  check('settings baseline restored after the versioned write', reset.status === 200 && resetMatchesBaseline, `got ${reset.status}`);
+  testContactVersion = null;
 
   console.log('\nmedia');
   const jpeg = await sharp({
@@ -133,6 +193,7 @@ async function main() {
   form.append('altText', 'Ảnh kiểm thử');
   form.append('file', new Blob([jpeg], { type: 'image/jpeg' }), 'anh-goc.jpg');
   const upload = await call('/media/upload', { method: 'POST', body: form });
+  if (upload.body?.id) testMediaIds.add(upload.body.id);
   check('upload accepted', upload.status === 201 || upload.status === 200, JSON.stringify(upload.body).slice(0, 200));
   check('stored as WebP, not JPEG', upload.body?.mimeType === 'image/webp', upload.body?.mimeType);
   check('storage key ends in .webp', upload.body?.storageKey?.endsWith('.webp'), upload.body?.storageKey);
@@ -157,6 +218,7 @@ async function main() {
 
   const removed = await call(`/media/${upload.body.id}`, { method: 'DELETE' });
   check('unused asset can be deleted', removed.status === 204, `got ${removed.status}`);
+  if (removed.status === 204) testMediaIds.delete(upload.body.id);
   const goneFile = await fetch(`${MEDIA_BASE}${upload.body.url}`);
   check('deleted file is gone from the volume', goneFile.status === 404, `got ${goneFile.status}`);
 
@@ -189,6 +251,7 @@ async function main() {
       metaDescription: 'Giới thiệu rừng quốc gia lâu đời nhất Việt Nam.',
     }),
   });
+  if (created.body?.id) testContentId = created.body.id;
   check('content created', created.status === 201 || created.status === 200, JSON.stringify(created.body).slice(0, 200));
   check('slug is Vietnamese-aware', created.body?.slug === 'gioi-thieu-vuon-quoc-gia-cuc-phuong', created.body?.slug);
   check('public route was reserved', created.body?.path === '/bai-viet/gioi-thieu-vuon-quoc-gia-cuc-phuong', created.body?.path);
@@ -204,15 +267,16 @@ async function main() {
   const publishTooEarly = await call(`/content/${created.body.id}/status`, {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ status: 'published' }),
+    body: JSON.stringify({ status: 'published', expectedVersion: created.body.version }),
   });
   check('publish blocked while the checklist fails', publishTooEarly.status === 400, `got ${publishTooEarly.status}`);
-  check('checklist names the missing cover image', JSON.stringify(publishTooEarly.body).includes('ảnh đại diện'));
+  check('checklist names the missing cover image', JSON.stringify(publishTooEarly.body).toLowerCase().includes('ảnh đại diện'));
 
   const cover = new FormData();
   cover.append('altText', 'Rừng Cúc Phương');
   cover.append('file', new Blob([jpeg], { type: 'image/jpeg' }), 'bia.jpg');
   const coverAsset = await call('/media/upload', { method: 'POST', body: cover });
+  if (coverAsset.body?.id) testMediaIds.add(coverAsset.body.id);
 
   const withCover = await call(`/content/${created.body.id}`, {
     method: 'PUT',
@@ -227,9 +291,11 @@ async function main() {
   const published = await call(`/content/${created.body.id}/status`, {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ status: 'published' }),
+    body: JSON.stringify({ status: 'published', expectedVersion: withCover.body.version }),
   });
   check('publish succeeds once the checklist passes', published.body?.publicationStatus === 'published', JSON.stringify(published.body).slice(0, 160));
+  const publicArticle = await call(`/public/articles/${created.body.slug}`);
+  check('published article is returned by the public API', publicArticle.status === 200 && publicArticle.body?.title === created.body.title, `got ${publicArticle.status}`);
 
   const renamed = await call(`/content/${created.body.id}`, {
     method: 'PUT',
@@ -237,6 +303,10 @@ async function main() {
     body: JSON.stringify({ slug: 'rung-cuc-phuong', expectedVersion: published.body.version }),
   });
   check('slug change moves the public path', renamed.body?.path === '/bai-viet/rung-cuc-phuong', renamed.body?.path);
+  const oldRoute = await call(`/public/routes/resolve?path=${encodeURIComponent(created.body.path)}`);
+  const newRoute = await call(`/public/routes/resolve?path=${encodeURIComponent(renamed.body.path)}`);
+  check('old public route resolves as a redirect', oldRoute.body?.kind === 'redirect' && oldRoute.body?.path === renamed.body.path, JSON.stringify(oldRoute.body));
+  check('new public route resolves as current', newRoute.body?.kind === 'current', JSON.stringify(newRoute.body));
 
   const revisions = await call(`/content/${created.body.id}/revisions`);
   check('revisions are recorded', Array.isArray(revisions.body) && revisions.body.length >= 1, String(revisions.body?.length));
@@ -251,31 +321,26 @@ async function main() {
   const inUse = await call(`/media/${coverAsset.body.id}`, { method: 'DELETE' });
   check('image in use cannot be deleted', inUse.status === 409, `got ${inUse.status}`);
 
-  const cleanup = await call(`/content/${created.body.id}`, { method: 'DELETE' });
-  check('published content cannot be deleted outright', cleanup.status === 409, `got ${cleanup.status}`);
+  const publishedDelete = await call(`/content/${created.body.id}?expectedVersion=${renamed.body.version}`, { method: 'DELETE' });
+  check('published content cannot be deleted outright', publishedDelete.status === 409, `got ${publishedDelete.status}`);
 
-  // Leave nothing behind, so a second run starts from the same state.
-  await call(`/content/${created.body.id}/status`, {
-    method: 'PATCH',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ status: 'draft' }),
-  });
-  const removedContent = await call(`/content/${created.body.id}`, { method: 'DELETE' });
-  check('unpublished content can be deleted', removedContent.status === 204, `got ${removedContent.status}`);
-  const removedCover = await call(`/media/${coverAsset.body.id}`, { method: 'DELETE' });
-  check('cover image freed once content is gone', removedCover.status === 204, `got ${removedCover.status}`);
+  await cleanup();
+  const hiddenAfterCleanup = await call('/public/articles/rung-cuc-phuong');
+  check('unpublished test article is absent from public API', hiddenAfterCleanup.status === 404, `got ${hiddenAfterCleanup.status}`);
 
   console.log('\nlogout');
   const logout = await call('/auth/logout', { method: 'POST' });
   check('logout is 204', logout.status === 204, `got ${logout.status}`);
   const afterLogout = await call('/auth/me');
   check('session no longer works', afterLogout.status === 401, `got ${afterLogout.status}`);
-
+  } finally {
+    await cleanup();
+  }
   console.log(`\n${passed} passed, ${failed} failed`);
-  process.exit(failed === 0 ? 0 : 1);
+  process.exitCode = failed === 0 ? 0 : 1;
 }
 
 main().catch((error) => {
   console.error(error);
-  process.exit(1);
+  process.exitCode = 1;
 });

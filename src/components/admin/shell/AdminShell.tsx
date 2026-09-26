@@ -63,7 +63,7 @@ function AdminFooter() {
   );
 }
 
-/** Info panel for the menu entries that are out of scope for this build. */
+/** Honest placeholder for modules whose API and workflows are not implemented yet. */
 export function PendingModule({ title }: { title: string }) {
   return (
     <section className="acard apending">
@@ -71,8 +71,8 @@ export function PendingModule({ title }: { title: string }) {
       <div>
         <h2>{title} chưa nằm trong phạm vi đợt này</h2>
         <p>
-          Menu vẫn giữ mục này để đúng với bản thiết kế, nhưng module chưa được lập trình. Các thao tác liên quan trong 6 màn
-          đã làm (ưu đãi combo, thanh toán của đơn, xuất dữ liệu) vẫn dùng được ngay trong màn tương ứng.
+          Mục này chưa có API hoặc tác vụ vận hành nên hiện chưa thể xem hay thay đổi dữ liệu tại đây. Những chức năng
+          chưa hoàn tất sẽ không hiển thị số liệu mẫu hoặc báo lưu thành công.
         </p>
       </div>
     </section>

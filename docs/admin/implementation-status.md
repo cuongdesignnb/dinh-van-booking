@@ -1,4 +1,9 @@
-# Trạng thái triển khai admin
+# Lưu trữ: đặc tả admin fixture cũ (không phải trạng thái hiện tại)
+
+> Tài liệu này mô tả phiên bản giao diện demo dùng fixture/localStorage trước khi các màn quản trị
+> được nối vào API. Các nhãn **DONE/PARTIAL** và số liệu mẫu phía dưới không còn là bằng chứng
+> trạng thái của sản phẩm hiện tại. Dùng [ma trận run-to-goal](./admin-run-to-goal-matrix.md) và
+> [kết quả audit legacy](./admin-legacy-findings.md) để xem trạng thái đã xác minh ngày 2026-09-27.
 
 **DONE** = có bố cục theo ảnh, thao tác thật trên dữ liệu mẫu, responsive và đã chụp ảnh đối chiếu.
 **PARTIAL** = dùng được nhưng còn giới hạn ghi bên dưới. Không có module nào chỉ là giao diện tĩnh.

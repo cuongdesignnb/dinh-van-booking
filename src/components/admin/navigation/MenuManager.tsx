@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, FilePlus2, Link2, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, FilePlus2, Link2, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { apiRequest } from '@/lib/api/client';
@@ -86,6 +86,23 @@ export function MenuManager() {
 
   const removeItem = (index: number) => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
 
+  const reset = async () => {
+    if (!window.confirm('Khôi phục Menu chính về các liên kết mặc định của website?')) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const restored = await apiRequest<MenuPayload>('/navigation/primary', { method: 'DELETE' });
+      setItems(restored.items);
+      setIsDefault(restored.isDefault);
+      setNotice('Đã khôi phục các liên kết mặc định của website.');
+    } catch (reason) {
+      setError(messageFor(reason));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
@@ -122,6 +139,7 @@ export function MenuManager() {
         </div>
         <div className="menu-manager__head-actions">
           <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || saving}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
+          {!isDefault && <button type="button" className="abtn abtn--ghost" onClick={() => void reset()} disabled={loading || saving}><RotateCcw size={15} aria-hidden="true" /> Khôi phục mặc định</button>}
           <button type="button" className="abtn abtn--primary" onClick={() => void save()} disabled={loading || saving}><Save size={15} aria-hidden="true" /> {saving ? 'Đang lưu…' : 'Lưu Menu'}</button>
         </div>
       </div>

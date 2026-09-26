@@ -23,7 +23,6 @@ import { usePathname } from 'next/navigation';
 import type { ComponentType, SVGProps } from 'react';
 import { DinhVanMark } from '@/components/ui/BrandLogo';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
-import { useAdmin } from '../AdminStore';
 
 export interface AdminNavItem {
   href: string;
@@ -31,7 +30,6 @@ export interface AdminNavItem {
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
   /** Modules that are out of scope for this build open an info panel instead. */
   scope?: 'pending';
-  badge?: 'inquiries';
 }
 
 export const ADMIN_NAV: AdminNavItem[] = [
@@ -41,7 +39,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/combo-du-lich', label: 'Combo du lịch', icon: MapIcon },
   { href: '/admin/diem-den', label: 'Điểm đến', icon: MapPin },
   { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users },
-  { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle, badge: 'inquiries' },
+  { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle },
   { href: '/admin/noi-dung', label: 'Nội dung website', icon: FileText },
   { href: '/admin/chuyen-trang', label: 'Chuyên trang', icon: BookOpenText },
   { href: '/admin/menu', label: 'Quản lý menu', icon: Menu },
@@ -63,8 +61,6 @@ export function activeNavHref(pathname: string) {
 export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const active = activeNavHref(pathname);
-  const { data } = useAdmin();
-  const unread = data.inquiries.filter((i) => !i.read).length;
 
   return (
     <aside className={`asidebar${open ? ' asidebar--open' : ''}`} aria-label="Điều hướng quản trị">
@@ -94,11 +90,6 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
                   >
                     <Icon size={21} strokeWidth={1.9} aria-hidden="true" />
                     <span>{item.label}</span>
-                    {item.badge === 'inquiries' && unread > 0 && (
-                      <span className="anav__badge" aria-label={`${unread} yêu cầu chưa đọc`}>
-                        {unread}
-                      </span>
-                    )}
                   </Link>
                 </li>
               );

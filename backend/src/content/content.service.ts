@@ -587,8 +587,10 @@ export class ContentService {
     }
 
     if (kind === 'article') {
-      const article = details?.article;
-      if (!article) return;
+      // Every article content node needs its typed projection row; without it,
+      // a published node passes the generic checklist but is invisible to the
+      // public article endpoints.
+      const article = details?.article ?? {};
       await tx.article.upsert({
         where: { contentId },
         create: {

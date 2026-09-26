@@ -1,14 +1,27 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { createContext, FormEvent, useCallback, useContext, useEffect, useState } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 
-interface AdminUser {
+export interface AdminUser {
   id: string;
   email: string;
   fullName: string;
   roles: string[];
   permissions: string[];
+}
+
+interface AdminSession {
+  user: AdminUser;
+  logout: () => Promise<void>;
+}
+
+const AdminSessionContext = createContext<AdminSession | null>(null);
+
+export function useAdminSession() {
+  const session = useContext(AdminSessionContext);
+  if (!session) throw new Error('useAdminSession phải được dùng trong AdminAuthGate');
+  return session;
 }
 
 export function AdminAuthGate({ children }: { children: React.ReactNode }) {
@@ -18,6 +31,11 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const logout = useCallback(async () => {
+    await apiRequest('/auth/logout', { method: 'POST' });
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     const onExpired = () => {
@@ -94,5 +112,9 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <AdminSessionContext.Provider value={{ user, logout }}>
+      {children}
+    </AdminSessionContext.Provider>
+  );
 }

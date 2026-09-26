@@ -67,3 +67,18 @@ test('stay publish checklist rejects units and rates that exist only on separate
   );
   assert.ok(problems.includes('Cần ít nhất một hạng phòng có cả đơn vị phòng và giá hợp lệ'));
 });
+
+test('article content always gets a public projection row when optional details are omitted', async () => {
+  const calls: unknown[] = [];
+  const syncDetails = (service as unknown as {
+    syncDetails: (tx: unknown, contentId: string, kind: string, details?: unknown) => Promise<void>;
+  }).syncDetails.bind(service);
+
+  await syncDetails({ article: { upsert: async (input: unknown) => calls.push(input) } }, 'content-id', 'article');
+
+  assert.deepEqual(calls, [{
+    where: { contentId: 'content-id' },
+    create: { contentId: 'content-id', authorName: null, readMinutes: null },
+    update: { authorName: null, readMinutes: null },
+  }]);
+});

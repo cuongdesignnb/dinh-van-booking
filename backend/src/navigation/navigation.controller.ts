@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Put } from '@nestjs/common';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
 import { PERMISSIONS } from '../common/permissions';
 import type { AuthenticatedUser } from '../common/types';
@@ -19,5 +19,11 @@ export class NavigationController {
   @RequirePermissions(PERMISSIONS.contentWrite)
   updatePrimary(@Body() dto: UpdateNavigationMenuDto, @CurrentUser() user: AuthenticatedUser) {
     return this.navigation.updatePrimaryMenu(dto.items, user);
+  }
+
+  @Delete('primary')
+  @RequirePermissions(PERMISSIONS.contentWrite)
+  resetPrimaryMenu(@CurrentUser() user: AuthenticatedUser) {
+    return this.navigation.resetPrimaryMenu(user);
   }
 }
