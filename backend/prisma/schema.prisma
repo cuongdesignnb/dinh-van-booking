@@ -184,6 +184,10 @@ model ContentNode {
   publishedRevisionId String?   @map("published_revision_id") @db.Uuid
   featured            Boolean   @default(false)
   isDemo              Boolean   @default(false) @map("is_demo")
+  /// Set once on first real publication; never inferred from createdAt.
+  firstPublishedAt    DateTime? @map("first_published_at") @db.Timestamptz(3)
+  /// Last meaningful change to the public projection; used as sitemap lastmod.
+  lastPublicChangedAt DateTime? @map("last_public_changed_at") @db.Timestamptz(3)
   version             Int       @default(1)
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -211,6 +215,7 @@ model ContentRevision {
   id               String   @id @default(uuid()) @db.Uuid
   contentId        String   @map("content_id") @db.Uuid
   documentSnapshot Json     @map("document_snapshot")
+  contentSnapshot  Json?    @map("content_snapshot")
   note             String?
   authorId         String?  @map("author_id") @db.Uuid
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)

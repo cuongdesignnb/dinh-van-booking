@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Put, Query } from '@nestjs/common';
 import { SettingsService, type SettingView } from './settings.service';
 import { ListSettingsQuery, UpdateSettingDto } from './dto/settings.dto';
 import { CurrentUser, Public, RequirePermissions } from '../common/decorators';
@@ -27,6 +27,7 @@ export class SettingsController {
   @RequirePermissions(PERMISSIONS.settingsRead)
   async getOne(@Param('key') key: string): Promise<SettingView> {
     const [item] = (await this.settings.list()).filter((s) => s.key === key);
+    if (!item) throw new NotFoundException(`Không có cấu hình ${key}`);
     return item;
   }
 
@@ -42,7 +43,11 @@ export class SettingsController {
 
   @Delete(':key')
   @RequirePermissions(PERMISSIONS.settingsWrite)
-  reset(@Param('key') key: string, @CurrentUser() user: AuthenticatedUser): Promise<SettingView> {
-    return this.settings.reset(key, user.id);
+  reset(
+    @Param('key') key: string,
+    @Query('expectedVersion', ParseIntPipe) expectedVersion: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<SettingView> {
+    return this.settings.reset(key, expectedVersion, user.id);
   }
 }

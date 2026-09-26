@@ -27,16 +27,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';
 import { SmallLeaf } from '@/components/ui/Decor';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
-import { DemoNote, Modal } from '@/components/ui/Modal';
+import { Modal } from '@/components/ui/Modal';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import {
   DESTINATION_CATEGORIES,
-  destinations,
-  destinationsById,
-  featuredDestinations,
-  type Destination,
-  type DestinationCategory,
-  type TipIcon,
-} from '@/data/destinations';
+} from '@/lib/catalog/constants';
+import type { Destination, DestinationCategory, TipIcon } from '@/data/destinations';
 import { readParam } from '@/lib/selection';
 
 function MonkeyIcon({ size = 15 }: { size?: number }) {
@@ -88,26 +84,24 @@ function CategoryIcon({ id }: { id: DestinationCategory | 'all' }) {
 }
 
 /** Category filter + destination cards + detail dialog (URL: ?loai=, ?d=). */
-export function DestinationExplorer() {
+export function DestinationExplorer({ destinations }: { destinations: Destination[] }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const raw = readParam(params, 'loai');
   const category = (DESTINATION_CATEGORIES.some((c) => c.id === raw) ? raw : 'all') as DestinationCategory | 'all';
   const openId = readParam(params, 'd');
-  const open = openId ? (destinationsById.get(openId) ?? null) : null;
+  const open = openId ? (destinations.find((destination) => destination.id === openId || destination.name === openId) ?? null) : null;
   const pushed = useRef(false);
   const [all, setAll] = useState(false);
-  const demo = readParam(params, 'demo');
 
   const list = useMemo(
-    () => featuredDestinations.filter((d) => category === 'all' || d.tags.includes(category)),
-    [category],
+    () => destinations.filter((d) => category === 'all' || d.tags.includes(category)),
+    [category, destinations],
   );
 
   const setQuery = (patch: Record<string, string | null>, mode: 'push' | 'replace' = 'push') => {
     const p = new URLSearchParams(params);
-    p.delete('demo');
     for (const [k, v] of Object.entries(patch)) {
       if (v === null) p.delete(k);
       else p.set(k, v);
@@ -131,32 +125,7 @@ export function DestinationExplorer() {
   };
 
   let body;
-  if (demo === 'error')
-    body = (
-      <div className="state-box" role="alert">
-        <p>
-          <strong>Chưa tải được danh sách điểm đến.</strong>
-        </p>
-        <button type="button" className="btn btn--primary" onClick={() => setQuery({}, 'replace')}>
-          Thử lại
-        </button>
-      </div>
-    );
-  else if (demo === 'loading')
-    body = (
-      <ul className="dest-grid" aria-hidden="true">
-        {Array.from({ length: 6 }, (_, i) => (
-          <li key={i} className="dcard">
-            <div className="dcard__media skeleton" />
-            <div className="dcard__body">
-              <span className="skeleton skeleton--line" />
-              <span className="skeleton skeleton--block" />
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  else if (!list.length)
+  if (!list.length)
     body = (
       <div className="state-box" role="status">
         <p>
@@ -243,13 +212,13 @@ export function DestinationExplorer() {
         {body}
       </section>
 
-      <AllDestinations open={all} onClose={() => setAll(false)} onPick={openDest} />
+      <AllDestinations destinations={destinations} open={all} onClose={() => setAll(false)} onPick={openDest} />
       <DestinationDialog destination={open} onClose={closeDest} />
     </>
   );
 }
 
-function AllDestinations({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (id: string) => void }) {
+function AllDestinations({ destinations, open, onClose, onPick }: { destinations: Destination[]; open: boolean; onClose: () => void; onPick: (id: string) => void }) {
   const id = useId();
   const [q, setQ] = useState('');
   const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
@@ -302,7 +271,7 @@ export function DestinationDialog({ destination, onClose }: { destination: Desti
             {d.name}
           </h2>
           <p className="dialog__lead">{d.summary}</p>
-          <p>{d.description}</p>
+          {d.body ? <RichContentRenderer document={d.body} /> : <p>{d.description}</p>}
           <div className="combo-d__incl">
             <section>
               <h3 className="combo-d__h">Hoạt động gợi ý</h3>
@@ -321,11 +290,10 @@ export function DestinationDialog({ destination, onClose }: { destination: Desti
               </ul>
             </section>
           </div>
-          <DemoNote>
-            Liên hệ để được tư vấn thông tin phù hợp thời điểm đi (giờ mở cửa, vé, đường đi). Nội dung trên là mô tả mẫu,
-            chưa phải hướng dẫn du lịch đã kiểm chứng.
-          </DemoNote>
           <div className="dialog__actions">
+            {d.slug && <Link className="btn btn--light" href={d.publicPath ?? `/diem-den/${d.slug}`}>
+              Xem trang điểm đến <ArrowRight size={16} aria-hidden="true" />
+            </Link>}
             <Link className="btn btn--primary" href={`/lien-he?intent=destination&item=${d.id}`} data-autofocus>
               Nhờ Đinh Vân gợi ý lịch trình <ArrowRight size={16} aria-hidden="true" />
             </Link>
@@ -337,7 +305,7 @@ export function DestinationDialog({ destination, onClose }: { destination: Desti
               type="button"
               className="btn btn--light"
               onClick={async () => {
-                const url = `${window.location.origin}/diem-den?d=${d.id}`;
+                const url = `${window.location.origin}${d.publicPath ?? `/diem-den/${d.slug ?? d.id}`}`;
                 const canShare = typeof navigator.share === 'function';
                 try {
                   if (canShare) await navigator.share({ title: d.name, url });

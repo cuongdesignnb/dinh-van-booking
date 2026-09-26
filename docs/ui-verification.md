@@ -13,7 +13,7 @@ production build (`next build && next start -p 3100`).
 | `npm test` (7 Playwright tests) | 7/7 pass |
 | Console errors, failed requests | none, at all 6 viewports |
 | Horizontal overflow | 0 px at 1448, 1440, 1024, 768, 390, 375 |
-| Fonts | Playfair Display, Roboto Condensed, Dancing Script served by `next/font` (self-hosted), all `loaded`; computed families asserted on h1, body, handwritten |
+| Fonts | Playfair Display, Roboto Condensed, Dancing Script served by self-hosted WOFF2 subsets via `@font-face`; computed families asserted on h1, body, handwritten |
 | Vietnamese text | no mojibake (`Ä‘ Æ° áº á»`) and no U+FFFD in rendered text |
 | Icon buttons | every icon-only control has a visible, non-zero SVG plus `aria-label` |
 

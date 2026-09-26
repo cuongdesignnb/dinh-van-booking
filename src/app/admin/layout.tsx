@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
 import { AdminStoreProvider } from '@/components/admin/AdminStore';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
 import '@/styles/admin.css';
@@ -10,6 +11,8 @@ import '@/styles/admin-combos.css';
 import '@/styles/admin-content.css';
 import '@/styles/admin-crm.css';
 import '@/styles/admin-editor.css';
+import '@/styles/admin-ai.css';
+import '@/styles/admin-media.css';
 import '@/styles/admin-responsive.css';
 
 export const metadata: Metadata = {
@@ -21,9 +24,11 @@ export const metadata: Metadata = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="dvb-admin">
-      <AdminStoreProvider>
-        <AdminShell>{children}</AdminShell>
-      </AdminStoreProvider>
+      <AdminAuthGate>
+        <AdminStoreProvider>
+          <AdminShell>{children}</AdminShell>
+        </AdminStoreProvider>
+      </AdminAuthGate>
     </div>
   );
 }

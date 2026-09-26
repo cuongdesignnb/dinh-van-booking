@@ -2,9 +2,11 @@
  * Listing filters for /phong-nghi. OR within a group, AND between groups.
  * The applied filter lives in the URL so back/forward and reload restore it.
  */
-import { fromPrice, maxCapacity, type Stay } from '@/data/stays';
+import type { Stay } from '@/data/stays';
 import type { AmenityId, StayType } from '@/data/types';
 import { readParam } from './selection';
+
+import { fromPrice, maxCapacity } from '@/lib/catalog/pricing';
 
 export const PRICE_BOUNDS = { min: 300000, max: 2000000, step: 50000 } as const;
 

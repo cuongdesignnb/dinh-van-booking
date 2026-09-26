@@ -2,7 +2,7 @@
 
 import { ChevronDown, RotateCcw, Star } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { AMENITIES, STAY_TYPES } from '@/data/stays';
+import { AMENITIES, STAY_TYPES } from '@/lib/catalog/constants';
 import type { AmenityId, StayType } from '@/data/types';
 import { formatVnd } from '@/lib/format';
 import { PRICE_BOUNDS, RATING_OPTIONS, type StayFilters } from '@/lib/stay-filters';

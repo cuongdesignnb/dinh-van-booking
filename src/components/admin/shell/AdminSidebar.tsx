@@ -2,13 +2,16 @@
 
 import {
   BedDouble,
+  BookOpenText,
   ChartColumn,
   CreditCard,
   FileText,
   House,
+  Images,
   Map as MapIcon,
   MapPin,
   MessageCircle,
+  Menu,
   Settings,
   Tag,
   Users,
@@ -40,10 +43,13 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users },
   { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle, badge: 'inquiries' },
   { href: '/admin/noi-dung', label: 'Nội dung website', icon: FileText },
+  { href: '/admin/chuyen-trang', label: 'Chuyên trang', icon: BookOpenText },
+  { href: '/admin/menu', label: 'Quản lý menu', icon: Menu },
+  { href: '/admin/thu-vien-anh', label: 'Thư viện ảnh', icon: Images },
   { href: '/admin/khuyen-mai', label: 'Khuyến mãi', icon: Tag, scope: 'pending' },
   { href: '/admin/thanh-toan', label: 'Thanh toán', icon: CreditCard, scope: 'pending' },
   { href: '/admin/bao-cao', label: 'Báo cáo', icon: ChartColumn, scope: 'pending' },
-  { href: '/admin/cai-dat', label: 'Cài đặt', icon: Settings, scope: 'pending' },
+  { href: '/admin/cai-dat', label: 'Cài đặt', icon: Settings },
 ];
 
 /** The menu entry a route belongs to (sub-routes never light up two items). */
@@ -67,8 +73,8 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
         <SmallLeaf className="asidebar__leaf asidebar__leaf--b" />
         <div className="asidebar__brand">
           <DinhVanMark className="asidebar__mark" />
-          <span className="asidebar__word brand-wordmark">Đinh Vân Booking</span>
-          <span className="asidebar__tagline">Ở ĐÂY CÓ NHỮNG CHUYẾN ĐI Ý NGHĨA</span>
+          <span className="asidebar__word brand-wordmark">Quản trị</span>
+          <span className="asidebar__tagline">Cấu hình và dữ liệu vận hành</span>
         </div>
         <button type="button" className="asidebar__close" onClick={onClose} aria-label="Đóng menu">
           <X size={18} aria-hidden="true" />
@@ -99,18 +105,20 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
             })}
           </ul>
         </nav>
-        <div className="asidebar__decor" aria-hidden="true" />
-        <p className="asidebar__script handwritten">
-          Thiên nhiên
-          <br />
-          kết nối những
-          <br />
-          con người đẹp ♡
-        </p>
-        <blockquote className="asidebar__quote">
-          <p>“Những hành trình nhỏ tạo nên những ký ức lớn”</p>
-          <cite>— Đinh Vân Booking —</cite>
-        </blockquote>
+        <div className="asidebar__foot">
+          <div className="asidebar__decor" aria-hidden="true" />
+          <p className="asidebar__script handwritten">
+            Thiên nhiên
+            <br />
+            kết nối những
+            <br />
+            con người đẹp ♡
+          </p>
+          <blockquote className="asidebar__quote">
+            <p>“Dữ liệu đã xuất bản là nguồn hiển thị duy nhất.”</p>
+            <cite>— Hệ thống —</cite>
+          </blockquote>
+        </div>
       </div>
     </aside>
   );

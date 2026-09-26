@@ -1,4 +1,4 @@
-import { CombosScreen } from '@/components/admin/combos/CombosScreen';
+import { AdminContentList } from '@/components/admin/content/AdminContentList';
 
 export default async function Page({
   searchParams,
@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  return <CombosScreen />;
+  return <AdminContentList kind="combo" title="Combo du lịch" />;
 }

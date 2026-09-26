@@ -7,26 +7,22 @@ import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { GuestPicker } from '@/components/ui/GuestPicker';
 import { DemoNote, Modal } from '@/components/ui/Modal';
 import { Popover } from '@/components/ui/Popover';
-import { siteConfig } from '@/config/site';
-import { combosById } from '@/data/combos';
-import { destinationsById } from '@/data/destinations';
-import { staysById } from '@/data/stays';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 import { formatShort, fromKey, startOfToday } from '@/lib/dates';
 import { takePendingNote } from '@/lib/draft-store';
 import { parseSelection, readParam } from '@/lib/selection';
-import { demoAdapter, failingAdapter, type ConsultationDraft } from '@/lib/services/consultation';
+import { apiAdapter, type ConsultationDraft } from '@/lib/services/consultation';
 import { MESSAGE_MAX, validateMessage, validateName, validatePhone } from '@/lib/validation';
 
 type Field = 'name' | 'phone' | 'date' | 'message';
-type Status = 'editing' | 'validating' | 'preview' | 'error';
+type Status = 'editing' | 'validating' | 'submitted' | 'error';
 
 function resolveContext(params: URLSearchParams): ConsultationDraft['context'] {
   const intent = readParam(params, 'intent');
   const item = readParam(params, 'item');
-  if (intent === 'combo' && item && combosById.has(item)) return { intent, id: item, label: combosById.get(item)!.title };
-  if (intent === 'destination' && item && destinationsById.has(item))
-    return { intent, id: item, label: destinationsById.get(item)!.name };
-  if (intent === 'stay' && item && staysById.has(item)) return { intent, id: item, label: staysById.get(item)!.name };
+  if (intent === 'combo' && item) return { intent, id: item, label: item };
+  if (intent === 'destination' && item) return { intent, id: item, label: item };
+  if (intent === 'stay' && item) return { intent, id: item, label: item };
   if (intent === 'stay') return { intent, id: '', label: 'Chọn phòng nghỉ phù hợp' };
   if (intent === 'combo') return { intent, id: '', label: 'Combo du lịch' };
   return null;
@@ -35,6 +31,7 @@ function resolveContext(params: URLSearchParams): ConsultationDraft['context'] {
 export const CONTACT_FORM_ID = 'form-tu-van';
 
 export function ConsultationForm() {
+  const site = useSiteData();
   const uid = useId();
   const params = useSearchParams();
   const [context, setContext] = useState(() => resolveContext(params));
@@ -99,8 +96,7 @@ export function ConsultationForm() {
     }
     setStatus('validating');
     setAdapterError(null);
-    const adapter = params.get('demo') === 'adapter-error' ? failingAdapter : demoAdapter;
-    const result = await adapter.submit({
+    const result = await apiAdapter.submit({
       name,
       phone,
       checkIn: date,
@@ -112,7 +108,7 @@ export function ConsultationForm() {
     if (result.status === 'error') {
       setAdapterError(result.message);
       setStatus('error');
-    } else setStatus('preview');
+    } else setStatus('submitted');
   };
 
   const summary = [
@@ -335,22 +331,19 @@ export function ConsultationForm() {
         />
       </Popover>
 
-      <Modal open={status === 'preview'} onClose={() => setStatus('editing')} labelledBy={`${uid}-pv`}>
+      <Modal open={status === 'submitted'} onClose={() => setStatus('editing')} labelledBy={`${uid}-pv`}>
         <h2 id={`${uid}-pv`} className="dialog__title">
-          Xem trước yêu cầu tư vấn
+          Đã nhận yêu cầu tư vấn
         </h2>
         <p className="dialog__pending" role="status">
-          Thông tin tư vấn của bạn đã được kiểm tra tại giao diện. Đây là bản xem trước; yêu cầu chưa được gửi đến Đinh
-          Vân.
+          Yêu cầu đã được lưu vào hệ thống tư vấn. Đinh Vân sẽ xem và phản hồi theo thông tin liên hệ đã cấu hình.
         </p>
         <ul className="preview-list">
           {summary.map((l) => (
             <li key={l}>{l}</li>
           ))}
         </ul>
-        {!siteConfig.contact.zaloUrl && !siteConfig.contact.phone && (
-          <DemoNote>Thông tin liên hệ đang được cập nhật. Bạn có thể sao chép nội dung để gửi khi kênh liên hệ sẵn sàng.</DemoNote>
-        )}
+        {!site.contact.zaloUrl && !site.contact.phone && <DemoNote>Kênh liên hệ trực tiếp chưa được cấu hình.</DemoNote>}
         <div className="dialog__actions">
           <button type="button" className="btn btn--light" data-autofocus onClick={() => setStatus('editing')}>
             Quay lại chỉnh sửa

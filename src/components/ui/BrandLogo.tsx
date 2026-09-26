@@ -1,4 +1,6 @@
-import { siteConfig } from '@/config/site';
+'use client';
+
+import { useSiteData } from '@/components/site/SiteDataProvider';
 
 /** Mountain + forest mark. Kept as SVG so it stays crisp at any size. */
 export function DinhVanMark({ className }: { className?: string }) {
@@ -42,12 +44,13 @@ export function DinhVanMark({ className }: { className?: string }) {
 }
 
 export function BrandLogo({ variant = 'header' }: { variant?: 'header' | 'footer' }) {
+  const site = useSiteData();
   return (
     <span className={`brand brand--${variant}`}>
       <DinhVanMark className="brand__mark" />
       <span className="brand__text">
-        <span className="brand-wordmark">{siteConfig.name}</span>
-        <span className="brand__tagline">{siteConfig.tagline}</span>
+        <span className="brand-wordmark">{site.name}</span>
+        <span className="brand__tagline">{site.tagline}</span>
       </span>
     </span>
   );

@@ -4,6 +4,7 @@
  * hours, ticket prices and access rules are intentionally absent.
  */
 import type { ImageAsset } from './types';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 const IMG = '/images/dinh-van-booking';
 
@@ -22,6 +23,13 @@ export type TipIcon = 'monkey' | 'walk' | 'center' | 'boat' | 'camera' | 'leaf' 
 
 export interface Destination {
   id: string;
+  slug?: string;
+  publicPath?: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  noindex?: boolean;
+  firstPublishedAt?: string | null;
+  lastPublicChangedAt?: string | null;
   name: string;
   /** Short line used on the homepage strip. */
   subtitle: string;
@@ -30,6 +38,8 @@ export interface Destination {
   summary: string;
   tips: { icon: TipIcon; text: string }[];
   description: string;
+  /** Published CMS body; demo fixtures may omit it. */
+  body?: RichDocument;
   activities: string[];
   notes: string[];
   image: ImageAsset;
@@ -40,7 +50,7 @@ export interface Destination {
   /** Position on the illustrated map (percent). */
   mapPos?: { x: number; y: number };
   featured: boolean;
-  isDemo: true;
+  isDemo?: boolean;
 }
 
 const img = (src: string, alt: string, width: number, height: number): ImageAsset => ({ src, alt, width, height });

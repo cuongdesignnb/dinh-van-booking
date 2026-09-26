@@ -1,17 +1,15 @@
 /**
- * Site configuration.
- *
- * Every contact channel below is `null` until the site owner confirms it.
- * The labels in `previewLabels` reproduce the mockup for visual comparison only
- * and are never turned into working links.
+ * Runtime site data is loaded from `/public/site`. This module intentionally
+ * contains no mutable business values; the empty shape is only used while the
+ * API is unavailable or the database has not been onboarded.
  */
-export type SiteMode = 'preview' | 'production';
-
 export interface SiteContact {
   phone: string | null;
+  hotline: string | null;
   zaloUrl: string | null;
   email: string | null;
   address: string | null;
+  mapUrl: string | null;
 }
 
 export interface SiteSocial {
@@ -21,33 +19,25 @@ export interface SiteSocial {
   tiktok: string | null;
 }
 
-export const siteConfig = {
-  mode: 'preview' as SiteMode,
-  name: 'Đinh Vân Booking',
-  tagline: 'Ở ĐÂY CÓ NHỮNG CHUYẾN ĐI Ý NGHĨA',
-  description:
-    'Tư vấn và đặt phòng nghỉ tại Cúc Phương, Ninh Bình cùng người bản địa Đinh Vân.',
-  /** Demo data (rooms, prices, reviews) is shown — never publish as real data. */
-  usesDemoData: true,
-  contact: {
-    phone: null,
-    zaloUrl: null,
-    email: null,
-    address: null,
-  } satisfies SiteContact as SiteContact,
-  social: {
-    facebook: null,
-    instagram: null,
-    youtube: null,
-    tiktok: null,
-  } satisfies SiteSocial as SiteSocial,
-  /** Mockup labels, shown as plain text only (not links). */
-  previewLabels: {
-    phone: '096x xxx xxx',
-    zalo: 'Zalo: Đinh Vân Booking',
-    email: 'dinhvanbooking@gmail.com',
-    address: 'Cúc Phương, Nho Quan, Ninh Bình',
-  },
+export interface RuntimeSiteData {
+  name: string;
+  shortName: string;
+  tagline: string;
+  description: string;
+  contact: SiteContact;
+  social: SiteSocial;
+  usesDemoData: boolean;
+}
+
+export const emptySiteData: RuntimeSiteData = {
+  name: '',
+  shortName: '',
+  tagline: '',
+  contact: { phone: null, hotline: null, zaloUrl: null, email: null, address: null, mapUrl: null },
+  description: '',
+  social: { facebook: null, instagram: null, youtube: null, tiktok: null },
+  usesDemoData: false,
 };
 
-export const isPreview = siteConfig.mode === 'preview';
+/** Kept as a compatibility export for non-rendering tooling. */
+export const siteConfig = emptySiteData;

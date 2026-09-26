@@ -1,4 +1,4 @@
-import { CrmScreen } from '@/components/admin/crm/CrmScreen';
+import { PendingModule } from '@/components/admin/shell/AdminShell';
 
 export default async function Page({
   searchParams,
@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  return <CrmScreen defaultTab="customers" />;
+  return <PendingModule title="Khách hàng" />;
 }

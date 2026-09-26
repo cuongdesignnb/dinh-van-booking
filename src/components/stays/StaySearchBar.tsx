@@ -14,7 +14,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode, type R
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { GuestPicker } from '@/components/ui/GuestPicker';
 import { Popover } from '@/components/ui/Popover';
-import { AMENITIES, STAY_TYPES } from '@/data/stays';
+import { AMENITIES, STAY_TYPES } from '@/lib/catalog/constants';
 import type { AmenityId, StayType } from '@/data/types';
 import { formatShort } from '@/lib/dates';
 import { onFocusSearch } from '@/lib/events';

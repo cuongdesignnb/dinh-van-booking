@@ -50,6 +50,8 @@ next-env.d.ts
 
 .vercel
 .env*
+!.env.docker.example
+!.env.runtime.example
 
 # duplicated under docs/reference
 /references/

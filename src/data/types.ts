@@ -1,4 +1,4 @@
-/** Shared data types. Every record coming from a fixture carries `isDemo: true`. */
+/** Shared UI shapes. Runtime records come from the API; fixtures are test-only. */
 
 export interface ImageAsset {
   src: string;
@@ -43,7 +43,7 @@ export interface Host {
   quote: string;
   bio: string;
   avatar: ImageAsset;
-  isDemo: true;
+  isDemo?: boolean;
 }
 
 export interface Review {
@@ -55,7 +55,7 @@ export interface Review {
   quote: string;
   avatar: ImageAsset | null;
   photos?: ImageAsset[];
-  isDemo: true;
+  isDemo?: boolean;
 }
 
 export interface Faq {

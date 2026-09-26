@@ -1,4 +1,4 @@
-import { CrmScreen } from '@/components/admin/crm/CrmScreen';
+import { InquiryInbox } from '@/components/admin/crm/InquiryInbox';
 
 export default async function Page({
   searchParams,
@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  return <CrmScreen defaultTab="inquiries" />;
+  return <InquiryInbox />;
 }

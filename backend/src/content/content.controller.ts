@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Patch,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -15,6 +16,7 @@ import {
   CreateContentDto,
   ListContentQuery,
   SetStatusDto,
+  RestoreContentDto,
   UpdateContentDto,
 } from './dto/content.dto';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
@@ -67,7 +69,7 @@ export class ContentController {
     @Body() dto: SetStatusDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ContentView> {
-    return this.content.setStatus(id, dto.status, dto.publishAt ?? null, user.id);
+    return this.content.setStatus(id, dto.status, dto.publishAt ?? null, dto.expectedVersion, user.id);
   }
 
   @Post(':id/revisions/:revisionId/restore')
@@ -75,15 +77,20 @@ export class ContentController {
   restore(
     @Param('id') id: string,
     @Param('revisionId') revisionId: string,
+    @Body() dto: RestoreContentDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ContentView> {
-    return this.content.restoreRevision(id, revisionId, user.id);
+    return this.content.restoreRevision(id, revisionId, dto.expectedVersion, user.id);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @RequirePermissions(PERMISSIONS.contentWrite)
-  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<void> {
-    return this.content.remove(id, user.id);
+  remove(
+    @Param('id') id: string,
+    @Query('expectedVersion', ParseIntPipe) expectedVersion: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    return this.content.remove(id, expectedVersion, user.id);
   }
 }

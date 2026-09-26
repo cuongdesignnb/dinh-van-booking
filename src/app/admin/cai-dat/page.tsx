@@ -1,5 +1,5 @@
-import { PendingModule } from '@/components/admin/shell/AdminShell';
+import { SettingsScreen } from '@/components/admin/settings/SettingsScreen';
 
 export default function Page() {
-  return <PendingModule title="Cài đặt" />;
+  return <SettingsScreen />;
 }

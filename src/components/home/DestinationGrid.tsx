@@ -2,16 +2,14 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SmallLeaf } from '@/components/ui/Decor';
-import { destinationsById, HOME_DESTINATION_IDS } from '@/data/destinations';
+import type { Destination } from '@/data/destinations';
 
 /** Homepage labels differ slightly from the destination page (mockup copy). */
 const HOME_NAMES: Record<string, string> = {
   'dong-nguoi-xua': 'Động người xưa',
   'trang-an': 'Tràng An - Ninh Bình',
 };
-const homeDestinations = HOME_DESTINATION_IDS.map((id) => destinationsById.get(id)!);
-
-export function DestinationGrid() {
+export function DestinationGrid({ destinations }: { destinations: Destination[] }) {
   return (
     <section className="explore" id="diem-den" aria-labelledby="explore-title">
       <div
@@ -30,7 +28,7 @@ export function DestinationGrid() {
         </Link>
       </div>
       <ul className="destination-grid">
-        {homeDestinations.map((d, i) => (
+        {destinations.map((d, i) => (
           <li key={d.id} data-reveal="card" style={{ '--d': `${1800 + i * 90}ms` } as React.CSSProperties}>
             <Link href={`/diem-den?d=${d.id}`} className="dest">
               <span className="dest__media">

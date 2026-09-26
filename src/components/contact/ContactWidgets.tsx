@@ -4,7 +4,7 @@ import { ArrowRight, Leaf, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import { useId, useState } from 'react';
 import { DemoNote, Modal } from '@/components/ui/Modal';
-import { siteConfig } from '@/config/site';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 import { CONTACT_FORM_ID } from './ConsultationForm';
 
 export function FocusFormButton({ className, children }: { className?: string; children: React.ReactNode }) {
@@ -25,6 +25,7 @@ export function FocusFormButton({ className, children }: { className?: string; c
 }
 
 function MapCanvas({ large }: { large?: boolean }) {
+  const site = useSiteData();
   return (
     <div className={`cmap${large ? ' cmap--large' : ''}`}>
       <Image src="/images/dinh-van-booking/pages/map-contact.webp" alt="" fill sizes={large ? '780px' : '456px'} className="cmap__bg" />
@@ -58,7 +59,7 @@ function MapCanvas({ large }: { large?: boolean }) {
         </svg>
       </span>
       <span className="cmap__pop">
-        <strong>{siteConfig.name}</strong>
+        <strong>{site.name || 'Địa điểm kinh doanh'}</strong>
         Cúc Phương – Ninh Bình
       </span>
       {!large && (

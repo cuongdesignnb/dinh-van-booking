@@ -6,6 +6,11 @@ import { SettingsModule } from './settings/settings.module';
 import { MediaModule } from './media/media.module';
 import { ContentModule } from './content/content.module';
 import { HealthModule } from './health/health.module';
+import { PublicModule } from './public/public.module';
+import { InquiryModule } from './inquiries/inquiry.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { NavigationModule } from './navigation/navigation.module';
+import { AiModule } from './ai/ai.module';
 import { loadConfig } from './common/config/env';
 
 @Module({
@@ -16,6 +21,11 @@ import { loadConfig } from './common/config/env';
     SettingsModule,
     MediaModule,
     ContentModule,
+    PublicModule,
+    InquiryModule,
+    CatalogModule,
+    NavigationModule,
+    AiModule,
     HealthModule,
   ],
 })

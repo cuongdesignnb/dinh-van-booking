@@ -1,0 +1,5 @@
+{
+  "status": "NOT_RUN",
+  "reason": "There are no published test records in the local database. Creating/updating business content solely for this check would change local user data and would not prove production behavior.",
+  "required_follow_up": "Use an isolated test database with a verified published fixture, then compare two independent browser sessions before and after publish/rename/restart."
+}

@@ -1,23 +1,53 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { DestinationExplorer } from '@/components/destinations/DestinationExplorer';
 import { ItineraryTabs, LocalMap, Seasons } from '@/components/destinations/DiscoveryLower';
 import { PageShell } from '@/components/layout/PageShell';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { SmallLeaf } from '@/components/ui/Decor';
+import { getPublicDestinations, getPublicLegacyTarget, getPublicSeoUrls, getPublicSite } from '@/lib/api/public';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { isSubstantivePublicContent } from '@/lib/seo/content';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { isSeoSchemaAllowed } from '@/lib/seo/policy';
+import { buildCollectionGraph } from '@/lib/seo/schema';
 import '@/styles/destinations.css';
 
-export const metadata: Metadata = {
-  title: 'Khám phá Cúc Phương - Ninh Bình — Đinh Vân Booking',
-  description: 'Rừng xanh, núi đá, văn hóa và trải nghiệm chân thật tại Cúc Phương - Ninh Bình.',
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const query = await searchParams;
+  if (query.d !== undefined) return { title: 'Điểm đến Cúc Phương — Đinh Vân Booking' };
+  const [destinations, urls] = await Promise.all([getPublicDestinations(), getPublicSeoUrls()]);
+  return buildPageMetadata({
+    path: '/diem-den',
+    title: 'Khám phá Cúc Phương - Ninh Bình — Đinh Vân Booking',
+    description: 'Rừng xanh, núi đá, văn hóa và trải nghiệm chân thật tại Cúc Phương - Ninh Bình.',
+    eligible: urls.some((entry) => entry.path === '/diem-den') && destinations.length > 0,
+    searchParams: query,
+  });
+}
 
 export default async function DestinationsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await searchParams;
+  const query = await searchParams;
+  if (query.d !== undefined) {
+    const value = typeof query.d === 'string' ? query.d.trim() : query.d.length === 1 ? query.d[0].trim() : '';
+    if (!value) notFound();
+    const path = await getPublicLegacyTarget('destination', value);
+    if (!path) notFound();
+    permanentRedirect(path);
+  }
+  const [destinations, site, urls] = await Promise.all([getPublicDestinations(), getPublicSite(), getPublicSeoUrls()]);
+  const indexablePaths = new Set(urls.map((entry) => entry.path));
+  const schemaItems = destinations
+    .filter((destination) => !destination.noindex && !!destination.publicPath && indexablePaths.has(destination.publicPath) && isSubstantivePublicContent(destination.body ?? destination.description))
+    .map((destination) => ({ name: destination.name, href: destination.publicPath! }));
+  const structuredData = isSeoSchemaAllowed(site, '/diem-den', { eligible: schemaItems.length > 0, searchParams: query })
+    ? buildCollectionGraph(site, { path: '/diem-den', title: 'Điểm đến Cúc Phương', items: schemaItems })
+    : null;
   return (
     <PageShell className="page-destinations">
       <section className="phero phero--dest" aria-labelledby="dest-h1">
@@ -62,13 +92,13 @@ export default async function DestinationsPage({
         </div>
       </section>
 
-        <DestinationExplorer />
+        <DestinationExplorer destinations={destinations} />
 
       <div className="discovery-lower content-shell">
         <ItineraryTabs />
         <Seasons />
         <div className="discovery-lower__right">
-            <LocalMap />
+            <LocalMap destinations={destinations} />
           <section className="note-card" aria-labelledby="note-t">
             <div className="note-card__body">
               <h2 className="note-card__title" id="note-t">
@@ -94,6 +124,7 @@ export default async function DestinationsPage({
           </section>
         </div>
       </div>
+      <JsonLd data={structuredData} />
     </PageShell>
   );
 }

@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 import { LeafSprig } from '@/components/ui/Decor';
-import { trustItems } from '@/data/home-fixtures';
+
+type TrustIcon = 'leaf' | 'heart' | 'shield' | 'users';
+type TrustItem = { id: string; icon: TrustIcon; lines: string[] };
+
+// Commercial claims must come from managed content, never from a UI fixture.
+const trustItems: TrustItem[] = [];
 
 /** Filled glyphs to match the solid icons in the mockup. */
 const glyphs: Record<(typeof trustItems)[number]['icon'], ReactNode> = {
@@ -49,6 +54,8 @@ const glyphs: Record<(typeof trustItems)[number]['icon'], ReactNode> = {
 };
 
 export function TrustStrip() {
+  if (!trustItems.length) return null;
+
   return (
     <section className="trust" aria-label="Cam kết của Đinh Vân Booking">
       <LeafSprig className="trust__leaf trust__leaf--l" />

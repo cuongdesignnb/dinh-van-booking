@@ -44,21 +44,21 @@ function AdminFooter() {
       <div className="afooter__brand">
         <DinhVanMark className="afooter__mark" />
         <span>
-          <strong className="brand-wordmark">Đinh Vân Booking</strong>
-          <small>Ở ĐÂY CÓ NHỮNG CHUYẾN ĐI Ý NGHĨA</small>
+          <strong className="brand-wordmark">Quản trị</strong>
+          <small>Thông tin thương hiệu lấy từ cấu hình hệ thống</small>
         </span>
       </div>
       <p className="afooter__mid">
         Quản trị hệ thống đặt phòng và du lịch
         <br />
-        Cúc Phương – Nho Quan – Ninh Bình
+        Dữ liệu vận hành và nội dung đã được xuất bản
       </p>
       <p className="afooter__script handwritten">
         Cùng nhau lan tỏa
         <br />
         những chuyến đi ý nghĩa ♡
       </p>
-      <p className="afooter__copy">© 2024 Đinh Vân Booking. Dữ liệu mẫu phục vụ demo giao diện.</p>
+      <p className="afooter__copy">Không lưu bản ghi nghiệp vụ trong trình duyệt</p>
     </footer>
   );
 }

@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { GuestPicker } from '@/components/ui/GuestPicker';
 import { Popover } from '@/components/ui/Popover';
-import { fromPrice } from '@/data/stays';
+import { fromPrice } from '@/lib/catalog/pricing';
 import { formatShort } from '@/lib/dates';
 import { formatVnd } from '@/lib/format';
 import { nights } from '@/lib/selection';
@@ -56,7 +56,7 @@ export function BookingCard() {
         )}
       </p>
       <p className="bcard__badge">
-        <ShieldCheck size={15} aria-hidden="true" /> Giá tốt, không qua trung gian
+        <ShieldCheck size={15} aria-hidden="true" /> Giá theo hạng phòng đã xuất bản
       </p>
 
       <div className="bcard__dates">

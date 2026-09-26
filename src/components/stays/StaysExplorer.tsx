@@ -5,7 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { Pagination } from '@/components/shared/Pagination';
 import { Modal } from '@/components/ui/Modal';
-import { AMENITIES, STAY_TYPES, stays as ALL_STAYS } from '@/data/stays';
+import { AMENITIES, STAY_TYPES } from '@/lib/catalog/constants';
+import type { Stay } from '@/data/stays';
 import { parseSelection, selectionQuery, writeSelection, type Selection } from '@/lib/selection';
 import {
   activeFilterCount,
@@ -25,6 +26,7 @@ import { StayMapCard } from './StayMap';
 import { priceLabel, StaySearchBar } from './StaySearchBar';
 
 interface Slots {
+  stays: Stay[];
   advisor: ReactNode;
   notFound: ReactNode;
   reviews: ReactNode;
@@ -35,20 +37,12 @@ interface Slots {
  * Listing state machine. The URL is the single source of truth for the applied
  * selection + filters, so reload and back/forward restore the same results.
  */
-export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
+export function StaysExplorer({ stays, advisor, notFound, reviews, faq }: Slots) {
   const params = useSearchParams();
   const pathname = usePathname();
   const selection = useMemo(() => parseSelection(params), [params]);
   const filters = useMemo(() => parseFilters(params), [params]);
-  const demo = params.get('demo');
-  const extended = params.get('fixture') === 'extended';
-  const dataset = useMemo(
-    () =>
-      extended
-        ? [...ALL_STAYS, ...ALL_STAYS.map((s) => ({ ...s, id: `${s.id}-copy`, badge: undefined, name: `${s.name} (bản sao demo)` }))]
-        : ALL_STAYS,
-    [extended],
-  );
+  const dataset = stays;
   const guests = selection.adults + selection.children;
   const results = useMemo(() => applyFilters(dataset, filters, guests), [dataset, filters, guests]);
   const counts = useMemo(() => facetCounts(dataset, filters, guests), [dataset, filters, guests]);
@@ -63,7 +57,6 @@ export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
 
   const navigate = (sel: Selection, f: StayFilters) => {
     const base = new URLSearchParams(params);
-    base.delete('demo');
     const next = writeFilters(f, writeSelection(sel, base));
     window.history.pushState(null, '', `${pathname}?${next.toString()}`);
   };
@@ -97,20 +90,7 @@ export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
   );
 
   let body: ReactNode;
-  if (demo === 'loading') body = <ResultsSkeleton />;
-  else if (demo === 'error')
-    body = (
-      <div className="state-box" role="alert">
-        <Info size={22} aria-hidden="true" />
-        <p>
-          <strong>Chưa tải được danh sách chỗ nghỉ.</strong> Lựa chọn của bạn vẫn được giữ nguyên.
-        </p>
-        <button type="button" className="btn btn--primary" onClick={() => navigate(selection, filters)}>
-          Thử lại
-        </button>
-      </div>
-    );
-  else if (!results.length)
+  if (!results.length)
     body = (
       <div className="state-box" role="status">
         <p>
@@ -157,7 +137,7 @@ export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
         <section className="stays-main" aria-labelledby="stays-count">
           <div className="stays-toolbar">
             <p className="stays-toolbar__count" id="stays-count" aria-live="polite">
-              {demo === 'loading' ? 'Đang tải kết quả…' : `Có ${results.length} kết quả phù hợp`}
+              {`Có ${results.length} kết quả phù hợp`}
             </p>
             <div className="stays-toolbar__mobile">
               <button
@@ -232,7 +212,7 @@ export function StaysExplorer({ advisor, notFound, reviews, faq }: Slots) {
         </section>
 
         <aside className="stays-side stays-side--right" id="ban-do" aria-label="Bản đồ và tư vấn">
-          <StayMapCard stays={demo ? [] : pageItems} query={query} />
+          <StayMapCard stays={pageItems} query={query} />
           {advisor}
         </aside>
       </div>

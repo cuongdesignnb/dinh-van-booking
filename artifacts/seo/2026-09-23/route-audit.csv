@@ -1,0 +1,14 @@
+method,path,status,robots_or_result,verified
+GET,/,200,"X-Robots-Tag=noindex; no canonical; no JSON-LD",yes
+GET,/phong-nghi,200,"noindex while the gate is closed",yes
+GET,/phong-nghi?q=smoke-test,200,"noindex; no canonical",yes
+GET,/combo-du-lich,200,"noindex while the gate is closed",yes
+GET,/diem-den,200,"noindex while the gate is closed",yes
+GET,/bai-viet,200,"noindex while the gate is closed",yes
+GET,/admin,200,"noindex; unauthenticated login screen",yes
+GET,/api/v1/content,401,"X-Robots-Tag=noindex, nofollow",yes
+GET,/robots.txt,200,"allows crawl; disallows /admin/ and /api/; no sitemap directive",yes
+GET,/sitemap.xml,200,"valid empty urlset; gate closed and no eligible records",yes
+GET,/seo-smoke-route-not-found,404,"not-found page; noindex",yes
+GET,/combo-du-lich?combo=seo-smoke-not-found,404,"unresolved legacy target is not shown as a successful list",yes
+GET,/diem-den?d=seo-smoke-not-found,404,"unresolved legacy target is not shown as a successful list",yes

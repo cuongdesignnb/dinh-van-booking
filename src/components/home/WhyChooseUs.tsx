@@ -1,10 +1,15 @@
 import { House, Map, MessageCircle, Tag, UserRound } from 'lucide-react';
 import { SmallLeaf } from '@/components/ui/Decor';
-import { reasons } from '@/data/home-fixtures';
+
+type Reason = { id: string; icon: keyof typeof icons; lines: string[] };
+// Business positioning is managed content; keep the public shell empty until it is published.
+const reasons: Reason[] = [];
 
 const icons = { user: UserRound, house: House, message: MessageCircle, tag: Tag, map: Map } as const;
 
 export function WhyChooseUs() {
+  if (!reasons.length) return null;
+
   return (
     <section className="why" aria-labelledby="why-title">
       <div className="why__intro" data-reveal="fade-up" style={{ '--d': '1500ms' } as React.CSSProperties}>

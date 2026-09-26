@@ -1,0 +1,17 @@
+Frontend:
+- npm run typecheck: PASS
+- npm run lint: PASS
+- Docker production build (Next.js 15.5.19): PASS
+- BASE_URL=http://127.0.0.1:18473 npm test -- tests/seo.spec.ts: PASS, 6/6
+
+Backend:
+- Docker Prisma generate + Nest build: PASS
+- node --test dist/**/*.spec.js in API container: PASS, 4/4
+- additive migrations applied locally: PASS (including root-route reserved-slug guard)
+
+Data/static checks:
+- npm run audit:no-hardcode: completed; 43 findings in docs/data-audit/no-hardcode-report.json (see implementation report for classification)
+- git diff --check: PASS (Git emitted line-ending advisory warnings only)
+- nginx -t: PASS; gateway restarted and API noindex header verified
+
+Not run: full legacy Playwright suite, positive content/redirect integration cases, DB-outage simulation, concurrent mutation race, Lighthouse/Core Web Vitals, Schema.org/Google validators, Search Console, production crawl.

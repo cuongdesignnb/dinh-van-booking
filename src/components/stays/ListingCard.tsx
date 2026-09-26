@@ -3,8 +3,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AmenityIcon } from '@/components/shared/AmenityIcon';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
-import { fromPrice, type Stay } from '@/data/stays';
+import type { Stay } from '@/data/stays';
 import { formatRating, formatVnd } from '@/lib/format';
+
+const fromPrice = (stay: Stay) => Math.min(...stay.roomTypes.map((room) => room.pricePerNight));
 
 /**
  * Listing card (grid) and row (list). The name and CTA are the only links;

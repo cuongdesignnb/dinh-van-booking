@@ -7,19 +7,12 @@ import { useEffect, useRef, useState } from 'react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
 import { focusSearch } from '@/lib/events';
-
-const NAV = [
-  { label: 'Trang chủ', href: '/' },
-  { label: 'Phòng nghỉ', href: '/phong-nghi' },
-  { label: 'Combo du lịch', href: '/combo-du-lich' },
-  { label: 'Điểm đến', href: '/diem-den' },
-  { label: 'Liên hệ', href: '/lien-he' },
-];
+import type { PublicNavigationItem } from '@/lib/api/public';
 
 const isActive = (path: string, href: string) =>
   href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
 
-export function SiteHeader() {
+export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] }) {
   const pathname = usePathname() ?? '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -57,12 +50,12 @@ export function SiteHeader() {
   }, [menuOpen]);
 
   const renderItems = () =>
-    NAV.map((item) => (
+    navigation.map((item) => (
       <li key={item.href}>
         <Link
           href={item.href}
           className="nav__link"
-          aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+          aria-current={item.href.startsWith('/') && isActive(pathname, item.href) ? 'page' : undefined}
           onClick={() => setMenuOpen(false)}
         >
           {item.label}

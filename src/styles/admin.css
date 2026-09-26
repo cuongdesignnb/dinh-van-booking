@@ -32,6 +32,10 @@
   color: var(--dvb-admin-text);
   background: var(--dvb-admin-bg);
   min-height: 100vh;
+  /* Keep the login card's top margin inside the admin canvas. Without a
+     formatting context it collapses through this wrapper and reveals the
+     public body's paper-white background as a horizontal strip. */
+  display: flow-root;
 }
 
 .dvb-admin h1,
@@ -96,7 +100,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 0 17px 0 14px;
+  padding: 0 17px 20px 14px;
 }
 
 .ashell__content {
@@ -122,7 +126,8 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 26px 8px 12px;
+  min-height: 480px;
+  padding: 20px 8px 12px;
   overflow: hidden;
 }
 
@@ -152,7 +157,10 @@
   display: grid;
   justify-items: center;
   gap: 2px;
-  padding-bottom: 14px;
+  flex: 0 0 auto;
+  margin: 0 2px 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e6ebe0;
 }
 
 .asidebar__mark {
@@ -180,9 +188,26 @@
 
 .asidebar__nav {
   position: relative;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
+  scrollbar-color: rgb(82 111 88 / 24%) transparent;
+  overscroll-behavior: contain;
+  padding: 2px 2px 6px;
+}
+
+.asidebar__nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.asidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.asidebar__nav::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(82 111 88 / 24%);
 }
 
 .asidebar__nav ul {
@@ -197,7 +222,7 @@
   gap: 13px;
   height: 38px;
   white-space: nowrap;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   padding: 0 12px 0 14px;
   border-radius: 10px;
   color: #1b2b25;
@@ -221,7 +246,7 @@
 .anav--active {
   background: linear-gradient(180deg, #2a6f3e 0%, #16482b 100%);
   color: #fff;
-  box-shadow: 0 0 0 3px rgb(166 188 156 / 35%);
+  box-shadow: 0 2px 8px rgb(22 72 43 / 18%), 0 0 0 2px rgb(166 188 156 / 28%);
 }
 
 .anav--active svg {
@@ -242,24 +267,34 @@
   font-weight: 700;
 }
 
+.asidebar__foot {
+  position: relative;
+  flex: 0 0 auto;
+  isolation: isolate;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
 .asidebar__decor {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 88px;
-  height: 210px;
+  bottom: 0;
+  height: 190px;
   background: url('/images/dinh-van-booking/hero-cuc-phuong.webp') center 30% / cover no-repeat;
   -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%);
   mask-image: linear-gradient(180deg, transparent, #000 45%);
-  opacity: 0.92;
+  opacity: 0.62;
   pointer-events: none;
+  z-index: -1;
 }
 
 .asidebar__script {
   position: relative;
-  margin: auto 0 0;
-  padding: 0 0 6px 14px;
-  font-size: 19px;
+  margin: 0 0 7px;
+  padding: 0 0 0 12px;
+  font-size: 16px;
+  line-height: 1.1;
   color: #1f4b2c;
 }
 
@@ -269,13 +304,18 @@
 
 .asidebar__quote {
   position: relative;
-  margin: 0;
-  padding: 10px 12px 4px;
-  border-top: 1px solid rgb(255 255 255 / 55%);
+  margin: 0 2px;
+  padding: 9px 10px 8px;
+  border: 1px solid rgb(219 227 215 / 92%);
+  border-radius: 11px;
+  background: rgb(255 254 250 / 88%);
+  box-shadow: 0 4px 14px rgb(34 57 39 / 7%);
   color: #33413a;
   font-size: 10.6px;
+  line-height: 1.4;
   font-style: italic;
   text-align: center;
+  backdrop-filter: blur(5px);
 }
 
 .asidebar__quote p {
@@ -707,8 +747,8 @@
   grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: 26px;
-  margin-top: 14px;
-  padding: 14px 6px 16px;
+  margin-top: 24px;
+  padding: 20px 12px 32px;
   border-top: 1px solid #e6eade;
   color: var(--dvb-admin-muted);
   font-size: 11.6px;

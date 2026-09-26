@@ -4,20 +4,33 @@ import { Checkout } from '@/components/booking/Checkout';
 import { PageShell } from '@/components/layout/PageShell';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
+import { getPublicStays } from '@/lib/api/public';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 import '@/styles/checkout.css';
 
-export const metadata: Metadata = {
-  title: 'Đặt phòng — Đinh Vân Booking',
-  description: 'Điền thông tin đặt phòng Cúc Phương cùng Đinh Vân Booking (bản mô phỏng).',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const query = await searchParams;
+  return buildPageMetadata({
+    path: '/dat-phong',
+    title: 'Đặt phòng — Đinh Vân Booking',
+    description: 'Gửi yêu cầu đặt phòng Cúc Phương cùng Đinh Vân Booking.',
+    eligible: false,
+    noindex: true,
+    follow: false,
+    canonical: false,
+    searchParams: query,
+  });
+}
 
 export default async function CheckoutPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await searchParams;
+  const params = await searchParams;
+  const stayKey = typeof params.stay === 'string' ? params.stay : null;
+  const stays = await getPublicStays();
+  const stay = stays.find((item) => item.id === stayKey || item.slug === stayKey) ?? null;
   return (
     <PageShell className="page-checkout" footer="checkout">
       <section className="phero phero--checkout" aria-labelledby="co-h1">
@@ -72,7 +85,7 @@ export default async function CheckoutPage({
       </div>
 
       <div className="co-shell">
-          <Checkout />
+          <Checkout stay={stay} />
       </div>
     </PageShell>
   );

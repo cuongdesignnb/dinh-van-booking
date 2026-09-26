@@ -4,6 +4,7 @@
  * NOT verified commercial data (`isDemo: true`).
  */
 import type { AmenityId, Host, ImageAsset, RoomType, StayType } from './types';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 const IMG = '/images/dinh-van-booking';
 
@@ -36,6 +37,12 @@ export interface CardFeature {
 export interface Stay {
   id: string;
   slug: string;
+  publicPath?: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  noindex?: boolean;
+  firstPublishedAt?: string | null;
+  lastPublicChangedAt?: string | null;
   name: string;
   type: StayType;
   /** Area tag used for location filtering; never inferred from pins. */
@@ -49,6 +56,8 @@ export interface Stay {
   cardSummary: string;
   tagline: string;
   description: string;
+  /** Published CMS body; fixtures may omit it and use description instead. */
+  descriptionDocument?: RichDocument;
   highlights: string[];
   badge?: string;
   popularity: number;
@@ -59,9 +68,11 @@ export interface Stay {
   host: Host | null;
   roomTypes: RoomType[];
   /** Position on the illustrated map, in percent. Not a real coordinate. */
-  mapPin: { x: number; y: number };
+  mapPin?: { x: number; y: number };
   nearby: string[];
-  isDemo: true;
+  houseRules?: { icon: string; text: string }[];
+  notes?: string[];
+  isDemo?: boolean;
 }
 
 const img = (src: string, alt: string, width: number, height: number, extra: Partial<ImageAsset> = {}) => ({

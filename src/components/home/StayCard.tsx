@@ -2,7 +2,8 @@ import { ArrowRight, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
-import { fromPrice, type Stay } from '@/data/stays';
+import type { Stay } from '@/data/stays';
+import { fromPrice } from '@/lib/catalog/pricing';
 import { formatVnd } from '@/lib/format';
 
 const PinCheck = () => (

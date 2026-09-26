@@ -1,18 +1,33 @@
 import { Gem, Heart, Leaf, MoveRight, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { ComboExplorer } from '@/components/combos/ComboExplorer';
 import { ComboReviews } from '@/components/combos/ComboReviews';
 import { PageShell } from '@/components/layout/PageShell';
 import { FaqCard } from '@/components/shared/FaqCard';
 import { LeafSprig } from '@/components/ui/Decor';
-import { comboFaqs, comboReviews } from '@/data/reviews';
+import { getPublicCombos, getPublicLegacyTarget, getPublicReviews } from '@/lib/api/public';
+import { getPublicSeoUrls, getPublicSite } from '@/lib/api/public';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { isSubstantivePublicContent } from '@/lib/seo/content';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { isSeoSchemaAllowed } from '@/lib/seo/policy';
+import { buildCollectionGraph } from '@/lib/seo/schema';
 import '@/styles/combos.css';
 
-export const metadata: Metadata = {
-  title: 'Combo du lịch Cúc Phương – Ninh Bình — Đinh Vân Booking',
-  description: 'Những hành trình được thiết kế bởi người bản địa Cúc Phương – Ninh Bình.',
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const query = await searchParams;
+  if (query.combo !== undefined) return { title: 'Combo du lịch — Đinh Vân Booking' };
+  const [combos, urls] = await Promise.all([getPublicCombos(), getPublicSeoUrls()]);
+  return buildPageMetadata({
+    path: '/combo-du-lich',
+    title: 'Combo du lịch Cúc Phương – Ninh Bình — Đinh Vân Booking',
+    description: 'Những hành trình được thiết kế bởi người bản địa Cúc Phương – Ninh Bình.',
+    eligible: urls.some((entry) => entry.path === '/combo-du-lich') && combos.length > 0,
+    searchParams: query,
+  });
+}
 
 function ResponsibleIcon() {
   return (
@@ -43,7 +58,22 @@ export default async function CombosPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await searchParams;
+  const query = await searchParams;
+  if (query.combo !== undefined) {
+    const value = typeof query.combo === 'string' ? query.combo.trim() : query.combo.length === 1 ? query.combo[0].trim() : '';
+    if (!value) notFound();
+    const path = await getPublicLegacyTarget('combo', value);
+    if (!path) notFound();
+    permanentRedirect(path);
+  }
+  const [combos, reviews, site, urls] = await Promise.all([getPublicCombos(), getPublicReviews(), getPublicSite(), getPublicSeoUrls()]);
+  const indexablePaths = new Set(urls.map((entry) => entry.path));
+  const schemaItems = combos
+    .filter((combo) => !combo.noindex && !!combo.publicPath && indexablePaths.has(combo.publicPath) && isSubstantivePublicContent(combo.body))
+    .map((combo) => ({ name: combo.title, href: combo.publicPath! }));
+  const structuredData = isSeoSchemaAllowed(site, '/combo-du-lich', { eligible: schemaItems.length > 0, searchParams: query })
+    ? buildCollectionGraph(site, { path: '/combo-du-lich', title: 'Combo du lịch', items: schemaItems })
+    : null;
   return (
     <PageShell className="page-combos">
       <section className="phero phero--combo" aria-labelledby="combo-h1">
@@ -78,7 +108,7 @@ export default async function CombosPage({
         </div>
       </section>
 
-        <ComboExplorer />
+        <ComboExplorer combos={combos} />
 
       <section className="combo-why content-shell" aria-labelledby="combo-why-t">
         <figure className="combo-quote combo-quote--left" data-reveal="fade-up">
@@ -152,9 +182,10 @@ export default async function CombosPage({
       </section>
 
       <div className="combo-bottom content-shell">
-        <ComboReviews reviews={comboReviews} />
-        <FaqCard className="combo-faq" title="Câu hỏi thường gặp" items={comboFaqs} icon="chevron" variant="boxed" moreLabel="Xem tất cả" />
+        <ComboReviews reviews={reviews} />
+        <FaqCard className="combo-faq" title="Câu hỏi thường gặp" items={[]} icon="chevron" variant="boxed" moreLabel="Xem tất cả" />
       </div>
+      <JsonLd data={structuredData} />
     </PageShell>
   );
 }

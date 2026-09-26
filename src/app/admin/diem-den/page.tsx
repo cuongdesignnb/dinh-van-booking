@@ -1,4 +1,4 @@
-import { ContentScreen } from '@/components/admin/content/ContentScreen';
+import { AdminContentList } from '@/components/admin/content/AdminContentList';
 
 export default async function Page({
   searchParams,
@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  return <ContentScreen defaultTab="destinations" />;
+  return <AdminContentList kind="destination" title="Điểm đến" />;
 }

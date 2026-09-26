@@ -1,0 +1,6 @@
+Schema.org validator: NOT_RUN
+Google Rich Results Test: NOT_RUN
+Google Search Console: NOT_RUN
+Production crawl: NOT RUN
+
+Reason: no production approval/access was part of the task; the local index gate is intentionally closed and the database has no eligible published business records.

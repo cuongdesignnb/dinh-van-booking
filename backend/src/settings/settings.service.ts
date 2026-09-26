@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '../generated/prisma/client';
 import { SETTINGS_BY_KEY, SETTING_DEFINITIONS, type SettingDefinition } from './settings.registry';
 
 export interface SettingView {
@@ -16,7 +17,10 @@ export interface SettingView {
 
 /** Deep merge that lets a stored value omit keys added by a later default. */
 function mergeWithDefault(defaultValue: unknown, stored: unknown): unknown {
-  if (stored === null || stored === undefined) return defaultValue;
+  // `null` is an explicit business value (for example an intentionally
+  // blank phone or social URL). Only an absent key should inherit a default.
+  if (stored === undefined) return defaultValue;
+  if (stored === null) return null;
   if (Array.isArray(defaultValue) || Array.isArray(stored)) return stored;
   if (typeof defaultValue !== 'object' || typeof stored !== 'object') return stored;
   const merged: Record<string, unknown> = { ...(defaultValue as Record<string, unknown>) };
@@ -28,30 +32,24 @@ function mergeWithDefault(defaultValue: unknown, stored: unknown): unknown {
 
 @Injectable()
 export class SettingsService {
-  // Settings are read on nearly every request; the cache is dropped on write.
-  private cache: Map<string, { value: unknown; version: number; updatedAt: Date | null }> | null = null;
-
   constructor(private readonly prisma: PrismaService) {}
 
   private async load(): Promise<Map<string, { value: unknown; version: number; updatedAt: Date | null }>> {
-    if (this.cache) return this.cache;
+    // Do not cache mutable business settings in a process-local Map. The API is
+    // allowed to run with more than one instance, and a local cache makes a
+    // successful admin write invisible to another web/API process.
     const rows = await this.prisma.setting.findMany();
     const byKey = new Map(rows.map((row) => [row.key, row]));
     const cache = new Map<string, { value: unknown; version: number; updatedAt: Date | null }>();
     for (const definition of SETTING_DEFINITIONS) {
       const row = byKey.get(definition.key);
       cache.set(definition.key, {
-        value: mergeWithDefault(definition.defaultValue, row?.value ?? null),
+        value: row ? mergeWithDefault(definition.defaultValue, row.value) : definition.defaultValue,
         version: row?.version ?? 0,
         updatedAt: row?.updatedAt ?? null,
       });
     }
-    this.cache = cache;
     return cache;
-  }
-
-  invalidate(): void {
-    this.cache = null;
   }
 
   /** Typed read used by the rest of the backend. Never returns undefined. */
@@ -82,65 +80,106 @@ export class SettingsService {
   async update(
     key: string,
     value: unknown,
-    expectedVersion: number | undefined,
+    expectedVersion: number,
     userId: string,
   ): Promise<SettingView> {
     const definition = SETTINGS_BY_KEY.get(key);
     if (!definition) throw new NotFoundException(`Không có cấu hình ${key}`);
     if (value === undefined) throw new BadRequestException('Thiếu giá trị');
 
-    const current = await this.prisma.setting.findUnique({ where: { key } });
-    const currentVersion = current?.version ?? 0;
-    if (expectedVersion !== undefined && expectedVersion !== currentVersion) {
-      throw new ConflictException({
-        code: 'version_conflict',
-        message: 'Cấu hình đã được người khác thay đổi. Tải lại rồi lưu lại.',
-        currentVersion,
-      });
-    }
-
     const merged = mergeWithDefault(definition.defaultValue, value);
-    const saved = await this.prisma.setting.upsert({
-      where: { key },
-      create: {
-        key,
-        value: merged as object,
-        schemaVersion: definition.schemaVersion,
-        isPublic: definition.isPublic,
-        version: 1,
-        updatedById: userId,
-      },
-      update: {
-        value: merged as object,
-        schemaVersion: definition.schemaVersion,
-        isPublic: definition.isPublic,
-        version: { increment: 1 },
-        updatedById: userId,
-      },
-    });
+    try {
+      const saved = await this.prisma.$transaction(
+        async (tx) => {
+          const current = await tx.setting.findUnique({ where: { key } });
+          const currentVersion = current?.version ?? 0;
+          if (expectedVersion !== currentVersion) {
+            throw new ConflictException({
+              code: 'version_conflict',
+              message: 'Cấu hình đã được người khác thay đổi. Tải lại rồi lưu lại.',
+              currentVersion,
+            });
+          }
 
-    await this.prisma.auditLog.create({
-      data: {
-        actorId: userId,
-        action: 'settings.update',
-        entityType: 'setting',
-        diff: { key, from: current?.value ?? null, to: merged } as object,
-      },
-    });
+          // Serializable protects the absent-row (version 0) case too. Two
+          // first writes cannot both be accepted and then overwrite each other.
+          const savedRow = await tx.setting.upsert({
+            where: { key },
+            create: {
+              key,
+              value: merged as object,
+              schemaVersion: definition.schemaVersion,
+              isPublic: definition.isPublic,
+              version: 1,
+              updatedById: userId,
+            },
+            update: {
+              value: merged as object,
+              schemaVersion: definition.schemaVersion,
+              isPublic: definition.isPublic,
+              version: { increment: 1 },
+              updatedById: userId,
+            },
+          });
 
-    this.invalidate();
-    return this.toView(definition, { value: merged, version: saved.version, updatedAt: saved.updatedAt });
+          await tx.auditLog.create({
+            data: {
+              actorId: userId,
+              action: 'settings.update',
+              entityType: 'setting',
+              diff: { key, from: current?.value ?? null, to: merged } as object,
+            },
+          });
+          return savedRow;
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+      return this.toView(definition, { value: merged, version: saved.version, updatedAt: saved.updatedAt });
+    } catch (error) {
+      // PostgreSQL can abort one of two concurrent serializable transactions.
+      // Expose a stable conflict instead of reporting a false success.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+        throw new ConflictException({
+          code: 'version_conflict',
+          message: 'Cấu hình vừa được người khác thay đổi. Tải lại rồi lưu lại.',
+        });
+      }
+      throw error;
+    }
   }
 
   /** Puts a key back to the shipped default. */
-  async reset(key: string, userId: string): Promise<SettingView> {
+  async reset(key: string, expectedVersion: number, userId: string): Promise<SettingView> {
     const definition = SETTINGS_BY_KEY.get(key);
     if (!definition) throw new NotFoundException(`Không có cấu hình ${key}`);
-    await this.prisma.setting.deleteMany({ where: { key } });
-    await this.prisma.auditLog.create({
-      data: { actorId: userId, action: 'settings.reset', entityType: 'setting', diff: { key } as object },
-    });
-    this.invalidate();
+    await this.prisma.$transaction(
+      async (tx) => {
+        const current = await tx.setting.findUnique({ where: { key }, select: { version: true } });
+        const currentVersion = current?.version ?? 0;
+        if (currentVersion !== expectedVersion) {
+          throw new ConflictException({
+            code: 'version_conflict',
+            message: 'Cấu hình đã được người khác thay đổi. Tải lại rồi thử lại.',
+            currentVersion,
+          });
+        }
+        if (current) {
+          const removed = await tx.setting.deleteMany({ where: { key, version: expectedVersion } });
+          if (removed.count !== 1) {
+            const latest = await tx.setting.findUnique({ where: { key }, select: { version: true } });
+            throw new ConflictException({
+              code: 'version_conflict',
+              message: 'Cấu hình vừa được thay đổi. Tải lại rồi thử lại.',
+              currentVersion: latest?.version ?? 0,
+            });
+          }
+        }
+        await tx.auditLog.create({
+          data: { actorId: userId, action: 'settings.reset', entityType: 'setting', diff: { key } as object },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
     return this.toView(definition, { value: definition.defaultValue, version: 0, updatedAt: null });
   }
 

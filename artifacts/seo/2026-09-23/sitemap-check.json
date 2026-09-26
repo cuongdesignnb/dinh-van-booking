@@ -1,0 +1,10 @@
+{
+  "status": "PASS for closed local gate",
+  "httpStatus": 200,
+  "contentType": "application/xml",
+  "validUrlset": true,
+  "urlCount": 0,
+  "robotsAdvertisesSitemap": false,
+  "indexingAllowed": false,
+  "reason": "No approved canonical origin/index opt-in and the local public database has zero eligible published records."
+}

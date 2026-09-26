@@ -4,6 +4,7 @@
  * Prices are per person — never compare with per-room prices.
  */
 import type { ImageAsset } from './types';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 const IMG = '/images/dinh-van-booking';
 
@@ -23,8 +24,16 @@ export const COMBO_CATEGORIES: { id: ComboCategory; label: string; icon: string 
 export interface Combo {
   id: string;
   slug: string;
+  publicPath?: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  noindex?: boolean;
+  firstPublishedAt?: string | null;
+  lastPublicChangedAt?: string | null;
   title: string;
   subtitle: string;
+  /** Published CMS body; demo fixtures may omit it. */
+  body?: RichDocument;
   durationDays: number;
   durationNights: number;
   badge: { label: string; icon: 'calendar' | 'family' | 'team' };
@@ -37,7 +46,7 @@ export interface Combo {
   itinerary: { day: string; items: string[] }[];
   included: string[];
   excluded: string[];
-  isDemo: true;
+  isDemo?: boolean;
 }
 
 export interface ComboLine {

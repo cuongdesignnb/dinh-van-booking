@@ -1,11 +1,11 @@
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { SmallLeaf } from '@/components/ui/Decor';
-import { HOME_STAY_IDS, staysById } from '@/data/stays';
+import type { Stay } from '@/data/stays';
 import { ExperiencePromo } from './ExperiencePromo';
 import { StayCard } from './StayCard';
 
-export function FeaturedStays() {
+export function FeaturedStays({ stays }: { stays: Stay[] }) {
   return (
     <section className="featured content-shell" id="phong-nghi" aria-labelledby="featured-title">
       <div className="featured__main">
@@ -21,7 +21,7 @@ export function FeaturedStays() {
           </Link>
         </div>
         <div className="stay-grid">
-          {HOME_STAY_IDS.map((id) => staysById.get(id)!).map((s, i) => (
+          {stays.map((s, i) => (
             <StayCard key={s.id} stay={s} index={i} />
           ))}
         </div>

@@ -1,0 +1,444 @@
+{
+  "generatedAt": "2026-09-26T16:26:36.089Z",
+  "baseSha": "54c246bbe9f70ed3bf298401e39df3e30a73057c",
+  "policy": "Runtime public/admin paths must not read commercial fixture records or browser-persisted business data.",
+  "scannedRoots": [
+    "src/app",
+    "src/components",
+    "src/lib",
+    "src/config"
+  ],
+  "findingCount": 43,
+  "findings": [
+    {
+      "file": "src/app/phong-nghi/[slug]/page.tsx",
+      "line": 37,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Destination } from '@/data/destinations';"
+    },
+    {
+      "file": "src/components/admin/bookings/BookingDetail.tsx",
+      "line": 7,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/bookings/BookingForm.tsx",
+      "line": 4,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY, addDays, coversNight, diffDays } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/bookings/BookingsScreen.tsx",
+      "line": 7,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { addDays } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/combos/CombosScreen.tsx",
+      "line": 24,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/content/DestinationEditor.tsx",
+      "line": 6,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/crm/CrmScreen.tsx",
+      "line": 17,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/crm/CustomerPanel.tsx",
+      "line": 7,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/overview/OverviewScreen.tsx",
+      "line": 22,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_PREV_RANGE, DEMO_TODAY, addDays } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/properties/PropertiesScreen.tsx",
+      "line": 24,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/properties/RatePanels.tsx",
+      "line": 6,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { DEMO_TODAY, addDays } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/shared/charts.tsx",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { addDays, eachDay, fromKey, toKey } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/booking/Checkout.tsx",
+      "line": 27,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/combos/ComboExplorer.tsx",
+      "line": 36,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Combo, ComboCategory, ComboLine, ComboSort } from '@/data/combos';"
+    },
+    {
+      "file": "src/components/destinations/DestinationExplorer.tsx",
+      "line": 35,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Destination, DestinationCategory, TipIcon } from '@/data/destinations';"
+    },
+    {
+      "file": "src/components/destinations/DiscoveryLower.tsx",
+      "line": 10,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Destination, Itinerary, ItineraryStop, Season } from '@/data/destinations';"
+    },
+    {
+      "file": "src/components/home/DestinationGrid.tsx",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Destination } from '@/data/destinations';"
+    },
+    {
+      "file": "src/components/home/FeaturedStays.tsx",
+      "line": 4,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/home/StayCard.tsx",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/stay-detail/BookingContext.tsx",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/stays/ListingCard.tsx",
+      "line": 6,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/stays/StayMap.tsx",
+      "line": 8,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/stays/StaysExplorer.tsx",
+      "line": 9,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/lib/admin/data.ts",
+      "line": 6,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "} from '@/data/admin/booking-fixtures';"
+    },
+    {
+      "file": "src/lib/admin/data.ts",
+      "line": 18,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "} from '@/data/admin/fixtures';"
+    },
+    {
+      "file": "src/lib/admin/data.ts",
+      "line": 33,
+      "kind": "demo-runtime-branch",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "export function buildAdminData(): AdminData {"
+    },
+    {
+      "file": "src/lib/admin/formatters.ts",
+      "line": 1,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { fromKey } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/lib/admin/selectors.ts",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "legacy-admin-review",
+      "scope": "legacy-admin-or-compatibility",
+      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
+      "evidence": "legacy admin module still imports fixture clock/data",
+      "excerpt": "import { addDays, coversNight, DEMO_TODAY, diffDays, eachDay, fromKey } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/lib/api/public.ts",
+      "line": 2,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Combo } from '@/data/combos';"
+    },
+    {
+      "file": "src/lib/api/public.ts",
+      "line": 3,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Destination } from '@/data/destinations';"
+    },
+    {
+      "file": "src/lib/api/public.ts",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/lib/catalog/constants.ts",
+      "line": 1,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { ComboCategory } from '@/data/combos';"
+    },
+    {
+      "file": "src/lib/catalog/constants.ts",
+      "line": 3,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { DestinationCategory } from '@/data/destinations';"
+    },
+    {
+      "file": "src/lib/catalog/pricing.ts",
+      "line": 1,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/lib/favorites.ts",
+      "line": 4,
+      "kind": "browser-admin-store",
+      "classification": "allowed-guest-preference",
+      "scope": "guest-ui-preference",
+      "disposition": "allowed: local ID preference only; no PII or business record",
+      "evidence": "favorites module stores IDs only",
+      "excerpt": "* Favourites for stays, combos and destinations, kept in localStorage under a"
+    },
+    {
+      "file": "src/lib/favorites.ts",
+      "line": 29,
+      "kind": "browser-admin-store",
+      "classification": "allowed-guest-preference",
+      "scope": "guest-ui-preference",
+      "disposition": "allowed: local ID preference only; no PII or business record",
+      "evidence": "favorites module stores IDs only",
+      "excerpt": "const raw = localStorage.getItem(KEY);"
+    },
+    {
+      "file": "src/lib/favorites.ts",
+      "line": 31,
+      "kind": "browser-admin-store",
+      "classification": "allowed-guest-preference",
+      "scope": "guest-ui-preference",
+      "disposition": "allowed: local ID preference only; no PII or business record",
+      "evidence": "favorites module stores IDs only",
+      "excerpt": "const legacy = clean(JSON.parse(localStorage.getItem(LEGACY_KEY) ?? '[]'));"
+    },
+    {
+      "file": "src/lib/favorites.ts",
+      "line": 34,
+      "kind": "browser-admin-store",
+      "classification": "allowed-guest-preference",
+      "scope": "guest-ui-preference",
+      "disposition": "allowed: local ID preference only; no PII or business record",
+      "evidence": "favorites module stores IDs only",
+      "excerpt": "localStorage.setItem(KEY, migrated);"
+    },
+    {
+      "file": "src/lib/favorites.ts",
+      "line": 35,
+      "kind": "browser-admin-store",
+      "classification": "allowed-guest-preference",
+      "scope": "guest-ui-preference",
+      "disposition": "allowed: local ID preference only; no PII or business record",
+      "evidence": "favorites module stores IDs only",
+      "excerpt": "localStorage.removeItem(LEGACY_KEY);"
+    },
+    {
+      "file": "src/lib/favorites.ts",
+      "line": 78,
+      "kind": "browser-admin-store",
+      "classification": "allowed-guest-preference",
+      "scope": "guest-ui-preference",
+      "disposition": "allowed: local ID preference only; no PII or business record",
+      "evidence": "favorites module stores IDs only",
+      "excerpt": "localStorage.setItem(KEY, cache);"
+    },
+    {
+      "file": "src/lib/seo/schema.ts",
+      "line": 3,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Destination } from '@/data/destinations';"
+    },
+    {
+      "file": "src/lib/seo/schema.ts",
+      "line": 4,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/lib/stay-filters.ts",
+      "line": 5,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Stay } from '@/data/stays';"
+    }
+  ]
+}

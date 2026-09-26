@@ -27,19 +27,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
-import { DemoNote, Modal } from '@/components/ui/Modal';
+import { Modal } from '@/components/ui/Modal';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { Popover } from '@/components/ui/Popover';
 import {
   COMBO_CATEGORIES,
-  comboMatches,
-  combos,
-  combosById,
-  sortCombos,
-  type Combo,
-  type ComboCategory,
-  type ComboLine,
-  type ComboSort,
-} from '@/data/combos';
+} from '@/lib/catalog/constants';
+import type { Combo, ComboCategory, ComboLine, ComboSort } from '@/data/combos';
 import { formatShort } from '@/lib/dates';
 import { setPendingNote } from '@/lib/draft-store';
 import { formatVnd } from '@/lib/format';
@@ -78,7 +72,12 @@ const SORTS: { id: ComboSort; label: string }[] = [
   { id: 'price-desc', label: 'Giá giảm dần' },
 ];
 
-export function ComboExplorer() {
+const comboMatches = (combo: Combo, category: ComboCategory) =>
+  category === 'all' || (category === '2n1d' ? combo.durationDays === 2 && combo.durationNights === 1 : category === '3n2d' ? combo.durationDays === 3 && combo.durationNights === 2 : combo.audienceTags.includes(category));
+
+const sortCombos = (list: Combo[], sort: ComboSort) => [...list].sort((a, b) => sort === 'price-asc' ? a.fromPriceVnd - b.fromPriceVnd : sort === 'price-desc' ? b.fromPriceVnd - a.fromPriceVnd : b.popularity - a.popularity);
+
+export function ComboExplorer({ combos }: { combos: Combo[] }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -87,15 +86,13 @@ export function ComboExplorer() {
   const sortRaw = readParam(params, 'sort');
   const sort: ComboSort = SORTS.some((s) => s.id === sortRaw) ? (sortRaw as ComboSort) : 'popular';
   const openId = readParam(params, 'combo');
-  const open = openId ? (combosById.get(openId) ?? null) : null;
-  const demo = readParam(params, 'demo');
+  const open = openId ? (combos.find((combo) => combo.id === openId || combo.slug === openId) ?? null) : null;
   const pushed = useRef(false);
 
-  const list = useMemo(() => sortCombos(combos.filter((c) => comboMatches(c, category)), sort), [category, sort]);
+  const list = useMemo(() => sortCombos(combos.filter((c) => comboMatches(c, category)), sort), [category, combos, sort]);
 
   const setQuery = (patch: Record<string, string | null>, mode: 'push' | 'replace' = 'push') => {
     const p = new URLSearchParams(params);
-    p.delete('demo');
     for (const [k, v] of Object.entries(patch)) {
       if (v === null) p.delete(k);
       else p.set(k, v);
@@ -119,33 +116,7 @@ export function ComboExplorer() {
   };
 
   let body;
-  if (demo === 'loading')
-    body = (
-      <ul className="combo-grid" aria-hidden="true">
-        {Array.from({ length: 6 }, (_, i) => (
-          <li key={i} className="ccard ccard--skeleton">
-            <div className="ccard__media skeleton" />
-            <div className="ccard__body">
-              <span className="skeleton skeleton--line" />
-              <span className="skeleton skeleton--line skeleton--short" />
-              <span className="skeleton skeleton--block" />
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  else if (demo === 'error')
-    body = (
-      <div className="state-box" role="alert">
-        <p>
-          <strong>Chưa tải được danh sách combo.</strong> Vui lòng thử lại.
-        </p>
-        <button type="button" className="btn btn--primary" onClick={() => setQuery({}, 'replace')}>
-          Thử lại
-        </button>
-      </div>
-    );
-  else if (!list.length)
+  if (!list.length)
     body = (
       <div className="state-box" role="status">
         <p>
@@ -301,6 +272,8 @@ function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
         Từ <strong>{formatVnd(combo.fromPriceVnd)}</strong> / {combo.priceUnit} (giá tham khảo)
       </p>
 
+      {combo.body ? <RichContentRenderer document={combo.body} /> : null}
+
       <h3 className="combo-d__h">Lịch trình gợi ý</h3>
       <ul className="combo-d__days">
         {combo.itinerary.map((d, i) => (
@@ -338,11 +311,6 @@ function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
           </ul>
         </section>
       </div>
-      <DemoNote>
-        Lịch trình, dịch vụ và giá là nội dung mẫu. Chính sách đặt cọc, hoàn/hủy tùy từng combo và sẽ được xác nhận khi tư
-        vấn.
-      </DemoNote>
-
       <div className="combo-d__form">
         <div className="field">
           <span className="field__label" id={`${titleId}-date`}>
@@ -401,6 +369,9 @@ function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
         </label>
       </div>
       <div className="dialog__actions">
+        <Link className="btn btn--light" href={combo.publicPath ?? `/combo-du-lich/${combo.slug}`}>
+          Xem trang hành trình <ArrowRight size={16} aria-hidden="true" />
+        </Link>
         <button
           type="button"
           className="btn btn--primary"

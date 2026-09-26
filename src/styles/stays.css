@@ -1745,10 +1745,6 @@
   font-size: 13.5px;
 }
 
-.page-stays + .footer {
-  margin-top: 4px;
-}
-
 /* Pagination sits with the results on small screens, in the bottom row on desktop. */
 .stays-main__pager {
   display: none;

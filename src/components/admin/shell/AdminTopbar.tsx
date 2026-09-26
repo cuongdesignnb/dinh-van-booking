@@ -5,18 +5,18 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Popover } from '@/components/ui/Popover';
-import { DEMO_RANGE, DEMO_TODAY } from '@/data/admin/fixture-clock';
+import { apiRequest } from '@/lib/api/client';
 import { formatDate } from '@/lib/admin/formatters';
 import { pendingBookings, searchAll, type SearchHit } from '@/lib/admin/selectors';
-import { useAdmin, type Role } from '../AdminStore';
+import { useAdmin } from '../AdminStore';
 import type { AdminPageMeta } from './page-meta';
 
-const RANGE_PRESETS: { id: string; label: string; from: string; to: string }[] = [
-  { id: 'month', label: 'Tháng 11/2024 (kỳ dữ liệu mẫu)', from: DEMO_RANGE.from, to: DEMO_RANGE.to },
-  { id: 'week', label: '7 ngày gần nhất', from: '2024-11-09', to: DEMO_TODAY },
-  { id: 'today', label: 'Hôm nay (15/11/2024)', from: DEMO_TODAY, to: DEMO_TODAY },
-  { id: 'quarter', label: 'Quý IV/2024', from: '2024-10-01', to: '2024-12-31' },
-];
+const dateKey = (date: Date) => date.toISOString().slice(0, 10);
+const shiftDate = (date: Date, days: number) => {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return dateKey(next);
+};
 
 const HIT_LABEL: Record<SearchHit['kind'], string> = {
   booking: 'Đặt phòng',
@@ -27,7 +27,7 @@ const HIT_LABEL: Record<SearchHit['kind'], string> = {
 };
 
 export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () => void }) {
-  const { data, range, setRange, role, setRole, commit, reset, persisted } = useAdmin();
+  const { data, range, setRange, role, commit, reset, persisted } = useAdmin();
   const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -41,6 +41,12 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
   const [userOpen, setUserOpen] = useState(false);
   const [rangeOpen, setRangeOpen] = useState(false);
   const listId = useId();
+  const today = dateKey(new Date());
+  const rangePresets: { id: string; label: string; from: string; to: string }[] = [
+    { id: 'month', label: '30 ngày gần nhất', from: shiftDate(new Date(), -29), to: today },
+    { id: 'week', label: '7 ngày gần nhất', from: shiftDate(new Date(), -6), to: today },
+    { id: 'today', label: 'Hôm nay', from: today, to: today },
+  ];
 
   const hits = searchAll(data, query);
   const unread = data.inquiries.filter((i) => !i.read);
@@ -116,8 +122,8 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
         >
           <Image src="/images/dinh-van-booking/people/admin-avatar.webp" alt="" width={40} height={40} className="atop__avatar" />
           <span className="atop__user-text">
-            <strong>Đinh Vân</strong>
-            <small>{role === 'viewer' ? 'Chỉ xem (demo)' : role === 'editor' ? 'Biên tập viên (demo)' : 'Quản trị viên'}</small>
+            <strong>Tài khoản quản trị</strong>
+            <small>{role === 'viewer' ? 'Chỉ xem' : role === 'editor' ? 'Biên tập viên' : 'Quản trị viên'}</small>
           </span>
           <ChevronDown size={16} aria-hidden="true" />
         </button>
@@ -222,30 +228,31 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
               khách chưa hoàn tất
             </li>
           </ul>
-          <p className="apop__note">Thông báo lấy từ dữ liệu mẫu trong máy, không có kết nối push.</p>
+          <p className="apop__note">Thông báo chỉ hiển thị các bản ghi đã được API quản trị trả về.</p>
         </div>
       </Popover>
 
       <Popover anchorRef={userRef} open={userOpen} onClose={() => setUserOpen(false)} label="Tài khoản" id="admin-user" align="end">
         <div className="apop">
           <div className="apop__head">
-            <strong>Đinh Vân</strong>
-            <span className="apop__muted">Bản demo, chưa gắn đăng nhập thật</span>
+            <strong>Tài khoản quản trị</strong>
+            <span className="apop__muted">Phiên đăng nhập được API xác thực</span>
           </div>
-          <fieldset className="apop__roles">
-            <legend>Vai trò thử nghiệm giao diện</legend>
-            {(['owner', 'editor', 'viewer'] as Role[]).map((r) => (
-              <label key={r}>
-                <input type="radio" name="admin-role" checked={role === r} onChange={() => setRole(r)} />
-                {r === 'owner' ? 'Chủ cơ sở (toàn quyền)' : r === 'editor' ? 'Biên tập viên' : 'Chỉ xem'}
-              </label>
-            ))}
-          </fieldset>
-          <p className="apop__note">Đây chỉ là lớp kiểm tra giao diện, không phải cơ chế phân quyền thật.</p>
+          <p className="apop__note">Vai trò và quyền thao tác được kiểm tra ở backend cho từng endpoint.</p>
           <button type="button" className="abtn abtn--ghost apop__reset" onClick={reset}>
-            Khôi phục dữ liệu mẫu gốc
+            Làm mới dữ liệu từ API
           </button>
-          {persisted && <p className="apop__note">Các thay đổi demo đang được lưu trong trình duyệt này.</p>}
+          {persisted && <p className="apop__note">Không lưu dữ liệu quản trị trong trình duyệt.</p>}
+          <button
+            type="button"
+            className="abtn abtn--ghost apop__reset"
+            onClick={async () => {
+              await apiRequest('/auth/logout', { method: 'POST' });
+              window.location.reload();
+            }}
+          >
+            Đăng xuất
+          </button>
         </div>
       </Popover>
 
@@ -255,7 +262,7 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
             <strong>Khoảng thời gian báo cáo</strong>
           </div>
           <ul className="apop__ranges">
-            {RANGE_PRESETS.map((p) => (
+            {rangePresets.map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
@@ -271,7 +278,7 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
               </li>
             ))}
           </ul>
-          <p className="apop__note">Dữ liệu mẫu tập trung trong tháng 11/2024 nên các kỳ khác có thể ít số liệu.</p>
+          <p className="apop__note">Khoảng thời gian chỉ lọc dữ liệu đã được API trả về.</p>
         </div>
       </Popover>
     </header>

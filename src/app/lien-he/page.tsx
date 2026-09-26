@@ -8,14 +8,23 @@ import { FaqCard } from '@/components/shared/FaqCard';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BrandIcon, brandTitle } from '@/components/ui/BrandIcons';
 import { LeafSprig } from '@/components/ui/Decor';
-import { siteConfig } from '@/config/site';
-import { contactFaqs } from '@/data/reviews';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { getPublicSeoUrls, getPublicSite } from '@/lib/api/public';
+import { buildPageMetadata } from '@/lib/seo/metadata';
+import { isSeoSchemaAllowed } from '@/lib/seo/policy';
+import { buildSiteGraph } from '@/lib/seo/schema';
 import '@/styles/contact.css';
 
-export const metadata: Metadata = {
-  title: 'Liên hệ tư vấn riêng — Đinh Vân Booking',
-  description: 'Chia sẻ kế hoạch chuyến đi Cúc Phương – Ninh Bình để Đinh Vân tư vấn tận tình.',
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const [query, site, urls] = await Promise.all([searchParams, getPublicSite(), getPublicSeoUrls()]);
+  return buildPageMetadata({
+    path: '/lien-he',
+    title: 'Liên hệ tư vấn riêng — Đinh Vân Booking',
+    description: 'Chia sẻ kế hoạch chuyến đi Cúc Phương – Ninh Bình để Đinh Vân tư vấn tận tình.',
+    eligible: urls.some((entry) => entry.path === '/lien-he') && !!(site.contact.phone?.trim() || site.contact.email?.trim()),
+    searchParams: query,
+  });
+}
 
 const SOCIALS = ['facebook', 'instagram', 'youtube', 'tiktok'] as const;
 
@@ -24,8 +33,10 @@ export default async function ContactPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await searchParams;
-  const { contact, social } = siteConfig;
+  const query = await searchParams;
+  const site = await getPublicSite();
+  const { contact, social } = site;
+  const hasVerifiedContact = !!(contact.phone?.trim() || contact.email?.trim());
   return (
     <PageShell className="page-contact">
       <section className="phero phero--contact" aria-labelledby="contact-h1">
@@ -93,7 +104,7 @@ export default async function ContactPage({
           <FaqCard
             className="contact-faq"
             title="Câu hỏi thường gặp"
-            items={contactFaqs}
+            items={[]}
             preview={3}
             icon="plus"
             variant="boxed"
@@ -302,6 +313,9 @@ export default async function ContactPage({
 
 
       </div>
+      <JsonLd data={isSeoSchemaAllowed(site, '/lien-he', { eligible: hasVerifiedContact, searchParams: query })
+        ? buildSiteGraph(site, { path: '/lien-he', title: 'Liên hệ tư vấn', description: site.identity.description, breadcrumbs: [{ label: 'Trang chủ', href: '/' }, { label: 'Liên hệ' }] })
+        : null} />
     </PageShell>
   );
 }

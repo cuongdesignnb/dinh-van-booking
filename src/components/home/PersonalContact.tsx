@@ -1,12 +1,14 @@
+'use client';
+
 import { Phone, Users } from 'lucide-react';
 import Image from 'next/image';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { LeafSprig } from '@/components/ui/Decor';
-import { siteConfig } from '@/config/site';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 
 export function PersonalContact() {
-  const { contact } = siteConfig;
+  const { contact } = useSiteData();
   return (
     <section
       className="contact"

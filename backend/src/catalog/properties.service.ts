@@ -1,0 +1,612 @@
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
+import { documentMediaIds, sanitizeDocument } from '../content/document';
+import { pathForContent, uniqueSlug } from '../content/slug';
+import type { CreatePropertyDto, DeletePropertyQuery, UpdatePropertyDto } from './dto/property.dto';
+
+function documentToText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(documentToText).filter(Boolean).join(' ');
+  if (!value || typeof value !== 'object') return '';
+  const node = value as { text?: unknown; content?: unknown };
+  return [node.text, documentToText(node.content)]
+    .filter((part): part is string => typeof part === 'string' && part.length > 0)
+    .join(' ');
+}
+
+function paragraphDocument(text: string): object {
+  return {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+  };
+}
+
+const PROPERTY_INCLUDE = {
+  content: {
+    include: {
+      routes: { where: { isCurrent: true }, take: 1 },
+      media: {
+        where: { role: 'cover', media: { isDemo: false, visibility: 'public', processingStatus: 'ready' } },
+        include: { media: { select: { storageKey: true, altText: true, originalFilename: true } } },
+        orderBy: { position: 'asc' as const },
+      },
+    },
+  },
+  roomTypes: {
+    orderBy: { position: 'asc' as const },
+    include: {
+      units: { select: { id: true, code: true, label: true, active: true } },
+      ratePlans: { where: { active: true }, orderBy: { createdAt: 'asc' as const } },
+    },
+  },
+} as const;
+
+type PropertyRow = {
+  id: string;
+  contentId: string;
+  code: string;
+  kind: string;
+  area: string;
+  address: string;
+  operatingStatus: string;
+  checkInTime: string;
+  checkOutTime: string;
+  version: number;
+  updatedAt: Date;
+  content: {
+    title: string;
+    slugSource: string | null;
+    bodyDocument: unknown;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    noindex: boolean;
+    version: number;
+    publicationStatus: string;
+    publishAt: Date | null;
+    excerpt: string | null;
+    featured: boolean;
+    routes: Array<{ path: string }>;
+    media: Array<{ mediaId: string; media: { storageKey: string; altText: string | null; originalFilename: string } }>;
+  };
+  roomTypes: Array<{
+    id: string;
+    code: string;
+    name: string;
+    description: string | null;
+    maxAdults: number;
+    maxChildren: number;
+    maxOccupancy: number;
+    bedSummary: string | null;
+    areaSqm: number | null;
+    status: string;
+    units: Array<{ id: string; code: string; label: string; active: boolean }>;
+    ratePlans: Array<{
+      id: string;
+      code: string;
+      name: string;
+      baseRateVnd: bigint;
+      weekendRateVnd: bigint | null;
+      breakfastIncluded: boolean;
+      depositBps: number;
+    }>;
+  }>;
+};
+
+export interface PropertyView {
+  id: string;
+  contentId: string;
+  title: string;
+  description: string;
+  descriptionDocument: unknown;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  noindex: boolean;
+  contentVersion: number;
+  slug: string | null;
+  path: string | null;
+  excerpt: string | null;
+  code: string;
+  kind: string;
+  area: string;
+  address: string;
+  operatingStatus: string;
+  publicationStatus: string;
+  publishAt: string | null;
+  featured: boolean;
+  version: number;
+  updatedAt: string;
+  cover: { mediaId: string; url: string; alt: string } | null;
+  roomTypes: Array<{
+    id: string;
+    code: string;
+    name: string;
+    description: string | null;
+    maxAdults: number;
+    maxChildren: number;
+    maxOccupancy: number;
+    bedSummary: string | null;
+    areaSqm: number | null;
+    unitCount: number;
+    rate: {
+      id: string;
+      code: string;
+      name: string;
+      baseRateVnd: number;
+      weekendRateVnd: number | null;
+      breakfastIncluded: boolean;
+      depositBps: number;
+    } | null;
+  }>;
+}
+
+@Injectable()
+export class PropertiesService {
+  constructor(private readonly prisma: PrismaService, private readonly settings: SettingsService) {}
+
+  async list(): Promise<{ items: PropertyView[] }> {
+    const rows = await this.prisma.property.findMany({
+      include: PROPERTY_INCLUDE,
+      orderBy: { updatedAt: 'desc' },
+    });
+    return { items: rows.map((row) => this.toView(row as unknown as PropertyRow)) };
+  }
+
+  async getOne(id: string): Promise<PropertyView> {
+    const row = await this.prisma.property.findUnique({ where: { id }, include: PROPERTY_INCLUDE });
+    if (!row) throw new NotFoundException('Không tìm thấy nơi lưu trú');
+    return this.toView(row as unknown as PropertyRow);
+  }
+
+  async create(input: CreatePropertyDto, userId: string): Promise<PropertyView> {
+    const title = input.title.trim();
+    const code = input.code.trim().toUpperCase();
+    const kind = input.kind.trim();
+    const area = input.area.trim();
+    const address = input.address.trim();
+    const roomCode = input.roomCode.trim().toUpperCase();
+    const roomName = input.roomName.trim();
+    const description = input.description?.trim() || `Thông tin đang được cập nhật cho ${title}.`;
+    const maxChildren = input.maxChildren ?? 0;
+    const maxOccupancy = input.maxAdults + maxChildren;
+    const rateCode = input.rateCode?.trim().toUpperCase() || 'BAR';
+    const rateName = input.rateName?.trim() || 'Giá tiêu chuẩn';
+
+    if (!title || !code || !kind || !area || !address || !roomCode || !roomName) {
+      throw new BadRequestException('Vui lòng điền đủ thông tin nơi lưu trú và loại phòng');
+    }
+    if (maxOccupancy < 1) throw new BadRequestException('Sức chứa phải lớn hơn 0');
+
+    const slug = await this.reserveSlug(input.slug?.trim() || title);
+    const body = input.descriptionDocument === undefined
+      ? paragraphDocument(description)
+      : await this.cleanDescriptionDocument(input.descriptionDocument);
+    const bodyText = documentToText(body);
+    const excerpt = input.excerpt?.trim() || (bodyText || description).slice(0, 500);
+
+    try {
+      const propertyId = await this.prisma.$transaction(async (tx) => {
+        if (input.coverMediaId) {
+          const media = await tx.mediaAsset.findUnique({
+            where: { id: input.coverMediaId },
+            select: { id: true, isDemo: true, visibility: true, processingStatus: true },
+          });
+          if (!media || media.isDemo || media.visibility !== 'public' || media.processingStatus !== 'ready') {
+            throw new BadRequestException('Ảnh đại diện không tồn tại hoặc chưa sẵn sàng');
+          }
+        }
+
+        const node = await tx.contentNode.create({
+          data: {
+            kind: 'stay',
+            title,
+            slugSource: slug,
+            excerpt,
+            bodyDocument: body,
+            metaTitle: input.metaTitle?.trim() || title,
+            metaDescription: input.metaDescription?.trim() || excerpt.slice(0, 320),
+            featured: input.featured ?? false,
+            publicationStatus: 'draft',
+            isDemo: false,
+          },
+        });
+
+        await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent('stay', slug) } });
+        await tx.contentRevision.create({
+          data: { contentId: node.id, documentSnapshot: body, note: 'Tạo nơi lưu trú mới', authorId: userId },
+        });
+
+        await this.attachInlineMedia(tx, node.id, body, input.coverMediaId);
+
+        const property = await tx.property.create({
+          data: {
+            contentId: node.id,
+            code,
+            kind,
+            area,
+            address,
+            operatingStatus: 'active',
+          },
+        });
+
+        const roomType = await tx.roomType.create({
+          data: {
+            propertyId: property.id,
+            code: roomCode,
+            name: roomName,
+            description: input.roomDescription?.trim() || null,
+            maxAdults: input.maxAdults,
+            maxChildren,
+            maxOccupancy,
+            bedSummary: input.bedSummary?.trim() || null,
+            areaSqm: input.areaSqm ?? null,
+            status: 'active',
+            position: 0,
+          },
+        });
+
+        await tx.ratePlan.create({
+          data: {
+            roomTypeId: roomType.id,
+            code: rateCode,
+            name: rateName,
+            baseRateVnd: BigInt(input.rateVnd),
+            weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd),
+            breakfastIncluded: input.breakfastIncluded ?? false,
+            // Payment/hold is not wired to the public checkout yet.
+            depositBps: 0,
+            active: true,
+          },
+        });
+
+        await tx.roomUnit.createMany({
+          data: Array.from({ length: input.unitCount }, (_, index) => {
+            const suffix = String(index + 1).padStart(2, '0');
+            return { roomTypeId: roomType.id, code: `${roomCode}-${suffix}`, label: `${roomName} ${index + 1}`, active: true };
+          }),
+        });
+
+        if (input.coverMediaId) {
+          await tx.contentMedia.create({
+            data: { contentId: node.id, mediaId: input.coverMediaId, role: 'cover', position: 0 },
+          });
+        }
+
+        await tx.auditLog.create({
+          data: {
+            actorId: userId,
+            action: 'property.create',
+            entityType: 'property',
+            entityId: property.id,
+            diff: { contentId: node.id, code, slug, roomCode, unitCount: input.unitCount } as object,
+          },
+        });
+        return property.id;
+      });
+
+      return this.getOne(propertyId);
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      if (this.isUniqueViolation(error)) throw new ConflictException('Mã nơi lưu trú, mã phòng hoặc đường dẫn đã tồn tại');
+      throw error;
+    }
+  }
+
+  async update(id: string, input: UpdatePropertyDto, userId: string): Promise<PropertyView> {
+    const current = await this.prisma.property.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        contentId: true,
+        code: true,
+        version: true,
+        kind: true,
+        area: true,
+        address: true,
+        operatingStatus: true,
+        content: {
+          select: {
+            id: true,
+            kind: true,
+            title: true,
+            slugSource: true,
+            excerpt: true,
+            bodyDocument: true,
+            metaTitle: true,
+            metaDescription: true,
+            noindex: true,
+            featured: true,
+            version: true,
+            publicationStatus: true,
+          },
+        },
+      },
+    });
+    if (!current) throw new NotFoundException('Không tìm thấy nơi lưu trú');
+    if (input.expectedVersion !== current.version || input.expectedContentVersion !== current.content.version) {
+      throw new ConflictException({
+        code: 'version_conflict',
+        message: 'Nơi lưu trú đã được người khác sửa. Tải lại rồi lưu lại.',
+        currentVersion: current.version,
+        currentContentVersion: current.content.version,
+      });
+    }
+
+    const title = input.title === undefined ? current.content.title : input.title.trim();
+    const kind = input.kind === undefined ? current.kind : input.kind.trim();
+    const area = input.area === undefined ? current.area : input.area.trim();
+    const address = input.address === undefined ? current.address : input.address.trim();
+    if (!title || !kind || !area || !address) {
+      throw new BadRequestException('Tên, loại hình, khu vực và địa chỉ không được để trống');
+    }
+
+    const description = input.description === undefined ? undefined : input.description.trim();
+    const body = input.descriptionDocument !== undefined
+      ? await this.cleanDescriptionDocument(input.descriptionDocument)
+      : description === undefined
+        ? undefined
+        : paragraphDocument(description);
+    const bodyText = body === undefined ? undefined : documentToText(body);
+    const nextDescription = description ?? bodyText;
+    const nextSlug =
+      input.slug === undefined
+        ? current.content.slugSource
+        : await this.reserveSlug(input.slug.trim() || title, current.contentId);
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        if (input.coverMediaId !== undefined && input.coverMediaId !== null) {
+          const media = await tx.mediaAsset.findUnique({
+            where: { id: input.coverMediaId },
+            select: { id: true, isDemo: true, visibility: true, processingStatus: true },
+          });
+          if (!media || media.isDemo || media.visibility !== 'public' || media.processingStatus !== 'ready') {
+            throw new BadRequestException('Ảnh đại diện không tồn tại hoặc chưa sẵn sàng');
+          }
+        }
+
+        if (nextSlug && nextSlug !== current.content.slugSource) {
+          const path = pathForContent('stay', nextSlug);
+          const existingRoute = await tx.publicRoute.findUnique({ where: { path }, select: { contentId: true } });
+          if (existingRoute && existingRoute.contentId !== current.contentId) {
+            throw new ConflictException('Đường dẫn này đã thuộc về nơi lưu trú khác');
+          }
+          await tx.publicRoute.updateMany({ where: { contentId: current.contentId, isCurrent: true }, data: { isCurrent: false } });
+          await tx.publicRoute.create({ data: { contentId: current.contentId, path, isCurrent: true } });
+        }
+
+        await tx.contentNode.update({
+          where: { id: current.contentId },
+          data: {
+            title,
+            slugSource: nextSlug ?? undefined,
+            excerpt:
+              input.excerpt === undefined
+                ? undefined
+                : input.excerpt === null
+                  ? nextDescription?.slice(0, 500) || null
+                  : input.excerpt.trim() || nextDescription?.slice(0, 500) || null,
+            bodyDocument: body === undefined ? undefined : body,
+            metaTitle: input.metaTitle === undefined ? undefined : input.metaTitle?.trim() || null,
+            metaDescription: input.metaDescription === undefined ? undefined : input.metaDescription?.trim() || null,
+            noindex: input.noindex ?? undefined,
+            featured: input.featured ?? undefined,
+            version: { increment: 1 },
+          },
+        });
+
+        await tx.property.update({
+          where: { id },
+          data: {
+            kind,
+            area,
+            address,
+            operatingStatus: input.operatingStatus ?? undefined,
+            version: { increment: 1 },
+          },
+        });
+
+        if (input.coverMediaId !== undefined) {
+          await tx.contentMedia.deleteMany({ where: { contentId: current.contentId, role: 'cover' } });
+          if (input.coverMediaId) {
+            await tx.contentMedia.create({
+              data: { contentId: current.contentId, mediaId: input.coverMediaId, role: 'cover', position: 0 },
+            });
+          }
+        }
+
+        if (body !== undefined) {
+          await this.attachInlineMedia(tx, current.contentId, body, input.coverMediaId ?? null);
+        }
+
+        if (body !== undefined) {
+          await tx.contentRevision.create({
+            data: {
+              contentId: current.contentId,
+              documentSnapshot: body,
+              note: 'Cập nhật nơi lưu trú',
+              authorId: userId,
+            },
+          });
+        }
+
+        await tx.auditLog.create({
+          data: {
+            actorId: userId,
+            action: 'property.update',
+            entityType: 'property',
+            entityId: id,
+            diff: {
+              contentId: current.contentId,
+              code: current.code,
+              fields: Object.keys(input).filter((field) => !field.startsWith('expected')),
+              slug: nextSlug,
+            } as object,
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof ConflictException) throw error;
+      if (this.isUniqueViolation(error)) throw new ConflictException('Mã nơi lưu trú hoặc đường dẫn đã tồn tại');
+      throw error;
+    }
+
+    return this.getOne(id);
+  }
+
+  async remove(id: string, query: DeletePropertyQuery, userId: string): Promise<void> {
+    const current = await this.prisma.property.findUnique({
+      where: { id },
+      select: { id: true, code: true, contentId: true, version: true, content: { select: { publicationStatus: true } } },
+    });
+    if (!current) throw new NotFoundException('Không tìm thấy nơi lưu trú');
+    if (query.expectedVersion !== current.version) {
+      throw new ConflictException({
+        code: 'version_conflict',
+        message: 'Nơi lưu trú đã được người khác sửa. Tải lại rồi xoá lại.',
+        currentVersion: current.version,
+      });
+    }
+    if (current.content.publicationStatus === 'published') {
+      throw new ConflictException('Không thể xoá nơi lưu trú đã xuất bản');
+    }
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.auditLog.create({
+          data: {
+            actorId: userId,
+            action: 'property.delete',
+            entityType: 'property',
+            entityId: id,
+            diff: { contentId: current.contentId, code: current.code } as object,
+          },
+        });
+        // ContentNode owns the route, revisions, media links and typed
+        // property relation, so deleting it removes the whole draft aggregate.
+        await tx.contentNode.delete({ where: { id: current.contentId } });
+      });
+    } catch (error) {
+      if (error instanceof ConflictException) throw error;
+      if (this.isForeignKeyViolation(error)) {
+        throw new ConflictException('Không thể xoá vì nơi lưu trú đã có dữ liệu liên quan');
+      }
+      throw error;
+    }
+  }
+
+  private async cleanDescriptionDocument(input: unknown): Promise<object> {
+    const editor = await this.settings.get<{ allowedBlocks: string[] }>('content.editor');
+    return sanitizeDocument(input, { allowedBlocks: editor.allowedBlocks });
+  }
+
+  private async attachInlineMedia(
+    tx: Prisma.TransactionClient,
+    contentId: string,
+    body: unknown,
+    coverMediaId: string | null | undefined,
+  ): Promise<void> {
+    const mediaIds = documentMediaIds(body).filter((mediaId) => mediaId !== coverMediaId);
+    await tx.contentMedia.deleteMany({ where: { contentId, role: 'inline' } });
+    if (!mediaIds.length) return;
+
+    const assets = await tx.mediaAsset.findMany({
+      where: { id: { in: mediaIds }, isDemo: false, visibility: 'public', processingStatus: 'ready' },
+      select: { id: true },
+    });
+    if (assets.length !== mediaIds.length) {
+      throw new BadRequestException('Một hoặc nhiều ảnh trong nội dung không tồn tại hoặc chưa sẵn sàng');
+    }
+    await tx.contentMedia.createMany({
+      data: mediaIds.map((mediaId, position) => ({ contentId, mediaId, role: 'inline', position })),
+    });
+  }
+
+  private async reserveSlug(desired: string, ignoreContentId?: string): Promise<string> {
+    const [siblings, routes] = await Promise.all([
+      this.prisma.contentNode.findMany({
+        where: { kind: 'stay', ...(ignoreContentId ? { id: { not: ignoreContentId } } : {}) },
+        select: { slugSource: true },
+      }),
+      this.prisma.publicRoute.findMany({
+        // Keep old routes of the same content reserved too: they remain
+        // redirects after a slug change and must not be reused accidentally.
+        where: { path: { startsWith: pathForContent('stay', '') } },
+        select: { path: true },
+      }),
+    ]);
+    const taken = new Set(siblings.map((item) => item.slugSource).filter((value): value is string => !!value));
+    const prefix = pathForContent('stay', '');
+    for (const route of routes) {
+      const rest = route.path.slice(prefix.length);
+      if (rest && !rest.includes('/')) taken.add(rest);
+    }
+    return uniqueSlug(desired, taken);
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return !!error && typeof error === 'object' && 'code' in error && (error as { code?: unknown }).code === 'P2002';
+  }
+
+  private isForeignKeyViolation(error: unknown): boolean {
+    return !!error && typeof error === 'object' && 'code' in error && (error as { code?: unknown }).code === 'P2003';
+  }
+
+  private toView(row: PropertyRow): PropertyView {
+    const cover = row.content.media[0];
+    return {
+      id: row.id,
+      contentId: row.contentId,
+      title: row.content.title,
+      description: documentToText(row.content.bodyDocument),
+      descriptionDocument: row.content.bodyDocument,
+      metaTitle: row.content.metaTitle,
+      metaDescription: row.content.metaDescription,
+      noindex: row.content.noindex,
+      contentVersion: row.content.version,
+      slug: row.content.slugSource,
+      path: row.content.routes[0]?.path ?? null,
+      excerpt: row.content.excerpt,
+      code: row.code,
+      kind: row.kind,
+      area: row.area,
+      address: row.address,
+      operatingStatus: row.operatingStatus,
+      publicationStatus: row.content.publicationStatus,
+      publishAt: row.content.publishAt?.toISOString() ?? null,
+      featured: row.content.featured,
+      version: row.version,
+      updatedAt: row.updatedAt.toISOString(),
+      cover: cover
+        ? { mediaId: cover.mediaId, url: `/media/${cover.media.storageKey}`, alt: cover.media.altText ?? cover.media.originalFilename }
+        : null,
+      roomTypes: row.roomTypes.map((room) => {
+        const rate = room.ratePlans[0];
+        return {
+          id: room.id,
+          code: room.code,
+          name: room.name,
+          description: room.description,
+          maxAdults: room.maxAdults,
+          maxChildren: room.maxChildren,
+          maxOccupancy: room.maxOccupancy,
+          bedSummary: room.bedSummary,
+          areaSqm: room.areaSqm,
+          unitCount: room.units.filter((unit) => unit.active).length,
+          rate: rate
+            ? {
+                id: rate.id,
+                code: rate.code,
+                name: rate.name,
+                baseRateVnd: Number(rate.baseRateVnd),
+                weekendRateVnd: rate.weekendRateVnd === null ? null : Number(rate.weekendRateVnd),
+                breakfastIncluded: rate.breakfastIncluded,
+                depositBps: rate.depositBps,
+              }
+            : null,
+        };
+      }),
+    };
+  }
+}

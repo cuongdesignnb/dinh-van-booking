@@ -1,0 +1,15 @@
+{
+  "baseUrl": "http://127.0.0.1:18473",
+  "scope": "Local Docker gateway only; production was not contacted",
+  "cases": [
+    { "path": "/", "status": 200, "xRobotsTag": "noindex, follow", "canonical": null, "jsonLdCount": 0 },
+    { "path": "/admin", "status": 200, "xRobotsTag": "noindex, follow", "result": "unauthenticated login screen" },
+    { "path": "/api/v1/content", "status": 401, "xRobotsTag": "noindex, nofollow" },
+    { "path": "/phong-nghi?q=smoke-test", "status": 200, "robotsMetaContains": "noindex", "canonical": null },
+    { "path": "/seo-smoke-route-not-found", "status": 404, "robotsMetaContains": "noindex" },
+    { "path": "/combo-du-lich?combo=seo-smoke-not-found", "status": 404 },
+    { "path": "/diem-den?d=seo-smoke-not-found", "status": 404 },
+    { "path": "/robots.txt", "status": 200, "disallow": ["/admin/", "/api/"], "sitemapDirective": false },
+    { "path": "/sitemap.xml", "status": 200, "urlCount": 0 }
+  ]
+}

@@ -6,8 +6,13 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
-import { DemoNote, Modal } from '@/components/ui/Modal';
-import { destinations, itineraries, seasons, type ItineraryStop, type Season } from '@/data/destinations';
+import { Modal } from '@/components/ui/Modal';
+import type { Destination, Itinerary, ItineraryStop, Season } from '@/data/destinations';
+
+// These are editable content, not UI constants. Until the corresponding
+// published records exist, the page renders an explicit empty state.
+const itineraries: Itinerary[] = [];
+const seasons: Season[] = [];
 
 const STOP_ICON: Record<ItineraryStop['icon'], typeof Car> = {
   car: Car,
@@ -31,6 +36,9 @@ export function ItineraryTabs() {
     if (byKeyboard.current) tabs.current[active]?.focus();
     byKeyboard.current = false;
   }, [active]);
+  if (!itineraries.length) {
+    return <section className="itin" aria-labelledby={`${uid}-t`}><h2 className="dsec-title" id={`${uid}-t`}>Gợi ý lịch trình khám phá</h2><div className="state-box" role="status">Chưa có lịch trình đã xuất bản.</div></section>;
+  }
   const onKey = (e: KeyboardEvent) => {
     const n = itineraries.length;
     const cur = tabs.current.findIndex((t) => t === document.activeElement);
@@ -128,7 +136,6 @@ export function ItineraryTabs() {
         <h2 id={`${uid}-d`} className="dialog__title">
           Lịch trình {it.label}
         </h2>
-        <DemoNote>Lịch trình gợi ý mẫu; thời gian di chuyển thực tế cần được tư vấn theo điểm xuất phát và mùa.</DemoNote>
         {it.days.map((day) => (
           <section key={day.title ?? 'd'} className="itin-full">
             {day.title && <h3 className="combo-d__h">{day.title}</h3>}
@@ -192,7 +199,6 @@ export function Seasons() {
                 <li key={t}>{t}</li>
               ))}
             </ul>
-            <DemoNote>Thông tin mùa là gợi ý chung, không phải dự báo thời tiết. Hãy hỏi Đinh Vân trước chuyến đi.</DemoNote>
             <div className="dialog__actions">
               <Link className="btn btn--primary" href="/lien-he?intent=destination&item=vuon-quoc-gia-cuc-phuong" data-autofocus>
                 Hỏi thời điểm phù hợp <ArrowRight size={16} aria-hidden="true" />
@@ -234,8 +240,8 @@ function MapIcon({ id }: { id: string }) {
   );
 }
 
-/** Illustrated map. Pins are placed from fixture percentages — not coordinates. */
-export function LocalMap() {
+/** Map positions are optional content fields and are never inferred as navigation coordinates. */
+export function LocalMap({ destinations }: { destinations: Destination[] }) {
   const uid = useId();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -308,7 +314,6 @@ export function LocalMap() {
         <h2 id={`${uid}-d`} className="dialog__title">
           Bản đồ khám phá địa phương
         </h2>
-        <DemoNote>Bản đồ minh họa — vị trí chỉ mang tính tương đối, chưa dùng để chỉ đường.</DemoNote>
         {canvas(true)}
         <ul className="map-list">
           {pins.map((d) => (

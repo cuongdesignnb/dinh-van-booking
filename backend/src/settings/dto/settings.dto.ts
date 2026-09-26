@@ -6,10 +6,9 @@ export class UpdateSettingDto {
   @Allow()
   value!: unknown;
 
-  @IsOptional()
   @IsInt()
   @Min(0)
-  expectedVersion?: number;
+  expectedVersion!: number;
 }
 
 export class ListSettingsQuery {

@@ -3,10 +3,12 @@ import { SiteFooter } from '@/components/home/SiteFooter';
 import { SiteHeader } from '@/components/home/SiteHeader';
 import { DialogHost } from '@/components/ui/DialogHost';
 import { MotionController } from '@/components/ui/MotionController';
+import { SiteDataProvider } from '@/components/site/SiteDataProvider';
+import { getPublicNavigation, getPublicSite } from '@/lib/api/public';
 import { MobileBottomBar } from './MobileBottomBar';
 
 /** Header + footer + global dialogs shared by every page. */
-export function PageShell({
+export async function PageShell({
   children,
   footer = 'default',
   className,
@@ -15,14 +17,15 @@ export function PageShell({
   footer?: 'default' | 'checkout';
   className?: string;
 }) {
+  const [site, navigation] = await Promise.all([getPublicSite(), getPublicNavigation()]);
   return (
-    <>
-      <SiteHeader />
+    <SiteDataProvider data={site}>
+      <SiteHeader navigation={navigation} />
       <main className={className}>{children}</main>
       <SiteFooter variant={footer} />
       <MobileBottomBar />
       <DialogHost />
       <MotionController />
-    </>
+    </SiteDataProvider>
   );
 }

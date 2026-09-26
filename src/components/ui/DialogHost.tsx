@@ -1,15 +1,15 @@
 'use client';
 
 import { ArrowRight, Copy, Info } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { siteConfig } from '@/config/site';
-import { testimonials } from '@/data/home-fixtures';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 import { onDialogRequest, type DialogRequest } from '@/lib/events';
 import { DEFAULT_SELECTION, dateError, selectionQuery } from '@/lib/selection';
 import { DateRangePicker } from './DateRangePicker';
 import { GuestPicker } from './GuestPicker';
-import { DemoNote, Modal } from './Modal';
+import { Modal } from './Modal';
 
 /** Global dialogs any page can request through `openDialog()`. */
 export function DialogHost() {
@@ -33,24 +33,17 @@ export function DialogHost() {
 }
 
 function DialogContent({ req, onDone }: { req: DialogRequest; onDone: () => void }) {
+  const site = useSiteData();
   switch (req.type) {
     case 'reviews':
       return (
         <>
           <h2 id="dialog-title" className="dialog__title">
-            Khách hàng nói về {siteConfig.name}
+            Khách hàng nói về {site.name || 'website'}
           </h2>
-          <DemoNote>Các nhận xét dưới đây là nội dung mẫu của thiết kế, chưa phải đánh giá đã xác minh.</DemoNote>
-          <ul className="dialog__reviews">
-            {testimonials.map((t) => (
-              <li key={t.id}>
-                <blockquote>“{t.quote}”</blockquote>
-                <p>
-                  <strong>{t.author}</strong> · {t.context}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <p className="dialog__pending" role="status">
+            Chưa có đánh giá đã được công bố.
+          </p>
         </>
       );
     case 'search':
@@ -146,7 +139,7 @@ function SearchDialog({ onDone }: { onDone: () => void }) {
 export function ContactPending({ title, lead, need }: { title: string; lead: string; need: string }) {
   const [text, setText] = useState(need);
   const [copied, setCopied] = useState<'idle' | 'ok' | 'fail'>('idle');
-  const { contact } = siteConfig;
+  const { contact } = useSiteData();
   const hasContact = contact.zaloUrl || contact.phone;
   const copy = async () => {
     try {
@@ -185,9 +178,9 @@ export function ContactPending({ title, lead, need }: { title: string; lead: str
         <button type="button" className="btn btn--light" onClick={copy} disabled={!text.trim()}>
           <Copy size={16} aria-hidden="true" /> Sao chép nhu cầu
         </button>
-        <a className="btn btn--primary" href="/lien-he">
+        <Link className="btn btn--primary" href="/lien-he">
           Mở trang tư vấn <ArrowRight size={16} aria-hidden="true" />
-        </a>
+        </Link>
         <span className="dialog__copied" role="status">
           {copied === 'ok'
             ? 'Đã sao chép.'

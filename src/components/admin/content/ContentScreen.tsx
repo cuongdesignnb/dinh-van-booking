@@ -512,6 +512,11 @@ function ArticleEditor({ article, onClose }: { article: Article; onClose: () => 
         label="Nội dung"
         hint="Định dạng, danh sách, trích dẫn và liên kết. Nội dung được lưu dạng tài liệu có cấu trúc."
         value={document}
+        aiContext={{ kind: 'article', title: form.title, excerpt: form.excerpt }}
+        onAiGenerated={(generated) => {
+          setForm((current) => ({ ...current, title: generated.title, excerpt: generated.excerpt, seo: generated.metaDescription }));
+          setDirty(true);
+        }}
         onChange={(next, plainText) => {
           setDocument(next);
           setForm((current) => ({ ...current, content: plainText }));

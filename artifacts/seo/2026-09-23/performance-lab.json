@@ -1,0 +1,5 @@
+{
+  "status": "NOT_RUN",
+  "fieldData": "NOT_AVAILABLE",
+  "reason": "No Lighthouse/Core Web Vitals lab run or production field-data source was available in this local implementation check."
+}

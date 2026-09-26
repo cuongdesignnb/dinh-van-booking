@@ -5,8 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import { DemoNote, Modal } from '@/components/ui/Modal';
-import { fromPrice, type Stay } from '@/data/stays';
+import type { Stay } from '@/data/stays';
 import { formatVnd } from '@/lib/format';
+
+const fromPrice = (stay: Stay) => Math.min(...stay.roomTypes.map((room) => room.pricePerNight));
 
 function Pin() {
   return (
@@ -40,13 +42,13 @@ function MapCanvas({
         Cúc Phương
       </span>
       <span className="smap__badge">Bản đồ minh họa</span>
-      {stays.map((s) => (
+      {stays.filter((s) => s.mapPin).map((s) => (
         <button
           key={s.id}
           type="button"
           className="smap__pin"
           data-active={active?.id === s.id || undefined}
-          style={{ left: `${s.mapPin.x}%`, top: `${s.mapPin.y}%` }}
+           style={{ left: `${s.mapPin!.x}%`, top: `${s.mapPin!.y}%` }}
           aria-label={`Xem ${s.name} trên bản đồ`}
           aria-pressed={active?.id === s.id}
           onClick={() => onSelect(s.id)}
@@ -57,7 +59,7 @@ function MapCanvas({
       {active && (
         <div
           className="smap__pop"
-          style={{ left: `${Math.min(active.mapPin.x, large ? 70 : 40)}%`, top: `${active.mapPin.y}%` }}
+            style={active.mapPin ? { left: `${Math.min(active.mapPin.x, large ? 70 : 40)}%`, top: `${active.mapPin.y}%` } : undefined}
         >
           <Link href={`/phong-nghi/${active.slug}${query ? `?${query}` : ''}`} className="smap__pop-name">
             {active.name}

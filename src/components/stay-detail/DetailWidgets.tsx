@@ -15,11 +15,10 @@ import {
   Wifi,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useId, useState } from 'react';
+import { useId, useState, type ElementType } from 'react';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { SmallLeaf } from '@/components/ui/Decor';
-import { DemoNote, Modal } from '@/components/ui/Modal';
-import { AMENITY_GROUPS, DETAIL_AMENITIES } from '@/data/stays';
+import { Modal } from '@/components/ui/Modal';
 import type { Host, Review } from '@/data/types';
 import { formatShort } from '@/lib/dates';
 import { openDialog } from '@/lib/events';
@@ -99,15 +98,12 @@ export function HostCard({ host }: { host: Host }) {
           </div>
         </div>
         <p>{host.bio}</p>
-        <DemoNote>
-          Hồ sơ và chân dung là minh họa. Chủ nhà là người vận hành chỗ nghỉ, khác với người tư vấn Đinh Vân.
-        </DemoNote>
       </Modal>
     </section>
   );
 }
 
-const AMENITY_ICON = {
+const AMENITY_ICON: Record<string, ElementType> = {
   wifi: Wifi,
   ac: Snowflake,
   bath: Bath,
@@ -116,7 +112,18 @@ const AMENITY_ICON = {
   desk: Laptop,
   breakfast: Coffee,
   nosmoke: CigaretteOff,
-} as const;
+};
+
+const AMENITY_LABELS: Record<string, string> = {
+  wifi: 'Wi-Fi',
+  breakfast: 'Bữa sáng',
+  view: 'View',
+  kitchen: 'Bếp',
+  family: 'Phù hợp gia đình',
+  parking: 'Chỗ đậu xe',
+  eco: 'Thân thiện môi trường',
+  pool: 'Hồ bơi',
+};
 
 function BalconyIcon({ size = 20 }: { size?: number; strokeWidth?: number }) {
   return (
@@ -127,9 +134,11 @@ function BalconyIcon({ size = 20 }: { size?: number; strokeWidth?: number }) {
   );
 }
 
-export function Amenities() {
+export function Amenities({ amenities }: { amenities: string[] }) {
   const [open, setOpen] = useState(false);
   const id = useId();
+  const items = amenities.map((icon) => ({ icon, label: AMENITY_LABELS[icon] ?? icon })).filter((item) => item.icon);
+  if (!items.length) return null;
   return (
     <section className="amen" aria-labelledby={`${id}-t`}>
       <div className="dsec-head">
@@ -141,8 +150,8 @@ export function Amenities() {
         </button>
       </div>
       <ul className="amen__list">
-        {DETAIL_AMENITIES.map((a) => {
-          const Icon = AMENITY_ICON[a.icon];
+        {items.slice(0, 8).map((a) => {
+          const Icon = AMENITY_ICON[a.icon] ?? Wifi;
           return (
             <li key={a.icon} className={`amen__chip amen__chip--${a.icon}`}>
               <Icon size={20} strokeWidth={1.7} aria-hidden="true" />
@@ -155,19 +164,11 @@ export function Amenities() {
         <h2 id={`${id}-d`} className="dialog__title">
           Tất cả tiện nghi
         </h2>
-        <div className="amen-groups">
-          {AMENITY_GROUPS.map((g) => (
-            <section key={g.title}>
-              <h3>{g.title}</h3>
-              <ul>
-                {g.items.map((it) => (
-                  <li key={it}>{it}</li>
-                ))}
-              </ul>
-            </section>
+        <ul className="amen-groups">
+          {items.map((item) => (
+            <li key={item.icon}>{item.label}</li>
           ))}
-        </div>
-        <DemoNote>Danh sách tiện nghi là dữ liệu mẫu, cần chủ nhà xác nhận.</DemoNote>
+        </ul>
       </Modal>
     </section>
   );
@@ -221,10 +222,7 @@ export function ReviewCards({ reviews, total }: { reviews: Review[]; total: numb
         <h2 id={`${id}-d`} className="dialog__title">
           Đánh giá của khách hàng
         </h2>
-        <DemoNote>
-          Đây là {reviews.length} nhận xét mẫu của thiết kế. Con số {total} đánh giá trên trang là dữ liệu minh họa, chưa có
-          dữ liệu đánh giá thật để tải thêm.
-        </DemoNote>
+        {reviews.length === 0 && <p className="dialog__pending">Chưa có đánh giá đã được công bố.</p>}
         <label className="dialog__sort">
           Sắp xếp:{' '}
           <select value={sort} onChange={(e) => setSort(e.target.value as 'new' | 'rating')}>

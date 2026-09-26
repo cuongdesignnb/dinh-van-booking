@@ -3,7 +3,11 @@
  * so public URLs stay readable and stable, and `đ`/`Đ` are handled explicitly
  * because Unicode decomposition leaves them untouched.
  */
-const RESERVED = new Set(['admin', 'api', 'media', '_next', 'static']);
+const RESERVED = new Set([
+  'admin', 'api', 'media', '_next', 'static', 'robots', 'sitemap', 'favicon', 'icon', 'apple-icon',
+  'opengraph-image', 'twitter-image', 'manifest', 'phong-nghi', 'combo-du-lich', 'diem-den',
+  'bai-viet', 'chuyen-trang', 'dat-phong', 'lien-he', 'tai-khoan', 'tra-cuu',
+]);
 
 export function slugify(input: string): string {
   const base = input
@@ -30,7 +34,7 @@ export function uniqueSlug(desired: string, taken: Set<string>): string {
   return `${base}-${Date.now()}`;
 }
 
-/** Public path for a content node, e.g. stay + `nha-san-doi` -> /phong-nghi/nha-san-doi */
+/** Public path for a content node; standalone CMS pages live at /<slug>. */
 const SECTION_BY_KIND: Record<string, string> = {
   stay: '/phong-nghi',
   combo: '/combo-du-lich',
@@ -42,5 +46,5 @@ const SECTION_BY_KIND: Record<string, string> = {
 export function pathForContent(kind: string, slug: string): string {
   const section = SECTION_BY_KIND[kind];
   if (section === undefined) throw new Error(`Không có đường dẫn công khai cho loại nội dung ${kind}`);
-  return `${section}/${slug}`;
+  return section ? `${section}/${slug}` : `/${slug}`;
 }

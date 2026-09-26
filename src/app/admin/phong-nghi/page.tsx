@@ -1,4 +1,4 @@
-import { PropertiesScreen } from '@/components/admin/properties/PropertiesScreen';
+import { PropertyCatalogScreen } from '@/components/admin/properties/PropertyCatalogScreen';
 
 export default async function Page({
   searchParams,
@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  return <PropertiesScreen />;
+  return <PropertyCatalogScreen />;
 }

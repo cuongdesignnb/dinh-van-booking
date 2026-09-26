@@ -1,0 +1,28 @@
+Date: 2026-09-23 (Asia/Saigon)
+Repository baseline: 54c246bbe9f70ed3bf298401e39df3e30a73057c
+Working tree: pre-existing dirty changes preserved; task changes uncommitted
+Local test origin: http://127.0.0.1:18473
+
+Docker Compose final check:
+- api: healthy
+- web: running
+- postgres: healthy
+- redis: healthy
+- gateway: running; host binding 127.0.0.1:18473 -> 80
+- worker: running (no healthcheck reported)
+
+Applied Prisma migrations:
+- 20260920101745_init
+- 20260920102057_guard_constraints
+- 20260923110000_public_seo_snapshots
+- 20260923113000_static_pages_root_routes
+- 20260923120000_protect_root_reserved_pages
+
+Observed SEO policy:
+- indexingAllowed=false
+- canonicalOrigin=null
+- blockers: deployment gate disabled; database indexing disabled; no approved HTTPS origin; brand identity confirmation incomplete
+- public published content counts: stays=0, combos=0, destinations=0, articles=0, pages=0
+- public URL inventory: 0 eligible URLs
+
+No credentials, tokens, environment-file contents, or customer data are recorded here.

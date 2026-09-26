@@ -47,6 +47,12 @@
   margin-left: auto;
 }
 
+.dvb-admin .rte__table-tools {
+  background: rgba(255, 255, 255, 0.58);
+  border-radius: 8px;
+  padding: 2px 4px 2px 2px;
+}
+
 .dvb-admin .rte__btn {
   display: inline-flex;
   align-items: center;
@@ -167,6 +173,55 @@
 .dvb-admin .rte__body .tiptap img.ProseMirror-selectednode {
   outline: 2px solid var(--dvb-admin-green-800);
   outline-offset: 2px;
+}
+
+.dvb-admin .rte__body .tiptap table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.dvb-admin .rte__body .tiptap th,
+.dvb-admin .rte__body .tiptap td {
+  min-width: 90px;
+  border: 1px solid var(--dvb-admin-border);
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+.dvb-admin .rte__body .tiptap th {
+  background: var(--dvb-admin-mint);
+  font-weight: 700;
+  color: var(--dvb-admin-green-900);
+}
+
+.dvb-admin .rte__body .tiptap .selectedCell:after {
+  background: rgba(25, 69, 38, 0.12);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.dvb-admin .rte__body .tiptap .column-resize-handle {
+  background: var(--dvb-admin-green-800);
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+}
+
+.dvb-admin .rte__preview {
+  max-height: 460px;
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+
+.dvb-admin .rte__preview.rich-content {
+  min-height: 200px;
 }
 
 /* Placeholder comes from the extension as a data attribute on the first node. */

@@ -1,0 +1,315 @@
+/* AI authoring: preview-only assistant and human-readable provider settings. */
+.dvb-admin .rte__btn[aria-label="AI viết nội dung và tạo ảnh"] {
+  color: var(--dvb-admin-green-800);
+  background: rgba(220, 237, 218, 0.56);
+}
+
+.dvb-admin .rte-ai-dialog {
+  width: min(1060px, calc(100vw - 32px));
+  max-width: min(1060px, calc(100vw - 32px));
+}
+
+.dvb-admin .rte-ai {
+  display: grid;
+  gap: 20px;
+}
+
+.dvb-admin .rte-ai__header,
+.dvb-admin .ai-settings__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.dvb-admin .rte-ai__header h2,
+.dvb-admin .ai-settings__head h3 {
+  margin: 0;
+  color: var(--dvb-admin-green-900);
+}
+
+.dvb-admin .rte-ai__header p,
+.dvb-admin .ai-settings__head p {
+  margin: 5px 0 0;
+}
+
+.dvb-admin .rte-ai__icon,
+.dvb-admin .ai-settings__title-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  color: var(--dvb-admin-green-800);
+  background: var(--dvb-admin-mint);
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 12px;
+}
+
+.dvb-admin .rte-ai__controls,
+.dvb-admin .ai-settings {
+  display: grid;
+  gap: 15px;
+}
+
+.dvb-admin .rte-ai__image-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 12px;
+  background: var(--dvb-admin-cream);
+}
+
+.dvb-admin .rte-ai__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--dvb-admin-green-900);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dvb-admin .rte-ai__check input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--dvb-admin-green-800);
+}
+
+.dvb-admin .rte-ai__count {
+  width: 155px;
+  margin-left: auto;
+}
+
+.dvb-admin .rte-ai__actions,
+.dvb-admin .ai-settings__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.dvb-admin .rte-ai__note,
+.dvb-admin .rte-ai__error,
+.dvb-admin .rte-ai__warning,
+.dvb-admin .ai-settings__security {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--dvb-admin-cream);
+  color: var(--dvb-admin-muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.dvb-admin .rte-ai__error {
+  color: var(--dvb-admin-danger);
+  background: #fff3f1;
+}
+
+.dvb-admin .rte-ai__error a {
+  color: var(--dvb-admin-green-800);
+  font-weight: 700;
+}
+
+.dvb-admin .rte-ai__warning {
+  color: #704f12;
+  background: #fff7df;
+}
+
+.dvb-admin .rte-ai__result {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding-top: 17px;
+  border-top: 1px solid var(--dvb-admin-border);
+}
+
+.dvb-admin .rte-ai__result-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.dvb-admin .rte-ai__result-head h3 {
+  margin: 4px 0;
+  color: var(--dvb-admin-green-900);
+}
+
+.dvb-admin .rte-ai__result-head p {
+  margin: 4px 0;
+  color: var(--dvb-admin-muted);
+}
+
+.dvb-admin .rte-ai__eyebrow {
+  color: var(--dvb-admin-green-800) !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.dvb-admin .rte-ai__meta {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 11px;
+  background: var(--dvb-admin-mint);
+  font-size: 12.5px;
+}
+
+.dvb-admin .rte-ai__meta > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  gap: 10px;
+}
+
+.dvb-admin .rte-ai__meta strong {
+  color: var(--dvb-admin-green-900);
+}
+
+.dvb-admin .rte-ai__preview {
+  max-height: 390px;
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dvb-admin .rte-ai__preview img {
+  display: block;
+  max-width: min(100%, 720px);
+  height: auto;
+  border-radius: 10px;
+}
+
+.dvb-admin .ai-settings {
+  margin: 18px 0;
+  padding: 20px;
+}
+
+.dvb-admin .ai-settings__head {
+  align-items: center;
+}
+
+.dvb-admin .ai-settings__head > div:nth-child(2) {
+  flex: 1;
+}
+
+.dvb-admin .ai-settings__providers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dvb-admin .ai-provider {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 13px;
+  background: var(--dvb-admin-surface);
+}
+
+.dvb-admin .ai-provider__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dvb-admin .ai-provider__head h4 {
+  margin: 0;
+  color: var(--dvb-admin-green-900);
+}
+
+.dvb-admin .ai-provider__head p {
+  margin: 4px 0 0;
+}
+
+.dvb-admin .ai-provider__status {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff3f1;
+  color: var(--dvb-admin-danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dvb-admin .ai-provider__status.is-ready {
+  color: var(--dvb-admin-green-800);
+  background: var(--dvb-admin-mint);
+}
+
+.dvb-admin .ai-provider__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.dvb-admin .ai-provider__wide {
+  grid-column: 1 / -1;
+}
+
+.dvb-admin .ai-provider__secret {
+  display: flex;
+  gap: 6px;
+}
+
+.dvb-admin .ai-provider__secret .ainput {
+  min-width: 0;
+  flex: 1;
+}
+
+.dvb-admin .ai-provider__clear {
+  justify-self: start;
+  color: var(--dvb-admin-danger);
+}
+
+.dvb-admin .ai-settings__security {
+  align-items: center;
+  border: 1px solid var(--dvb-admin-border);
+}
+
+.dvb-admin .ai-settings__footer {
+  justify-content: space-between;
+}
+
+@media (max-width: 760px) {
+  .dvb-admin .ai-settings__providers {
+    grid-template-columns: 1fr;
+  }
+
+  .dvb-admin .ai-settings__head {
+    flex-wrap: wrap;
+  }
+
+  .dvb-admin .ai-provider__head,
+  .dvb-admin .rte-ai__result-head {
+    flex-wrap: wrap;
+  }
+
+  .dvb-admin .rte-ai__result-head > .abtn {
+    width: 100%;
+  }
+
+  .dvb-admin .rte-ai__meta > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .dvb-admin .ai-settings__footer {
+    align-items: stretch;
+  }
+}

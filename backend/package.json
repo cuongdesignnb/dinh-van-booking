@@ -13,7 +13,8 @@
     "migrate:deploy": "node scripts/run-with-db-url.mjs npx prisma migrate deploy",
     "seed": "node scripts/run-with-db-url.mjs node dist/scripts/seed.js",
     "test": "node --test dist/**/*.spec.js",
-    "create-owner": "node scripts/run-with-db-url.mjs node dist/scripts/create-owner.js"
+    "create-owner": "node scripts/run-with-db-url.mjs node dist/scripts/create-owner.js",
+    "import:business:cuc-phuong": "node scripts/run-with-db-url.mjs node dist/scripts/import-cuc-phuong.js"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",

@@ -1,13 +1,30 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { DEMO_RANGE, DEMO_TODAY } from '@/data/admin/fixture-clock';
-import { buildAdminData } from '@/lib/admin/data';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AdminData } from '@/lib/admin/types';
 import type { Range } from '@/lib/admin/selectors';
 
-const STORAGE_KEY = 'dvb:admin:v1';
-const MAX_PERSIST_BYTES = 2_500_000;
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+const EMPTY_DATA: AdminData = {
+  properties: [],
+  roomTypes: [],
+  roomUnits: [],
+  inventoryOverrides: [],
+  rates: { weekendEnabled: false, weekendDays: [], seasonalEnabled: false, seasons: [] },
+  bookings: [],
+  payments: [],
+  customers: [],
+  inquiries: [],
+  interactions: [],
+  followUps: [],
+  combos: [],
+  destinations: [],
+  articles: [],
+  media: [],
+  users: [],
+  analytics: { visits: 0, visitsPrev: 0, contentViews: 0, contentViewsPrev: 0 },
+};
 
 export type Role = 'owner' | 'editor' | 'viewer';
 
@@ -25,7 +42,7 @@ interface Ctx {
   role: Role;
   setRole: (r: Role) => void;
   canEdit: boolean;
-  /** Runs a demo mutation: returns an error message, or null on success. */
+  /** Compatibility surface for unfinished admin modules; never mutates local demo data. */
   commit: (label: string, updater: (draft: AdminData) => string | void, toast?: string | null) => Promise<string | null>;
   busy: string | null;
   toasts: Toast[];
@@ -37,45 +54,14 @@ interface Ctx {
 
 const AdminContext = createContext<Ctx | null>(null);
 
-/** Demo repository: validates, waits a beat and mutates the in-memory snapshot. */
 export function AdminStoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<AdminData>(() => buildAdminData());
-  const [range, setRange] = useState<Range>(DEMO_RANGE);
+  const [data] = useState<AdminData>(EMPTY_DATA);
+  const today = todayKey();
+  const [range, setRange] = useState<Range>({ from: today, to: today });
   const [role, setRole] = useState<Role>('owner');
   const [busy, setBusy] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [persisted, setPersisted] = useState(false);
-  const dataRef = useRef(data);
-  dataRef.current = data;
   const toastId = useRef(0);
-
-  // Restore demo edits after a reload (best effort; never blocks rendering).
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { version: number; data: AdminData };
-        if (parsed.version === 1 && parsed.data?.bookings?.length) {
-          dataRef.current = parsed.data;
-          setData(parsed.data);
-          setPersisted(true);
-        }
-      }
-    } catch {
-      /* private mode / blocked storage: keep the fixture snapshot */
-    }
-  }, []);
-
-  const persist = useCallback((next: AdminData) => {
-    try {
-      const raw = JSON.stringify({ version: 1, data: next });
-      if (raw.length > MAX_PERSIST_BYTES) return;
-      window.localStorage.setItem(STORAGE_KEY, raw);
-      setPersisted(true);
-    } catch {
-      /* quota or unavailable storage: the session keeps working in memory */
-    }
-  }, []);
 
   const pushToast = useCallback((text: string, tone: Toast['tone'] = 'success') => {
     const id = ++toastId.current;
@@ -86,46 +72,28 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
 
   const commit = useCallback<Ctx['commit']>(
-    async (label, updater, toast = 'Đã lưu trong bản demo') => {
+    async (label) => {
       if (role === 'viewer') {
         pushToast('Vai trò “Chỉ xem” không được phép thay đổi dữ liệu.', 'error');
         return 'no-permission';
       }
       setBusy(label);
-      await new Promise((r) => window.setTimeout(r, 260));
-      const draft: AdminData = structuredClone(dataRef.current);
-      const result = updater(draft);
       setBusy(null);
-      if (typeof result === 'string') {
-        pushToast(result, 'error');
-        return result;
-      }
-      dataRef.current = draft;
-      setData(draft);
-      persist(draft);
-      if (toast) pushToast(toast);
-      return null;
+      const message = `Tác vụ “${label}” chưa có endpoint API tương ứng; không ghi dữ liệu cục bộ.`;
+      pushToast(message, 'error');
+      return message;
     },
-    [persist, pushToast, role],
+    [pushToast, role],
   );
 
   const reset = useCallback(() => {
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    const fresh = buildAdminData();
-    dataRef.current = fresh;
-    setData(fresh);
-    setPersisted(false);
-    pushToast('Đã khôi phục dữ liệu mẫu gốc', 'info');
+    pushToast('Không có dữ liệu cục bộ để khôi phục. Hãy thao tác qua API quản trị.', 'info');
   }, [pushToast]);
 
   const value = useMemo<Ctx>(
     () => ({
       data,
-      today: DEMO_TODAY,
+      today,
       range,
       setRange,
       role,
@@ -137,9 +105,9 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       pushToast,
       dismissToast,
       reset,
-      persisted,
+      persisted: false,
     }),
-    [data, range, role, commit, busy, toasts, pushToast, dismissToast, reset, persisted],
+    [data, today, range, role, commit, busy, toasts, pushToast, dismissToast, reset],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

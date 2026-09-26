@@ -67,6 +67,10 @@ services:
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
     <<: *runtime-env
+    environment:
+      TZ: ${BUSINESS_TIMEZONE:-Asia/Ho_Chi_Minh}
+      SEO_INDEXING_ALLOWED: ${SEO_INDEXING_ALLOWED:-false}
+      SEO_APPROVED_CANONICAL_ORIGIN: ${SEO_APPROVED_CANONICAL_ORIGIN:-}
     secrets:
       - db_app_password
       - session_secret
@@ -114,6 +118,8 @@ services:
     environment:
       NODE_ENV: production
       TZ: ${BUSINESS_TIMEZONE:-Asia/Ho_Chi_Minh}
+      SEO_INDEXING_ALLOWED: ${SEO_INDEXING_ALLOWED:-false}
+      SEO_APPROVED_CANONICAL_ORIGIN: ${SEO_APPROVED_CANONICAL_ORIGIN:-}
       INTERNAL_API_BASE_URL: http://api:3001/api/v1
       NEXT_PUBLIC_API_BASE_PATH: /api/v1
     depends_on:
