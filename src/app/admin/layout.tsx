@@ -12,6 +12,7 @@ import '@/styles/admin-crm.css';
 import '@/styles/admin-editor.css';
 import '@/styles/admin-ai.css';
 import '@/styles/admin-media.css';
+import '@/styles/admin-operations.css';
 import '@/styles/admin-responsive.css';
 
 export const metadata: Metadata = {

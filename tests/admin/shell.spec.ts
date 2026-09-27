@@ -5,6 +5,7 @@ const ROUTES = [
   ['/admin', 'Tổng quan', 'Tổng quan'],
   ['/admin/dat-phong', 'Quản lý đặt phòng', 'Đặt phòng'],
   ['/admin/phong-nghi', 'Quản lý phòng nghỉ', 'Phòng nghỉ'],
+  ['/admin/ton-phong', 'Quỹ phòng', 'Quỹ phòng'],
   ['/admin/combo-du-lich', 'Quản lý combo du lịch', 'Combo du lịch'],
   ['/admin/diem-den', 'Quản lý điểm đến', 'Điểm đến'],
   ['/admin/khach-hang', 'Khách hàng', 'Khách hàng'],
@@ -54,7 +55,7 @@ test('mật khẩu sai không tạo phiên đăng nhập', async ({ page }) => {
   await expect(page.locator('.atop__user')).toHaveCount(0);
 });
 
-test('mọi route admin có tiêu đề, menu hiện hành và trạng thái module trung thực', async ({ page }) => {
+test('mọi route admin có tiêu đề, menu hiện hành và module vận hành thật', async ({ page }) => {
   await signInAsOwner(page);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -62,22 +63,23 @@ test('mọi route admin có tiêu đề, menu hiện hành và trạng thái mod
   for (const [route, title, active] of ROUTES) {
     const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
     expect(response?.status(), route).toBe(200);
-    await expect(page.locator('h1'), route).toContainText(title);
+    await expect(page.locator('.atop__title'), route).toContainText(title);
     await expect(page.locator('.asidebar [aria-current="page"]'), route).toContainText(active);
     await expect(page.locator('.atop__search, .atop__bell, .atop__range'), route).toHaveCount(0);
   }
 
-  for (const [route, heading] of [
-    ['/admin', 'Tổng quan và báo cáo'],
-    ['/admin/dat-phong', 'Quản lý đặt phòng'],
-    ['/admin/khach-hang', 'Khách hàng'],
-    ['/admin/khuyen-mai', 'Khuyến mãi'],
-    ['/admin/thanh-toan', 'Thanh toán'],
-    ['/admin/bao-cao', 'Báo cáo'],
+  for (const [route, section] of [
+    ['/admin', 'dashboard'],
+    ['/admin/dat-phong', 'bookings'],
+    ['/admin/ton-phong', 'inventory'],
+    ['/admin/khach-hang', 'customers'],
+    ['/admin/khuyen-mai', 'coupons'],
+    ['/admin/thanh-toan', 'payments'],
+    ['/admin/bao-cao', 'reports'],
   ]) {
     await page.goto(route);
-    await expect(page.locator('.apending h2')).toHaveText(`${heading} chưa nằm trong phạm vi đợt này`);
-    await expect(page.locator('main').getByRole('button')).toHaveCount(0);
+    await expect(page.locator(`[data-admin-section="${section}"]`)).toBeVisible();
+    await expect(page.locator(`[data-admin-section="${section}"] h1`)).toBeVisible();
     await expect(page.locator('main')).not.toContainText(/đã lưu thành công|dữ liệu demo/i);
   }
 
@@ -158,7 +160,7 @@ for (const [width, height] of [[1440, 900], [1024, 900], [768, 1024], [390, 844]
     await page.setViewportSize({ width, height });
     for (const [route] of ROUTES) {
       await page.goto(route, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('h1')).toBeVisible();
+      await expect(page.locator('.atop__title')).toBeVisible();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, `${route} @ ${width}px`).toBeLessThanOrEqual(0);
     }

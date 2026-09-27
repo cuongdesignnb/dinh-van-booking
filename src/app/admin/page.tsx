@@ -1,4 +1,4 @@
-import { PendingModule } from '@/components/admin/shell/AdminShell';
+import { AdminOperationsScreen } from '@/components/admin/operations/AdminOperationsScreen';
 
 export default async function AdminOverviewPage({
   searchParams,
@@ -8,5 +8,5 @@ export default async function AdminOverviewPage({
   // Reading the params keeps this route dynamic so client islands never bail
   // out of server rendering.
   await searchParams;
-  return <PendingModule title="Tổng quan và báo cáo" />;
+  return <AdminOperationsScreen section="dashboard" />;
 }

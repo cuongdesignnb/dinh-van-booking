@@ -1,5 +1,5 @@
-import { PendingModule } from '@/components/admin/shell/AdminShell';
+import { AdminOperationsScreen } from '@/components/admin/operations/AdminOperationsScreen';
 
 export default function Page() {
-  return <PendingModule title="Báo cáo" />;
+  return <AdminOperationsScreen section="reports" />;
 }

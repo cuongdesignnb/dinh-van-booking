@@ -1,0 +1,251 @@
+/* Operations screens: dashboard, booking, inventory, CRM, finance and reports. */
+.admin-operations {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-operations__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--dvb-admin-border);
+}
+
+.admin-operations__head h1 {
+  margin: 0;
+  color: var(--dvb-admin-green-950);
+  font-size: clamp(23px, 2vw, 30px);
+  line-height: 1.15;
+}
+
+.admin-operations__head p,
+.admin-operations__source {
+  margin: 4px 0 0;
+  color: var(--dvb-admin-muted);
+  font-size: 11.5px;
+}
+
+.admin-operations__head > .abtn { flex: 0 0 auto; }
+.admin-operations__loading { padding: 18px; color: var(--dvb-admin-muted); }
+
+.admin-operations__notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #cae4cf;
+  border-radius: 9px;
+  background: #eff8f0;
+  color: var(--dvb-admin-green-900);
+}
+
+.admin-operations__kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.admin-operations__kpis .kpi { height: auto; min-height: 145px; }
+
+.admin-operations__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+.admin-operations__grid > *,
+.admin-operations__finance-grid > * { min-width: 0; }
+.admin-operations__activity { grid-column: 1 / -1; }
+
+.admin-operations__status-list { display: grid; gap: 7px; }
+.admin-operations__status-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding: 4px 0;
+  border-bottom: 1px solid #edf0eb;
+}
+.admin-operations__status-list > div:last-child { border-bottom: 0; }
+.admin-operations__status-list strong { font-variant-numeric: tabular-nums; }
+
+.admin-operations__timeline,
+.admin-operations__plain-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+.admin-operations__timeline li { padding-left: 2px; }
+.admin-operations__timeline time,
+.admin-operations__timeline strong,
+.admin-operations__timeline small { display: block; }
+.admin-operations__timeline time,
+.admin-operations__timeline small { color: var(--dvb-admin-muted); font-size: 11px; }
+.admin-operations__timeline strong { margin: 2px 0; font-weight: 600; }
+.admin-operations__plain-list li { overflow-wrap: anywhere; }
+
+.admin-operations__form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #e8ece6;
+  border-radius: 10px;
+  background: #fbfcf9;
+}
+.admin-operations__form > .admin-operations__span { grid-column: 1 / -1; }
+.admin-operations__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+.admin-operations__form-actions small,
+.admin-operations__form > div > small { color: var(--dvb-admin-muted); font-size: 11px; }
+.admin-operations__inventory-form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.admin-operations__quote {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #cfe2d1;
+  border-radius: 9px;
+  background: #f1f8f1;
+}
+.admin-operations__quote > div { display: grid; gap: 2px; min-width: 0; }
+.admin-operations__quote span,
+.admin-operations__quote small { color: var(--dvb-admin-muted); font-size: 11px; }
+.admin-operations__quote strong { overflow-wrap: anywhere; }
+.admin-operations__quote > small { grid-column: 1 / -1; }
+
+.admin-operations__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 9px;
+  margin: 0 0 10px;
+}
+.admin-operations__filters > .afield { min-width: 180px; margin: 0; }
+.admin-operations__filters > .ainput { width: min(240px, 100%); }
+.admin-operations__search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 280px;
+  min-width: min(100%, 220px);
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--dvb-admin-muted);
+}
+.admin-operations__search:focus-within { border-color: var(--dvb-admin-green-700); box-shadow: 0 0 0 2px rgb(40 119 71 / 10%); }
+.admin-operations__search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--dvb-admin-text);
+  font: inherit;
+}
+
+.admin-operations__table-wrap { width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.admin-operations .atable { min-width: 720px; }
+.admin-operations .atable td small { display: block; margin-top: 2px; color: var(--dvb-admin-muted); }
+.admin-operations__row-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dvb-admin-green-800);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-operations__row-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.admin-operations__detail-grid,
+.admin-operations__report-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-operations__detail-grid > div,
+.admin-operations__report-cards > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #e9ede7;
+  border-radius: 8px;
+  background: #fbfcf9;
+}
+.admin-operations__detail-grid span,
+.admin-operations__report-cards span { color: var(--dvb-admin-muted); font-size: 11px; }
+.admin-operations__detail-grid strong,
+.admin-operations__report-cards strong { overflow-wrap: anywhere; }
+.admin-operations__report-cards strong { color: var(--dvb-admin-green-900); font-size: 18px; font-variant-numeric: tabular-nums; }
+.admin-operations > .acard h3 { margin: 14px 0 7px; color: var(--dvb-admin-green-950); font-size: 13px; }
+
+.admin-operations__inline-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 12px 0;
+}
+.admin-operations__inline-form .ainput { flex: 1; min-width: 100px; }
+.admin-operations__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.admin-operations__crm-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; }
+.admin-operations__crm-grid .admin-operations__inline-form { min-width: 0; }
+.admin-operations__safe-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 9px 0 0;
+  color: #80530c;
+  font-size: 11.5px;
+}
+.admin-operations__safe-note svg { flex: 0 0 auto; margin-top: 1px; }
+.admin-operations .ahint { color: var(--dvb-admin-muted); font-size: 11px; }
+
+.admin-operations__inventory-form .atoggle { align-self: center; }
+.admin-operations .apager { margin-top: 10px; }
+
+@media (max-width: 1150px) {
+  .admin-operations__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-operations__form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-operations__inventory-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .admin-operations { gap: 9px; }
+  .admin-operations__head { align-items: center; }
+  .admin-operations__head p { max-width: 56ch; }
+  .admin-operations__kpis,
+  .admin-operations__grid,
+  .admin-operations__form,
+  .admin-operations__inventory-form,
+  .admin-operations__detail-grid,
+  .admin-operations__report-cards,
+  .admin-operations__crm-grid { grid-template-columns: 1fr; }
+  .admin-operations__quote { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-operations__form > .admin-operations__span { grid-column: auto; }
+  .admin-operations__activity { grid-column: auto; }
+  .admin-operations__inline-form { flex-wrap: wrap; }
+  .admin-operations__inline-form .ainput { flex: 1 1 100%; }
+  .admin-operations__filters > .afield,
+  .admin-operations__filters > .ainput { width: 100%; min-width: 0; }
+  .admin-operations__form-actions { align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-operations__loading { animation: admin-operations-pulse 1.2s ease-in-out infinite alternate; }
+  @keyframes admin-operations-pulse { to { opacity: .68; } }
+}

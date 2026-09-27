@@ -11,6 +11,7 @@ import { InquiryModule } from './inquiries/inquiry.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { NavigationModule } from './navigation/navigation.module';
 import { AiModule } from './ai/ai.module';
+import { AdminOperationsModule } from './admin-operations/admin-operations.module';
 import { loadConfig } from './common/config/env';
 
 @Module({
@@ -26,6 +27,7 @@ import { loadConfig } from './common/config/env';
     CatalogModule,
     NavigationModule,
     AiModule,
+    AdminOperationsModule,
     HealthModule,
   ],
 })

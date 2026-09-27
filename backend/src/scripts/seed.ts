@@ -19,9 +19,11 @@ async function main(): Promise<void> {
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: buildDatabaseUrl() }) });
 
   const descriptions: Record<PermissionCode, string> = {
+    'dashboard.read': 'Xem tổng quan số liệu vận hành thật',
     'booking.read': 'Xem đơn đặt phòng',
     'booking.write': 'Tạo và sửa đơn đặt phòng',
     'booking.cancel': 'Huỷ đơn và hoàn tiền cọc',
+    'inventory.read': 'Xem quỹ phòng và tình trạng giữ chỗ',
     'inventory.write': 'Sửa tồn phòng, khoá phòng',
     'catalog.read': 'Xem nơi lưu trú, hạng phòng, combo',
     'catalog.write': 'Sửa nơi lưu trú, hạng phòng, giá, combo',
@@ -33,8 +35,12 @@ async function main(): Promise<void> {
     'media.delete': 'Xoá ảnh khỏi thư viện',
     'crm.read': 'Xem khách hàng và yêu cầu tư vấn',
     'crm.write': 'Sửa khách hàng, ghi nhận trao đổi',
+    'coupon.read': 'Xem mã khuyến mãi và lịch sử sử dụng',
+    'coupon.write': 'Tạo, sửa và tắt mã khuyến mãi',
     'finance.read': 'Xem thanh toán, hoàn tiền, báo cáo',
     'finance.write': 'Ghi nhận thanh toán và hoàn tiền',
+    'refund.approve': 'Duyệt trạng thái hoàn tiền thủ công',
+    'report.read': 'Xem báo cáo đối soát từ PostgreSQL',
     'settings.read': 'Xem cấu hình hệ thống',
     'settings.write': 'Sửa cấu hình hệ thống',
     'user.read': 'Xem tài khoản nhân sự',

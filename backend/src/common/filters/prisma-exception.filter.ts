@@ -33,6 +33,13 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       : (exception.meta?.target as string | undefined);
 
     switch (exception.code) {
+      case 'P2034':
+        void reply.status(HttpStatus.CONFLICT).send({
+          statusCode: HttpStatus.CONFLICT,
+          code: 'transaction_conflict',
+          message: 'Dữ liệu vừa được cập nhật đồng thời. Hãy tải lại và thử lại.',
+        });
+        return;
       case 'P2002':
         void reply.status(HttpStatus.CONFLICT).send({
           statusCode: HttpStatus.CONFLICT,

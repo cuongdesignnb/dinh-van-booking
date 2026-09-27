@@ -35,13 +35,40 @@ import {
 import { formatDayLabel } from '@/lib/dates';
 import { openDialog } from '@/lib/events';
 import { formatVnd } from '@/lib/format';
-import { apiAdapter } from '@/lib/services/consultation';
+import { apiRequest } from '@/lib/api/client';
 import { dateError, nights as nightsOf, parseSelection, readParam, selectionQuery, type Selection } from '@/lib/selection';
 import { validateEmail, validateMessage, validateName, validatePhone } from '@/lib/validation';
 
 const NATIONALITIES = ['Việt Nam', 'Hàn Quốc', 'Nhật Bản', 'Trung Quốc', 'Hoa Kỳ', 'Pháp', 'Úc', 'Khác'];
 const SPECIAL_MAX = 300;
 const NOTE_MAX = 500;
+
+interface ServerQuote {
+  id: string;
+  subtotalVnd: string;
+  discountVnd: string;
+  totalVnd: string;
+  dueNowVnd: string;
+  expiresAt: string;
+  snapshot: {
+    quantity: number;
+    nights: Array<{ stayDate: string; amountVnd: string }>;
+  };
+}
+
+interface BookingReceipt {
+  id: string;
+  publicCode: string;
+  bookingStatus: string;
+  expiresAt: string;
+  totalVnd: string;
+  dueNowVnd: string;
+}
+
+function formatServerVnd(value: string | number | bigint): string {
+  const amount = typeof value === 'bigint' ? value : BigInt(String(value));
+  return `${new Intl.NumberFormat('vi-VN').format(amount)}đ`;
+}
 
 type Stage = 'editing' | 'review' | 'submitted';
 type GuestField = 'name' | 'phone' | 'email' | 'special' | 'note';
@@ -147,6 +174,8 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
   const [guest, setGuest] = useState<Guest>({ name: '', phone: '', email: '', nationality: 'Việt Nam', special: '', note: '' });
   const [errors, setErrors] = useState<Partial<Record<GuestField | 'capacity' | 'addons', string>>>({});
   const [stage, setStage] = useState<Stage>('editing');
+  const [quote, setQuote] = useState<ServerQuote | null>(null);
+  const [bookingReceipt, setBookingReceipt] = useState<BookingReceipt | null>(null);
   const [confirmChecked, setConfirmChecked] = useState(false);
   const [confirmErr, setConfirmErr] = useState(false);
   const [guestPop, setGuestPop] = useState(false);
@@ -199,7 +228,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     if (errors[f as GuestField]) setErrors((e) => ({ ...e, [f]: validate(f as GuestField, g) ?? undefined }));
   };
 
-  const goReview = () => {
+  const goReview = async () => {
     if (busy) return;
     const next: typeof errors = {};
     (['name', 'phone', 'email', 'special', 'note'] as GuestField[]).forEach((f) => {
@@ -220,12 +249,23 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     }
     if (next.addons) return;
     setBusy(true);
-    setStage('review');
-    requestAnimationFrame(() => {
-      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      topRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+    setSubmitError(null);
+    try {
+      const nextQuote = await apiRequest<ServerQuote>('/quotes', {
+        method: 'POST',
+        body: JSON.stringify({ roomTypeId: room.id, checkIn: sel.checkIn, checkOut: sel.checkOut, quantity: sel.rooms, adults: sel.adults, children: sel.children }),
+      });
+      setQuote(nextQuote);
+      setStage('review');
+      requestAnimationFrame(() => {
+        topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        topRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+      });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Chưa lấy được báo giá. Vui lòng thử lại.');
+    } finally {
       setBusy(false);
-    });
+    }
   };
 
   const backToEdit = (focus?: GuestField) => {
@@ -239,39 +279,42 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     router.push(`/phong-nghi/${stay.slug}?${q}&room=${room.id}#cac-loai-phong`);
   };
 
-  const submitInquiry = async () => {
+  const submitBookingRequest = async () => {
     if (!confirmChecked) {
       setConfirmErr(true);
       return;
     }
     setBusy(true);
     setSubmitError(null);
-    const message = [
-      'Phòng: ' + room.name,
-      'Số phòng: ' + sel.rooms,
-      'Ngày: ' + sel.checkIn + ' → ' + sel.checkOut,
-      'Số khách: ' + guests,
-      'Dịch vụ: ' + (summary?.lines.slice(1).map((line) => line.label).join(', ') || 'Không chọn thêm'),
-      guest.special.trim() ? 'Yêu cầu đặc biệt: ' + guest.special.trim() : '',
-      guest.note.trim() ? 'Ghi chú: ' + guest.note.trim() : '',
-    ].filter(Boolean).join('\n');
-    const result = await apiAdapter.submit({
-      name: guest.name.trim(),
-      phone: guest.phone.trim(),
-      email: guest.email.trim(),
-      checkIn: sel.checkIn,
-      checkOut: sel.checkOut,
-      adults: sel.adults,
-      children: sel.children,
-      message,
-      context: { intent: 'stay', id: stay.slug, label: stay.name },
-    });
-    setBusy(false);
-    if (result.status === 'error') {
-      setSubmitError(result.message);
+    if (!quote) {
+      setBusy(false);
+      setSubmitError('Báo giá không còn trong phiên này. Vui lòng quay lại lấy báo giá mới.');
       return;
     }
-    setStage('submitted');
+    const idempotencyKey = globalThis.crypto?.randomUUID?.();
+    if (!idempotencyKey) {
+      setBusy(false);
+      setSubmitError('Trình duyệt chưa hỗ trợ gửi yêu cầu an toàn. Hãy cập nhật trình duyệt rồi thử lại.');
+      return;
+    }
+    const note = [
+      `Quốc tịch: ${guest.nationality}`,
+      guest.special.trim() ? `Yêu cầu đặc biệt: ${guest.special.trim()}` : '',
+      guest.note.trim() ? `Ghi chú: ${guest.note.trim()}` : '',
+    ].filter(Boolean).join('\n');
+    try {
+      const receipt = await apiRequest<BookingReceipt>(`/quotes/${quote.id}/hold`, {
+        method: 'POST',
+        headers: { 'idempotency-key': idempotencyKey },
+        body: JSON.stringify({ fullName: guest.name.trim(), phone: guest.phone.trim(), email: guest.email.trim(), note }),
+      });
+      setBookingReceipt(receipt);
+      setStage('submitted');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Chưa giữ được phòng. Vui lòng thử lại.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const err = (f: GuestField) => errors[f];
@@ -363,8 +406,25 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
           <Pencil size={15} aria-hidden="true" /> Thay đổi lựa chọn phòng
         </button>
 
-        <h3 className="co-summary__sub">Ước tính chi phí</h3>
-        {summary ? (
+        <h3 className="co-summary__sub">{quote ? 'Báo giá từ hệ thống' : 'Ước tính chi phí'}</h3>
+        {quote ? (
+          <>
+            <ul className="co-lines">
+              {quote.snapshot.nights.map((night) => (
+                <li key={night.stayDate}>
+                  <span>{dayLabel(night.stayDate)} × {quote.snapshot.quantity} phòng</span>
+                  <span>{formatServerVnd(BigInt(night.amountVnd) * BigInt(quote.snapshot.quantity))}</span>
+                </li>
+              ))}
+              {BigInt(quote.discountVnd) > BigInt(0) && <li><span>Ưu đãi</span><span>−{formatServerVnd(quote.discountVnd)}</span></li>}
+            </ul>
+            <p className="co-total" aria-live="polite">
+              <span>Tổng theo bảng giá đang áp dụng</span>
+              <strong>{formatServerVnd(quote.totalVnd)}</strong>
+            </p>
+            <p className="co-terms">Tạm tính cần thanh toán khi xác nhận: {formatServerVnd(quote.dueNowVnd)}. Website chưa thu tiền.</p>
+          </>
+        ) : summary ? (
           <>
             <ul className="co-lines">
               {summary.lines.map((l) => (
@@ -392,11 +452,12 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
         )}
         {stage === 'editing' ? (
           <button type="button" className="btn btn--primary co-cta btn-shine" onClick={goReview} disabled={busy} data-magnetic>
-            <LockKeyhole size={20} aria-hidden="true" /> Gửi yêu cầu <ArrowRight size={20} aria-hidden="true" />
+            <LockKeyhole size={20} aria-hidden="true" /> {busy ? 'Đang lấy báo giá…' : 'Xem giá & xác nhận'} <ArrowRight size={20} aria-hidden="true" />
           </button>
         ) : null}
+        {submitError && stage === 'editing' && <p className="co-err" role="alert">{submitError}</p>}
         <p className="co-terms">
-          Đây là ước tính từ giá phòng đã xuất bản; chưa giữ phòng và chưa thu tiền. Xem <PolicyLink policy="terms" className="co-link" />{' '}
+          {quote ? 'Báo giá do máy chủ tính; chưa giữ phòng cho đến khi bạn gửi yêu cầu.' : 'Đây là ước tính từ giá phòng đã xuất bản; chưa giữ phòng và chưa thu tiền.'} Xem <PolicyLink policy="terms" className="co-link" />{' '}
           và <PolicyLink policy="cancel" className="co-link" /> của Đinh Vân Booking.
         </p>
       </section>
@@ -434,8 +495,10 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     return (
       <section className="co-empty" aria-labelledby={uid + '-submitted-t'}>
         <Check size={36} aria-hidden="true" />
-        <h2 id={uid + '-submitted-t'}>Đã nhận yêu cầu đặt phòng</h2>
-        <p>Yêu cầu đã được ghi vào hệ thống để Đinh Vân xác nhận tình trạng phòng và phương án thanh toán với bạn.</p>
+        <h2 id={uid + '-submitted-t'}>Đã giữ phòng chờ xác nhận</h2>
+        {bookingReceipt && <p>Mã yêu cầu <strong>{bookingReceipt.publicCode}</strong> · Trạng thái: chờ xác nhận.</p>}
+        {bookingReceipt && <p>Phòng được giữ tạm đến {new Date(bookingReceipt.expiresAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}. Tổng giá {formatServerVnd(bookingReceipt.totalVnd)}; khoản cần thanh toán khi xác nhận {formatServerVnd(bookingReceipt.dueNowVnd)}. Chưa có khoản tiền nào được thu.</p>}
+        <p>Đinh Vân sẽ liên hệ xác nhận tình trạng phòng và phương án thanh toán. Đây chưa phải xác nhận đặt phòng cuối cùng.</p>
         <div className="dialog__actions">
           <Link className="btn btn--primary" href={'/phong-nghi/' + stay.slug}>Quay lại chỗ nghỉ</Link>
           <Link className="btn btn--light" href="/phong-nghi">Xem các chỗ nghỉ khác</Link>
@@ -454,7 +517,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
               Kiểm tra thông tin đặt phòng
             </h2>
             <p className="dialog__pending" role="status">
-              Bước này gửi một yêu cầu tư vấn/đặt phòng vào hệ thống. Phòng chỉ được xác nhận sau khi có phản hồi từ cơ sở.
+              Giá được tính từ bảng giá đang hoạt động. Gửi yêu cầu sẽ giữ tạm số phòng đã chọn trong 15 phút; booking vẫn chờ cơ sở xác nhận và website chưa thu tiền.
             </p>
             <dl className="co-review__list">
               <div>
@@ -484,12 +547,14 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
                 </button>
               </div>
               <div>
-                <dt>Dịch vụ</dt>
-                <dd>{summary && summary.lines.length > 1 ? summary.lines.slice(1).map((l) => l.label).join(', ') : 'Không chọn thêm'}</dd>
+                <dt>Giá phòng</dt>
+                <dd>{quote ? `${formatServerVnd(quote.totalVnd)} · ${n} đêm · ${sel.rooms} phòng` : 'Chưa có báo giá'}</dd>
                 <button type="button" className="co-link" onClick={() => backToEdit()}>
                   Sửa
                 </button>
               </div>
+              {quote && <div><dt>Giá cần thanh toán khi xác nhận</dt><dd>{formatServerVnd(quote.dueNowVnd)} (chưa thu tiền)</dd></div>}
+              {quote && <div><dt>Báo giá hết hạn</dt><dd>{new Date(quote.expiresAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}</dd></div>}
               <div>
                 <dt>Thanh toán</dt>
                 <dd>Chưa thu tiền; phương án thanh toán sẽ được trao đổi sau khi xác nhận tình trạng phòng.</dd>
@@ -531,10 +596,10 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
                     setConfirmErr(true);
                     return;
                   }
-                  void submitInquiry();
+                  void submitBookingRequest();
                 }}
               >
-                {busy ? 'Đang gửi…' : 'Gửi yêu cầu đặt phòng'} <ArrowRight size={16} aria-hidden="true" />
+                {busy ? 'Đang giữ phòng…' : 'Giữ phòng & gửi yêu cầu'} <ArrowRight size={16} aria-hidden="true" />
               </button>
             </div>
             {submitError && <p className="co-err" role="alert">{submitError}</p>}
@@ -689,14 +754,14 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
       </div>
       {summaryCard}
 
-      {summary && (
+      {(summary || quote) && (
         <div className="co-mbar">
           <p>
-            <span>Tổng</span>
-            <strong>{formatVnd(summary.totalVnd)}</strong>
+            <span>{quote ? 'Tổng giá' : 'Ước tính'}</span>
+            <strong>{quote ? formatServerVnd(quote.totalVnd) : formatVnd(summary!.totalVnd)}</strong>
           </p>
           <button type="button" className="btn btn--primary" onClick={goReview} disabled={busy}>
-            Gửi yêu cầu <ArrowRight size={16} aria-hidden="true" />
+            {busy ? 'Đang lấy giá…' : 'Xem giá & xác nhận'} <ArrowRight size={16} aria-hidden="true" />
           </button>
         </div>
       )}

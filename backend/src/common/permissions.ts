@@ -1,8 +1,10 @@
 /** Permission codes are the single vocabulary used by guards, seeds and the admin UI. */
 export const PERMISSIONS = {
+  dashboardRead: 'dashboard.read',
   bookingRead: 'booking.read',
   bookingWrite: 'booking.write',
   bookingCancel: 'booking.cancel',
+  inventoryRead: 'inventory.read',
   inventoryWrite: 'inventory.write',
   catalogRead: 'catalog.read',
   catalogWrite: 'catalog.write',
@@ -14,8 +16,12 @@ export const PERMISSIONS = {
   mediaDelete: 'media.delete',
   crmRead: 'crm.read',
   crmWrite: 'crm.write',
+  couponRead: 'coupon.read',
+  couponWrite: 'coupon.write',
   financeRead: 'finance.read',
   financeWrite: 'finance.write',
+  refundApprove: 'refund.approve',
+  reportRead: 'report.read',
   settingsRead: 'settings.read',
   settingsWrite: 'settings.write',
   userRead: 'user.read',
@@ -26,13 +32,16 @@ export const PERMISSIONS = {
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 export const PERMISSION_MODULES: Record<PermissionCode, string> = {
+  'dashboard.read': 'dashboard',
   'booking.read': 'booking', 'booking.write': 'booking', 'booking.cancel': 'booking',
-  'inventory.write': 'inventory',
+  'inventory.read': 'inventory', 'inventory.write': 'inventory',
   'catalog.read': 'catalog', 'catalog.write': 'catalog',
   'content.read': 'content', 'content.write': 'content', 'content.publish': 'content',
   'media.read': 'media', 'media.write': 'media', 'media.delete': 'media',
   'crm.read': 'crm', 'crm.write': 'crm',
-  'finance.read': 'finance', 'finance.write': 'finance',
+  'coupon.read': 'coupon', 'coupon.write': 'coupon',
+  'finance.read': 'finance', 'finance.write': 'finance', 'refund.approve': 'finance',
+  'report.read': 'report',
   'settings.read': 'settings', 'settings.write': 'settings',
   'user.read': 'user', 'user.write': 'user',
   'audit.read': 'audit',
@@ -51,16 +60,16 @@ const ALL = Object.values(PERMISSIONS) as PermissionCode[];
 export const ROLE_PERMISSIONS: Record<string, PermissionCode[]> = {
   owner: ALL,
   operator: [
-    'booking.read', 'booking.write', 'booking.cancel', 'inventory.write',
+    'dashboard.read', 'booking.read', 'booking.write', 'booking.cancel', 'inventory.read', 'inventory.write',
     'catalog.read', 'catalog.write', 'content.read', 'media.read', 'media.write',
-    'crm.read', 'crm.write', 'finance.read', 'settings.read',
+    'crm.read', 'crm.write', 'coupon.read', 'coupon.write', 'settings.read',
   ],
   editor: [
-    'content.read', 'content.write', 'content.publish', 'catalog.read',
+    'dashboard.read', 'content.read', 'content.write', 'content.publish', 'catalog.read',
     'media.read', 'media.write', 'media.delete', 'settings.read', 'booking.read',
   ],
-  accountant: ['finance.read', 'finance.write', 'booking.read', 'crm.read', 'settings.read', 'audit.read'],
-  viewer: ['booking.read', 'catalog.read', 'content.read', 'media.read', 'crm.read', 'settings.read'],
+  accountant: ['dashboard.read', 'finance.read', 'finance.write', 'refund.approve', 'report.read', 'coupon.read', 'booking.read', 'crm.read', 'settings.read', 'audit.read'],
+  viewer: ['dashboard.read', 'booking.read', 'inventory.read', 'catalog.read', 'content.read', 'media.read', 'crm.read', 'coupon.read', 'settings.read'],
 };
 
 export const ROLE_LABELS: Record<string, string> = {

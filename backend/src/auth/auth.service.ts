@@ -12,12 +12,75 @@ export interface IssuedSession {
   user: AuthenticatedUser;
 }
 
+export interface IssuedGuestSession {
+  id: string;
+  token: string;
+  csrfToken: string;
+  expiresAt: Date;
+}
+
+export interface GuestSessionContext {
+  id: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly config = loadConfig();
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Bootstrap an anonymous, opaque browser session and its CSRF token. */
+  async bootstrapGuestSession(token?: string, csrfToken?: string): Promise<IssuedGuestSession> {
+    const now = new Date();
+    if (token) {
+      const current = await this.prisma.guestSession.findUnique({ where: { tokenHash: sha256(token) } });
+      if (current && !current.revokedAt && current.expiresAt > now) {
+        if (csrfToken && current.csrfHash === sha256(csrfToken)) {
+          return { id: current.id, token, csrfToken, expiresAt: current.expiresAt };
+        }
+        const rotatedCsrf = newToken(24);
+        await this.prisma.guestSession.update({ where: { id: current.id }, data: { csrfHash: sha256(rotatedCsrf) } });
+        return { id: current.id, token, csrfToken: rotatedCsrf, expiresAt: current.expiresAt };
+      }
+    }
+
+    const guestToken = newToken();
+    const nextCsrf = newToken(24);
+    const expiresAt = new Date(now.getTime() + this.config.guestSessionTtlMinutes * 60_000);
+    const created = await this.prisma.guestSession.create({
+      data: { tokenHash: sha256(guestToken), csrfHash: sha256(nextCsrf), expiresAt },
+      select: { id: true },
+    });
+    return { id: created.id, token: guestToken, csrfToken: nextCsrf, expiresAt };
+  }
+
+  async bootstrapAuthenticatedCsrf(token: string, csrfToken?: string): Promise<{ csrfToken: string; expiresAt: Date } | null> {
+    const current = await this.prisma.authSession.findUnique({
+      where: { tokenHash: sha256(token) },
+      include: { user: { select: { disabledAt: true } } },
+    });
+    const now = new Date();
+    if (!current || current.revokedAt || current.expiresAt <= now || current.idleUntil <= now || current.user.disabledAt) return null;
+    if (csrfToken && current.csrfHash === sha256(csrfToken)) return { csrfToken, expiresAt: current.expiresAt };
+    const rotatedCsrf = newToken(24);
+    await this.prisma.authSession.update({ where: { id: current.id }, data: { csrfHash: sha256(rotatedCsrf) } });
+    return { csrfToken: rotatedCsrf, expiresAt: current.expiresAt };
+  }
+
+  async resolveGuestSession(token: string): Promise<GuestSessionContext | null> {
+    const session = await this.prisma.guestSession.findUnique({
+      where: { tokenHash: sha256(token) },
+      select: { id: true, expiresAt: true, revokedAt: true },
+    });
+    return session && !session.revokedAt && session.expiresAt > new Date() ? { id: session.id } : null;
+  }
+
+  async verifyGuestCsrf(sessionId: string, csrfToken: string | undefined): Promise<boolean> {
+    if (!csrfToken) return false;
+    const session = await this.prisma.guestSession.findUnique({ where: { id: sessionId } });
+    return !!session && !session.revokedAt && session.expiresAt > new Date() && session.csrfHash === sha256(csrfToken);
+  }
 
   async login(email: string, password: string, meta: { ip?: string; userAgent?: string }): Promise<IssuedSession> {
     const user = await this.prisma.user.findUnique({

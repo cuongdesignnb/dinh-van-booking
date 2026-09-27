@@ -3,7 +3,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto, LoginDto } from './dto/auth.dto';
 import { CurrentUser, Public } from '../common/decorators';
-import { CSRF_COOKIE, SESSION_COOKIE } from '../common/guards/session.guard';
+import { CSRF_COOKIE, GUEST_SESSION_COOKIE, SESSION_COOKIE } from '../common/guards/session.guard';
 import { loadConfig } from '../common/config/env';
 import type { AuthenticatedUser } from '../common/types';
 
@@ -12,6 +12,36 @@ export class AuthController {
   private readonly config = loadConfig();
 
   constructor(private readonly auth: AuthService) {}
+
+  @Public()
+  @Get('csrf')
+  async csrf(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ csrfToken: string; expiresAt: string }> {
+    const cookies = (request as FastifyRequest & { cookies?: Record<string, string> }).cookies ?? {};
+    const secure = this.config.nodeEnv === 'production' && !this.config.publicOrigins.some((o) => o.startsWith('http://'));
+    reply.header('Cache-Control', 'private, no-store');
+
+    const authenticated = cookies[SESSION_COOKIE]
+      ? await this.auth.bootstrapAuthenticatedCsrf(cookies[SESSION_COOKIE], cookies[CSRF_COOKIE])
+      : null;
+    if (authenticated) {
+      reply.setCookie(CSRF_COOKIE, authenticated.csrfToken, {
+        httpOnly: false, sameSite: 'lax', secure, path: '/', expires: authenticated.expiresAt,
+      });
+      return { csrfToken: authenticated.csrfToken, expiresAt: authenticated.expiresAt.toISOString() };
+    }
+
+    const guest = await this.auth.bootstrapGuestSession(cookies[GUEST_SESSION_COOKIE], cookies[CSRF_COOKIE]);
+    reply.setCookie(GUEST_SESSION_COOKIE, guest.token, {
+      httpOnly: true, sameSite: 'lax', secure, path: '/', expires: guest.expiresAt,
+    });
+    reply.setCookie(CSRF_COOKIE, guest.csrfToken, {
+      httpOnly: false, sameSite: 'lax', secure, path: '/', expires: guest.expiresAt,
+    });
+    return { csrfToken: guest.csrfToken, expiresAt: guest.expiresAt.toISOString() };
+  }
 
   @Public()
   @Post('login')

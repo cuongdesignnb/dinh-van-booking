@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-27T01:01:04.300Z",
-  "baseSha": "c8fe7a94303ce81cb109cc3a35c8587dbe9b3369",
+  "generatedAt": "2026-09-27T04:46:11.195Z",
+  "baseSha": "987c03606fbb8acc632f17ae77233b099e6e14b5",
   "policy": "Runtime public/admin paths must not read commercial fixture records or browser-persisted business data.",
   "scannedRoots": [
     "src/app",

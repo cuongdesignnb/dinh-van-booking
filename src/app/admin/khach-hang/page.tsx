@@ -1,4 +1,4 @@
-import { PendingModule } from '@/components/admin/shell/AdminShell';
+import { AdminOperationsScreen } from '@/components/admin/operations/AdminOperationsScreen';
 
 export default async function Page({
   searchParams,
@@ -6,5 +6,5 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await searchParams;
-  return <PendingModule title="Khách hàng" />;
+  return <AdminOperationsScreen section="customers" />;
 }

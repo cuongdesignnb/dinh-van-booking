@@ -18,6 +18,23 @@ function csrfCookie(): string | null {
   return part ? decodeURIComponent(part.slice('dvb_csrf='.length)) : null;
 }
 
+async function bootstrapCsrf(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const response = await fetch(`${browserBase()}/auth/csrf`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  const text = await response.text();
+  let payload: unknown = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = text;
+  }
+  if (!response.ok) throw new ApiError(response.status, payload);
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase();
   const headers = new Headers(init.headers);
@@ -26,6 +43,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   if (init.body && !isFormData && !headers.has('content-type')) headers.set('content-type', 'application/json');
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const isPublicMutation = path === '/auth/login' || path === '/inquiries' || path === '/quotes' || path.startsWith('/quotes/');
+    if (!csrfCookie() || isPublicMutation) await bootstrapCsrf();
     const csrf = csrfCookie();
     if (csrf) headers.set('x-csrf-token', csrf);
   }

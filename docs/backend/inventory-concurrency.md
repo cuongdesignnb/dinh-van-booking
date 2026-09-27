@@ -1,7 +1,9 @@
 # Tồn phòng và tranh chấp khi đặt cùng lúc
 
+> **Trạng thái hiện hành 27/09/2026:** hold service đã triển khai và test cạnh tranh chạy trên PostgreSQL local. Phần “sẽ triển khai/chưa kiểm chứng” bên dưới là mô tả thiết kế lịch sử; xem [schema/runtime delta](./admin-full-completion-schema-delta.md) và `tests/admin/operations.spec.ts` để biết kết quả mới.
+
 Tài liệu này mô tả mô hình đã có trong schema và các ràng buộc đã bật trong database.
-Dịch vụ đặt phòng (giai đoạn 3) sẽ triển khai theo đúng mô hình này.
+Dịch vụ quote/hold hiện triển khai theo mô hình này.
 
 ## 1. Đơn vị tính
 
@@ -108,9 +110,10 @@ Mọi bảng admin sửa được đều có `version`. Client gửi `expectedVe
 trả `409` kèm `currentVersion` và không ghi gì. Đã có kiểm thử thật cho `settings` và
 `content` trong `scripts/smoke.mjs`; các module sau dùng lại đúng cơ chế đó.
 
-## 8. Chưa kiểm chứng
+## 8. Kiểm chứng hiện hành
 
-Mô hình trên đã có ràng buộc trong database và đã áp dụng thật, nhưng **chưa** có test
-đặt phòng đồng thời vì dịch vụ đặt phòng chưa viết. Kiểm thử cần làm ở giai đoạn 3:
-N request cùng lúc vào đêm cuối cùng, đúng một request thành công, phần còn lại nhận
-`409`, và `held + reserved + blocked` không bao giờ vượt `capacity`.
+Test operations tạo hai request cạnh tranh cho lượng tồn cuối cùng; đúng một request
+giữ được phòng, request còn lại nhận lỗi miền `409`, và ràng buộc PostgreSQL giữ
+`held + reserved + blocked` trong giới hạn `capacity`. Test cũng bao phủ idempotency,
+quyền sở hữu guest quote và job nhả chỗ hết hạn. Không có kiểm thử tải N-node hoặc
+benchmark throughput trong lần này.

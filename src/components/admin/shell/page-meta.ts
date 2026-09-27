@@ -8,18 +8,23 @@ export interface AdminPageMeta {
 const META: Record<string, AdminPageMeta> = {
   '/admin': {
     title: 'Tổng quan',
-    subtitle: 'API tổng quan và báo cáo chưa được tích hợp; màn này không hiển thị số liệu mẫu.',
+    subtitle: 'Tình hình đặt phòng, tư vấn, quỹ phòng, thu tiền và hoạt động gần đây từ dữ liệu hệ thống.',
     script: 'Làm du lịch\nbằng cả trái tim ♡',
   },
   '/admin/dat-phong': {
     title: 'Quản lý đặt phòng',
-    subtitle: 'Chức năng đặt phòng quản trị đang chờ API nghiệp vụ; không có đơn mẫu để thao tác.',
+    subtitle: 'Tra cứu đơn, tạo yêu cầu giữ chỗ, xác nhận hoặc huỷ và xem lịch sử xử lý.',
     script: 'Làm du lịch\nbằng cả trái tim ♡',
   },
   '/admin/phong-nghi': {
     title: 'Quản lý phòng nghỉ',
     subtitle: 'Quản lý hồ sơ nơi lưu trú, nội dung, ảnh và trạng thái xác minh.',
     script: 'Làm du lịch\nbằng cả trái tim ♡',
+  },
+  '/admin/ton-phong': {
+    title: 'Quỹ phòng',
+    subtitle: 'Mở tồn theo ngày, thiết lập sức chứa, khoá phòng và trạng thái dừng bán.',
+    script: 'Quản lý chủ động\nhành trình an tâm ♡',
   },
   '/admin/combo-du-lich': {
     title: 'Quản lý combo du lịch',
@@ -39,8 +44,23 @@ const META: Record<string, AdminPageMeta> = {
   },
   '/admin/khach-hang': {
     title: 'Khách hàng',
-    subtitle: 'Quản lý hồ sơ khách hàng đang chờ tích hợp API; hiện không có dữ liệu mẫu.',
+    subtitle: 'Cập nhật hồ sơ, theo dõi lịch sử trao đổi và lên lịch chăm sóc tiếp theo.',
     script: 'Làm du lịch\nbằng cả trái tim ♡',
+  },
+  '/admin/khuyen-mai': {
+    title: 'Khuyến mãi',
+    subtitle: 'Tạo, chỉnh sửa và bật/tắt mã giảm giá; lượt giữ và sử dụng được kiểm soát ở máy chủ.',
+    script: 'Ưu đãi đúng lúc\nhành trình trọn vẹn ♡',
+  },
+  '/admin/thanh-toan': {
+    title: 'Thanh toán',
+    subtitle: 'Ghi nhận thanh toán và xử lý hoàn tiền thủ công; không kết nối hay gọi cổng thanh toán.',
+    script: 'Rõ ràng từng khoản\nan tâm mỗi chuyến đi ♡',
+  },
+  '/admin/bao-cao': {
+    title: 'Báo cáo',
+    subtitle: 'Đối soát booking, tiền đã ghi nhận, hoàn tiền, yêu cầu tư vấn và quỹ phòng theo kỳ.',
+    script: 'Số liệu thật\nquyết định vững vàng ♡',
   },
 };
 
@@ -70,20 +90,7 @@ META['/admin/cai-dat'] = {
   script: 'Cấu hình rõ ràng\nvận hành an tâm ♡',
 };
 
-const PENDING: Record<string, string> = {
-  '/admin/khuyen-mai': 'Khuyến mãi',
-  '/admin/thanh-toan': 'Thanh toán',
-  '/admin/bao-cao': 'Báo cáo',
-};
-
 export function pageMeta(pathname: string): AdminPageMeta {
   if (META[pathname]) return META[pathname];
-  const pending = PENDING[pathname];
-  if (pending)
-    return {
-      title: pending,
-      subtitle: 'Module này chưa nằm trong phạm vi đợt lập trình giao diện quản trị hiện tại.',
-      script: 'Làm du lịch\nbằng cả trái tim ♡',
-    };
   return META['/admin'];
 }

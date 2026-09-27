@@ -20,34 +20,38 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
 import { DinhVanMark } from '@/components/ui/BrandLogo';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
+import { useAdminSession } from '@/components/admin/AdminAuthGate';
+import { apiRequest } from '@/lib/api/client';
 
 export interface AdminNavItem {
   href: string;
   label: string;
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
-  /** Modules that are out of scope for this build open an info panel instead. */
-  scope?: 'pending';
+  permission: string;
+  badge?: 'pendingBookings' | 'newInquiries';
 }
 
 export const ADMIN_NAV: AdminNavItem[] = [
-  { href: '/admin', label: 'Tổng quan', icon: House },
-  { href: '/admin/dat-phong', label: 'Đặt phòng', icon: CalendarDays },
-  { href: '/admin/phong-nghi', label: 'Phòng nghỉ', icon: BedDouble },
-  { href: '/admin/combo-du-lich', label: 'Combo du lịch', icon: MapIcon },
-  { href: '/admin/diem-den', label: 'Điểm đến', icon: MapPin },
-  { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users },
-  { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle },
-  { href: '/admin/noi-dung', label: 'Nội dung website', icon: FileText },
-  { href: '/admin/chuyen-trang', label: 'Chuyên trang', icon: BookOpenText },
-  { href: '/admin/menu', label: 'Quản lý menu', icon: Menu },
-  { href: '/admin/thu-vien-anh', label: 'Thư viện ảnh', icon: Images },
-  { href: '/admin/khuyen-mai', label: 'Khuyến mãi', icon: Tag, scope: 'pending' },
-  { href: '/admin/thanh-toan', label: 'Thanh toán', icon: CreditCard, scope: 'pending' },
-  { href: '/admin/bao-cao', label: 'Báo cáo', icon: ChartColumn, scope: 'pending' },
-  { href: '/admin/cai-dat', label: 'Cài đặt', icon: Settings },
+  { href: '/admin', label: 'Tổng quan', icon: House, permission: 'dashboard.read' },
+  { href: '/admin/dat-phong', label: 'Đặt phòng', icon: CalendarDays, permission: 'booking.read', badge: 'pendingBookings' },
+  { href: '/admin/phong-nghi', label: 'Phòng nghỉ', icon: BedDouble, permission: 'catalog.read' },
+  { href: '/admin/ton-phong', label: 'Quỹ phòng', icon: CalendarDays, permission: 'inventory.read' },
+  { href: '/admin/combo-du-lich', label: 'Combo du lịch', icon: MapIcon, permission: 'catalog.read' },
+  { href: '/admin/diem-den', label: 'Điểm đến', icon: MapPin, permission: 'catalog.read' },
+  { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users, permission: 'crm.read' },
+  { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle, permission: 'crm.read', badge: 'newInquiries' },
+  { href: '/admin/noi-dung', label: 'Nội dung website', icon: FileText, permission: 'content.read' },
+  { href: '/admin/chuyen-trang', label: 'Chuyên trang', icon: BookOpenText, permission: 'content.read' },
+  { href: '/admin/menu', label: 'Quản lý menu', icon: Menu, permission: 'content.read' },
+  { href: '/admin/thu-vien-anh', label: 'Thư viện ảnh', icon: Images, permission: 'media.read' },
+  { href: '/admin/khuyen-mai', label: 'Khuyến mãi', icon: Tag, permission: 'coupon.read' },
+  { href: '/admin/thanh-toan', label: 'Thanh toán', icon: CreditCard, permission: 'finance.read' },
+  { href: '/admin/bao-cao', label: 'Báo cáo', icon: ChartColumn, permission: 'report.read' },
+  { href: '/admin/cai-dat', label: 'Cài đặt', icon: Settings, permission: 'settings.read' },
 ];
 
 /** The menu entry a route belongs to (sub-routes never light up two items). */
@@ -60,7 +64,26 @@ export function activeNavHref(pathname: string) {
 
 export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const { user } = useAdminSession();
   const active = activeNavHref(pathname);
+  const [counts, setCounts] = useState<{ pendingBookings: number; newInquiries: number }>({ pendingBookings: 0, newInquiries: 0 });
+
+  useEffect(() => {
+    let active = true;
+    const loadCounts = async () => {
+      try {
+        const summary = await apiRequest<{ bookings: { byStatus: Record<string, number> }; newInquiries: number }>('/admin/dashboard/summary');
+        if (active) setCounts({ pendingBookings: summary.bookings.byStatus.pending_confirmation ?? 0, newInquiries: summary.newInquiries });
+      } catch {
+        // Navigation stays usable when a role can read its page but not the dashboard summary.
+      }
+    };
+    if (user.permissions.includes('dashboard.read')) void loadCounts();
+    const timer = window.setInterval(() => { if (user.permissions.includes('dashboard.read')) void loadCounts(); }, 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [user.id, user.permissions]);
+
+  const visibleItems = ADMIN_NAV.filter((item) => user.permissions.includes(item.permission));
 
   return (
     <aside className={`asidebar${open ? ' asidebar--open' : ''}`} aria-label="Điều hướng quản trị">
@@ -77,7 +100,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
         </button>
         <nav className="asidebar__nav">
           <ul>
-            {ADMIN_NAV.map((item) => {
+            {visibleItems.map((item) => {
               const Icon = item.icon;
               const isActive = active === item.href;
               return (
@@ -90,6 +113,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
                   >
                     <Icon size={21} strokeWidth={1.9} aria-hidden="true" />
                     <span>{item.label}</span>
+                    {item.badge && counts[item.badge] > 0 && <span className="anav__badge" aria-label={`${counts[item.badge]} mục cần xử lý`}>{counts[item.badge] > 99 ? '99+' : counts[item.badge]}</span>}
                   </Link>
                 </li>
               );

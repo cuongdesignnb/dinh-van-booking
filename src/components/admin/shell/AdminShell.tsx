@@ -1,6 +1,5 @@
 'use client';
 
-import { Info } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { DinhVanMark } from '@/components/ui/BrandLogo';
@@ -48,21 +47,5 @@ function AdminFooter() {
       </p>
       <p className="afooter__copy">Không lưu bản ghi nghiệp vụ trong trình duyệt</p>
     </footer>
-  );
-}
-
-/** Honest placeholder for modules whose API and workflows are not implemented yet. */
-export function PendingModule({ title }: { title: string }) {
-  return (
-    <section className="acard apending">
-      <Info size={22} aria-hidden="true" />
-      <div>
-        <h2>{title} chưa nằm trong phạm vi đợt này</h2>
-        <p>
-          Mục này chưa có API hoặc tác vụ vận hành nên hiện chưa thể xem hay thay đổi dữ liệu tại đây. Những chức năng
-          chưa hoàn tất sẽ không hiển thị số liệu mẫu hoặc báo lưu thành công.
-        </p>
-      </div>
-    </section>
   );
 }

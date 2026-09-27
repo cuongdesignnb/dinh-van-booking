@@ -1,5 +1,5 @@
 import { AdminOperationsScreen } from '@/components/admin/operations/AdminOperationsScreen';
 
 export default function Page() {
-  return <AdminOperationsScreen section="payments" />;
+  return <AdminOperationsScreen section="inventory" />;
 }

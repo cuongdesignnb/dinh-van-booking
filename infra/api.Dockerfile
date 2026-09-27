@@ -10,6 +10,13 @@ WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci
 
+# The running API/worker only need production packages. Keep Prisma CLI,
+# Nest build tools, and their advisories out of the long-lived app containers.
+FROM base AS runtime-deps
+WORKDIR /app
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev
+
 FROM base AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -30,7 +37,7 @@ FROM base AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN mkdir -p /var/lib/dvb/media && chown -R node:node /var/lib/dvb/media
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=runtime-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY backend/package.json ./
 COPY backend/prisma ./prisma

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
+    "audit:admin-runtime": "node scripts/audit-admin-runtime.mjs",
     "audit:no-hardcode": "node scripts/no-hardcode-runtime.mjs",
     "assets:extract": "python scripts/extract-assets.py",
     "shoot": "node scripts/shoot.mjs"
@@ -24,9 +25,11 @@
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
     "lucide-react": "^1.47.0",
-    "next": "15.5.19",
+    "next": "15.5.26",
+    "postcss": "8.5.28",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "sharp": "0.35.4",
     "simple-icons": "^16.31.0"
   },
   "devDependencies": {
@@ -38,5 +41,8 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.19",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.28"
   }
 }

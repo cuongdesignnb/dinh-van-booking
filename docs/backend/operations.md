@@ -28,7 +28,8 @@ bash scripts/compose.sh up -d --build
 ```
 
 Thứ tự compose tự lo: `postgres` + `redis` healthy → `migrate` chạy xong (exit 0) →
-`api` healthy → `worker` và `web` → `gateway`. Mở `http://127.0.0.1:18473`.
+`api` healthy → `worker` và `web` → `gateway`. Port host đọc trong `.env.ports`;
+stack local xác minh ngày 27/09/2026 đang dùng `http://127.0.0.1:18474`.
 
 Một số lệnh hay dùng:
 
@@ -45,7 +46,7 @@ bash scripts/compose.sh down -v       # xoá luôn volume (mất sạch DB và �
 bash scripts/backend.sh seed
 ```
 
-Seed chỉ nạp **từ vựng cố định**: 21 mã quyền và 5 vai trò (owner, operator, editor,
+Seed chỉ nạp **từ vựng cố định**: 27 mã quyền và 5 vai trò (owner, operator, editor,
 accountant, viewer). Nó không tạo người dùng và không tạo dữ liệu mẫu nào.
 
 Tài khoản chủ sở hữu tạo bằng CLI, mật khẩu đọc từ file hoặc gõ trong terminal —
@@ -90,8 +91,8 @@ Ràng buộc nào Prisma không diễn đạt được thì viết tay, xem
 ## 5. Kiểm thử
 
 ```bash
-bash scripts/smoke.sh      # 48 kiểm tra API thật: auth, CSRF, settings, media, content
-npx playwright test        # 98 test giao diện
+bash scripts/smoke.sh      # 69 kiểm tra API thật qua gateway
+npx playwright test        # 34 đạt; bài restart persistence bật riêng bằng cờ opt-in
 ```
 
 `smoke.sh` chạy trong container trên network của stack, đăng nhập bằng tài khoản chủ sở
@@ -120,7 +121,6 @@ Phục hồi phải thử thật trên database trống rồi mới tính là xo
 
 ## 7. Những việc không được làm
 
-Theo ràng buộc của dự án: không ghi vào database production đang chạy, không đổi DNS,
-không chạy giao dịch tiền thật, không gửi email hàng loạt, không push/merge/deploy công
-khai, không restart dịch vụ của dự án khác. PostgreSQL và Redis phải luôn ở trạng thái
-không publish ra host.
+Ranh giới an toàn: không ghi vào database production, đổi DNS, chạy giao dịch tiền thật,
+gửi email hàng loạt, deploy production hoặc restart dịch vụ dự án khác. Chỉ push Git khi
+request của người dùng cho phép rõ ràng. PostgreSQL và Redis không publish ra host.

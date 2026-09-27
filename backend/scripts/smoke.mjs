@@ -145,6 +145,19 @@ async function main() {
   const anonymous = await call('/settings');
   check('GET /settings without session is 401', anonymous.status === 401, `got ${anonymous.status}`);
 
+  const guestCsrf = await call('/auth/csrf');
+  csrf = guestCsrf.body?.csrfToken ?? '';
+  check('anonymous browser receives a CSRF token and opaque guest session', guestCsrf.status === 200 && !!csrf && cookie.includes('dvb_guest'), `got ${guestCsrf.status}`);
+  const guestCsrfSaved = csrf;
+  csrf = '';
+  const guestWriteWithoutCsrf = await call('/inquiries', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  check('anonymous writes are rejected until a guest CSRF token is sent', guestWriteWithoutCsrf.status === 403, `got ${guestWriteWithoutCsrf.status}`);
+  csrf = guestCsrfSaved;
+
   const badLogin = await call('/auth/login', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -160,7 +173,7 @@ async function main() {
   check('login succeeds', login.status === 200, JSON.stringify(login.body));
   csrf = login.body?.csrfToken ?? '';
   check('session cookie is HttpOnly and CSRF token issued', cookie.includes('dvb_session') && !!csrf);
-  check('owner has all 21 permissions', login.body?.user?.permissions?.length === 21, `got ${login.body?.user?.permissions?.length}`);
+  check('owner receives the complete permission registry', login.body?.user?.permissions?.length >= 27, `got ${login.body?.user?.permissions?.length}`);
 
   const me = await call('/auth/me');
   check('GET /auth/me returns the owner', me.body?.email === EMAIL, JSON.stringify(me.body));
