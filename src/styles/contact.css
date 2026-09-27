@@ -67,6 +67,98 @@
   box-shadow: 0 2px 8px rgb(0 0 0 / 20%);
 }
 
+.contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: start;
+  gap: clamp(20px, 3vw, 40px);
+  padding-top: clamp(24px, 4vw, 48px);
+  padding-bottom: clamp(48px, 6vw, 80px);
+}
+
+.contact-layout--form-only {
+  grid-template-columns: minmax(0, min(100%, 820px));
+  justify-content: center;
+}
+
+.contact-layout__form,
+.contact-layout__aside {
+  min-width: 0;
+}
+
+.contact-layout__aside {
+  display: grid;
+  gap: 16px;
+}
+
+.contact-layout__aside > section {
+  min-width: 0;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid #e5e9dc;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(31 55 36 / 7%);
+}
+
+.contact-layout__aside h2 {
+  margin: 0 0 12px;
+  color: #193c24;
+  font-size: 20px;
+}
+
+.contact-layout__aside ul {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-layout__aside a {
+  color: #1e6337;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contact-advisor__image,
+.contact-map img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.contact-scenic {
+  margin-top: 0;
+  margin-bottom: 40px;
+}
+
+.contact-scenic img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+}
+
+.contact-faq,
+.contact-script,
+.contact-social {
+  margin-top: 32px;
+  margin-bottom: 48px;
+}
+
+.contact-social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.contact-social a {
+  color: #1e6337;
+}
+
 .contact-hero__quote {
   position: absolute;
   left: 686px;
@@ -1019,6 +1111,11 @@
   .contact-grid,
   .contact-col--right {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .contact-layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 24px;
+    padding-bottom: 48px;
   }
   /* Mobile reading order: quick contact → form → profile → promises → map → FAQ/social/scenic */
   .contact-col,

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-27T09:47:03.087Z",
-  "baseSha": "ac20af35fdf50d603d72c479effafb57429b6c32",
+  "generatedAt": "2026-09-27T11:46:13.745Z",
+  "baseSha": "e8bc0a17221b9a0af84655b4ed264e862496631d",
   "policy": "Runtime public/admin paths must not read commercial fixture records or browser-persisted business data.",
   "scannedRoots": [
     "src/app",
@@ -132,7 +132,7 @@
     },
     {
       "file": "src/components/booking/Checkout.tsx",
-      "line": 27,
+      "line": 26,
       "kind": "fixture-import",
       "classification": "type-only-review",
       "scope": "runtime-type-only",
@@ -161,16 +161,6 @@
       "excerpt": "import type { Destination, DestinationCategory, TipIcon } from '@/data/destinations';"
     },
     {
-      "file": "src/components/destinations/DiscoveryLower.tsx",
-      "line": 10,
-      "kind": "fixture-import",
-      "classification": "type-only-review",
-      "scope": "runtime-type-only",
-      "disposition": "allowed: erased type import; no runtime fixture dependency",
-      "evidence": "import type is erased by the TypeScript build",
-      "excerpt": "import type { Destination, Itinerary, ItineraryStop, Season } from '@/data/destinations';"
-    },
-    {
       "file": "src/components/home/DestinationGrid.tsx",
       "line": 5,
       "kind": "fixture-import",
@@ -189,6 +179,16 @@
       "disposition": "allowed: erased type import; no runtime fixture dependency",
       "evidence": "import type is erased by the TypeScript build",
       "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/components/home/HomeCombos.tsx",
+      "line": 4,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { Combo } from '@/data/combos';"
     },
     {
       "file": "src/components/home/StayCard.tsx",

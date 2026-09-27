@@ -61,5 +61,5 @@ export interface Review {
 export interface Faq {
   id: string;
   question: string;
-  answer: string;
+  answer: string | import('@/lib/content/rich-document').RichDocument;
 }

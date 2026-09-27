@@ -7,12 +7,20 @@ import { useEffect, useRef, useState } from 'react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
 import { focusSearch } from '@/lib/events';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 import type { PublicNavigationItem } from '@/lib/api/public';
+import { publicSetting, publicText } from '@/lib/public-content';
 
 const isActive = (path: string, href: string) =>
   href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
 
 export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] }) {
+  const site = useSiteData();
+  const header = publicSetting(site.publicSite, 'site.header');
+  const ctaLabel = publicText(header.ctaLabel);
+  const ctaTarget = publicText(header.ctaTarget);
+  const mottoLine1 = publicText(header.mottoLine1);
+  const mottoLine2 = publicText(header.mottoLine2);
   const pathname = usePathname() ?? '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -67,7 +75,7 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
     <header className="site-header" id="top">
       <LeafSprig className="site-header__decor" />
       <div className="site-header__inner">
-        <Link href="/" className="site-header__brand" aria-label="Đinh Vân Booking — Trang chủ">
+        <Link href="/" className="site-header__brand" aria-label={site.name || undefined}>
           <BrandLogo />
         </Link>
 
@@ -77,19 +85,16 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
 
         <div className="site-header__aside">
           <SmallLeaf className="site-header__leaf" />
-          <p className="site-header__motto">
-            <span>Du lịch bản địa</span>
-            <span>Kết nối những giá trị thật</span>
-          </p>
+          {(mottoLine1 || mottoLine2) && <p className="site-header__motto">{mottoLine1 && <span>{mottoLine1}</span>}{mottoLine2 && <span>{mottoLine2}</span>}</p>}
         </div>
 
         <div className="site-header__actions">
           <button type="button" className="round-btn" aria-label="Tìm phòng" onClick={() => focusSearch()}>
             <Search size={17} strokeWidth={2.1} aria-hidden="true" />
           </button>
-          <Link href="/phong-nghi" className="btn btn--primary btn--header btn-shine" data-magnetic>
-            Đặt ngay <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
-          </Link>
+          {ctaLabel && ctaTarget && <Link href={ctaTarget} className="btn btn--primary btn--header btn-shine" data-magnetic>
+            {ctaLabel} <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
+          </Link>}
           <button
             type="button"
             className="round-btn menu-toggle"
@@ -152,10 +157,10 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
             </button>
           </div>
           <ul className="drawer__list">{renderItems()}</ul>
-          <Link href="/phong-nghi" className="btn btn--primary drawer__cta" onClick={() => setMenuOpen(false)}>
-            Đặt ngay <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-          <p className="drawer__motto handwritten">Du lịch bản địa — Kết nối những giá trị thật</p>
+          {ctaLabel && ctaTarget && <Link href={ctaTarget} className="btn btn--primary drawer__cta" onClick={() => setMenuOpen(false)}>
+            {ctaLabel} <ArrowRight size={16} aria-hidden="true" />
+          </Link>}
+          {(mottoLine1 || mottoLine2) && <p className="drawer__motto handwritten">{[mottoLine1, mottoLine2].filter(Boolean).join(' — ')}</p>}
         </div>
       </div>
     </header>

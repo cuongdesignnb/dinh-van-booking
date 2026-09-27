@@ -6,14 +6,6 @@ import { pathForContent } from '../content/slug';
 
 const PRIMARY_MENU_KEY = 'primary';
 
-const DEFAULT_PRIMARY_ITEMS = [
-  { label: 'Trang chủ', externalUrl: '/' },
-  { label: 'Phòng nghỉ', externalUrl: '/phong-nghi' },
-  { label: 'Combo du lịch', externalUrl: '/combo-du-lich' },
-  { label: 'Điểm đến', externalUrl: '/diem-den' },
-  { label: 'Liên hệ', externalUrl: '/lien-he' },
-] as const;
-
 type NavigationMenuWithItems = {
   id: string;
   key: string;
@@ -67,17 +59,7 @@ export class NavigationService {
         key: PRIMARY_MENU_KEY,
         name: 'Menu chính',
         isDefault: true,
-        items: DEFAULT_PRIMARY_ITEMS.map((item, position) => ({
-          id: `default-${position}`,
-          label: item.label,
-          contentId: null,
-          externalUrl: item.externalUrl,
-          href: item.externalUrl,
-          kind: null,
-          publicationStatus: null,
-          position,
-          enabled: true,
-        })),
+        items: [],
       };
     }
 
@@ -114,9 +96,7 @@ export class NavigationService {
       },
     })) as NavigationMenuWithItems | null;
 
-    if (!menu) {
-      return DEFAULT_PRIMARY_ITEMS.map((item) => ({ label: item.label, href: item.externalUrl }));
-    }
+    if (!menu) return [];
 
     const now = new Date();
     return menu.items.flatMap((item) => {

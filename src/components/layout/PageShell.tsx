@@ -19,10 +19,10 @@ export async function PageShell({
 }) {
   const [site, navigation] = await Promise.all([getPublicSite(), getPublicNavigation()]);
   return (
-    <SiteDataProvider data={site}>
+    <SiteDataProvider data={site} navigation={navigation}>
       <SiteHeader navigation={navigation} />
       <main className={className}>{children}</main>
-      <SiteFooter variant={footer} />
+      <SiteFooter variant={footer} navigation={navigation} />
       <MobileBottomBar />
       <DialogHost />
       <MotionController />

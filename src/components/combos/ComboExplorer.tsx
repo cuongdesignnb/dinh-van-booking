@@ -38,6 +38,9 @@ import { formatShort } from '@/lib/dates';
 import { setPendingNote } from '@/lib/draft-store';
 import { formatVnd } from '@/lib/format';
 import { readParam } from '@/lib/selection';
+import type { PublicRecord } from '@/lib/public-content';
+import { publicText, richDocumentHasContent } from '@/lib/public-content';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 const LINE_ICON: Record<ComboLine['icon'], typeof Leaf> = {
   leaf: Leaf,
@@ -77,7 +80,8 @@ const comboMatches = (combo: Combo, category: ComboCategory) =>
 
 const sortCombos = (list: Combo[], sort: ComboSort) => [...list].sort((a, b) => sort === 'price-asc' ? a.fromPriceVnd - b.fromPriceVnd : sort === 'price-desc' ? b.fromPriceVnd - a.fromPriceVnd : b.popularity - a.popularity);
 
-export function ComboExplorer({ combos }: { combos: Combo[] }) {
+export function ComboExplorer({ combos, config }: { combos: Combo[]; config: PublicRecord }) {
+  const listTitle = publicText(config.listTitle);
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -201,19 +205,13 @@ export function ComboExplorer({ combos }: { combos: Combo[] }) {
               </button>
             ))}
           </div>
-          <p className="combo-filters__note handwritten" aria-hidden="true">
-            Chọn hành trình phù hợp
-            <br /> với bạn nhé!
-          </p>
         </div>
       </div>
 
-      <section className="combo-list content-shell" aria-labelledby="combo-title">
+      <section className="combo-list content-shell" aria-labelledby={listTitle ? 'combo-title' : undefined}>
         <div className="combo-list__head">
-          <h2 className="section-title" id="combo-title">
-            Các combo nổi bật <Leaf className="section-title__leaf" fill="currentColor" strokeWidth={1} aria-hidden="true" />
-          </h2>
-          <p className="combo-list__sub">Những hành trình được yêu thích nhất, kết hợp tinh hoa của Cúc Phương và Ninh Bình</p>
+          {listTitle && <h2 className="section-title" id="combo-title">{listTitle} <Leaf className="section-title__leaf" fill="currentColor" strokeWidth={1} aria-hidden="true" /></h2>}
+          {richDocumentHasContent(config.listSubtitle) && <div className="combo-list__sub"><RichContentRenderer document={config.listSubtitle as RichDocument} /></div>}
           <label className="combo-sort">
             <span>Sắp xếp theo</span>
             <span className="combo-sort__select">

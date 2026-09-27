@@ -1,53 +1,30 @@
 import Image from 'next/image';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import type { PublicMediaAsset } from '@/lib/api/public';
+import type { PublicRecord } from '@/lib/public-content';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import type { RichDocument } from '@/lib/content/rich-document';
+import { richDocumentHasContent } from '@/lib/public-content';
 
-export function StaysHero() {
+export function StaysHero({ config, image }: { config: PublicRecord; image: PublicMediaAsset | null }) {
+  const title = typeof config.heroTitle === 'string' ? config.heroTitle.trim() : '';
+  const kicker = typeof config.heroKicker === 'string' ? config.heroKicker.trim() : '';
+  const note = typeof config.heroNote === 'string' ? config.heroNote.trim() : '';
+  if (!title) return null;
   return (
     <section className="phero phero--stays" aria-labelledby="stays-title">
       <div className="phero__media" aria-hidden="true">
-        <Image
-          src="/images/dinh-van-booking/pages/stays-hero.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="phero__img"
-        />
+        {image?.src && <Image src={image.src} alt={image.alt ?? ''} fill priority sizes="100vw" className="phero__img" unoptimized />}
         <div className="phero__shade" />
       </div>
       <div className="phero__inner content-shell">
         <Breadcrumb items={[{ label: 'Trang chủ', href: '/' }, { label: 'Phòng nghỉ' }]} />
         <h1 id="stays-title" className="phero__title" data-reveal="fade-up">
-          Phòng nghỉ Cúc Phương
+          {title}
         </h1>
-        <p className="phero__script handwritten" data-reveal="write" style={{ '--d': '150ms' } as React.CSSProperties}>
-          Những nơi dừng chân giữa thiên nhiên trong lành
-        </p>
-        <p className="phero__text" data-reveal="fade-up" style={{ '--d': '300ms' } as React.CSSProperties}>
-          Từ homestay ấm cúng giữa rừng, đến những lodge mộc mạc bên núi,
-          <br /> Đinh Vân Booking tuyển chọn những nơi lưu trú chất lượng, để hành trình của bạn thêm trọn vẹn.
-        </p>
-        <p className="phero__note handwritten" aria-hidden="true">
-          <span>Một đêm ở rừng</span>
-          <span>là một cuộc hẹn</span>
-          <span>
-            với bình yên
-            <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
-              <path
-                d="M12 20.5s-7.5-4.6-8.9-9.4C2 7.4 4.6 4.5 7.6 4.9c1.9.2 3.4 1.6 4.4 3.3 1-1.7 2.5-3.1 4.4-3.3 3-.4 5.6 2.5 4.5 6.2-1.4 4.8-8.9 9.4-8.9 9.4Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              />
-            </svg>
-          </span>
-        </p>
-        <p className="phero__sign handwritten" aria-hidden="true">
-          <span>“Những căn phòng đẹp</span>
-          <span>cho những người</span>
-          <span>yêu thiên nhiên</span>
-          <span>- Đinh Vân Booking -</span>
-        </p>
+        {kicker && <p className="phero__script handwritten" data-reveal="write" style={{ '--d': '150ms' } as React.CSSProperties}>{kicker}</p>}
+        {richDocumentHasContent(config.heroDescription) && <div className="phero__text" data-reveal="fade-up" style={{ '--d': '300ms' } as React.CSSProperties}><RichContentRenderer document={config.heroDescription as RichDocument} /></div>}
+        {note && <p className="phero__note handwritten">{note}</p>}
       </div>
     </section>
   );

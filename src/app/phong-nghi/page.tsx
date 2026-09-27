@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { FaqCard } from '@/components/shared/FaqCard';
+import { FaqList } from '@/components/shared/FaqList';
 import { ReviewsStrip } from '@/components/shared/ReviewsStrip';
 import { PageShell } from '@/components/layout/PageShell';
 import { AdvisorCard } from '@/components/stays/AdvisorCard';
@@ -13,28 +13,33 @@ import { isSubstantivePublicContent } from '@/lib/seo/content';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { isSeoSchemaAllowed } from '@/lib/seo/policy';
 import { buildCollectionGraph } from '@/lib/seo/schema';
+import { publicAsset, publicSetting } from '@/lib/public-content';
+import { richDocumentHasContent } from '@/lib/public-content';
+import type { RichDocument } from '@/lib/content/rich-document';
+import { publicText } from '@/lib/public-content';
 import '@/styles/stays.css';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
-  const [query, stays, urls] = await Promise.all([searchParams, getPublicStays(), getPublicSeoUrls()]);
+  const [query, stays, urls, site] = await Promise.all([searchParams, getPublicStays(), getPublicSeoUrls(), getPublicSite()]);
+  const content = publicSetting(site, 'catalog.staysPage');
   return buildPageMetadata({
     path: '/phong-nghi',
-    title: 'Phòng nghỉ Cúc Phương — Đinh Vân Booking',
-    description: 'Những nơi lưu trú được Đinh Vân tuyển chọn tại Cúc Phương, Ninh Bình.',
-    eligible: urls.some((entry) => entry.path === '/phong-nghi') && stays.length > 0,
+    eligible: !!publicText(content.heroTitle) && urls.some((entry) => entry.path === '/phong-nghi') && stays.length > 0,
     searchParams: query,
   });
 }
 
-function Reviews({ reviews }: { reviews: Awaited<ReturnType<typeof getPublicReviews>> }) {
+function Reviews({ reviews, config }: { reviews: Awaited<ReturnType<typeof getPublicReviews>>; config: Record<string, unknown> }) {
+  const title = typeof config.reviewsTitle === 'string' ? config.reviewsTitle.trim() : '';
+  const subtitle = typeof config.reviewsSubtitle === 'string' ? config.reviewsSubtitle.trim() : '';
+  if (!title || !reviews.length) return null;
   return (
     <section className="stays-reviews" aria-labelledby="stays-reviews-t">
       <div className="stays-reviews__head">
         <h2 id="stays-reviews-t" className="stays-reviews__title">
-          Khách hàng nói về
-          <br /> phòng nghỉ tại Đinh Vân Booking <SmallLeaf className="section-title__leaf" />
+          {title} <SmallLeaf className="section-title__leaf" />
         </h2>
-        <p className="stays-reviews__sub">Những chia sẻ chân thật từ những người đã trải nghiệm</p>
+        {subtitle && <p className="stays-reviews__sub">{subtitle}</p>}
       </div>
       <ReviewsStrip reviews={reviews} />
     </section>
@@ -49,32 +54,32 @@ export default async function StaysPage({
   // Per-request render so filters/selection from the URL are server-rendered.
   const query = await searchParams;
   const [stays, reviews, site, urls] = await Promise.all([getPublicStays(), getPublicReviews(), getPublicSite(), getPublicSeoUrls()]);
+  const pageContent = publicSetting(site, 'catalog.staysPage');
+  const faqItems = (Array.isArray(pageContent.faqs) ? pageContent.faqs : []).flatMap((value, index) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    const item = value as Record<string, unknown>;
+    const question = typeof item.question === 'string' ? item.question.trim() : '';
+    const answer = typeof item.answer === 'string' ? item.answer.trim() : item.answer;
+    return item.enabled === false || !question || !(typeof answer === 'string' ? !!answer : richDocumentHasContent(answer)) ? [] : [{ id: typeof item.id === 'string' ? item.id : `stay-faq-${index}`, question, answer: answer as string | RichDocument }];
+  });
   const indexablePaths = new Set(urls.map((entry) => entry.path));
   const schemaItems = stays
     .filter((stay) => !stay.noindex && !!stay.publicPath && indexablePaths.has(stay.publicPath) && isSubstantivePublicContent(stay.descriptionDocument ?? stay.description))
     .map((stay) => ({ name: stay.name, href: stay.publicPath! }));
-  const structuredData = isSeoSchemaAllowed(site, '/phong-nghi', { eligible: schemaItems.length > 0, searchParams: query })
-    ? buildCollectionGraph(site, { path: '/phong-nghi', title: 'Phòng nghỉ Cúc Phương', items: schemaItems })
+  const pageTitle = publicText(pageContent.heroTitle);
+  const structuredData = pageTitle && isSeoSchemaAllowed(site, '/phong-nghi', { eligible: schemaItems.length > 0, searchParams: query })
+    ? buildCollectionGraph(site, { path: '/phong-nghi', title: pageTitle, items: schemaItems })
     : null;
   return (
     <PageShell className="page-stays">
-      <StaysHero />
+      <StaysHero config={pageContent} image={publicAsset(site, pageContent.heroImageMediaId)} />
         <StaysExplorer
           stays={stays}
-          advisor={<AdvisorCard />}
+          advisor={<AdvisorCard config={pageContent} image={publicAsset(site, pageContent.advisorImageMediaId)} />}
           notFound={<NotFoundCard />}
-          reviews={<Reviews reviews={reviews} />}
+          reviews={<Reviews reviews={reviews} config={pageContent} />}
           faq={
-            <FaqCard
-              className="stays-faq"
-              title={
-                <>
-                  Câu hỏi thường gặp <SmallLeaf className="section-title__leaf" />
-                  <br /> về phòng nghỉ
-                </>
-              }
-              items={[]}
-            />
+            pageContent.faqTitle && faqItems.length > 0 ? <section className="stays-faq"><h2 className="section-title">{String(pageContent.faqTitle)} <SmallLeaf className="section-title__leaf" /></h2><FaqList items={faqItems} variant="boxed" /></section> : null
           }
         />
       <JsonLd data={structuredData} />

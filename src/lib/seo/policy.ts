@@ -122,7 +122,7 @@ export function canonicalUrl(origin: string, path: string): string | null {
 }
 
 export function getSiteName(site: PublicSiteData): string {
-  return site.identity.shortName?.trim() || site.identity.name?.trim() || 'Đinh Vân Booking';
+  return site.identity.shortName?.trim() || site.identity.name?.trim() || '';
 }
 
 export function isSeoSchemaAllowed(

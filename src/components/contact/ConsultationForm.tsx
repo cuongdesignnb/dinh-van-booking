@@ -13,6 +13,9 @@ import { takePendingNote } from '@/lib/draft-store';
 import { parseSelection, readParam } from '@/lib/selection';
 import { apiAdapter, type ConsultationDraft } from '@/lib/services/consultation';
 import { MESSAGE_MAX, validateMessage, validateName, validatePhone } from '@/lib/validation';
+import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 type Field = 'name' | 'phone' | 'date' | 'message';
 type Status = 'editing' | 'validating' | 'submitted' | 'error';
@@ -32,6 +35,8 @@ export const CONTACT_FORM_ID = 'form-tu-van';
 
 export function ConsultationForm() {
   const site = useSiteData();
+  const contactPage = publicSetting(site.publicSite, 'contact.page');
+  const formTitle = publicText(contactPage.formTitle);
   const uid = useId();
   const params = useSearchParams();
   const [context, setContext] = useState(() => resolveContext(params));
@@ -124,11 +129,9 @@ export function ConsultationForm() {
   const errorList = (['name', 'phone', 'date', 'message'] as Field[]).filter((f) => err(f));
 
   return (
-    <form id={CONTACT_FORM_ID} className="cform" noValidate onSubmit={submit} aria-labelledby={`${uid}-t`}>
-      <h2 className="cform__title" id={`${uid}-t`}>
-        Gửi yêu cầu tư vấn riêng
-      </h2>
-      <p className="cform__sub">Chia sẻ với Đinh Vân kế hoạch của bạn, mình sẽ phản hồi sớm nhất!</p>
+    <form id={CONTACT_FORM_ID} className="cform" noValidate onSubmit={submit} aria-labelledby={formTitle ? `${uid}-t` : undefined} aria-label={formTitle || undefined}>
+      {formTitle && <h2 className="cform__title" id={`${uid}-t`}>{formTitle}</h2>}
+      {richDocumentHasContent(contactPage.formIntro) && <div className="cform__sub"><RichContentRenderer document={contactPage.formIntro as RichDocument} /></div>}
 
       {context && (
         <p className="cform__context">

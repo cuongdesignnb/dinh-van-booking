@@ -1,6 +1,7 @@
 'use client';
 
 import { useSiteData } from '@/components/site/SiteDataProvider';
+import Image from 'next/image';
 
 /** Mountain + forest mark. Kept as SVG so it stays crisp at any size. */
 export function DinhVanMark({ className }: { className?: string }) {
@@ -45,12 +46,14 @@ export function DinhVanMark({ className }: { className?: string }) {
 
 export function BrandLogo({ variant = 'header' }: { variant?: 'header' | 'footer' }) {
   const site = useSiteData();
+  const logo = site.publicSite.media?.logo;
+  if (!logo?.src && !site.name && !site.tagline) return null;
   return (
     <span className={`brand brand--${variant}`}>
-      <DinhVanMark className="brand__mark" />
+      {logo?.src ? <Image className="brand__mark" src={logo.src} alt={logo.alt ?? site.name} width={logo.width ?? 600} height={logo.height ?? 200} unoptimized /> : null}
       <span className="brand__text">
-        <span className="brand-wordmark">{site.name}</span>
-        <span className="brand__tagline">{site.tagline}</span>
+        {site.name && <span className="brand-wordmark">{site.name}</span>}
+        {site.tagline && <span className="brand__tagline">{site.tagline}</span>}
       </span>
     </span>
   );

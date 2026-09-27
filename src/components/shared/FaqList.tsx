@@ -3,6 +3,8 @@
 import { ChevronDown } from 'lucide-react';
 import { useId, useState } from 'react';
 import type { Faq } from '@/data/types';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 /** Accordion: one button per question controlling its own answer region. */
 export function FaqList({
@@ -40,7 +42,7 @@ export function FaqList({
               </button>
             </h3>
             <div id={`${uid}-${f.id}`} className="faq__a" role="region" hidden={!expanded}>
-              <p>{f.answer}</p>
+              {typeof f.answer === 'string' ? <p>{f.answer}</p> : <RichContentRenderer document={f.answer as RichDocument} />}
             </div>
           </li>
         );

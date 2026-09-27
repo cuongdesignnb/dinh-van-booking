@@ -5,8 +5,19 @@ import { dirname, join } from 'node:path';
 import sharp, { type Metadata, type Sharp } from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
+import { SETTINGS_BY_KEY } from '../settings/settings.registry';
 import { loadConfig } from '../common/config/env';
 import type { Paginated } from '../common/types';
+
+function settingMediaReferences(value: unknown, id: string, path = ''): string[] {
+  if (Array.isArray(value)) return value.flatMap((item, index) => settingMediaReferences(item, id, `${path}[${index}]`));
+  if (!value || typeof value !== 'object') return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) => {
+    const next = path ? `${path}.${key}` : key;
+    if ((key === 'mediaId' || /MediaId$/.test(key)) && child === id) return [next];
+    return settingMediaReferences(child, id, next);
+  });
+}
 
 export interface MediaProcessingSettings {
   convertToWebp: boolean;
@@ -201,18 +212,22 @@ export class MediaService {
     return this.toView(asset);
   }
 
-  /** Refuses to delete an asset still referenced by content, so pages never break. */
+  /** Refuses to delete an asset still referenced by content or public settings. */
   async remove(id: string, userId: string): Promise<void> {
     const asset = await this.prisma.mediaAsset.findUnique({
       where: { id },
       include: { contentMedia: true, ogForContent: { select: { id: true } } },
     });
     if (!asset) throw new NotFoundException('Không tìm thấy ảnh');
-    const uses = asset.contentMedia.length + asset.ogForContent.length;
-    if (uses > 0) {
+    const settings = await this.prisma.setting.findMany({ select: { key: true, value: true } });
+    const settingUses = settings.filter((setting) => SETTINGS_BY_KEY.has(setting.key))
+      .flatMap((setting) => settingMediaReferences(setting.value, id).map((path) => `${setting.key}.${path}`));
+    const contentUses = asset.contentMedia.length + asset.ogForContent.length;
+    if (contentUses > 0 || settingUses.length > 0) {
+      const useCount = contentUses + settingUses.length;
       throw new ConflictException({
         code: 'media_in_use',
-        message: `Ảnh đang được dùng ở ${uses} nơi. Gỡ khỏi nội dung trước khi xoá.`,
+        message: `Ảnh đang được dùng ở ${useCount} nơi${settingUses.length ? ` (${settingUses.join(', ')})` : ''}. Gỡ khỏi nội dung hoặc cài đặt trước khi xoá.`,
       });
     }
 

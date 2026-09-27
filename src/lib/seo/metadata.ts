@@ -62,11 +62,25 @@ export async function buildPageMetadata(options: MetadataOptions): Promise<Metad
 export function metadataForSite(site: PublicSiteData, options: MetadataOptions): Metadata {
   const policy = getSeoPolicy(site);
   const seo = object(site.seo);
+  const pageSeoRoot = object(site['seo.pages']);
+  const pageKey: Record<string, string> = {
+    '/': 'home',
+    '/phong-nghi': 'stays',
+    '/diem-den': 'destinations',
+    '/combo-du-lich': 'combos',
+    '/lien-he': 'contact',
+    '/dat-phong': 'booking',
+    '/bai-viet': 'articles',
+    '/chuyen-trang': 'staticPages',
+  };
+  const configuredPageKey = pageKey[options.path.replace(/\/$/, '') || '/'];
+  const pageSeo = object(pageSeoRoot[configuredPageKey ?? '']);
   const verification = object(seo.verification);
   const queryPolicy = classifySeoQuery(options.path, queryString(options.searchParams));
-  const rawTitle = clean(options.title) ?? clean(seo.defaultTitle) ?? clean(site.identity.name) ?? 'Đinh Vân Booking';
-  const title = applyTemplate(rawTitle, seo.titleTemplate, getSiteName(site));
-  const description = clean(options.description) ?? clean(seo.defaultDescription) ?? clean(site.identity.description);
+  const rawTitle = clean(pageSeo.title) ?? (configuredPageKey ? undefined : clean(options.title)) ?? clean(seo.defaultTitle) ?? clean(site.identity.name);
+  const siteName = getSiteName(site);
+  const title = rawTitle ? applyTemplate(rawTitle, seo.titleTemplate, siteName) : undefined;
+  const description = clean(pageSeo.description) ?? (configuredPageKey ? undefined : clean(options.description)) ?? clean(seo.defaultDescription) ?? clean(site.identity.description);
   const index = policy.indexingAllowed && options.eligible === true && options.noindex !== true && !queryPolicy.noindex;
   const pathForCanonical = queryPolicy.canonicalPath;
   const canonical = options.canonical !== false && pathForCanonical && policy.canonicalOrigin
@@ -76,8 +90,7 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
   const imageUrl = image?.src && policy.canonicalOrigin
     ? image.src.startsWith('https://') ? image.src : canonicalUrl(policy.canonicalOrigin, image.src)
     : undefined;
-  const openGraphImages = imageUrl ? [{ url: imageUrl, width: image?.width, height: image?.height, alt: image?.alt || title }] : undefined;
-  const siteName = getSiteName(site);
+  const openGraphImages = imageUrl ? [{ url: imageUrl, width: image?.width, height: image?.height, ...(image?.alt || title ? { alt: image?.alt || title } : {}) }] : undefined;
 
   const result: Metadata = {
     title,
@@ -86,9 +99,9 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
     openGraph: {
       type: options.type ?? 'website',
       locale: 'vi_VN',
-      siteName,
-      title,
-      description,
+      ...(siteName ? { siteName } : {}),
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
       ...(canonical ? { url: canonical } : {}),
       ...(options.type === 'article' ? {
         ...(options.publishedTime ? { publishedTime: options.publishedTime } : {}),
@@ -98,8 +111,8 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
     },
     twitter: {
       card: openGraphImages ? 'summary_large_image' : 'summary',
-      title,
-      description,
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
       ...(openGraphImages ? { images: openGraphImages.map((entry) => entry.url) } : {}),
     },
   };

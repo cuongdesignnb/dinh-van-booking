@@ -15,9 +15,19 @@ async function opsApi<T>(page: Page, path: string, method = 'GET', body?: unknow
       const csrfCookie = document.cookie.split('; ').find((part) => part.startsWith('dvb_csrf='));
       if (csrfCookie) headers['x-csrf-token'] = decodeURIComponent(csrfCookie.slice('dvb_csrf='.length));
     }
-    const response = await fetch(`/api/v1${path}`, {
-      method, headers, credentials: 'include', body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 20_000);
+    let response: Response;
+    try {
+      response = await fetch(`/api/v1${path}`, {
+        method, headers, credentials: 'include', body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`${method} /api/v1${path} did not complete within 20 seconds: ${detail}`);
+    } finally {
+      window.clearTimeout(timeout);
+    }
     const text = await response.text();
     let parsed: unknown = null;
     try { parsed = text ? JSON.parse(text) : null; } catch { parsed = text; }
@@ -255,13 +265,13 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     await expect(publicName).toBeVisible({ timeout: 10_000 });
     await expect(publicPhoneField).toBeVisible({ timeout: 10_000 });
     await expect(publicEmail).toBeVisible({ timeout: 10_000 });
-    await publicName.focus();
-    await guestPage.locator('h1').first().click();
+    await publicName.focus({ timeout: 5_000 });
+    await publicName.press('Tab', { timeout: 5_000 });
     await expect(publicName).toHaveAttribute('aria-invalid', 'true', { timeout: 10_000 });
-    await publicName.fill('Khách kiểm thử public');
+    await publicName.fill('Khách kiểm thử public', { timeout: 5_000 });
     await expect(publicName).toHaveAttribute('aria-invalid', 'false');
-    await publicPhoneField.fill(publicPhone);
-    await publicEmail.fill(`atg-public-${stamp}@example.test`);
+    await publicPhoneField.fill(publicPhone, { timeout: 5_000 });
+    await publicEmail.fill(`atg-public-${stamp}@example.test`, { timeout: 5_000 });
     const publicQuoteResponsePromise = guestPage.waitForResponse((response) => response.url().endsWith('/api/v1/quotes') && response.request().method() === 'POST', { timeout: 20_000 });
     await guestPage.getByRole('button', { name: 'Xem giá & xác nhận' }).first().click({ timeout: 10_000 });
     const publicQuoteResponse = await publicQuoteResponsePromise;
@@ -398,9 +408,15 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     await page.getByLabel('Khu vực').fill('Nho Quan — dữ liệu QA');
     await page.getByRole('button', { name: 'Lưu hồ sơ' }).click();
     await page.getByPlaceholder('Ghi nhận cuộc gọi / trao đổi…').fill(`Đã gọi kiểm thử ${stamp}`);
+    const interactionResponsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/v1/admin/customers/${booking.customer.id}/interactions`) && response.request().method() === 'POST', { timeout: 10_000 });
     await page.getByRole('button', { name: 'Lưu trao đổi' }).click();
+    expect((await interactionResponsePromise).status()).toBe(201);
     await page.getByPlaceholder('Mục đích nhắc việc').fill(`Nhắc kiểm thử ${stamp}`);
+    const followUpResponsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/v1/admin/customers/${booking.customer.id}/follow-ups`) && response.request().method() === 'POST', { timeout: 10_000 });
     await page.getByRole('button', { name: 'Tạo nhắc việc' }).click();
+    expect((await followUpResponsePromise).status()).toBe(201);
+    const followUps = await opsApi<{ items: Array<{ purpose: string }> }>(page, `/admin/customers/${booking.customer.id}/follow-ups`);
+    expect(followUps.body.items.some((item) => item.purpose === `Nhắc kiểm thử ${stamp}`)).toBe(true);
     const customer = await opsApi<{ city: string | null; inquiries: Array<{ interactions: Array<{ body: string }>; followUps: Array<{ purpose: string }> }> }>(page, `/admin/customers/${booking.customer.id}`);
     expect(customer.body.city).toBe('Nho Quan — dữ liệu QA');
     expect(customer.body.inquiries.flatMap((item) => item.interactions).some((item) => item.body === `Đã gọi kiểm thử ${stamp}`)).toBe(true);

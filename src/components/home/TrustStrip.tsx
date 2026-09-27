@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react';
 import { LeafSprig } from '@/components/ui/Decor';
+import type { PublicRecord } from '@/lib/public-content';
 
 type TrustIcon = 'leaf' | 'heart' | 'shield' | 'users';
 type TrustItem = { id: string; icon: TrustIcon; lines: string[] };
 
-// Commercial claims must come from managed content, never from a UI fixture.
-const trustItems: TrustItem[] = [];
-
 /** Filled glyphs to match the solid icons in the mockup. */
-const glyphs: Record<(typeof trustItems)[number]['icon'], ReactNode> = {
+const glyphs: Record<TrustIcon, ReactNode> = {
   leaf: (
     <svg viewBox="0 0 28 28" aria-hidden="true" focusable="false">
       <path
@@ -53,11 +51,21 @@ const glyphs: Record<(typeof trustItems)[number]['icon'], ReactNode> = {
   ),
 };
 
-export function TrustStrip() {
-  if (!trustItems.length) return null;
+export function TrustStrip({ config }: { config: PublicRecord }) {
+  const raw = Array.isArray(config.items) ? config.items : [];
+  const trustItems = raw.flatMap((value, index): TrustItem[] => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    const item = value as Record<string, unknown>;
+    const icon = item.icon;
+    if (icon !== 'leaf' && icon !== 'heart' && icon !== 'shield' && icon !== 'users') return [];
+    const lines = [item.line1, item.line2].filter((line): line is string => typeof line === 'string' && !!line.trim());
+    if (item.enabled === false || !lines.length) return [];
+    return [{ id: typeof item.id === 'string' ? item.id : `trust-${index}`, icon, lines }];
+  });
+  if (config.enabled !== true || !trustItems.length) return null;
 
   return (
-    <section className="trust" aria-label="Cam kết của Đinh Vân Booking">
+    <section className="trust" aria-label="Cam kết">
       <LeafSprig className="trust__leaf trust__leaf--l" />
       <LeafSprig className="trust__leaf trust__leaf--r" />
       <ul className="trust__list">

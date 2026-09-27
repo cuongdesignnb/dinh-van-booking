@@ -5,7 +5,6 @@ import { PageShell } from '@/components/layout/PageShell';
 
 export const metadata: Metadata = {
   title: 'Không tìm thấy trang — Đinh Vân Booking',
-  robots: { index: false, follow: false },
 };
 
 export default function NotFound() {

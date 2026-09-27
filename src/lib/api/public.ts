@@ -136,8 +136,7 @@ function normalizeStay(value: ApiStay): Stay | null {
     })
     .filter((room) => Number.isFinite(room.pricePerNight) && room.pricePerNight > 0);
   if (!rooms.length) return null;
-  const features = (value.cardFeatures ?? []).slice(0, 3).map((feature) => ({ icon: feature.icon as never, label: feature.label }));
-  while (features.length < 3) features.push({ icon: 'view' as never, label: 'Thông tin đang cập nhật' });
+  const features = (value.cardFeatures ?? []).filter((feature) => !!feature.label?.trim()).slice(0, 3).map((feature) => ({ icon: feature.icon as never, label: feature.label }));
   const gallery = (value.gallery ?? []).map(asset).filter((item): item is ImageAsset => !!item);
   return {
     ...value,
@@ -201,6 +200,7 @@ type ApiCombo = {
   noindex?: boolean;
   firstPublishedAt?: string | null;
   lastPublicChangedAt?: string | null;
+  featured?: boolean;
   isDemo?: boolean;
 };
 
@@ -261,7 +261,6 @@ const loadPublicCombos = cache(async (): Promise<Combo[]> => {
     const image = asset(item.image);
     if (!image || item.fromPriceVnd === null) return null;
     const lines = item.included.slice(0, 3).map((text, index) => ({ icon: (['leaf', 'food', 'route'] as const)[index] ?? 'leaf', text }));
-    while (lines.length < 3) lines.push({ icon: 'leaf', text: 'Thông tin đang cập nhật' });
     return {
       id: item.id,
       slug: item.slug,
@@ -278,7 +277,7 @@ const loadPublicCombos = cache(async (): Promise<Combo[]> => {
       durationNights: item.durationNights,
       badge: { label: item.badge.label, icon: 'calendar' as const },
       audienceTags: [],
-      includedHighlights: lines as Combo['includedHighlights'],
+      includedHighlights: lines,
       fromPriceVnd: item.fromPriceVnd,
       priceUnit: 'người' as const,
       popularity: 0,
@@ -314,6 +313,7 @@ type ApiDestination = {
   noindex?: boolean;
   firstPublishedAt?: string | null;
   lastPublicChangedAt?: string | null;
+  featured?: boolean;
   isDemo?: boolean;
 };
 
@@ -343,7 +343,7 @@ const loadPublicDestinations = cache(async (): Promise<Destination[]> => {
       activities: item.activities,
       notes: item.notes,
       image,
-      featured: true,
+      featured: item.featured === true,
       isDemo: false,
     } as Destination;
   }).filter((item): item is Destination => !!item);
@@ -388,7 +388,7 @@ async function loadPublicDestination(slug: string): Promise<PublicDestinationRec
       activities: item.activities,
       notes: item.notes,
       image,
-      featured: true,
+      featured: item.featured === true,
       isDemo: false,
       metaTitle: item.metaTitle ?? null,
       metaDescription: item.metaDescription ?? null,

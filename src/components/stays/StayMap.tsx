@@ -77,6 +77,7 @@ export function StayMapCard({ stays, query }: { stays: Stay[]; query: string }) 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const titleId = useId();
+  if (!stays.some((stay) => stay.mapPin)) return null;
   const active = stays.find((s) => s.id === activeId) ?? stays[0] ?? null;
   return (
     <section className="side-card map-card" aria-labelledby={`${titleId}-card`} data-reveal="slide-left">

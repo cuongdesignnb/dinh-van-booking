@@ -46,20 +46,14 @@ export function StayCard({ stay, index }: { stay: Stay; index: number }) {
         <h3 className="stay__name" id={`${stay.id}-name`}>
           {stay.name}
         </h3>
-        <p className="stay__rating">
-          <Star size={14} className="star" aria-hidden="true" />
-          <strong>{stay.rating.toFixed(1)}</strong>
-          <span>({stay.reviewCount} đánh giá)</span>
-        </p>
+        {stay.reviewCount > 0 && <p className="stay__rating"><Star size={14} className="star" aria-hidden="true" /><strong>{stay.rating.toFixed(1)}</strong><span>({stay.reviewCount} đánh giá)</span></p>}
         <p className="stay__meta">
           <PinCheck />
           {home.location}
         </p>
         <p className="stay__meta stay__meta--tags">
-          <Sprig />
-          <span>{home.tags[0]}</span>
-          <i aria-hidden="true">•</i>
-          <span>{home.tags[1]}</span>
+          {home.tags.length > 0 && <Sprig />}
+          {home.tags.map((tag, index) => <span key={`${tag}-${index}`}>{index > 0 && <i aria-hidden="true">•</i>}{tag}</span>)}
         </p>
         <div className="stay__foot">
           <p className="stay__price">

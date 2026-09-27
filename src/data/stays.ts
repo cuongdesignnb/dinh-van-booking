@@ -52,7 +52,7 @@ export interface Stay {
   location: string;
   address: string;
   amenities: AmenityId[];
-  cardFeatures: [CardFeature, CardFeature, CardFeature];
+  cardFeatures: CardFeature[];
   cardSummary: string;
   tagline: string;
   description: string;
@@ -62,7 +62,7 @@ export interface Stay {
   badge?: string;
   popularity: number;
   image: ImageAsset;
-  home?: { image: ImageAsset; location: string; tags: [string, string] };
+  home?: { image: ImageAsset; location: string; tags: string[] };
   gallery: ImageAsset[];
   galleryNote?: string;
   host: Host | null;

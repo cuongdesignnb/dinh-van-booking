@@ -34,6 +34,9 @@ import {
 } from '@/lib/catalog/constants';
 import type { Destination, DestinationCategory, TipIcon } from '@/data/destinations';
 import { readParam } from '@/lib/selection';
+import type { PublicRecord } from '@/lib/public-content';
+import { publicText, richDocumentHasContent } from '@/lib/public-content';
+import type { RichDocument } from '@/lib/content/rich-document';
 
 function MonkeyIcon({ size = 15 }: { size?: number }) {
   return (
@@ -84,7 +87,8 @@ function CategoryIcon({ id }: { id: DestinationCategory | 'all' }) {
 }
 
 /** Category filter + destination cards + detail dialog (URL: ?loai=, ?d=). */
-export function DestinationExplorer({ destinations }: { destinations: Destination[] }) {
+export function DestinationExplorer({ destinations, config }: { destinations: Destination[]; config: PublicRecord }) {
+  const listTitle = publicText(config.listTitle);
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -185,22 +189,14 @@ export function DestinationExplorer({ destinations }: { destinations: Destinatio
               </button>
             ))}
           </div>
-          <p className="dest-filters__msg">
-            <SmallLeaf className="dest-filters__leaf" />
-            Những điểm đến không chỉ để ngắm, mà để cảm nhận
-          </p>
         </div>
       </div>
 
       <section className="dest-list content-shell" aria-labelledby="dest-title">
         <div className="dest-list__head">
           <div>
-            <h2 className="section-title" id="dest-title">
-              Những điểm đến nổi bật <SmallLeaf className="section-title__leaf" />
-            </h2>
-            <p className="section-sub">
-              Khám phá vẻ đẹp nguyên sơ, những giá trị văn hóa đặc sắc và trải nghiệm khó quên tại Cúc Phương - Ninh Bình.
-            </p>
+            {listTitle && <h2 className="section-title" id="dest-title">{listTitle} <SmallLeaf className="section-title__leaf" /></h2>}
+            {richDocumentHasContent(config.listSubtitle) && <div className="section-sub"><RichContentRenderer document={config.listSubtitle as RichDocument} /></div>}
           </div>
           <button type="button" className="link-more dest-list__all" aria-haspopup="dialog" onClick={() => setAll(true)}>
             Xem tất cả điểm đến <ArrowRight size={15} aria-hidden="true" />

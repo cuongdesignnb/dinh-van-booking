@@ -21,7 +21,6 @@ import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { capacityIssue } from '@/components/stay-detail/BookingContext';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { GuestPicker } from '@/components/ui/GuestPicker';
-import { PolicyLink } from '@/components/ui/PolicyLink';
 import { Popover } from '@/components/ui/Popover';
 import { useSiteData } from '@/components/site/SiteDataProvider';
 import type { Stay } from '@/data/stays';
@@ -33,11 +32,14 @@ import {
   type PriceSummary,
 } from '@/lib/booking/pricing';
 import { formatDayLabel } from '@/lib/dates';
-import { openDialog } from '@/lib/events';
 import { formatVnd } from '@/lib/format';
 import { apiRequest } from '@/lib/api/client';
 import { dateError, nights as nightsOf, parseSelection, readParam, selectionQuery, type Selection } from '@/lib/selection';
 import { validateEmail, validateMessage, validateName, validatePhone } from '@/lib/validation';
+import { publicSetting, publicText } from '@/lib/public-content';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import type { RichDocument } from '@/lib/content/rich-document';
+import { richDocumentHasContent } from '@/lib/public-content';
 
 const NATIONALITIES = ['Việt Nam', 'Hàn Quốc', 'Nhật Bản', 'Trung Quốc', 'Hoa Kỳ', 'Pháp', 'Úc', 'Khác'];
 const SPECIAL_MAX = 300;
@@ -165,6 +167,11 @@ function Section({ n, title, aside, children, id }: { n: number; title: ReactNod
 
 function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: RoomType; initial: Selection }) {
   const site = useSiteData();
+  const bookingPage = publicSetting(site.publicSite, 'catalog.bookingPage');
+  const securityNote = publicText(bookingPage.securityNote);
+  const policyLinks = site.navigation.filter((item) => item.href.startsWith('/chuyen-trang/'));
+  const helpTitle = publicText(bookingPage.helpTitle);
+  const helpDescription = bookingPage.helpDescription;
   const router = useRouter();
   const uid = useId();
   const room = initialRoom;
@@ -456,38 +463,22 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
           </button>
         ) : null}
         {submitError && stage === 'editing' && <p className="co-err" role="alert">{submitError}</p>}
-        <p className="co-terms">
-          {quote ? 'Báo giá do máy chủ tính; chưa giữ phòng cho đến khi bạn gửi yêu cầu.' : 'Đây là ước tính từ giá phòng đã xuất bản; chưa giữ phòng và chưa thu tiền.'} Xem <PolicyLink policy="terms" className="co-link" />{' '}
-          và <PolicyLink policy="cancel" className="co-link" /> của Đinh Vân Booking.
-        </p>
+        {(securityNote || policyLinks.length > 0) && <p className="co-terms">{securityNote}{securityNote && policyLinks.length > 0 ? ' ' : ''}{policyLinks.map((item, index) => <span key={item.href}>{index > 0 ? ' · ' : ''}<Link className="co-link" href={item.href}>{item.label}</Link></span>)}</p>}
       </section>
 
-      <section className="co-card co-help" aria-labelledby={`${uid}-help`}>
+      {(site.contact.phone || site.contact.zaloUrl) && (helpTitle || richDocumentHasContent(helpDescription)) && <section className="co-card co-help" aria-labelledby={helpTitle ? `${uid}-help` : undefined}>
         <span className="co-help__ic" aria-hidden="true">
           <Headset size={30} />
         </span>
         <div>
-          <h2 id={`${uid}-help`}>Bạn cần hỗ trợ?</h2>
-          <p>Đội ngũ Đinh Vân Booking luôn sẵn sàng hỗ trợ bạn trong suốt quá trình đặt phòng.</p>
+          {helpTitle && <h2 id={`${uid}-help`}>{helpTitle}</h2>}
+          {richDocumentHasContent(helpDescription) && <div><RichContentRenderer document={helpDescription as RichDocument} /></div>}
           <div className="co-help__btns">
-            {site.contact.phone ? (
-              <a className="co-help__btn" href={`tel:${site.contact.phone}`}>
-                <Phone size={16} fill="currentColor" strokeWidth={0} aria-hidden="true" /> {site.contact.phone}
-              </a>
-            ) : (
-              <button type="button" className="co-help__btn" aria-haspopup="dialog" onClick={() => openDialog({ type: 'contact', channel: 'phone' })}>
-                <Phone size={16} fill="currentColor" strokeWidth={0} aria-hidden="true" /> Gọi cho mình
-              </button>
-            )}
-            <button type="button" className="co-help__btn" aria-haspopup="dialog" onClick={() => openDialog({ type: 'contact', channel: 'zalo' })}>
-              <span className="co-help__zalo" aria-hidden="true">
-                <BrandIcon name="zalo" size={14} />
-              </span>
-              Chat qua Zalo
-            </button>
+            {site.contact.phone && <a className="co-help__btn" href={`tel:${site.contact.phone}`}><Phone size={16} fill="currentColor" strokeWidth={0} aria-hidden="true" /> {site.contact.phone}</a>}
+            {site.contact.zaloUrl && <a className="co-help__btn" href={site.contact.zaloUrl} target="_blank" rel="noopener noreferrer"><span className="co-help__zalo" aria-hidden="true"><BrandIcon name="zalo" size={14} /></span>Zalo</a>}
           </div>
         </div>
-      </section>
+      </section>}
     </aside>
   );
 
@@ -690,7 +681,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
         <Section n={3} title="Ghi chú">
           <div className="co-field">
             <label htmlFor={`${uid}-note`} className="co-field__label">
-              Ghi chú cho Đinh Vân Booking (tùy chọn)
+              {site.name ? `Ghi chú cho ${site.name} (tùy chọn)` : 'Ghi chú (tùy chọn)'}
             </label>
             <textarea
               ref={refs.note}
@@ -718,11 +709,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
               Website chỉ ghi nhận yêu cầu, chưa giữ phòng và chưa thu tiền. Phương án thanh toán sẽ do cơ sở trao đổi sau khi kiểm tra tình trạng phòng.
             </p>
           </div>
-          <p className="co-secure">
-            <LockKeyhole size={20} aria-hidden="true" />
-            <span>Website chưa thu tiền; thông tin thanh toán sẽ được trao đổi sau khi xác nhận phòng.</span>
-            <PolicyLink policy="payment" className="co-link co-secure__link" label="Xem chính sách thanh toán →" />
-          </p>
+          {securityNote && <p className="co-secure"><LockKeyhole size={20} aria-hidden="true" /><span>{securityNote}</span>{policyLinks.map((item) => <Link key={item.href} className="co-link co-secure__link" href={item.href}>{item.label}</Link>)}</p>}
         </Section>
 
         <ul className="co-benefits">

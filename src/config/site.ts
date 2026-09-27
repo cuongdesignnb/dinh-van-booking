@@ -27,6 +27,8 @@ export interface RuntimeSiteData {
   contact: SiteContact;
   social: SiteSocial;
   usesDemoData: boolean;
+  publicSite: import('@/lib/api/public').PublicSiteData;
+  navigation: import('@/lib/api/public').PublicNavigationItem[];
 }
 
 export const emptySiteData: RuntimeSiteData = {
@@ -37,6 +39,8 @@ export const emptySiteData: RuntimeSiteData = {
   description: '',
   social: { facebook: null, instagram: null, youtube: null, tiktok: null },
   usesDemoData: false,
+  publicSite: {} as import('@/lib/api/public').PublicSiteData,
+  navigation: [],
 };
 
 /** Kept as a compatibility export for non-rendering tooling. */

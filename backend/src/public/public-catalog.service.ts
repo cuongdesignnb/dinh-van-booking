@@ -781,6 +781,7 @@ export class PublicCatalogService {
       noindex: node.noindex,
       firstPublishedAt: node.firstPublishedAt?.toISOString() ?? null,
       lastPublicChangedAt: node.lastPublicChangedAt?.toISOString() ?? null,
+      featured: node.featured,
       category: destination.category,
       location: destination.location,
       summary: node.excerpt ?? textFromDocument(node.bodyDocument).slice(0, 240),

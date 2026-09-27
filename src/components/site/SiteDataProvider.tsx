@@ -6,7 +6,7 @@ import type { PublicSiteData } from '@/lib/api/public';
 
 const SiteDataContext = createContext<RuntimeSiteData>(emptySiteData);
 
-export function SiteDataProvider({ data, children }: { data: PublicSiteData; children: ReactNode }) {
+export function SiteDataProvider({ data, navigation, children }: { data: PublicSiteData; navigation: RuntimeSiteData['navigation']; children: ReactNode }) {
   const identity = data.identity ?? {};
   const contact = data.contact ?? {};
   const social = data.social ?? {};
@@ -31,6 +31,8 @@ export function SiteDataProvider({ data, children }: { data: PublicSiteData; chi
       tiktok: social.tiktok ?? null,
     },
     usesDemoData: mode,
+    publicSite: data,
+    navigation,
   };
   return <SiteDataContext.Provider value={runtime}>{children}</SiteDataContext.Provider>;
 }

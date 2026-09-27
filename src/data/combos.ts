@@ -38,7 +38,7 @@ export interface Combo {
   durationNights: number;
   badge: { label: string; icon: 'calendar' | 'family' | 'team' };
   audienceTags: ComboAudience[];
-  includedHighlights: [ComboLine, ComboLine, ComboLine];
+  includedHighlights: ComboLine[];
   fromPriceVnd: number;
   priceUnit: 'người';
   popularity: number;

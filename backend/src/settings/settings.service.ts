@@ -30,6 +30,18 @@ function mergeWithDefault(defaultValue: unknown, stored: unknown): unknown {
   return merged;
 }
 
+function referencedMediaIds(value: unknown, result = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) {
+    value.forEach((item) => referencedMediaIds(item, result));
+  } else if (value && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if ((key === 'mediaId' || /MediaId$/.test(key)) && typeof child === 'string' && child) result.add(child);
+      else referencedMediaIds(child, result);
+    }
+  }
+  return result;
+}
+
 @Injectable()
 export class SettingsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -88,6 +100,16 @@ export class SettingsService {
     if (value === undefined) throw new BadRequestException('Thiếu giá trị');
 
     const merged = mergeWithDefault(definition.defaultValue, value);
+    const mediaIds = [...referencedMediaIds(merged)];
+    if (mediaIds.length) {
+      const assets = await this.prisma.mediaAsset.findMany({
+        where: { id: { in: mediaIds }, isDemo: false, visibility: 'public', processingStatus: 'ready' },
+        select: { id: true },
+      });
+      if (assets.length !== mediaIds.length) {
+        throw new BadRequestException('Một hoặc nhiều ảnh không còn khả dụng trong Media Library. Hãy chọn lại ảnh trước khi lưu.');
+      }
+    }
     try {
       const saved = await this.prisma.$transaction(
         async (tx) => {
