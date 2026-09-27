@@ -92,7 +92,7 @@ RESPONSIVE_QA=PASS
 ```text
 START_SHA=e8bc0a17221b9a0af84655b4ed264e862496631d
 REMOTE_MAIN_BEFORE=e8bc0a17221b9a0af84655b4ed264e862496631d
-IMPLEMENTATION_COMMIT=<final code commit; filled after commit>
+IMPLEMENTATION_COMMIT=8ec8751a3dd46e1f382c3e7a16c9a2987736c9f8
 NEW_MIGRATIONS=0
 MIGRATION_FILES=NONE
 DATA_BACKFILL=NO
@@ -104,7 +104,7 @@ ENV_CHANGES=NONE tracked; local DVB_HTTP_PORT=18474 and PUBLIC_ORIGINS loopback 
 NEW_SECRETS_REQUIRED=NO
 
 DEPLOY_FROM_SHA=987c03606fbb8acc632f17ae77233b099e6e14b5
-DEPLOY_TO_SHA=<final code commit; filled after commit> (no schema change; no production deployment performed)
+DEPLOY_TO_SHA=8ec8751a3dd46e1f382c3e7a16c9a2987736c9f8 (no schema change; no production deployment performed)
 REBUILD_WEB=YES
 REBUILD_API=YES
 REBUILD_WORKER=YES
@@ -115,7 +115,7 @@ RESTART_GATEWAY=NO (local gateway remained on 18474; restart-persistence force-r
 LIVE_PAYMENT_PROVIDER_ENABLED=NO
 SEO_INDEXING_ALLOWED=false
 COMMIT_CREATED=YES
-PUSHED_TO_MAIN=YES (fast-forward, no force; final SHA recorded after push)
+PUSHED_TO_MAIN=YES (implementation and handoff commits pushed fast-forward, no force; origin/main verified after push)
 SAFE_TO_PREPARE_PRODUCTION_DEPLOY=NO
 BLOCKERS=Production PostgreSQL/media backup-and-restore rehearsal; owner approval of canonical/brand/contact/content and live payment policy. No local code/test blocker.
 ```
