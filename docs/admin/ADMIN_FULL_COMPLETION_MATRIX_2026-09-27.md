@@ -6,7 +6,7 @@ Ma trận chi tiết bắt buộc theo screen → action → API → service →
 
 | Khu vực | Route | Màn hình và thao tác đã nối API | Bằng chứng chính |
 |---|---|---|---|
-| Tổng quan | `/admin` | KPI và hoạt động lấy từ PostgreSQL; không dùng KPI demo | `tests/admin/operations.spec.ts`; runtime audit |
+| Tổng quan | `/admin` | KPI và hoạt động lấy từ PostgreSQL; không dùng KPI demo | `tests/admin/full-completion.spec.ts`; `tests/admin/operations.spec.ts`; runtime audit |
 | Đặt phòng | `/admin/dat-phong` | Tìm/lọc, xem chi tiết, tạo booking qua quote + hold, trạng thái, ghi chú, huỷ theo quyền | `tests/admin/operations.spec.ts`; API smoke; concurrency test |
 | Phòng nghỉ | `/admin/phong-nghi` | Tạo/sửa/xoá bản nháp, nội dung/SEO/media, hạng phòng/đơn vị/rate; publish chỉ khi checklist đầy đủ | `tests/admin/run-to-goal.spec.ts`; `tests/admin/shell.spec.ts` |
 | Quỹ phòng | `/admin/ton-phong` | Xem ngày/hạng phòng, đặt sức chứa, khoá phòng/ngừng bán; kiểm tra sức chứa ở service và PostgreSQL | `tests/admin/operations.spec.ts`; `backend/src/common/permissions.guard.spec.ts` |
@@ -34,9 +34,9 @@ Ma trận chi tiết bắt buộc theo screen → action → API → service →
 ## Kết quả kiểm chứng
 
 - `npm run typecheck`: đạt; `npm run lint`: đạt; `npm run audit:admin-runtime`: đạt; `git diff --check`: đạt.
-- Backend unit: 22/22; API smoke qua gateway: 69/69; Playwright full có restart opt-in: 35/35. Dashboard booking/status, inquiries, customer, publication, payment/refund được đối chiếu với endpoint list; report totals đối chiếu với fixture nghiệp vụ. PostgreSQL/media volumes được giữ nguyên qua restart.
+- Backend unit: 22/22; API smoke qua gateway: 69/69; Playwright full có restart opt-in: 38/38. `tests/admin/full-completion.spec.ts` kiểm route crawler, dashboard reconciliation và CSRF; booking/status, inquiries, customer, publication, payment/refund được đối chiếu với endpoint list; report totals đối chiếu với fixture nghiệp vụ. PostgreSQL/media volumes được giữ nguyên qua restart.
 - Dependency audit: root/backend, full/prod đều 0 vulnerability.
-- Local URL `http://127.0.0.1:18474`; homepage, API health, `robots.txt` trả 200.
+- Local URL `http://127.0.0.1:18473`; homepage, API health, `robots.txt` trả 200.
 - SEO gate đang đóng: `indexingAllowed=false`; trang trả `X-Robots-Tag: noindex, follow` và meta robots noindex; canonical/sitemap URL indexable đang vắng; public API không trả draft.
 
 ## Giới hạn có chủ ý

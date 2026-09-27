@@ -62,7 +62,7 @@ export function getSeoPolicy(site: PublicSiteData): SeoPolicy {
   if (seo.robotsIndex !== true) blockedReasons.push('Cài đặt website đang tắt index');
   if (!configuredOrigin) blockedReasons.push('Chưa có origin HTTPS hợp lệ trong cài đặt SEO');
   if (!approvedOrigin || configuredOrigin !== approvedOrigin) blockedReasons.push('Origin chưa khớp domain được Owner duyệt ở môi trường');
-  if (dataMode.usesDemoData === true) blockedReasons.push('Website đang được đánh dấu dùng dữ liệu mẫu');
+  if (dataMode.usesDemoData === true) blockedReasons.push('Nội dung website đang chờ xác minh');
   if (!nonEmpty(site.identity?.name) || !nonEmpty(site.identity?.description)) {
     blockedReasons.push('Thiếu tên hoặc mô tả thương hiệu đã xác nhận');
   }

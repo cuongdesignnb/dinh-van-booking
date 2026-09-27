@@ -234,7 +234,7 @@ export function MediaLibrary({
             <RefreshCw size={14} aria-hidden="true" /> Tải lại
           </button>
           <label className="abtn abtn--primary abtn--sm media-library__upload">
-            <Upload size={14} aria-hidden="true" /> {uploading ? 'Đang xử lý…' : 'Tải ảnh lên'}
+            <Upload size={14} aria-hidden="true" /> {uploading ? 'Đang xử lý…' : 'Tải ảnh mới'}
             <input type="file" accept={ACCEPTED} multiple onChange={(event) => void upload(event)} disabled={uploading} />
           </label>
         </div>

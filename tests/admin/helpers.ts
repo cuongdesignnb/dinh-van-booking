@@ -16,6 +16,11 @@ export async function signInAsOwner(page: Page) {
   await page.getByLabel('Email').fill(OWNER_EMAIL);
   await page.getByLabel('Mật khẩu').fill(OWNER_PASSWORD);
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  // Failure snapshots can include accessible input values; clear the secret immediately.
+  await page.evaluate(() => {
+    const password = document.querySelector<HTMLInputElement>('input[type="password"]');
+    if (password) password.value = '';
+  });
   await expect(page.locator('.atop__user')).toBeVisible();
 }
 

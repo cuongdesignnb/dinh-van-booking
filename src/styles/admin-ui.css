@@ -1010,6 +1010,16 @@ textarea.ainput {
   font-size: 12px;
 }
 
+.settings-media-field__selected > span {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-media-field__selected small {
+  color: var(--dvb-admin-muted);
+  font-size: 11px;
+}
+
 .settings-media-field__selected img {
   width: 120px;
   height: 76px;
@@ -1025,6 +1035,49 @@ textarea.ainput {
   gap: 7px;
 }
 
+.settings-form__drag-handle {
+  color: #6f8274;
+  font-size: 20px;
+  cursor: grab;
+  user-select: none;
+}
+
+.settings-form__repeat-item[draggable="true"],
+.settings-form__ordered-list li[draggable="true"],
+.settings-home-sections li[draggable="true"] {
+  cursor: grab;
+}
+
+.settings-home-sections {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-home-sections li {
+  display: grid;
+  grid-template-columns: 24px 28px minmax(120px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--dvb-admin-text);
+  font-size: 12px;
+}
+
+.settings-home-sections__toggle {
+  margin: 0;
+}
+
+.settings-form__field--rich {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
 @media (max-width: 720px) {
   .settings-form__grid,
   .settings-form__choices {
@@ -1033,6 +1086,14 @@ textarea.ainput {
 
   .settings-form__ordered-list li {
     grid-template-columns: 25px minmax(0, 1fr) auto auto;
+  }
+
+  .settings-home-sections li {
+    grid-template-columns: 20px 24px minmax(0, 1fr) auto;
+  }
+
+  .settings-home-sections li .abtn {
+    grid-row: 2;
   }
 
   .settings-form__ordered-list li .abtn:last-child {

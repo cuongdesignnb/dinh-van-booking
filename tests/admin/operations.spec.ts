@@ -195,6 +195,52 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     const checkIn = addDays(todayKey(), 5);
     const checkOut = addDays(checkIn, 2);
 
+    await page.goto('/admin/khuyen-mai');
+    await page.getByLabel('Mã', { exact: true }).fill(couponCode);
+    await page.getByLabel('Tên hiển thị').fill(`Coupon QA ${stamp}`);
+    await page.getByRole('button', { name: 'Tạo mã', exact: true }).click();
+    await expect(page.locator('.admin-operations__notice')).toContainText('Đã tạo mã');
+    const couponList = await opsApi<{ items: Coupon[] }>(page, `/admin/coupons?search=${couponCode}`);
+    coupon = couponList.body.items.find((item) => item.code === couponCode) ?? null;
+    expect(coupon).toBeTruthy();
+    expect(coupon!.active).toBe(true);
+    expect(coupon!.percentBps).toBe(1000);
+    const validCouponQuote = await opsApi<{ id: string; subtotalVnd: string; discountVnd: string; totalVnd: string }>(page, '/quotes', 'POST', {
+      roomTypeId: property.roomTypes[0].id, checkIn, checkOut, quantity: 1, adults: 2, children: 0, couponCode,
+    });
+    expect(validCouponQuote.status, JSON.stringify(validCouponQuote.body)).toBe(201);
+    quoteIds.push(validCouponQuote.body.id);
+    expect(validCouponQuote.body).toMatchObject({ subtotalVnd: '20000', discountVnd: '2000', totalVnd: '18000' });
+    const invalidCouponQuote = await opsApi(page, '/quotes', 'POST', {
+      roomTypeId: property.roomTypes[0].id, checkIn, checkOut, quantity: 1, adults: 2, children: 0, couponCode: `${couponCode}INVALID`,
+    });
+    expect(invalidCouponQuote.status).toBe(400);
+    const couponRow = page.locator('tr').filter({ hasText: couponCode });
+    await couponRow.getByRole('button', { name: 'Sửa' }).click();
+    await page.getByLabel('Tên hiển thị').fill(`Coupon QA đã sửa ${stamp}`);
+    const saveCouponResponsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/v1/admin/coupons/${coupon!.id}`) && response.request().method() === 'PATCH');
+    await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    const saveCouponResponse = await saveCouponResponsePromise;
+    expect(saveCouponResponse.status()).toBe(200);
+    const savedCoupon = (await opsApi<{ items: Coupon[] }>(page, `/admin/coupons?search=${couponCode}`)).body.items[0];
+    expect(savedCoupon.name).toBe(`Coupon QA đã sửa ${stamp}`);
+    const staleCoupon = await opsApi(page, `/admin/coupons/${savedCoupon.id}`, 'PATCH', { code: couponCode, name: 'Không được ghi đè', discountType: 'percent', percentBps: 1000, expectedVersion: coupon!.version });
+    expect(staleCoupon.status).toBe(409);
+    const expireCoupon = await opsApi(page, `/admin/coupons/${savedCoupon.id}`, 'PATCH', {
+      code: couponCode, name: savedCoupon.name, discountType: 'percent', percentBps: 1000,
+      endsAt: new Date(Date.now() - 60_000).toISOString(), expectedVersion: savedCoupon.version,
+    });
+    expect(expireCoupon.status).toBe(200);
+    const expiredCouponQuote = await opsApi(page, '/quotes', 'POST', {
+      roomTypeId: property.roomTypes[0].id, checkIn, checkOut, quantity: 1, adults: 2, children: 0, couponCode,
+    });
+    expect(expiredCouponQuote.status).toBe(400);
+    await page.reload();
+    const disableCouponResponsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/v1/admin/coupons/${coupon!.id}`) && response.request().method() === 'PATCH');
+    await page.locator('tr').filter({ hasText: couponCode }).getByRole('button', { name: 'Tắt mã' }).click();
+    expect((await disableCouponResponsePromise).status()).toBe(200);
+    expect((await opsApi<{ items: Coupon[] }>(page, `/admin/coupons?search=${couponCode}`)).body.items[0].active).toBe(false);
+
     // Exercise the actual anonymous website flow against the same published test property.
     // A separate browser context proves that quote IDs alone do not grant access.
     const browser = page.context().browser();
@@ -359,30 +405,6 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     expect(customer.body.city).toBe('Nho Quan — dữ liệu QA');
     expect(customer.body.inquiries.flatMap((item) => item.interactions).some((item) => item.body === `Đã gọi kiểm thử ${stamp}`)).toBe(true);
     expect(customer.body.inquiries.flatMap((item) => item.followUps).some((item) => item.purpose === `Nhắc kiểm thử ${stamp}`)).toBe(true);
-
-    await page.goto('/admin/khuyen-mai');
-    await page.getByLabel('Mã', { exact: true }).fill(couponCode);
-    await page.getByLabel('Tên hiển thị').fill(`Coupon QA ${stamp}`);
-    await page.getByRole('button', { name: 'Tạo mã', exact: true }).click();
-    await expect(page.locator('.admin-operations__notice')).toContainText('Đã tạo mã');
-    const couponList = await opsApi<{ items: Coupon[] }>(page, `/admin/coupons?search=${couponCode}`);
-    coupon = couponList.body.items.find((item) => item.code === couponCode) ?? null;
-    expect(coupon).toBeTruthy();
-    const couponRow = page.locator('tr').filter({ hasText: couponCode });
-    await couponRow.getByRole('button', { name: 'Sửa' }).click();
-    await page.getByLabel('Tên hiển thị').fill(`Coupon QA đã sửa ${stamp}`);
-    const saveCouponResponsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/v1/admin/coupons/${coupon!.id}`) && response.request().method() === 'PATCH');
-    await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
-    const saveCouponResponse = await saveCouponResponsePromise;
-    expect(saveCouponResponse.status()).toBe(200);
-    const savedCoupon = (await opsApi<{ items: Coupon[] }>(page, `/admin/coupons?search=${couponCode}`)).body.items[0];
-    expect(savedCoupon.name).toBe(`Coupon QA đã sửa ${stamp}`);
-    const staleCoupon = await opsApi(page, `/admin/coupons/${savedCoupon.id}`, 'PATCH', { code: couponCode, name: 'Không được ghi đè', discountType: 'percent', percentBps: 1000, expectedVersion: coupon!.version });
-    expect(staleCoupon.status).toBe(409);
-    const disableCouponResponsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/v1/admin/coupons/${coupon!.id}`) && response.request().method() === 'PATCH');
-    await page.locator('tr').filter({ hasText: couponCode }).getByRole('button', { name: 'Tắt mã' }).click();
-    expect((await disableCouponResponsePromise).status()).toBe(200);
-    expect((await opsApi<{ items: Coupon[] }>(page, `/admin/coupons?search=${couponCode}`)).body.items[0].active).toBe(false);
 
     const report = await opsApi<{
       bookingSummary: { total: number };

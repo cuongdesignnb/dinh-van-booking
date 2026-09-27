@@ -175,6 +175,19 @@ function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
+function mediaIdsIn(value: unknown, result = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) {
+    for (const item of value) mediaIdsIn(item, result);
+    return result;
+  }
+  if (!value || typeof value !== 'object') return result;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (/mediaId$/i.test(key) && typeof child === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(child)) result.add(child);
+    mediaIdsIn(child, result);
+  }
+  return result;
+}
+
 function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
@@ -210,7 +223,7 @@ export class PublicCatalogService {
 
   constructor(private readonly prisma: PrismaService, private readonly settings: SettingsService) {}
 
-  async site(): Promise<{ settings: Record<string, unknown>; media: Record<string, unknown>; generatedAt: string }> {
+  async site(): Promise<{ settings: Record<string, unknown>; media: Record<string, unknown>; assets: Record<string, unknown>; generatedAt: string }> {
     const settings = await this.settings.publicSnapshot();
     const identity = record(settings['brand.identity']);
     const seo = record(settings['seo.defaults']);
@@ -219,10 +232,10 @@ export class PublicCatalogService {
       favicon: identity.faviconMediaId,
       og: seo.ogMediaId,
     };
-    const mediaIds = [...new Set(Object.values(ids).filter((id): id is string => typeof id === 'string' && id.length > 0))];
+    const mediaIds = [...new Set([...mediaIdsIn(settings), ...Object.values(ids).filter((id): id is string => typeof id === 'string' && id.length > 0)])];
     const rows = mediaIds.length ? await this.prisma.mediaAsset.findMany({
       where: { id: { in: mediaIds }, isDemo: false, visibility: 'public', processingStatus: 'ready' },
-      select: { id: true, storageKey: true, originalFilename: true, altText: true, width: true, height: true },
+      select: { id: true, storageKey: true, originalFilename: true, altText: true, caption: true, width: true, height: true },
     }) : [];
     const byId = new Map(rows.map((row) => [row.id, row]));
     const toAsset = (id: unknown) => {
@@ -230,12 +243,15 @@ export class PublicCatalogService {
       const row = byId.get(id);
       if (!row) return null;
       return {
+        id: row.id,
         src: `/media/${row.storageKey}`,
         alt: row.altText ?? row.originalFilename,
         width: row.width ?? undefined,
         height: row.height ?? undefined,
+        caption: row.caption ?? undefined,
       };
     };
+    const assets = Object.fromEntries(rows.map((row) => [row.id, toAsset(row.id)]));
     return {
       settings,
       media: {
@@ -243,6 +259,7 @@ export class PublicCatalogService {
         favicon: toAsset(ids.favicon) ? { src: '/api/v1/public/favicon.png', alt: toAsset(ids.favicon)?.alt, width: 96, height: 96 } : null,
         og: toAsset(ids.og),
       },
+      assets,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -260,7 +277,7 @@ export class PublicCatalogService {
     if (seo.robotsIndex !== true) blockedReasons.push('Cài đặt SEO của website đang tắt index.');
     if (!origin) blockedReasons.push('Tên miền chính thức chưa phải origin HTTPS hợp lệ.');
     if (!approved || origin !== approved) blockedReasons.push('Tên miền chưa khớp origin được Owner duyệt ở môi trường triển khai.');
-    if (dataMode.usesDemoData === true) blockedReasons.push('Website được đánh dấu còn dùng dữ liệu mẫu.');
+    if (dataMode.usesDemoData === true) blockedReasons.push('Nội dung website đang chờ xác minh.');
     if (typeof identity.name !== 'string' || !identity.name.trim() || typeof identity.description !== 'string' || !identity.description.trim()) {
       blockedReasons.push('Thiếu tên hoặc mô tả thương hiệu đã xác nhận.');
     }

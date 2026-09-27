@@ -1,12 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '@/lib/api/client';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
+import { RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
 
 type Option = { value: string; label: string };
-type FieldKind = 'text' | 'textarea' | 'number' | 'time' | 'email' | 'url' | 'tel' | 'select' | 'boolean' | 'media' | 'bytes' | 'multi' | 'ordered';
+type FieldKind = 'text' | 'textarea' | 'rich' | 'number' | 'time' | 'email' | 'url' | 'tel' | 'select' | 'boolean' | 'media' | 'bytes' | 'multi' | 'ordered';
 type FieldMeta = {
   label: string;
   kind?: FieldKind;
@@ -19,18 +20,23 @@ type FieldMeta = {
   required?: boolean;
   suffix?: string;
   options?: Option[];
+  recommendedWidth?: number;
+  recommendedHeight?: number;
+  recommendedRatio?: number;
 };
 
 const SECTIONS: Option[] = [
-  { value: 'hero', label: 'Ảnh bìa và giới thiệu' },
-  { value: 'search', label: 'Tìm kiếm phòng' },
-  { value: 'featured', label: 'Nơi lưu trú nổi bật' },
-  { value: 'combos', label: 'Combo du lịch' },
+  { value: 'hero', label: 'Hero' },
+  { value: 'trust', label: 'Cam kết' },
+  { value: 'search', label: 'Tìm kiếm' },
+  { value: 'featured', label: 'Phòng nghỉ nổi bật' },
+  { value: 'why', label: 'Vì sao chọn chúng tôi' },
+  { value: 'combos', label: 'Combo' },
   { value: 'destinations', label: 'Điểm đến' },
-  { value: 'reviews', label: 'Đánh giá khách hàng' },
-  { value: 'promo', label: 'Khuyến mãi' },
-  { value: 'faq', label: 'Câu hỏi thường gặp' },
-  { value: 'contact', label: 'Liên hệ' },
+  { value: 'reviews', label: 'Đánh giá' },
+  { value: 'promo', label: 'Giới thiệu trải nghiệm' },
+  { value: 'faq', label: 'FAQ' },
+  { value: 'contact', label: 'Tư vấn' },
 ];
 
 const BLOCKS: Option[] = [
@@ -75,8 +81,8 @@ const FIELD_META: Record<string, FieldMeta> = {
   'brand.identity.shortName': { label: 'Tên viết gọn', placeholder: 'Tên ngắn dùng trên menu' },
   'brand.identity.tagline': { label: 'Khẩu hiệu', placeholder: 'Thông điệp ngắn của thương hiệu' },
   'brand.identity.description': { label: 'Mô tả thương hiệu', kind: 'textarea' },
-  'brand.identity.logoMediaId': { label: 'Logo', kind: 'media', help: 'Chọn ảnh đã có hoặc tải ảnh mới lên Thư viện ảnh.' },
-  'brand.identity.faviconMediaId': { label: 'Biểu tượng trình duyệt (favicon)', kind: 'media' },
+  'brand.identity.logoMediaId': { label: 'Logo', kind: 'media', recommendedWidth: 600, recommendedHeight: 200, recommendedRatio: 3, help: 'Khuyến nghị ảnh ngang từ 600 × 200 px.' },
+  'brand.identity.faviconMediaId': { label: 'Biểu tượng trình duyệt (favicon)', kind: 'media', recommendedWidth: 512, recommendedHeight: 512, recommendedRatio: 1, help: 'Khuyến nghị ảnh vuông tối thiểu 512 × 512 px.' },
   'brand.contact.phone': { label: 'Số điện thoại', kind: 'tel', placeholder: '024…' },
   'brand.contact.hotline': { label: 'Hotline', kind: 'tel' },
   'brand.contact.zaloUrl': { label: 'Liên kết Zalo', kind: 'url', placeholder: 'https://zalo.me/…' },
@@ -128,7 +134,7 @@ const FIELD_META: Record<string, FieldMeta> = {
   'seo.defaults.defaultTitle': { label: 'Tiêu đề mặc định', placeholder: 'Đinh Vân Booking — nghỉ dưỡng Cúc Phương' },
   'seo.defaults.defaultDescription': { label: 'Mô tả mặc định', kind: 'textarea' },
   'seo.defaults.canonicalBase': { label: 'Tên miền chính thức', kind: 'url', placeholder: 'https://tenmien.vn' },
-  'seo.defaults.ogMediaId': { label: 'Ảnh chia sẻ mạng xã hội', kind: 'media' },
+  'seo.defaults.ogMediaId': { label: 'Ảnh chia sẻ mạng xã hội', kind: 'media', recommendedWidth: 1200, recommendedHeight: 630, recommendedRatio: 1.91 },
   'seo.defaults.robotsIndex': { label: 'Cho phép công cụ tìm kiếm lập chỉ mục website', kind: 'boolean', help: 'Đây là lựa chọn nội dung. Máy chủ chỉ mở index khi môi trường và domain chính thức cũng được Owner duyệt.' },
   'seo.defaults.verification.google': { label: 'Mã xác minh Google' },
   'seo.defaults.verification.bing': { label: 'Mã xác minh Bing' },
@@ -142,6 +148,210 @@ const FIELD_META: Record<string, FieldMeta> = {
   'analytics.providers.enabled': { label: 'Bật tích hợp thống kê', kind: 'boolean', help: 'Chỉ bật khi đã nhập mã theo dõi thật.' },
   'home.sections.order': { label: 'Thứ tự các khối trang chủ', kind: 'ordered', options: SECTIONS, help: 'Dùng nút lên/xuống để sắp xếp thứ tự hiển thị.' },
   'home.sections.hidden': { label: 'Ẩn các khối trang chủ', kind: 'multi', options: SECTIONS },
+  'site.header.mottoLine1': { label: 'Khẩu hiệu — dòng 1' },
+  'site.header.mottoLine2': { label: 'Khẩu hiệu — dòng 2' },
+  'site.header.ctaLabel': { label: 'Nhãn nút chính' },
+  'site.header.ctaTarget': { label: 'Đích nút chính', kind: 'url', placeholder: 'Ví dụ: /phong-nghi' },
+  'site.footer.quote': { label: 'Trích dẫn chân trang' },
+  'site.footer.quoteAuthor': { label: 'Tác giả trích dẫn' },
+  'site.footer.motto': { label: 'Khẩu hiệu chân trang' },
+  'site.footer.copyrightText': { label: 'Nội dung bản quyền' },
+  'home.hero.enabled': { label: 'Hiển thị Hero', kind: 'boolean' },
+  'home.hero.kicker': { label: 'Kicker / lời dẫn' },
+  'home.hero.titleLine1': { label: 'Tiêu đề — dòng 1', required: true },
+  'home.hero.titleLine2': { label: 'Tiêu đề — dòng 2' },
+  'home.hero.signature': { label: 'Chữ ký thương hiệu' },
+  'home.hero.description': { label: 'Mô tả Hero', kind: 'rich', help: 'Nội dung dài dùng Rich Text Editor.' },
+  'home.hero.note': { label: 'Ghi chú viết tay' },
+  'home.hero.imageMediaId': { label: 'Ảnh Hero desktop', kind: 'media', recommendedWidth: 1920, recommendedHeight: 900, recommendedRatio: 2.13 },
+  'home.hero.mobileImageMediaId': { label: 'Ảnh Hero mobile', kind: 'media', recommendedWidth: 900, recommendedHeight: 1200, recommendedRatio: 0.75 },
+  'home.trust.enabled': { label: 'Hiển thị dải cam kết', kind: 'boolean' },
+  'home.trust.items': { label: 'Các cam kết' },
+  'home.trust.items[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'home.trust.items[].icon': { label: 'Biểu tượng', kind: 'select', options: [{ value: 'leaf', label: 'Lá' }, { value: 'heart', label: 'Trái tim' }, { value: 'shield', label: 'Khiên' }, { value: 'users', label: 'Cộng đồng' }] },
+  'home.trust.items[].line1': { label: 'Dòng 1' },
+  'home.trust.items[].line2': { label: 'Dòng 2' },
+  'home.why.enabled': { label: 'Hiển thị khối', kind: 'boolean' },
+  'home.why.title': { label: 'Tiêu đề' },
+  'home.why.intro': { label: 'Đoạn giới thiệu', kind: 'rich' },
+  'home.why.reasons': { label: 'Các lý do' },
+  'home.why.reasons[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'home.why.reasons[].icon': { label: 'Biểu tượng', kind: 'select', options: [{ value: 'user', label: 'Người' }, { value: 'house', label: 'Lưu trú' }, { value: 'message', label: 'Tư vấn' }, { value: 'tag', label: 'Ưu đãi' }, { value: 'map', label: 'Bản đồ' }] },
+  'home.why.reasons[].title': { label: 'Tiêu đề' },
+  'home.why.reasons[].description': { label: 'Mô tả ngắn' },
+  'home.featured.enabled': { label: 'Hiển thị', kind: 'boolean' },
+  'home.featured.title': { label: 'Tiêu đề khối' },
+  'home.featured.subtitle': { label: 'Mô tả ngắn' },
+  'home.featured.ctaLabel': { label: 'Nhãn liên kết' },
+  'home.featured.ctaTarget': { label: 'Đường dẫn nội bộ', kind: 'url', placeholder: '/phong-nghi' },
+  'home.featured.limit': { label: 'Số nơi lưu trú tối đa', kind: 'number', min: 1, max: 12, step: 1, required: true },
+  'home.featured.selectionMode': { label: 'Nguồn lựa chọn', kind: 'select', options: [{ value: 'featured', label: 'Nơi lưu trú nổi bật đã xuất bản' }] },
+  'home.promo.enabled': { label: 'Hiển thị khối trải nghiệm', kind: 'boolean' },
+  'home.promo.titleLine1': { label: 'Tiêu đề — dòng 1' },
+  'home.promo.titleLine2': { label: 'Tiêu đề — dòng 2' },
+  'home.promo.body': { label: 'Nội dung giới thiệu', kind: 'rich' },
+  'home.promo.ctaLabel': { label: 'Nhãn nút' },
+  'home.promo.ctaTarget': { label: 'Đường dẫn nút', kind: 'url' },
+  'home.promo.quote': { label: 'Trích dẫn' },
+  'home.promo.imageMediaId': { label: 'Ảnh giới thiệu trải nghiệm', kind: 'media', recommendedWidth: 900, recommendedHeight: 1200, recommendedRatio: 0.75 },
+  'home.destinations.enabled': { label: 'Hiển thị', kind: 'boolean' },
+  'home.destinations.title': { label: 'Tiêu đề khối' },
+  'home.destinations.subtitle': { label: 'Mô tả ngắn' },
+  'home.destinations.ctaLabel': { label: 'Nhãn liên kết' },
+  'home.destinations.ctaTarget': { label: 'Đường dẫn nội bộ', kind: 'url', placeholder: '/diem-den' },
+  'home.destinations.limit': { label: 'Số điểm đến tối đa', kind: 'number', min: 1, max: 12, step: 1, required: true },
+  'home.destinations.selectionMode': { label: 'Nguồn lựa chọn', kind: 'select', options: [{ value: 'featured', label: 'Điểm đến nổi bật đã xuất bản' }] },
+  'home.testimonials.enabled': { label: 'Hiển thị khi có đánh giá đã duyệt', kind: 'boolean' },
+  'home.testimonials.title': { label: 'Tiêu đề đánh giá' },
+  'home.testimonials.ctaLabel': { label: 'Nhãn liên kết' },
+  'home.testimonials.limit': { label: 'Số đánh giá tối đa', kind: 'number', min: 1, max: 12, step: 1, required: true },
+  'home.contactPanel.enabled': { label: 'Hiển thị khối tư vấn', kind: 'boolean' },
+  'home.contactPanel.title': { label: 'Tiêu đề khối tư vấn' },
+  'home.contactPanel.description': { label: 'Mô tả tư vấn', kind: 'rich' },
+  'home.contactPanel.advisorName': { label: 'Tên tư vấn viên' },
+  'home.contactPanel.advisorRole': { label: 'Vai trò / lời giới thiệu' },
+  'home.contactPanel.zaloCtaLabel': { label: 'Nhãn nút Zalo' },
+  'home.contactPanel.phoneCtaLabel': { label: 'Nhãn nút điện thoại' },
+  'home.contactPanel.note': { label: 'Ghi chú / chữ ký' },
+  'home.contactPanel.imageMediaId': { label: 'Ảnh khối tư vấn', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'home.faq.enabled': { label: 'Hiển thị FAQ', kind: 'boolean' },
+  'home.faq.title': { label: 'Tiêu đề FAQ' },
+  'home.faq.items': { label: 'Câu hỏi và trả lời' },
+  'home.faq.items[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'home.faq.items[].question': { label: 'Câu hỏi' },
+  'home.faq.items[].answer': { label: 'Câu trả lời', kind: 'rich' },
+  'contact.page.heroEyebrow': { label: 'Lời dẫn đầu trang' },
+  'contact.page.title': { label: 'Tiêu đề trang' },
+  'contact.page.intro': { label: 'Giới thiệu', kind: 'rich' },
+  'contact.page.heroImageMediaId': { label: 'Ảnh đầu trang liên hệ', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
+  'contact.page.promises': { label: 'Các cam kết' },
+  'contact.page.promises[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'contact.page.promises[].title': { label: 'Tiêu đề' },
+  'contact.page.promises[].description': { label: 'Mô tả ngắn' },
+  'contact.page.formIntro': { label: 'Lời giới thiệu biểu mẫu', kind: 'rich' },
+  'contact.page.quickTitle': { label: 'Tiêu đề liên hệ nhanh' },
+  'contact.page.quickIntro': { label: 'Mô tả liên hệ nhanh', kind: 'rich' },
+  'contact.page.advisorName': { label: 'Tên tư vấn viên' },
+  'contact.page.advisorRole': { label: 'Vai trò' },
+  'contact.page.advisorDescription': { label: 'Giới thiệu tư vấn viên', kind: 'rich' },
+  'contact.page.advisorImageMediaId': { label: 'Ảnh tư vấn viên', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'contact.page.advisorHighlights': { label: 'Điểm nổi bật' },
+  'contact.page.advisorHighlights[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'contact.page.advisorHighlights[].text': { label: 'Nội dung ngắn' },
+  'contact.page.advisorNote': { label: 'Ghi chú tư vấn', kind: 'rich' },
+  'contact.page.mapTitle': { label: 'Tiêu đề khu vực bản đồ' },
+  'contact.page.mapDescription': { label: 'Mô tả địa điểm', kind: 'rich' },
+  'contact.page.mapImageMediaId': { label: 'Ảnh minh họa bản đồ', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5, help: 'Chỉ dùng ảnh doanh nghiệp có quyền sử dụng; bản đồ thật dùng Liên kết bản đồ ở mục Liên hệ.' },
+  'contact.page.scenicImageMediaId': { label: 'Ảnh phong cảnh', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'contact.page.scriptNote': { label: 'Ghi chú cuối trang', kind: 'rich' },
+  'contact.page.showFaq': { label: 'Hiển thị FAQ', kind: 'boolean' },
+  'contact.page.faqTitle': { label: 'Tiêu đề FAQ' },
+  'contact.page.faqs': { label: 'Câu hỏi và trả lời' },
+  'contact.page.faqs[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'contact.page.faqs[].question': { label: 'Câu hỏi' },
+  'contact.page.faqs[].answer': { label: 'Câu trả lời', kind: 'rich' },
+  'catalog.staysPage.heroTitle': { label: 'Tiêu đề Hero phòng nghỉ' },
+  'catalog.staysPage.heroKicker': { label: 'Lời dẫn Hero' },
+  'catalog.staysPage.heroDescription': { label: 'Mô tả Hero', kind: 'rich' },
+  'catalog.staysPage.heroImageMediaId': { label: 'Ảnh Hero phòng nghỉ', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
+  'catalog.staysPage.heroNote': { label: 'Ghi chú Hero' },
+  'catalog.staysPage.reviewsTitle': { label: 'Tiêu đề khu đánh giá' },
+  'catalog.staysPage.reviewsSubtitle': { label: 'Mô tả đánh giá' },
+  'catalog.staysPage.advisorTitle': { label: 'Tiêu đề tư vấn' },
+  'catalog.staysPage.advisorDescription': { label: 'Nội dung tư vấn', kind: 'rich' },
+  'catalog.staysPage.advisorCtaLabel': { label: 'Nhãn nút tư vấn' },
+  'catalog.staysPage.advisorImageMediaId': { label: 'Ảnh tư vấn phòng nghỉ', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'catalog.staysPage.advisorBenefits': { label: 'Điểm nổi bật tư vấn' },
+  'catalog.staysPage.advisorBenefits[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.staysPage.advisorBenefits[].icon': { label: 'Biểu tượng', kind: 'select', options: [{ value: 'headset', label: 'Tư vấn' }, { value: 'route', label: 'Hành trình' }, { value: 'heart', label: 'Trái tim' }] },
+  'catalog.staysPage.advisorBenefits[].text': { label: 'Nội dung ngắn' },
+  'catalog.staysPage.faqTitle': { label: 'Tiêu đề FAQ' },
+  'catalog.staysPage.faqs': { label: 'Câu hỏi và trả lời' },
+  'catalog.staysPage.faqs[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.staysPage.faqs[].question': { label: 'Câu hỏi' },
+  'catalog.staysPage.faqs[].answer': { label: 'Câu trả lời', kind: 'rich' },
+  'catalog.staysPage.mapTitle': { label: 'Tiêu đề bản đồ' },
+  'catalog.staysPage.mapImageMediaId': { label: 'Ảnh bản đồ phòng nghỉ', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'catalog.destinationsPage.heroKicker': { label: 'Lời dẫn Hero' },
+  'catalog.destinationsPage.heroTitle': { label: 'Tiêu đề Hero' },
+  'catalog.destinationsPage.heroDescription': { label: 'Mô tả Hero', kind: 'rich' },
+  'catalog.destinationsPage.heroQuote': { label: 'Trích dẫn Hero', kind: 'rich' },
+  'catalog.destinationsPage.heroImageMediaId': { label: 'Ảnh Hero điểm đến', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
+  'catalog.destinationsPage.noteTitle': { label: 'Tiêu đề lời nhắn' },
+  'catalog.destinationsPage.noteBody': { label: 'Lời nhắn', kind: 'rich' },
+  'catalog.destinationsPage.noteAuthor': { label: 'Người gửi lời nhắn' },
+  'catalog.destinationsPage.noteImageMediaId': { label: 'Ảnh người gửi lời nhắn', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'catalog.destinationsPage.mapImageMediaId': { label: 'Ảnh bản đồ điểm đến', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
+  'catalog.destinationsPage.itineraryImageMediaId': { label: 'Ảnh lịch trình', kind: 'media', recommendedWidth: 900, recommendedHeight: 1200, recommendedRatio: 0.75 },
+  'catalog.destinationsPage.itineraryTitle': { label: 'Tiêu đề lịch trình' },
+  'catalog.destinationsPage.itinerarySubtitle': { label: 'Mô tả lịch trình' },
+  'catalog.destinationsPage.itineraries': { label: 'Các lựa chọn lịch trình' },
+  'catalog.destinationsPage.itineraries[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.destinationsPage.itineraries[].label': { label: 'Tên tab' },
+  'catalog.destinationsPage.itineraries[].subtitle': { label: 'Mô tả ngắn' },
+  'catalog.destinationsPage.itineraries[].title': { label: 'Tiêu đề lịch trình' },
+  'catalog.destinationsPage.itineraries[].days': { label: 'Các ngày trong lịch trình' },
+  'catalog.destinationsPage.itineraries[].days[].title': { label: 'Tiêu đề ngày' },
+  'catalog.destinationsPage.itineraries[].days[].activities': { label: 'Hoạt động trong ngày' },
+  'catalog.destinationsPage.seasons': { label: 'Thông tin theo mùa' },
+  'catalog.destinationsPage.seasons[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.destinationsPage.seasons[].title': { label: 'Tên mùa' },
+  'catalog.destinationsPage.seasons[].description': { label: 'Mô tả mùa', kind: 'rich' },
+  'catalog.combosPage.heroTitle': { label: 'Tiêu đề Hero combo' },
+  'catalog.combosPage.heroKicker': { label: 'Lời dẫn Hero' },
+  'catalog.combosPage.heroDescription': { label: 'Mô tả Hero', kind: 'rich' },
+  'catalog.combosPage.heroImageMediaId': { label: 'Ảnh Hero combo', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
+  'catalog.combosPage.quoteLeft': { label: 'Trích dẫn bên trái', kind: 'rich' },
+  'catalog.combosPage.quoteRight': { label: 'Trích dẫn bên phải', kind: 'rich' },
+  'catalog.combosPage.benefitsTitle': { label: 'Tiêu đề lợi ích' },
+  'catalog.combosPage.benefits': { label: 'Các lợi ích' },
+  'catalog.combosPage.benefits[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.combosPage.benefits[].icon': { label: 'Biểu tượng', kind: 'select', options: [{ value: 'user', label: 'Người' }, { value: 'gem', label: 'Đá quý' }, { value: 'heart', label: 'Trái tim' }, { value: 'leaf', label: 'Lá' }] },
+  'catalog.combosPage.benefits[].title': { label: 'Tiêu đề' },
+  'catalog.combosPage.benefits[].description': { label: 'Mô tả ngắn' },
+  'catalog.combosPage.stepsTitle': { label: 'Tiêu đề quy trình' },
+  'catalog.combosPage.stepsSubtitle': { label: 'Mô tả quy trình' },
+  'catalog.combosPage.steps': { label: 'Các bước' },
+  'catalog.combosPage.steps[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.combosPage.steps[].title': { label: 'Tên bước' },
+  'catalog.combosPage.steps[].description': { label: 'Mô tả bước' },
+  'catalog.combosPage.faqTitle': { label: 'Tiêu đề FAQ' },
+  'catalog.combosPage.faqs': { label: 'Câu hỏi và trả lời' },
+  'catalog.combosPage.faqs[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'catalog.combosPage.faqs[].question': { label: 'Câu hỏi' },
+  'catalog.combosPage.faqs[].answer': { label: 'Câu trả lời', kind: 'rich' },
+  'catalog.bookingPage.heroTitle': { label: 'Tiêu đề Hero đặt phòng' },
+  'catalog.bookingPage.heroDescription': { label: 'Mô tả Hero', kind: 'rich' },
+  'catalog.bookingPage.heroKicker': { label: 'Lời dẫn Hero' },
+  'catalog.bookingPage.heroImageMediaId': { label: 'Ảnh Hero đặt phòng', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
+  'catalog.bookingPage.securityNote': { label: 'Thông điệp an toàn' },
+  'legal.policies.terms.enabled': { label: 'Bật điều khoản dịch vụ', kind: 'boolean' },
+  'legal.policies.terms.title': { label: 'Tiêu đề điều khoản' },
+  'legal.policies.terms.body': { label: 'Nội dung điều khoản', kind: 'rich' },
+  'legal.policies.privacy.enabled': { label: 'Bật chính sách bảo mật', kind: 'boolean' },
+  'legal.policies.privacy.title': { label: 'Tiêu đề bảo mật' },
+  'legal.policies.privacy.body': { label: 'Nội dung bảo mật', kind: 'rich' },
+  'legal.policies.cancellation.enabled': { label: 'Bật chính sách huỷ', kind: 'boolean' },
+  'legal.policies.cancellation.title': { label: 'Tiêu đề chính sách huỷ' },
+  'legal.policies.cancellation.body': { label: 'Nội dung chính sách huỷ', kind: 'rich' },
+  'legal.policies.payment.enabled': { label: 'Bật chính sách thanh toán', kind: 'boolean' },
+  'legal.policies.payment.title': { label: 'Tiêu đề chính sách thanh toán' },
+  'legal.policies.payment.body': { label: 'Nội dung chính sách thanh toán', kind: 'rich' },
+  'legal.policies.houseRules.enabled': { label: 'Bật nội quy lưu trú', kind: 'boolean' },
+  'legal.policies.houseRules.title': { label: 'Tiêu đề nội quy' },
+  'legal.policies.houseRules.body': { label: 'Nội dung nội quy', kind: 'rich' },
+  'seo.pages.home.title': { label: 'Meta title — trang chủ' },
+  'seo.pages.home.description': { label: 'Meta description — trang chủ', kind: 'textarea' },
+  'seo.pages.stays.title': { label: 'Meta title — phòng nghỉ' },
+  'seo.pages.stays.description': { label: 'Meta description — phòng nghỉ', kind: 'textarea' },
+  'seo.pages.destinations.title': { label: 'Meta title — điểm đến' },
+  'seo.pages.destinations.description': { label: 'Meta description — điểm đến', kind: 'textarea' },
+  'seo.pages.combos.title': { label: 'Meta title — combo' },
+  'seo.pages.combos.description': { label: 'Meta description — combo', kind: 'textarea' },
+  'seo.pages.contact.title': { label: 'Meta title — liên hệ' },
+  'seo.pages.contact.description': { label: 'Meta description — liên hệ', kind: 'textarea' },
+  'seo.pages.booking.title': { label: 'Meta title — đặt phòng' },
+  'seo.pages.booking.description': { label: 'Meta description — đặt phòng', kind: 'textarea' },
 
   'content.editor.allowedBlocks': { label: 'Các khối được phép dùng', kind: 'multi', options: BLOCKS },
   'content.editor.maxImageWidth': { label: 'Chiều rộng ảnh tối đa trong nội dung', kind: 'number', min: 320, max: 10000, step: 1, required: true, suffix: 'px' },
@@ -176,12 +386,26 @@ const FIELD_META: Record<string, FieldMeta> = {
   'ops.maintenance.enabled': { label: 'Bật chế độ bảo trì', kind: 'boolean', help: 'Khi bật, khách truy cập sẽ thấy thông báo bảo trì thay vì nội dung website.' },
   'ops.maintenance.message': { label: 'Thông báo bảo trì', kind: 'textarea' },
   'ops.maintenance.allowAdmin': { label: 'Cho quản trị viên truy cập khi bảo trì', kind: 'boolean' },
-  'ops.dataMode.usesDemoData': { label: 'Website đang dùng dữ liệu mẫu', kind: 'boolean' },
-  'ops.dataMode.demoBanner': { label: 'Thông báo về dữ liệu mẫu', kind: 'textarea' },
+  'ops.dataMode.usesDemoData': { label: 'Nội dung cần xác minh trước khi lập chỉ mục', kind: 'boolean', help: 'Khi bật, website tiếp tục được gắn noindex cho đến khi dữ liệu đã được xác minh.' },
+  'ops.dataMode.demoBanner': { label: 'Thông báo xác minh nội dung', kind: 'textarea' },
 };
 
 const OBJECT_TEMPLATES: Record<string, Record<string, unknown>> = {
   'booking.cancellation.tiers': CANCELLATION_TIER,
+  'home.trust.items': { enabled: true, icon: 'leaf', line1: '', line2: '' },
+  'home.why.reasons': { enabled: true, icon: 'user', title: '', description: '' },
+  'home.faq.items': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
+  'contact.page.promises': { enabled: true, title: '', description: '' },
+  'contact.page.advisorHighlights': { enabled: true, text: '' },
+  'contact.page.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
+  'catalog.staysPage.advisorBenefits': { enabled: true, icon: 'headset', text: '' },
+  'catalog.staysPage.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
+  'catalog.destinationsPage.itineraries': { enabled: true, label: '', subtitle: '', title: '', days: [] },
+  'catalog.destinationsPage.itineraries[].days': { title: '', activities: [] },
+  'catalog.destinationsPage.seasons': { enabled: true, title: '', description: { type: 'doc', content: [{ type: 'paragraph' }] } },
+  'catalog.combosPage.benefits': { enabled: true, icon: 'leaf', title: '', description: '' },
+  'catalog.combosPage.steps': { enabled: true, title: '', description: '' },
+  'catalog.combosPage.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
 };
 
 const GROUP_LABELS: Record<string, string> = {
@@ -190,6 +414,10 @@ const GROUP_LABELS: Record<string, string> = {
   locale: 'Ngôn ngữ & định dạng',
   seo: 'SEO & thống kê',
   content: 'Nội dung',
+  publicHeader: 'Header & chân trang',
+  publicHome: 'Nội dung trang chủ',
+  publicPages: 'Các trang nội dung',
+  publicLegal: 'FAQ & chính sách',
   media: 'Thư viện ảnh',
   crm: 'Khách hàng & tư vấn',
   ops: 'Vận hành',
@@ -214,8 +442,8 @@ const COMMON_LABELS: Record<string, string> = {
   stages: 'Các giai đoạn', sources: 'Nguồn khách hàng', code: 'Mã', label: 'Tên hiển thị',
   followUpDefaultHours: 'Nhắc chăm sóc sau', slaFirstResponseHours: 'Thời hạn phản hồi',
   fromName: 'Tên người gửi', fromAddress: 'Email người gửi', replyTo: 'Email nhận phản hồi', internalRecipients: 'Người nhận nội bộ',
-  maintenance: 'Chế độ bảo trì', allowAdmin: 'Cho quản trị viên truy cập', dataMode: 'Nguồn dữ liệu',
-  usesDemoData: 'Đang dùng dữ liệu mẫu', demoBanner: 'Thông báo dữ liệu mẫu', beforeHours: 'Huỷ trước ít nhất',
+  maintenance: 'Chế độ bảo trì', allowAdmin: 'Cho quản trị viên truy cập', dataMode: 'Kiểm duyệt nội dung',
+  usesDemoData: 'Nội dung cần xác minh', demoBanner: 'Thông báo xác minh', beforeHours: 'Huỷ trước ít nhất',
   refundPercent: 'Tỷ lệ hoàn tiền', freeCancelHours: 'Huỷ miễn phí trước', tiers: 'Các mốc hoàn tiền',
   minNights: 'Số đêm tối thiểu', maxNights: 'Số đêm tối đa', maxAdults: 'Số người lớn tối đa',
   maxChildren: 'Số trẻ em tối đa', maxRoomsPerBooking: 'Số phòng tối đa mỗi đơn', advanceBookingDays: 'Đặt trước tối đa',
@@ -260,11 +488,25 @@ function blankLike(value: unknown): unknown {
   return '';
 }
 
+function moveItem<T>(items: T[], from: number, to: number): T[] {
+  if (from < 0 || to < 0 || from >= items.length || to >= items.length || from === to) return items;
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 function mediaIdFrom(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function MediaIdField({ value, onChange, disabled, label }: { value: unknown; onChange: (value: unknown) => void; disabled: boolean; label: string }) {
+function formatAssetBytes(value: string): string {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return '—';
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function MediaIdField({ value, onChange, disabled, label, meta }: { value: unknown; onChange: (value: unknown) => void; disabled: boolean; label: string; meta?: FieldMeta }) {
   const id = mediaIdFrom(value);
   const [asset, setAsset] = useState<MediaAsset | null>(null);
   const [open, setOpen] = useState(false);
@@ -281,16 +523,24 @@ function MediaIdField({ value, onChange, disabled, label }: { value: unknown; on
     return () => { current = false; };
   }, [id]);
 
+  const actualRatio = asset?.width && asset?.height ? asset.width / asset.height : null;
+  const ratioMismatch = actualRatio !== null && meta?.recommendedRatio !== undefined && Math.abs(actualRatio - meta.recommendedRatio) / meta.recommendedRatio > 0.08;
+  const undersized = !!asset?.width && !!asset?.height && meta?.recommendedWidth !== undefined && meta.recommendedHeight !== undefined
+    && (asset.width < meta.recommendedWidth || asset.height < meta.recommendedHeight);
+
   return (
     <div className="settings-media-field">
+      {meta?.recommendedWidth && meta.recommendedHeight && <p className="ahint">Khuyến nghị: {meta.recommendedWidth} × {meta.recommendedHeight} px · tỷ lệ {meta.recommendedRatio?.toFixed(2)}:1 · {meta.recommendedWidth > meta.recommendedHeight ? 'ảnh ngang' : meta.recommendedWidth < meta.recommendedHeight ? 'ảnh dọc' : 'ảnh vuông'}.</p>}
       {asset ? (
         <div className="settings-media-field__selected">
           <Image src={asset.url} alt={asset.altText ?? label} width={120} height={76} unoptimized />
-          <span>{asset.originalFilename}</span>
+          <span><strong>{asset.originalFilename}</strong><small>{asset.width && asset.height ? `${asset.width} × ${asset.height} px` : 'Chưa có metadata kích thước'} · {formatAssetBytes(asset.byteSize)}</small><small>ALT: {asset.altText || 'Chưa có ALT'}{asset.caption ? ` · ${asset.caption}` : ''}</small></span>
         </div>
       ) : <p className="ahint">{id ? 'Ảnh đã chọn nhưng không tải được thông tin xem trước.' : 'Chưa chọn ảnh.'}</p>}
+      {(ratioMismatch || undersized) && <p className="settings-screen__message settings-screen__message--error" role="status">{[undersized ? `Ảnh nhỏ hơn khuyến nghị ${meta?.recommendedWidth} × ${meta?.recommendedHeight} px` : '', ratioMismatch ? `Tỷ lệ ảnh hiện tại ${actualRatio?.toFixed(2)}:1 khác tỷ lệ khuyến nghị ${meta?.recommendedRatio?.toFixed(2)}:1` : ''].filter(Boolean).join(' · ')}. Có thể bị crop; bạn vẫn có thể lưu nếu phù hợp.</p>}
       <div className="settings-media-field__actions">
-        <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => setOpen(true)} disabled={disabled}>{id ? 'Chọn ảnh khác' : 'Chọn từ Thư viện ảnh'}</button>
+        <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => setOpen(true)} disabled={disabled}>{id ? 'Thay ảnh từ thư viện' : 'Chọn từ thư viện ảnh'}</button>
+        <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => setOpen(true)} disabled={disabled}>Tải ảnh mới</button>
         {id && <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => { setAsset(null); onChange(null); }} disabled={disabled}>Bỏ ảnh</button>}
       </div>
       <MediaLibrary
@@ -302,6 +552,35 @@ function MediaIdField({ value, onChange, disabled, label }: { value: unknown; on
         onSelect={(next) => { setAsset(next); onChange(next.id); setOpen(false); }}
       />
     </div>
+  );
+}
+
+function RichSettingField({ value, onChange, disabled, label, help }: { value: unknown; onChange: (value: unknown) => void; disabled: boolean; label: string; help?: string }) {
+  const [open, setOpen] = useState(false);
+  const insertRef = useRef<((attrs: { src: string; alt?: string; mediaId?: string }) => void) | null>(null);
+  const documentValue = value && typeof value === 'object' && !Array.isArray(value) ? value as RichDocument : null;
+  return (
+    <>
+      <RichTextEditor
+        label={label}
+        hint={help ?? 'Nội dung dài dùng TipTap; ảnh chèn trong bài phải chọn từ Media Library.'}
+        value={documentValue}
+        disabled={disabled}
+        onChange={(document) => onChange(document)}
+        onPickImage={(insert) => { insertRef.current = insert; setOpen(true); }}
+      />
+      <MediaLibrary
+        mode="modal"
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Chèn ảnh từ Media Library"
+        onSelect={(asset) => {
+          insertRef.current?.({ src: asset.url, alt: asset.altText ?? asset.originalFilename, mediaId: asset.id });
+          insertRef.current = null;
+          setOpen(false);
+        }}
+      />
+    </>
   );
 }
 
@@ -371,7 +650,8 @@ function ValueField({
           {meta?.help && <p className="ahint">{meta.help}</p>}
           <ol className="settings-form__ordered-list">
             {items.map((item, index) => (
-              <li key={`${item}-${index}`}>
+              <li key={`${item}-${index}`} draggable onDragStart={(event) => { event.dataTransfer.setData('text/plain', String(index)); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); onChange(moveItem(items, Number(event.dataTransfer.getData('text/plain')), index)); }}>
+                <span className="settings-form__drag-handle" aria-hidden="true">⠿</span>
                 <span className="settings-form__order-number">{index + 1}</span>
                 <select className="ainput" aria-label={`${label}, mục ${index + 1}`} value={item} disabled={disabled} onChange={(event) => onChange(items.map((entry, itemIndex) => itemIndex === index ? event.target.value : entry))}>
                   {allOptions.filter((option) => option.value === item || !items.includes(option.value)).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -399,7 +679,7 @@ function ValueField({
           {!rows.length && <p className="ahint">Chưa có mục nào.</p>}
           <div className="settings-form__repeat-list">
             {rows.map((row, index) => (
-              <article className="settings-form__repeat-item" key={`${path}-${index}`}>
+              <article className="settings-form__repeat-item" key={`${path}-${index}`} draggable onDragStart={(event) => { event.dataTransfer.setData('text/plain', String(index)); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); onChange(moveItem(rows, Number(event.dataTransfer.getData('text/plain')), index)); }}>
                 <div className="settings-form__repeat-head"><strong>{label} {index + 1}</strong><button type="button" className="abtn abtn--ghost abtn--sm" disabled={disabled} onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>Xoá mục</button></div>
                 {isRecord(row) ? (
                   <div className="settings-form__grid">{Object.entries(row).map(([key, child]) => {
@@ -448,7 +728,11 @@ function ValueField({
   }
 
   if (kind === 'media') {
-    return <div className="afield settings-form__field"><span>{label}</span><MediaIdField value={value} onChange={onChange} disabled={disabled} label={label} />{meta?.help && <small className="ahint">{meta.help}</small>}</div>;
+    return <div className="afield settings-form__field"><span>{label}</span><MediaIdField value={value} onChange={onChange} disabled={disabled} label={label} meta={meta} />{meta?.help && <small className="ahint">{meta.help}</small>}</div>;
+  }
+
+  if (kind === 'rich') {
+    return <div className="settings-form__field settings-form__field--rich"><RichSettingField value={value} onChange={onChange} disabled={disabled} label={label} help={meta?.help} /></div>;
   }
 
   const asNumber = kind === 'number' || kind === 'bytes';
@@ -494,6 +778,38 @@ function ValueField({
 
 export function SettingsFormEditor({ settingKey, value, disabled, onChange }: { settingKey: string; value: unknown; disabled: boolean; onChange: (value: unknown) => void }) {
   const root = isRecord(value) ? value : {};
+  if (settingKey === 'home.sections') {
+    const incoming = Array.isArray(root.order) ? root.order.filter((item): item is string => typeof item === 'string') : [];
+    const order = [...incoming, ...SECTIONS.map((item) => item.value).filter((id) => !incoming.includes(id))];
+    const hidden = Array.isArray(root.hidden) ? root.hidden.filter((item): item is string => typeof item === 'string') : [];
+    return (
+      <ol className="settings-home-sections" aria-label="Thứ tự và trạng thái các khối trang chủ">
+        {order.map((id, index) => {
+          const option = SECTIONS.find((item) => item.value === id);
+          if (!option) return null;
+          return (
+            <li key={id} draggable onDragStart={(event) => { event.dataTransfer.setData('text/plain', id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
+              event.preventDefault();
+              const moving = event.dataTransfer.getData('text/plain');
+              const from = order.indexOf(moving);
+              onChange({ ...root, order: moveItem(order, from, index), hidden });
+            }}>
+              <span className="settings-form__drag-handle" aria-hidden="true">⠿</span>
+              <span className="settings-form__order-number">{index + 1}</span>
+              <strong>{option.label}</strong>
+              <label className="atoggle settings-home-sections__toggle">
+                <input type="checkbox" checked={!hidden.includes(id)} disabled={disabled} onChange={(event) => onChange({ ...root, order, hidden: event.target.checked ? hidden.filter((item) => item !== id) : [...new Set([...hidden, id])] })} />
+                <span className="atoggle__track"><span className="atoggle__thumb" /></span>
+                <span className="atoggle__text"><strong>{hidden.includes(id) ? 'Ẩn' : 'Hiện'}</strong></span>
+              </label>
+              <button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ${option.label} lên`} disabled={disabled || index === 0} onClick={() => onChange({ ...root, order: moveItem(order, index, index - 1), hidden })}>↑</button>
+              <button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ${option.label} xuống`} disabled={disabled || index === order.length - 1} onClick={() => onChange({ ...root, order: moveItem(order, index, index + 1), hidden })}>↓</button>
+            </li>
+          );
+        })}
+      </ol>
+    );
+  }
   return (
     <div className="settings-form">
       <ValueField settingKey={settingKey} path="" value={root} onChange={onChange} disabled={disabled} />

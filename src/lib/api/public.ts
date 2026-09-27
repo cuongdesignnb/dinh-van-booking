@@ -7,10 +7,12 @@ import type { RichDocument } from '@/lib/content/rich-document';
 import { ApiError, serverApiRequest } from './client';
 
 export interface PublicMediaAsset {
+  id?: string;
   src: string;
   alt?: string;
   width?: number;
   height?: number;
+  caption?: string;
 }
 
 export interface PublicSeoUrl {
@@ -39,12 +41,14 @@ export interface PublicSiteData {
   businessHours: Record<string, unknown>;
   seo: Record<string, unknown>;
   media?: { logo?: PublicMediaAsset | null; favicon?: PublicMediaAsset | null; og?: PublicMediaAsset | null };
+  assets?: Record<string, PublicMediaAsset>;
   [key: string]: unknown;
 }
 
 type PublicSiteResponse = {
   settings?: Record<string, unknown>;
   media?: PublicSiteData['media'];
+  assets?: PublicSiteData['assets'];
 };
 
 type ApiAsset = { src?: string; alt?: string; width?: number; height?: number; caption?: string } | null;
@@ -74,7 +78,7 @@ function asSite(value: Record<string, unknown>): PublicSiteData {
 
 const loadPublicSite = cache(async (): Promise<PublicSiteData> => {
   const response = await serverApiRequest<PublicSiteResponse>('/public/site');
-  return { ...asSite(response?.settings ?? {}), media: response?.media };
+  return { ...asSite(response?.settings ?? {}), media: response?.media, assets: response?.assets ?? {} };
 });
 
 export function getPublicSite(): Promise<PublicSiteData> {
