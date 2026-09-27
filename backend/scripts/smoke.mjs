@@ -3,7 +3,7 @@
 //   scripts/smoke.sh
 // Checks: health, login + session cookie, CSRF enforcement, permissions,
 // settings, catalog property CRUD/versioning, navigation save/restore, media
-// WebP processing, and the content publication/route lifecycle.
+// WebP processing/media security, and the content publication/route lifecycle.
 import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 
@@ -247,6 +247,19 @@ async function main() {
   badForm.append('file', new Blob([Buffer.concat([Buffer.from('not an image'), png])], { type: 'application/pdf' }), 'x.pdf');
   const rejected = await call('/media/upload', { method: 'POST', body: badForm });
   check('disallowed mime type is rejected', rejected.status === 400, `got ${rejected.status}`);
+
+  const mediaLimit = Number(list.body?.items?.find((item) => item.key === 'media.processing')?.value?.maxBytes);
+  if (Number.isSafeInteger(mediaLimit) && mediaLimit > 0) {
+    const oversizedForm = new FormData();
+    oversizedForm.append('file', new Blob([Buffer.alloc(mediaLimit + 1)], { type: 'image/png' }), 'over-limit.png');
+    const oversized = await call('/media/upload', { method: 'POST', body: oversizedForm });
+    check('upload above the configured byte limit is rejected', oversized.status >= 400 && oversized.status < 500, `got ${oversized.status}`);
+  } else {
+    check('configured media upload byte limit is available for boundary test', false, String(mediaLimit));
+  }
+
+  const traversal = await fetch(`${MEDIA_BASE}/media/%2e%2e%2fetc%2fpasswd`, { redirect: 'manual' });
+  check('encoded media path traversal cannot read outside the storage root', traversal.status === 404, `got ${traversal.status}`);
 
   const library = await call('/media');
   check('library lists the upload', library.body?.total >= 1, JSON.stringify(library.body?.total));
