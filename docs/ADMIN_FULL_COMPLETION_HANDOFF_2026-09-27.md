@@ -119,8 +119,9 @@ RESTART_GATEWAY=NO (local gateway remained on 18473; restart-persistence force-r
 LIVE_PAYMENT_PROVIDER_ENABLED=NO
 SEO_INDEXING_ALLOWED=false
 COMMIT_CREATED=YES
-PUSHED_TO_MAIN=YES (implementation and handoff commits pushed fast-forward, no force; origin/main verified after push)
-REMOTE_MAIN_AFTER=TO_BE_RECORDED_AFTER_PUSH
+IMPLEMENTATION_COMMIT=5bce02815507885334a2f5161aa27b4ef9fe87aa
+PUSHED_TO_MAIN=YES (implementation commit pushed fast-forward, no force; origin/main verified after push)
+REMOTE_MAIN_AFTER_IMPLEMENTATION=5bce02815507885334a2f5161aa27b4ef9fe87aa
 SAFE_TO_PREPARE_PRODUCTION_DEPLOY=NO
 BLOCKERS=Production PostgreSQL/media backup-and-restore rehearsal; owner approval of canonical/brand/contact/content and live payment policy. No local code/test blocker.
 ```
