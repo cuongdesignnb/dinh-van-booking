@@ -172,6 +172,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
   const policyLinks = site.navigation.filter((item) => item.href.startsWith('/chuyen-trang/'));
   const helpTitle = publicText(bookingPage.helpTitle);
   const helpDescription = bookingPage.helpDescription;
+  const confirmationNote = bookingPage.confirmationNote;
   const router = useRouter();
   const uid = useId();
   const room = initialRoom;
@@ -489,7 +490,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
         <h2 id={uid + '-submitted-t'}>Đã giữ phòng chờ xác nhận</h2>
         {bookingReceipt && <p>Mã yêu cầu <strong>{bookingReceipt.publicCode}</strong> · Trạng thái: chờ xác nhận.</p>}
         {bookingReceipt && <p>Phòng được giữ tạm đến {new Date(bookingReceipt.expiresAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}. Tổng giá {formatServerVnd(bookingReceipt.totalVnd)}; khoản cần thanh toán khi xác nhận {formatServerVnd(bookingReceipt.dueNowVnd)}. Chưa có khoản tiền nào được thu.</p>}
-        <p>Đinh Vân sẽ liên hệ xác nhận tình trạng phòng và phương án thanh toán. Đây chưa phải xác nhận đặt phòng cuối cùng.</p>
+        {richDocumentHasContent(confirmationNote) && <div className="co-confirmation-note"><RichContentRenderer document={confirmationNote as RichDocument} /></div>}
         <div className="dialog__actions">
           <Link className="btn btn--primary" href={'/phong-nghi/' + stay.slug}>Quay lại chỗ nghỉ</Link>
           <Link className="btn btn--light" href="/phong-nghi">Xem các chỗ nghỉ khác</Link>

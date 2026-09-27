@@ -7,12 +7,12 @@ import { formatVnd } from '@/lib/format';
 import { ROOMS_ANCHOR } from './BookingCard';
 import { capacityIssue, useBooking } from './BookingContext';
 
-export function RoomTypes() {
+export function RoomTypes({ title }: { title?: string }) {
   const { stay, room, selection, chooseRoom, issue } = useBooking();
   return (
     <section className="rooms" id={ROOMS_ANCHOR} aria-labelledby="rooms-title">
       <h2 className="dsec-title" id="rooms-title" tabIndex={-1}>
-        Các loại phòng &amp; gói dịch vụ <SmallLeaf className="section-title__leaf" />
+        {title || 'Hạng phòng'} <SmallLeaf className="section-title__leaf" />
       </h2>
       {issue?.kind === 'room' && (
         <p className="rooms__hint" role="status">

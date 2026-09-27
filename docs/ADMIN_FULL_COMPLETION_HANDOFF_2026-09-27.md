@@ -13,7 +13,7 @@ Ngày: 27/09/2026. Đây là bàn giao kiểm thử môi trường local, không
 
 | Lệnh/luồng | Kết quả |
 |---|---|
-| `npm run lint -- --no-warn-ignored` | PASS |
+| `npm run lint` | PASS |
 | `npm run typecheck` | PASS |
 | `npm run audit:admin-runtime` | PASS — 17 route entry, 63 reachable modules; không còn pending/fallback/demo trong graph hoạt động |
 | `npm ci` (Node 24) | PASS |
@@ -23,18 +23,21 @@ Ngày: 27/09/2026. Đây là bàn giao kiểm thử môi trường local, không
 | API smoke qua Docker network (`node scripts/smoke.mjs`) | PASS — 69/69, chạy lại sau full E2E/restart |
 | Full browser suite với `BASE_URL=http://127.0.0.1:18473`, `DVB_ADMIN_RESTART_STACK=1` | PASS — 38/38, gồm settings rich-text save/conflict, full-completion route/API/CSRF E2E, coupon discount/reject-invalid/reject-expired, restart persistence và 1440/1024/768/390 px |
 | `npm audit` (root/backend), `npm audit --omit=dev` (root/backend) | PASS — cả bốn lượt đều báo 0 vulnerabilities |
-| `npm run audit:no-hardcode` | PASS — 43 phát hiện đã phân loại: 6 local preference, 21 type-only, 16 legacy/compatibility ngoài route graph; crawler xác nhận không có nội dung demo/pending trên route đang chạy |
+| `npm run audit:no-hardcode` | PASS — 42 phát hiện được liệt kê; đối chiếu với route graph xác nhận không có fixture/demo/browser business data trên đường chạy admin/public hiện hành |
+| Dependency audit | PASS — `npm audit` và `npm audit --omit=dev` ở cả root/backend đều 0 vulnerabilities |
 | SEO | PASS — gate, robots/sitemap, draft isolation, admin/API noindex, 404/filtered URLs |
 | Docker build | PASS — Next và backend build trong image local |
 | `git diff --check` | PASS |
 
-Public homepage hiện không có section/hero được cấu hình trong DB (`home.sections.order=[]`, `home.hero.enabled=false`); do đó trang không tự dựng hero hoặc catalogue mẫu. Nội dung sẽ chỉ xuất hiện sau khi quản trị viên cấu hình/publish qua Admin. SEO indexing vẫn đóng.
+Public homepage hiện không có section/hero được cấu hình trong DB (`home.sections.order=[]`, `home.hero.enabled=false`); do đó trang không tự dựng hero hoặc catalogue mẫu. Nội dung sẽ chỉ xuất hiện sau khi quản trị viên cấu hình/publish qua Admin. SEO indexing vẫn đóng. Trang liên hệ vẫn giữ form tạo yêu cầu tư vấn hoạt động khi phần nội dung marketing chưa bật.
 
 ## Phạm vi và ranh giới
 
 - Đã nối màn admin vào API thật, bao gồm CRM, đặt phòng/tồn, coupon, offline finance/refund, báo cáo, CMS, thư viện ảnh, menu, settings và AI configuration. `tests/admin/full-completion.spec.ts` crawl đủ 16 route, đối soát dashboard với API và chứng minh POST thiếu CSRF bị từ chối; suite operations xác minh mã hợp lệ giảm đúng giá phía server, mã không tồn tại/hết hạn bị từ chối, cùng CRUD/version conflict/disable, race tồn, booking lifecycle, ledger/refund và báo cáo. Ma trận screen → action → API → service → Prisma → permission → browser test ở [full-completion-matrix.md](admin/full-completion-matrix.md); tóm tắt tại [ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md](admin/ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md).
 - Không có schema change/migration trong lượt hoàn tất này; chi tiết ở [admin-full-completion-schema-delta.md](backend/admin-full-completion-schema-delta.md).
 - Sửa lỗi backend khi Settings merge một trường mặc định `null` thành tài liệu TipTap; API settings PUT và round-trip public đã được kiểm tra lại.
+- Combo editor có các repeater trực quan cho nhóm khách, từng ngày/hoạt động, bao gồm/không bao gồm và điều khoản; bài test thao tác qua accessible labels thay vì textarea lịch trình cũ.
+- Bài kiểm thử restart xác minh menu qua API quản trị (public API chủ động ẩn liên kết tới trang nháp); với menu mặc định trống, fixture tạo mục URL tạm và khôi phục đúng baseline. 11 nơi lưu trú Cúc Phương vẫn là bản nháp trong PostgreSQL, chưa được xuất bản.
 - Không gọi cổng thanh toán, không thu tiền thật, không gửi hàng loạt, không truy cập/sửa production, DNS hoặc dịch vụ bên ngoài. Không deploy production.
 - Thư viện ảnh kiểm thử và fixture của Playwright được cleanup; bản ghi hiện hữu không bị ghi đè. Không force-push.
 - Trước production rollout vẫn cần backup PostgreSQL/media và thử phục hồi, chốt domain/canonical, xác minh dữ liệu cơ sở lưu trú và quy trình payment thực tế. SEO index chỉ được bật sau phê duyệt riêng.
@@ -91,9 +94,9 @@ RESPONSIVE_QA=PASS
 ## Database / operations / deployment preparation
 
 ```text
-START_SHA=81b65712469a49c77858a4e1624f6e989232c13a
-REMOTE_MAIN_BEFORE=81b65712469a49c77858a4e1624f6e989232c13a (fresh fetch; equal to HEAD before this task's changes)
-PREVIOUS_ADMIN_IMPLEMENTATION_COMMIT=8ec8751a3dd46e1f382c3e7a16c9a2987736c9f8
+START_SHA=2a0364fbf50fb4bb0ccaed362422dd6b270d8326
+REMOTE_MAIN_BEFORE=2a0364fbf50fb4bb0ccaed362422dd6b270d8326 (fresh fetch; equal to HEAD before this task's changes)
+PREVIOUS_ADMIN_IMPLEMENTATION_COMMIT=2a0364fbf50fb4bb0ccaed362422dd6b270d8326
 NEW_MIGRATIONS=0
 MIGRATION_FILES=NONE
 DATA_BACKFILL=NO
@@ -117,6 +120,7 @@ LIVE_PAYMENT_PROVIDER_ENABLED=NO
 SEO_INDEXING_ALLOWED=false
 COMMIT_CREATED=YES
 PUSHED_TO_MAIN=YES (implementation and handoff commits pushed fast-forward, no force; origin/main verified after push)
+REMOTE_MAIN_AFTER=TO_BE_RECORDED_AFTER_PUSH
 SAFE_TO_PREPARE_PRODUCTION_DEPLOY=NO
 BLOCKERS=Production PostgreSQL/media backup-and-restore rehearsal; owner approval of canonical/brand/contact/content and live payment policy. No local code/test blocker.
 ```

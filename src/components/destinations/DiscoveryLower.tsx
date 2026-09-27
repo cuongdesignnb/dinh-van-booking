@@ -6,7 +6,7 @@ import type { RichDocument } from '@/lib/content/rich-document';
 
 export function ItineraryTabs({ config, image }: { config: Record<string, unknown>; image: PublicMediaAsset | null }) {
   const title = publicText(config.itineraryTitle);
-  const subtitle = publicText(config.itinerarySubtitle);
+  const subtitle = config.itinerarySubtitle;
   const itineraries = (Array.isArray(config.itineraries) ? config.itineraries : []).flatMap((value, index) => {
     const item = publicRecord(value);
     const label = publicText(item.label);
@@ -20,7 +20,7 @@ export function ItineraryTabs({ config, image }: { config: Record<string, unknow
   if (!title || !itineraries.length) return null;
   return <section className="itin" aria-labelledby="destination-itinerary-title">
     <h2 className="dsec-title" id="destination-itinerary-title">{title}</h2>
-    {subtitle && <p className="dsec-sub">{subtitle}</p>}
+    {richDocumentHasContent(subtitle) ? <div className="dsec-sub"><RichContentRenderer document={subtitle as RichDocument} /></div> : publicText(subtitle) && <p className="dsec-sub">{publicText(subtitle)}</p>}
     <div className="itin__tabs" role="list">{itineraries.map((item) => <article className="itin__tab" key={item.id}>
       <h3>{item.label}</h3>{item.subtitle && <p>{item.subtitle}</p>}{item.title && <strong>{item.title}</strong>}
       {item.days.map((day) => <section key={day.id} className="itin__day">{day.title && <h4 className="itin__daytitle">{day.title}</h4>}<ul>{day.activities.map((activity, index) => <li key={`${activity}-${index}`}>{activity}</li>)}</ul></section>)}
@@ -31,7 +31,7 @@ export function ItineraryTabs({ config, image }: { config: Record<string, unknow
 
 export function Seasons({ config }: { config: Record<string, unknown> }) {
   const title = publicText(config.seasonsTitle);
-  const subtitle = publicText(config.seasonsSubtitle);
+  const subtitle = config.seasonsSubtitle;
   const items = (Array.isArray(config.seasons) ? config.seasons : []).flatMap((value, index) => {
     const item = publicRecord(value);
     const name = publicText(item.title);
@@ -41,7 +41,7 @@ export function Seasons({ config }: { config: Record<string, unknown> }) {
   if (!title || !items.length) return null;
   return <section className="seasons" aria-labelledby="destination-seasons-title">
     <h2 className="dsec-title" id="destination-seasons-title">{title}</h2>
-    {subtitle && <p className="dsec-sub">{subtitle}</p>}
+    {richDocumentHasContent(subtitle) ? <div className="dsec-sub"><RichContentRenderer document={subtitle as RichDocument} /></div> : publicText(subtitle) && <p className="dsec-sub">{publicText(subtitle)}</p>}
     <ul className="seasons__grid">{items.map((item) => <li key={item.id} className="season"><h3 className="season__name">{item.name}</h3><RichContentRenderer document={item.description} /></li>)}</ul>
   </section>;
 }

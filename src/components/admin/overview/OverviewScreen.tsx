@@ -270,13 +270,7 @@ export function OverviewScreen() {
               const property = data.properties.find((p) => p.id === b.propertyId);
               return (
                 <li key={b.id}>
-                  <Image
-                    src={property?.cover ?? '/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp'}
-                    alt=""
-                    width={72}
-                    height={52}
-                    className="confirm-list__img"
-                  />
+                  {property?.cover ? <Image src={property.cover} alt="" width={72} height={52} className="confirm-list__img" /> : <span className="confirm-list__img confirm-list__img--empty" aria-hidden="true" />}
                   <div className="confirm-list__text">
                     <strong>{property?.name ?? data.combos.find((c) => c.id === b.comboId)?.name}</strong>
                     <span>

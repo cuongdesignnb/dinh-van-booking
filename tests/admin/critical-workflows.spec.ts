@@ -361,7 +361,7 @@ test('form liên hệ tạo inquiry thật, admin nhận và cập nhật stage 
     const createResponse = page.waitForResponse((response) =>
       response.url().endsWith('/api/v1/inquiries') && response.request().method() === 'POST',
     );
-    await page.getByRole('button', { name: 'Gửi yêu cầu tư vấn ngay' }).click();
+    await page.getByRole('button', { name: /^Gửi yêu cầu/ }).click();
     const response = await createResponse;
     expect([200, 201]).toContain(response.status());
     const created = await response.json() as { id: string; status: string };

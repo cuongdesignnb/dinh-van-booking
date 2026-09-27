@@ -7,7 +7,6 @@ import {
   CigaretteOff,
   Heart,
   Laptop,
-  MessageCircle,
   Share2,
   Snowflake,
   SprayCan,
@@ -19,9 +18,12 @@ import { useId, useState, type ElementType } from 'react';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { SmallLeaf } from '@/components/ui/Decor';
 import { Modal } from '@/components/ui/Modal';
+import { useSiteData } from '@/components/site/SiteDataProvider';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import type { RichDocument } from '@/lib/content/rich-document';
+import { publicAsset, publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import type { Host, Review } from '@/data/types';
 import { formatShort } from '@/lib/dates';
-import { openDialog } from '@/lib/events';
 import { useFavorite } from '@/lib/favorites';
 
 export function ShareSave({ id, name }: { id: string; name: string }) {
@@ -114,17 +116,6 @@ const AMENITY_ICON: Record<string, ElementType> = {
   nosmoke: CigaretteOff,
 };
 
-const AMENITY_LABELS: Record<string, string> = {
-  wifi: 'Wi-Fi',
-  breakfast: 'Bữa sáng',
-  view: 'View',
-  kitchen: 'Bếp',
-  family: 'Phù hợp gia đình',
-  parking: 'Chỗ đậu xe',
-  eco: 'Thân thiện môi trường',
-  pool: 'Hồ bơi',
-};
-
 function BalconyIcon({ size = 20 }: { size?: number; strokeWidth?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -134,16 +125,16 @@ function BalconyIcon({ size = 20 }: { size?: number; strokeWidth?: number }) {
   );
 }
 
-export function Amenities({ amenities }: { amenities: string[] }) {
+export function Amenities({ amenities, labels, title }: { amenities: string[]; labels?: Record<string, string>; title?: string }) {
   const [open, setOpen] = useState(false);
   const id = useId();
-  const items = amenities.map((icon) => ({ icon, label: AMENITY_LABELS[icon] ?? icon })).filter((item) => item.icon);
+  const items = amenities.map((icon) => ({ icon, label: labels?.[icon] ?? icon })).filter((item) => item.icon);
   if (!items.length) return null;
   return (
     <section className="amen" aria-labelledby={`${id}-t`}>
       <div className="dsec-head">
         <h2 className="dsec-title" id={`${id}-t`}>
-          Tiện nghi nổi bật <SmallLeaf className="section-title__leaf" />
+          {title || 'Tiện nghi'} <SmallLeaf className="section-title__leaf" />
         </h2>
         <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => setOpen(true)}>
           Xem tất cả <ArrowRight size={14} aria-hidden="true" />
@@ -174,7 +165,7 @@ export function Amenities({ amenities }: { amenities: string[] }) {
   );
 }
 
-export function ReviewCards({ reviews, total }: { reviews: Review[]; total: number }) {
+export function ReviewCards({ reviews, total, title }: { reviews: Review[]; total: number; title?: string }) {
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<'new' | 'rating'>('new');
   const id = useId();
@@ -207,11 +198,12 @@ export function ReviewCards({ reviews, total }: { reviews: Review[]; total: numb
       )}
     </article>
   );
+  if (!reviews.length) return null;
   return (
     <section className="dreviews" aria-labelledby={`${id}-t`}>
       <div className="dsec-head">
         <h2 className="dsec-title" id={`${id}-t`}>
-          Đánh giá của khách hàng <SmallLeaf className="section-title__leaf" />
+          {title || 'Đánh giá'} <SmallLeaf className="section-title__leaf" />
         </h2>
         <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => setOpen(true)}>
           Xem tất cả {total} đánh giá <ArrowRight size={14} aria-hidden="true" />
@@ -237,35 +229,29 @@ export function ReviewCards({ reviews, total }: { reviews: Review[]; total: numb
 }
 
 export function SupportCard() {
+  const site = useSiteData();
+  const config = publicSetting(site.publicSite, 'home.contactPanel');
+  const image = publicAsset(site.publicSite, config.imageMediaId);
+  const title = publicText(config.title);
+  const name = publicText(config.advisorName);
+  const role = publicText(config.advisorRole);
+  const zaloLabel = publicText(config.zaloCtaLabel);
+  const phoneLabel = publicText(config.phoneCtaLabel);
+  const note = publicText(config.note);
+  if (config.enabled !== true || !title) return null;
   return (
     <section className="support" aria-labelledby="support-t">
-      <Image src="/images/dinh-van-booking/people/advisor-support.webp" alt="" width={75} height={118} className="support__img" />
+      {image?.src && <Image src={image.src} alt={image.alt ?? title} width={image.width ?? 1200} height={image.height ?? 800} className="support__img" unoptimized />}
       <div className="support__body">
         <h2 className="support__title" id="support-t">
-          Cần tư vấn thêm?
+          {title}
         </h2>
-        <p className="support__text">
-          Đinh Vân luôn sẵn sàng hỗ trợ bạn chọn phòng phù hợp và gợi ý lịch trình thú vị nhất!
-        </p>
-        <p className="support__script handwritten" aria-hidden="true">
-          Đi để thấy
-          <br /> thiên nhiên thật tuyệt!
-        </p>
+        {richDocumentHasContent(config.description) && <div className="support__text"><RichContentRenderer document={config.description as RichDocument} /></div>}
+        {(name || role) && <p className="support__script handwritten">{[name, role].filter(Boolean).join(' — ')}</p>}
+        {note && <p className="support__script handwritten">{note}</p>}
         <div className="support__actions">
-          <button type="button" className="btn btn--light support__btn" aria-haspopup="dialog" onClick={() => openDialog({ type: 'contact', channel: 'zalo' })}>
-            <BrandIcon name="zalo" size={14} /> Chat Zalo
-          </button>
-          <button type="button" className="btn btn--primary support__btn" aria-haspopup="dialog" onClick={() => openDialog({ type: 'contact', channel: 'phone' })}>
-            Gọi cho mình
-          </button>
-          <button
-            type="button"
-            className="btn btn--primary support__wide"
-            aria-haspopup="dialog"
-            onClick={() => openDialog({ type: 'contact', channel: 'chat' })}
-          >
-            <MessageCircle size={16} aria-hidden="true" /> Nhắn tin ngay
-          </button>
+          {site.contact.zaloUrl && zaloLabel && <a className="btn btn--light support__btn" href={site.contact.zaloUrl} target="_blank" rel="noopener noreferrer"><BrandIcon name="zalo" size={14} /> {zaloLabel}</a>}
+          {site.contact.phone && phoneLabel && <a className="btn btn--primary support__btn" href={`tel:${site.contact.phone}`}>{phoneLabel}</a>}
         </div>
       </div>
     </section>

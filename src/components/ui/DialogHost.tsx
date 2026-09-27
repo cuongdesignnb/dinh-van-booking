@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useSiteData } from '@/components/site/SiteDataProvider';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { onDialogRequest, type DialogRequest } from '@/lib/events';
 import { DEFAULT_SELECTION, dateError, selectionQuery } from '@/lib/selection';
+import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
+import type { RichDocument } from '@/lib/content/rich-document';
 import { DateRangePicker } from './DateRangePicker';
 import { GuestPicker } from './GuestPicker';
 import { Modal } from './Modal';
@@ -34,6 +37,8 @@ export function DialogHost() {
 
 function DialogContent({ req, onDone }: { req: DialogRequest; onDone: () => void }) {
   const site = useSiteData();
+  const contactPage = publicSetting(site.publicSite, 'contact.page');
+  const contactName = publicText(contactPage.advisorName) || site.name;
   switch (req.type) {
     case 'reviews':
       return (
@@ -51,16 +56,8 @@ function DialogContent({ req, onDone }: { req: DialogRequest; onDone: () => void
     case 'contact':
       return (
         <ContactPending
-          title={
-            req.channel === 'zalo'
-              ? 'Nhắn Zalo cho Đinh Vân'
-              : req.channel === 'phone'
-                ? 'Gọi cho Đinh Vân'
-                : req.channel === 'chat'
-                  ? 'Chat với Đinh Vân'
-                  : 'Kết nối với Đinh Vân'
-          }
-          lead="Hãy liên hệ với mình để được gợi ý phòng nghỉ, lịch trình phù hợp nhất nhé!"
+          title={`${req.channel === 'zalo' ? 'Nhắn Zalo' : req.channel === 'phone' ? 'Gọi điện' : req.channel === 'chat' ? 'Chat' : 'Liên hệ'}${contactName ? ` · ${contactName}` : ''}`}
+          lead={contactPage.quickIntro ?? publicSetting(site.publicSite, 'home.contactPanel').description}
           need={req.need ?? ''}
         />
       );
@@ -136,10 +133,11 @@ function SearchDialog({ onDone }: { onDone: () => void }) {
 }
 
 /** Shown whenever a contact channel is not configured yet. */
-export function ContactPending({ title, lead, need }: { title: string; lead: string; need: string }) {
+export function ContactPending({ title, lead, need }: { title: string; lead: unknown; need: string }) {
   const [text, setText] = useState(need);
   const [copied, setCopied] = useState<'idle' | 'ok' | 'fail'>('idle');
-  const { contact } = useSiteData();
+  const runtime = useSiteData();
+  const { contact } = runtime;
   const hasContact = contact.zaloUrl || contact.phone;
   const copy = async () => {
     try {
@@ -154,20 +152,20 @@ export function ContactPending({ title, lead, need }: { title: string; lead: str
       <h2 id="dialog-title" className="dialog__title">
         {title}
       </h2>
-      <p className="dialog__lead">{lead}</p>
+      {richDocumentHasContent(lead) ? <div className="dialog__lead"><RichContentRenderer document={lead as RichDocument} /></div> : publicText(lead) && <p className="dialog__lead">{publicText(lead)}</p>}
       {!hasContact && (
         <p className="dialog__pending" role="status">
           <Info size={16} aria-hidden="true" /> Thông tin liên hệ đang được cập nhật.
         </p>
       )}
       <label className="field">
-        <span className="field__label">Nhu cầu của bạn (để sao chép gửi cho mình)</span>
+        <span className="field__label">Nhu cầu của bạn (để sao chép)</span>
         <textarea
           className="field__input"
           rows={4}
           value={text}
           data-autofocus
-          placeholder="Ví dụ: 2 người lớn, 1 trẻ em, muốn ở gần Vườn quốc gia 2 đêm…"
+          placeholder="Ghi ngày đi, số khách hoặc chỗ nghỉ bạn quan tâm."
           onChange={(e) => {
             setText(e.target.value);
             setCopied('idle');

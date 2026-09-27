@@ -44,6 +44,19 @@ async function chooseCover(page: Parameters<typeof browserApi>[0], alt: string, 
   await expect(page.locator('dialog[open]')).toHaveCount(0);
 }
 
+async function setStringList(page: Parameters<typeof browserApi>[0], label: string, values: string[]) {
+  const section = page.locator('.content-editor__list-editor').filter({ has: page.getByText(label, { exact: true }) });
+  await expect(section).toHaveCount(1);
+  let currentCount = await section.locator('.settings-form__string-row').count();
+  while (currentCount < values.length) {
+    await section.getByRole('button', { name: 'Thêm mục' }).click();
+    currentCount += 1;
+  }
+  for (const [index, value] of values.entries()) {
+    await section.getByLabel(`${label}, mục ${index + 1}`).fill(value);
+  }
+}
+
 test('destination và combo CRUD, publish, public propagation, redirect slug cũ, archive/unpublish', async ({ page }) => {
   test.setTimeout(120_000);
   await signInAsOwner(page);
@@ -96,10 +109,13 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       } else {
         await page.getByLabel('Mã combo *').fill(`ATG-COMBO-${stamp}`);
         await page.getByLabel('Khu vực').fill('Cúc Phương');
-        await page.getByLabel('Lịch trình').fill('1|Ngày kiểm thử|Tham quan rừng; Nghỉ ngơi');
-        await page.getByLabel('Bao gồm', { exact: true }).fill('Hướng dẫn viên địa phương');
-        await page.getByLabel('Không bao gồm').fill('Chi phí cá nhân');
-        await page.getByLabel('Điều khoản').fill('Lịch trình mẫu chỉ dùng kiểm thử local.');
+        await setStringList(page, 'Nhóm khách', ['Gia đình']);
+        const day = page.locator('.content-editor__days .content-editor__subsection').first();
+        await day.getByLabel('Tiêu đề ngày').fill('Ngày kiểm thử');
+        await setStringList(page, 'Hoạt động trong ngày', ['Tham quan rừng', 'Nghỉ ngơi']);
+        await setStringList(page, 'Bao gồm', ['Hướng dẫn viên địa phương']);
+        await setStringList(page, 'Không bao gồm', ['Chi phí cá nhân']);
+        await setStringList(page, 'Điều khoản', ['Lịch trình mẫu chỉ dùng kiểm thử local.']);
       }
 
       await page.locator('.rte [contenteditable="true"]').fill(

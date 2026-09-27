@@ -2,10 +2,13 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/PageShell';
+import { getPublicSite } from '@/lib/api/public';
+import { metadataForSite } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'Không tìm thấy trang — Đinh Vân Booking',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getPublicSite();
+  return metadataForSite(site, { path: '/404', title: 'Không tìm thấy trang', eligible: false, canonical: false });
+}
 
 export default function NotFound() {
   return (
@@ -13,7 +16,7 @@ export default function NotFound() {
       <section className="notfound content-shell">
         <p className="notfound__script handwritten">Ơ, lạc đường rồi…</p>
         <h1 className="notfound__title">Không tìm thấy trang</h1>
-        <p>Có thể đường dẫn đã thay đổi hoặc trang chưa có trên Đinh Vân Booking.</p>
+        <p>Đường dẫn có thể đã thay đổi hoặc trang hiện không tồn tại.</p>
         <Link href="/" className="btn btn--primary">
           Về trang chủ <ArrowRight size={16} aria-hidden="true" />
         </Link>

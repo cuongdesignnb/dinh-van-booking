@@ -1419,6 +1419,26 @@ textarea.ainput {
   background: #fbfcf8;
 }
 
+.content-editor__list-editor,
+.content-editor__days {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.content-editor__row-actions,
+.content-editor__list-columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.content-editor__list-columns > * {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
 .content-editor__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

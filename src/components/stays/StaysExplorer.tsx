@@ -23,6 +23,10 @@ import {
 import { ListingCard } from './ListingCard';
 import { StayFilterPanel } from './StayFilterPanel';
 import { StayMapCard } from './StayMap';
+import type { PublicMediaAsset } from '@/lib/api/public';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import type { RichDocument } from '@/lib/content/rich-document';
+import { publicText, richDocumentHasContent, type PublicRecord } from '@/lib/public-content';
 import { priceLabel, StaySearchBar } from './StaySearchBar';
 
 interface Slots {
@@ -31,13 +35,15 @@ interface Slots {
   notFound: ReactNode;
   reviews: ReactNode;
   faq: ReactNode;
+  mapImage: PublicMediaAsset | null;
+  content: PublicRecord;
 }
 
 /**
  * Listing state machine. The URL is the single source of truth for the applied
  * selection + filters, so reload and back/forward restore the same results.
  */
-export function StaysExplorer({ stays, advisor, notFound, reviews, faq }: Slots) {
+export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage, content }: Slots) {
   const params = useSearchParams();
   const pathname = usePathname();
   const selection = useMemo(() => parseSelection(params), [params]);
@@ -90,23 +96,21 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq }: Slots)
   );
 
   let body: ReactNode;
-  if (!results.length)
-    body = (
+  if (!results.length) {
+    const emptyTitle = publicText(content.emptyResultTitle);
+    const emptyCta = publicText(content.emptyResultCtaLabel);
+    const emptyDescription = content.emptyResultDescription;
+    body = emptyTitle || emptyCta || richDocumentHasContent(emptyDescription) ? (
       <div className="state-box" role="status">
-        <p>
-          <strong>Chưa có chỗ nghỉ phù hợp với bộ lọc này.</strong> Bạn thử nới khoảng giá, bỏ bớt tiện ích hoặc
-          nhờ Đinh Vân gợi ý nhé.
-        </p>
+        {emptyTitle && <strong>{emptyTitle}</strong>}
+        {richDocumentHasContent(emptyDescription) && <div><RichContentRenderer document={emptyDescription as RichDocument} /></div>}
         <div className="state-box__actions">
-          <button type="button" className="btn btn--light" onClick={reset}>
-            <RotateCcw size={15} aria-hidden="true" /> Đặt lại bộ lọc
-          </button>
-          <a className="btn btn--primary" href={`/lien-he?intent=stay&${query}`}>
-            Nhận tư vấn miễn phí
-          </a>
+          {activeFilterCount(filters) > 0 && <button type="button" className="btn btn--light" onClick={reset}><RotateCcw size={15} aria-hidden="true" /> Đặt lại bộ lọc</button>}
+          {emptyCta && <a className="btn btn--primary" href={`/lien-he?intent=stay&${query}`}>{emptyCta}</a>}
         </div>
       </div>
-    );
+    ) : null;
+  }
   else
     body = (
       <ul className={`stays-results stays-results--${filters.view}`}>
@@ -212,7 +216,7 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq }: Slots)
         </section>
 
         <aside className="stays-side stays-side--right" id="ban-do" aria-label="Bản đồ và tư vấn">
-          <StayMapCard stays={pageItems} query={query} />
+          <StayMapCard stays={pageItems} query={query} image={mapImage} />
           {advisor}
         </aside>
       </div>

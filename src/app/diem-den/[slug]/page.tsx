@@ -6,6 +6,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { getPublicDestination, getPublicSite } from '@/lib/api/public';
+import { publicSetting, publicText } from '@/lib/public-content';
 import { isSubstantivePublicContent } from '@/lib/seo/content';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { isSeoSchemaAllowed } from '@/lib/seo/policy';
@@ -39,13 +40,17 @@ export default async function DestinationDetailPage({ params, searchParams }: Pr
   const canonicalPath = `/diem-den/${slug}`;
   if (destination.publicPath !== canonicalPath) permanentRedirect(destination.publicPath);
   const site = await getPublicSite();
+  const contentLabels = publicSetting(site, 'catalog.destinationDetail');
+  const eyebrow = publicText(contentLabels.eyebrow);
+  const activitiesTitle = publicText(contentLabels.activitiesTitle);
+  const notesTitle = publicText(contentLabels.notesTitle);
   return (
     <PageShell className="page-static-content">
       <section className="static-page">
         <Breadcrumb items={[{ label: 'Trang chủ', href: '/' }, { label: 'Điểm đến', href: '/diem-den' }, { label: destination.name }]} />
         <article className="static-page__article">
           <header className="static-page__header">
-            <p className="static-page__eyebrow">Điểm đến Cúc Phương – Ninh Bình</p>
+            {eyebrow && <p className="static-page__eyebrow">{eyebrow}</p>}
             <h1>{destination.name}</h1>
             {destination.subtitle && <p className="static-page__excerpt">{destination.subtitle}</p>}
             {destination.summary && <p className="static-page__lead">{destination.summary}</p>}
@@ -54,12 +59,12 @@ export default async function DestinationDetailPage({ params, searchParams }: Pr
           {destination.body
             ? <RichContentRenderer document={destination.body} className="static-page__body" />
             : <p className="static-page__body">{destination.description}</p>}
-          {destination.activities.length > 0 && <section className="static-page__section">
-            <h2>Hoạt động</h2>
+          {destination.activities.length > 0 && activitiesTitle && <section className="static-page__section">
+            <h2>{activitiesTitle}</h2>
             <ul>{destination.activities.map((item) => <li key={item}>{item}</li>)}</ul>
           </section>}
-          {destination.notes.length > 0 && <section className="static-page__section">
-            <h2>Lưu ý trước chuyến đi</h2>
+          {destination.notes.length > 0 && notesTitle && <section className="static-page__section">
+            <h2>{notesTitle}</h2>
             <ul>{destination.notes.map((item) => <li key={item}>{item}</li>)}</ul>
           </section>}
         </article>

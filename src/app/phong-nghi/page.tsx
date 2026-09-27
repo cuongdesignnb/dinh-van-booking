@@ -17,6 +17,7 @@ import { publicAsset, publicSetting } from '@/lib/public-content';
 import { richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { publicText } from '@/lib/public-content';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import '@/styles/stays.css';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
@@ -31,7 +32,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 function Reviews({ reviews, config }: { reviews: Awaited<ReturnType<typeof getPublicReviews>>; config: Record<string, unknown> }) {
   const title = typeof config.reviewsTitle === 'string' ? config.reviewsTitle.trim() : '';
-  const subtitle = typeof config.reviewsSubtitle === 'string' ? config.reviewsSubtitle.trim() : '';
+  const subtitle = config.reviewsSubtitle;
   if (!title || !reviews.length) return null;
   return (
     <section className="stays-reviews" aria-labelledby="stays-reviews-t">
@@ -39,7 +40,7 @@ function Reviews({ reviews, config }: { reviews: Awaited<ReturnType<typeof getPu
         <h2 id="stays-reviews-t" className="stays-reviews__title">
           {title} <SmallLeaf className="section-title__leaf" />
         </h2>
-        {subtitle && <p className="stays-reviews__sub">{subtitle}</p>}
+        {richDocumentHasContent(subtitle) ? <div className="stays-reviews__sub"><RichContentRenderer document={subtitle as RichDocument} /></div> : publicText(subtitle) && <p className="stays-reviews__sub">{publicText(subtitle)}</p>}
       </div>
       <ReviewsStrip reviews={reviews} />
     </section>
@@ -55,6 +56,7 @@ export default async function StaysPage({
   const query = await searchParams;
   const [stays, reviews, site, urls] = await Promise.all([getPublicStays(), getPublicReviews(), getPublicSite(), getPublicSeoUrls()]);
   const pageContent = publicSetting(site, 'catalog.staysPage');
+  const mapImage = publicAsset(site, pageContent.mapImageMediaId);
   const faqItems = (Array.isArray(pageContent.faqs) ? pageContent.faqs : []).flatMap((value, index) => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
     const item = value as Record<string, unknown>;
@@ -75,8 +77,10 @@ export default async function StaysPage({
       <StaysHero config={pageContent} image={publicAsset(site, pageContent.heroImageMediaId)} />
         <StaysExplorer
           stays={stays}
+          mapImage={mapImage}
+          content={pageContent}
           advisor={<AdvisorCard config={pageContent} image={publicAsset(site, pageContent.advisorImageMediaId)} />}
-          notFound={<NotFoundCard />}
+          notFound={<NotFoundCard config={pageContent} />}
           reviews={<Reviews reviews={reviews} config={pageContent} />}
           faq={
             pageContent.faqTitle && faqItems.length > 0 ? <section className="stays-faq"><h2 className="section-title">{String(pageContent.faqTitle)} <SmallLeaf className="section-title__leaf" /></h2><FaqList items={faqItems} variant="boxed" /></section> : null

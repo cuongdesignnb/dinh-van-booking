@@ -52,22 +52,26 @@ export default async function ContactPage() {
   const mapUrl = publicText(site.contact.mapUrl);
   const zaloUrl = publicText(site.contact.zaloUrl);
   const social = publicRecord(site.social);
-  const pageEnabled = page.enabled === true;
   const title = publicText(page.title);
-  const formTitle = publicText(page.formTitle);
   const quickTitle = publicText(page.quickTitle);
   const advisorName = publicText(page.advisorName);
   const advisorRole = publicText(page.advisorRole);
   const mapTitle = publicText(page.mapTitle);
   const faqTitle = publicText(page.faqTitle);
-  const showQuick = pageEnabled && !!(quickTitle || richDocumentHasContent(page.quickIntro) || phone || hotline || email || address || zaloUrl);
-  const showAdvisor = pageEnabled && !!(advisorName || advisorRole || richDocumentHasContent(page.advisorDescription) || advisorImage);
-  const showMap = pageEnabled && !!(mapTitle || richDocumentHasContent(page.mapDescription) || mapImage || mapUrl);
+  const businessHours = publicRecord(site.businessHours);
+  const weekdays = publicText(businessHours.weekdays);
+  const weekend = publicText(businessHours.weekend);
+  const hoursNote = businessHours.note;
+  const hoursTitle = publicText(page.hoursTitle);
+  const showHours = !!(hoursTitle || weekdays || weekend || richDocumentHasContent(hoursNote));
+  const showQuick = !!(quickTitle || richDocumentHasContent(page.quickIntro) || phone || hotline || email || address || zaloUrl);
+  const showAdvisor = !!(advisorName || advisorRole || richDocumentHasContent(page.advisorDescription) || advisorImage);
+  const showMap = !!(mapTitle || richDocumentHasContent(page.mapDescription) || mapImage || mapUrl);
   const showAside = showQuick || showAdvisor || showMap;
 
   return (
     <PageShell className="page-contact">
-      {pageEnabled && title && <>
+      {title && <>
         <section className="phero phero--contact" aria-labelledby="contact-h1">
           <div className="phero__media" aria-hidden="true">
             {heroImage?.src && <Image src={heroImage.src} alt={heroImage.alt ?? ''} fill priority sizes="100vw" className="phero__img" unoptimized />}
@@ -84,11 +88,8 @@ export default async function ContactPage() {
         {promises.length > 0 && <ul className="contact-promises content-shell">{promises.map((item) => <li key={item.id}><strong>{item.title}</strong>{item.description && <span>{item.description}</span>}</li>)}</ul>}
       </>}
 
-      {pageEnabled && promises.length > 0 && !title && <ul className="contact-promises content-shell">{promises.map((item) => <li key={item.id}><strong>{item.title}</strong>{item.description && <span>{item.description}</span>}</li>)}</ul>}
-
       <div className={`contact-layout content-shell${showAside ? '' : ' contact-layout--form-only'}`}>
         <div className="contact-layout__form">
-          {formTitle && <h2 className="section-title">{formTitle}</h2>}
           <ConsultationForm />
         </div>
         {showAside && <aside className="contact-layout__aside">
@@ -104,6 +105,15 @@ export default async function ContactPage() {
             </ul>
           </section>}
 
+          {showHours && <section className="contact-hours">
+            {hoursTitle && <h2>{hoursTitle}</h2>}
+            {(weekdays || weekend) && <dl>
+              {weekdays && <div><dt>Ngày thường</dt><dd>{weekdays}</dd></div>}
+              {weekend && <div><dt>Cuối tuần</dt><dd>{weekend}</dd></div>}
+            </dl>}
+            {richDocumentHasContent(hoursNote) && <RichContentRenderer document={hoursNote as RichDocument} />}
+          </section>}
+
           {showAdvisor && <section className="contact-advisor">
             {advisorImage?.src && <Image src={advisorImage.src} alt={advisorImage.alt ?? ''} width={advisorImage.width ?? 600} height={advisorImage.height ?? 400} className="contact-advisor__image" unoptimized />}
             {(advisorName || advisorRole) && <h2>{[advisorName, advisorRole].filter(Boolean).join(' — ')}</h2>}
@@ -115,17 +125,17 @@ export default async function ContactPage() {
           {showMap && <section className="contact-map">
             {mapTitle && <h2>{mapTitle}</h2>}
             {richDocumentHasContent(page.mapDescription) && <RichContentRenderer document={page.mapDescription as RichDocument} />}
-            {mapImage?.src && <Image src={mapImage.src} alt={mapImage.alt ?? ''} width={mapImage.width ?? 1200} height={mapImage.height ?? 800} unoptimized />}
+            {mapImage?.src && <figure><Image src={mapImage.src} alt={mapImage.alt ?? ''} width={mapImage.width ?? 1200} height={mapImage.height ?? 800} unoptimized /><figcaption>Ảnh minh họa</figcaption></figure>}
             {address && <p>{address}</p>}
             {mapUrl && <a href={mapUrl} target="_blank" rel="noopener noreferrer">Mở bản đồ</a>}
           </section>}
         </aside>}
       </div>
 
-      {pageEnabled && scenicImage?.src && <figure className="contact-scenic content-shell"><Image src={scenicImage.src} alt={scenicImage.alt ?? ''} width={scenicImage.width ?? 1200} height={scenicImage.height ?? 800} unoptimized /></figure>}
-      {pageEnabled && page.showFaq === true && faqTitle && faqs.length > 0 && <section className="contact-faq content-shell"><h2 className="section-title">{faqTitle}</h2><FaqList items={faqs} variant="boxed" /></section>}
-      {pageEnabled && richDocumentHasContent(page.scriptNote) && <div className="contact-script content-shell"><RichContentRenderer document={page.scriptNote as RichDocument} /></div>}
-      {pageEnabled && Object.values(social).some((value) => typeof value === 'string' && value.trim()) && <nav className="contact-social content-shell" aria-label="Mạng xã hội">{Object.entries(social).filter(([, value]) => typeof value === 'string' && value.trim()).map(([key, value]) => <a key={key} href={value as string} target="_blank" rel="noopener noreferrer">{key}</a>)}</nav>}
+      {scenicImage?.src && <figure className="contact-scenic content-shell"><Image src={scenicImage.src} alt={scenicImage.alt ?? ''} width={scenicImage.width ?? 1200} height={scenicImage.height ?? 800} unoptimized /></figure>}
+      {page.showFaq === true && faqTitle && faqs.length > 0 && <section className="contact-faq content-shell"><h2 className="section-title">{faqTitle}</h2><FaqList items={faqs} variant="boxed" /></section>}
+      {richDocumentHasContent(page.scriptNote) && <div className="contact-script content-shell"><RichContentRenderer document={page.scriptNote as RichDocument} /></div>}
+      {Object.values(social).some((value) => typeof value === 'string' && value.trim()) && <nav className="contact-social content-shell" aria-label="Mạng xã hội">{Object.entries(social).filter(([, value]) => typeof value === 'string' && value.trim()).map(([key, value]) => <a key={key} href={value as string} target="_blank" rel="noopener noreferrer">{key}</a>)}</nav>}
     </PageShell>
   );
 }

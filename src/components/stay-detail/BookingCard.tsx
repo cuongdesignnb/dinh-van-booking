@@ -2,6 +2,8 @@
 
 import { ArrowRight, CalendarDays, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { GuestPicker } from '@/components/ui/GuestPicker';
 import { Popover } from '@/components/ui/Popover';
@@ -9,12 +11,16 @@ import { fromPrice } from '@/lib/catalog/pricing';
 import { formatShort } from '@/lib/dates';
 import { formatVnd } from '@/lib/format';
 import { nights } from '@/lib/selection';
+import { publicSetting, richDocumentHasContent } from '@/lib/public-content';
+import type { RichDocument } from '@/lib/content/rich-document';
 import { useBooking } from './BookingContext';
 
 export const ROOMS_ANCHOR = 'cac-loai-phong';
 
 export function BookingCard() {
   const { stay, selection, room, issue, setSelection, proceed } = useBooking();
+  const site = useSiteData();
+  const bookingNote = publicSetting(site.publicSite, 'catalog.stayDetail').bookingNote;
   const uid = useId();
   const [open, setOpen] = useState<null | 'in' | 'out' | 'guests'>(null);
   const inRef = useRef<HTMLButtonElement>(null);
@@ -117,13 +123,7 @@ export function BookingCard() {
         Đặt phòng ngay <ArrowRight size={17} aria-hidden="true" />
       </button>
 
-      <div className="bcard__info">
-        <ShieldCheck size={24} className="bcard__info-ic" aria-hidden="true" />
-        <p>
-          <strong>Không cần thanh toán ngay</strong>
-          <span>Xác nhận phòng khi tư vấn</span>
-        </p>
-      </div>
+      {richDocumentHasContent(bookingNote) && <div className="bcard__info"><ShieldCheck size={24} className="bcard__info-ic" aria-hidden="true" /><div><RichContentRenderer document={bookingNote as RichDocument} /></div></div>}
 
       <Popover
         id={`${uid}-dates`}

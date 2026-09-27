@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const query = await searchParams;
   // notFound() supplies its own noindex robots directive. Omitting route-level
   // robots here avoids duplicate tags for legacy query routes that resolve 404.
-  if (query.d !== undefined) return { title: 'Không tìm thấy điểm đến — Đinh Vân Booking' };
+  if (query.d !== undefined) return { title: 'Không tìm thấy điểm đến' };
   const [destinations, site, urls] = await Promise.all([getPublicDestinations(), getPublicSite(), getPublicSeoUrls()]);
   const page = publicSetting(site, 'catalog.destinationsPage');
   return buildPageMetadata({ path: '/diem-den', eligible: publicText(page.heroTitle) !== '' && urls.some((entry) => entry.path === '/diem-den') && destinations.length > 0, searchParams: query });

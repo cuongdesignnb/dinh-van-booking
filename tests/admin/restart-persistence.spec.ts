@@ -56,13 +56,15 @@ test('PostgreSQL và media volume giữ CMS, ảnh, settings, inquiry, catalog v
     const menuResult = await browserApi(page, '/navigation/primary');
     expect(menuResult.status).toBe(200);
     menuBaseline = menuResult.body as MenuBaseline;
-    const menuItems = menuBaseline!.items.map((item, index) => ({
-      ...(item.id && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(item.id) ? { id: item.id } : {}),
-      label: index === 0 ? menuLabel : item.label,
-      contentId: item.contentId,
-      externalUrl: item.externalUrl,
-      enabled: item.enabled,
-    }));
+    const menuItems = menuBaseline!.items.length
+      ? menuBaseline!.items.map((item, index) => ({
+          ...(item.id && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(item.id) ? { id: item.id } : {}),
+          label: index === 0 ? menuLabel : item.label,
+          contentId: item.contentId,
+          externalUrl: item.externalUrl,
+          enabled: item.enabled,
+        }))
+      : [{ label: menuLabel, contentId: null, externalUrl: '/', enabled: true }];
     const menuWrite = await browserApi(page, '/navigation/primary', 'PUT', { items: menuItems });
     expect(menuWrite.status).toBe(200);
     menuChanged = true;
@@ -136,7 +138,7 @@ test('PostgreSQL và media volume giữ CMS, ảnh, settings, inquiry, catalog v
     const inquiryRequest = page.waitForResponse((response) =>
       response.url().endsWith('/api/v1/inquiries') && response.request().method() === 'POST',
     );
-    await page.getByRole('button', { name: 'Gửi yêu cầu tư vấn ngay' }).click();
+    await page.getByRole('button', { name: /^Gửi yêu cầu/ }).click();
     const inquiryResponse = await inquiryRequest;
     expect([200, 201]).toContain(inquiryResponse.status());
     inquiryId = ((await inquiryResponse.json()) as { id: string }).id;
@@ -204,8 +206,11 @@ test('PostgreSQL và media volume giữ CMS, ảnh, settings, inquiry, catalog v
     expect((inquiryAfter.body as { items: Array<{ id: string; message: string }> }).items
       .some((item) => item.id === inquiryId && item.message.includes(inquiryMarker))).toBe(true);
 
-    const publicMenu = await browserApi(page, '/public/navigation/primary');
-    expect((publicMenu.body as Array<{ label: string }>).some((item) => item.label === menuLabel)).toBe(true);
+    // Admin is the persistence source of truth; the public menu intentionally
+    // hides links whose target page is still a draft.
+    const persistedMenu = await browserApi(page, '/navigation/primary');
+    expect(persistedMenu.status).toBe(200);
+    expect((persistedMenu.body as MenuBaseline).items.some((item) => item.label === menuLabel)).toBe(true);
   } finally {
     if (contentId) {
       const current = await browserApi(page, `/content/${contentId}`);

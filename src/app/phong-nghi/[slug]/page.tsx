@@ -1,20 +1,14 @@
 import {
-  ArrowRight,
-  BadgeCheck,
   CalendarCheck,
   Clock3,
   Coffee,
-  Compass,
   Leaf,
   MapPin,
   Mountain,
   Sprout,
   Star,
-  UserRoundCheck,
 } from 'lucide-react';
 import type { Metadata } from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { PageShell } from '@/components/layout/PageShell';
@@ -34,7 +28,8 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 import { isSeoSchemaAllowed } from '@/lib/seo/policy';
 import { buildStayGraph } from '@/lib/seo/schema';
 import { formatRating } from '@/lib/format';
-import type { Destination } from '@/data/destinations';
+import type { RichDocument } from '@/lib/content/rich-document';
+import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import '@/styles/stay-detail.css';
 
 type Params = {
@@ -45,7 +40,7 @@ type Params = {
 export async function generateMetadata({ params, searchParams }: Params): Promise<Metadata> {
   const [{ slug }, query] = await Promise.all([params, searchParams ?? Promise.resolve({})]);
   const stay = await getPublicStay(slug);
-  if (!stay) return { title: 'Không tìm thấy chỗ nghỉ — Đinh Vân Booking' };
+  if (!stay) return { title: 'Không tìm thấy chỗ nghỉ' };
   return buildPageMetadata({
     path: stay.publicPath ?? `/phong-nghi/${slug}`,
     title: stay.metaTitle ?? stay.name,
@@ -72,7 +67,16 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
     noindex: stay.noindex,
     searchParams: query,
   }) ? buildStayGraph(site, stay, stay.publicPath ?? `/phong-nghi/${slug}`) : null;
-  const nearby: Destination[] = [];
+  const detail = publicSetting(site, 'catalog.stayDetail');
+  const introTitle = publicText(detail.introTitle);
+  const quoteAuthor = publicText(detail.introQuoteAuthor);
+  const factsTitle = publicText(detail.factsTitle);
+  const checkInLabel = publicText(detail.checkInLabel);
+  const checkOutLabel = publicText(detail.checkOutLabel);
+  const breakfastLabel = publicText(detail.breakfastLabel);
+  const breakfastValue = stay.roomTypes.every((room) => room.breakfastIncluded)
+    ? 'Có'
+    : stay.roomTypes.some((room) => room.breakfastIncluded) ? 'Tùy theo hạng phòng' : 'Không';
 
   const content = (
     <>
@@ -86,9 +90,6 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
             { label: stay.name },
           ]}
         />
-        <p className="detail-demo">
-          <BadgeCheck size={14} aria-hidden="true" /> Thông tin, giá và chính sách được đọc từ dữ liệu đã xuất bản.
-        </p>
       </div>
 
       <div className="detail-top detail-shell">
@@ -106,10 +107,10 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
             <span>
               <MapPin size={16} aria-hidden="true" /> {stay.address}
             </span>
-            <span className="detail-head__rating">
+            {stay.reviewCount > 0 && <span className="detail-head__rating">
               <Star size={17} className="star" aria-hidden="true" />
               <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
-            </span>
+            </span>}
           </p>
           <p className="detail-head__tagline">“{stay.tagline}”</p>
           <ul className="detail-head__hl">
@@ -126,11 +127,6 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
             })}
           </ul>
           <ShareSave id={stay.id} name={stay.name} />
-          <p className="detail-head__note handwritten" aria-hidden="true">
-            Nơi mỗi chuyến đi
-            <br /> đều là một câu chuyện
-            <br /> đáng nhớ!
-          </p>
           <LeafSprig className="detail-head__sprig" />
         </header>
 
@@ -143,124 +139,38 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
         </aside>
 
         <div className="detail-top__host">
-          {stay.host ? (
-            <HostCard host={stay.host} />
-          ) : (
-            <section className="host host--none" aria-label="Chủ nhà">
-              <p>Thông tin chủ nhà đang được cập nhật. Đinh Vân sẽ kết nối bạn khi cần.</p>
-            </section>
-          )}
+          {stay.host && <HostCard host={stay.host} />}
         </div>
 
         <div className="detail-top__info">
           <section className="intro" aria-labelledby="intro-t">
-            <h2 className="dsec-title" id="intro-t">
-              Giới thiệu phòng nghỉ <SmallLeaf className="section-title__leaf" />
-            </h2>
+            {introTitle && <h2 className="dsec-title" id="intro-t">{introTitle} <SmallLeaf className="section-title__leaf" /></h2>}
             {stay.descriptionDocument ? <RichContentRenderer document={stay.descriptionDocument} className="intro__text" /> : <p className="intro__text">{stay.description}</p>}
-            <figure className="intro__quote">
-              <blockquote>
-                “Không chỉ là một nơi lưu trú, mà là nơi bạn tìm lại sự kết nối
-                <br /> với thiên nhiên và chính mình.”
-              </blockquote>
-              <figcaption>Đinh Vân Booking</figcaption>
-            </figure>
+            {richDocumentHasContent(detail.introQuote) && <figure className="intro__quote"><blockquote><RichContentRenderer document={detail.introQuote as RichDocument} /></blockquote>{quoteAuthor && <figcaption>{quoteAuthor}</figcaption>}</figure>}
           </section>
-            <Amenities amenities={stay.amenities} />
+            <Amenities amenities={stay.amenities} labels={stay.amenityLabels} title={publicText(detail.amenitiesTitle)} />
         </div>
       </div>
 
       <div className="detail-lower detail-shell">
         <div className="detail-lower__left">
-          <RoomTypes />
-          <ReviewCards reviews={reviews} total={stay.reviewCount} />
+          <RoomTypes title={publicText(detail.roomsTitle)} />
+          <ReviewCards reviews={reviews} total={stay.reviewCount} title={publicText(detail.reviewsTitle)} />
         </div>
         <div className="detail-lower__right">
           <div className="facts-row">
-            <section className="facts" aria-labelledby="facts-t">
-              <h2 className="dsec-title" id="facts-t">
-                Lịch nhận phòng &amp; thông tin cần biết <SmallLeaf className="section-title__leaf" />
-              </h2>
+            {(factsTitle || checkInLabel || checkOutLabel || breakfastLabel) && <section className="facts" aria-labelledby={factsTitle ? 'facts-t' : undefined} aria-label={factsTitle ? undefined : 'Thông tin lưu trú'}>
+              {factsTitle && <h2 className="dsec-title" id="facts-t">{factsTitle} <SmallLeaf className="section-title__leaf" /></h2>}
               <ul className="facts__list">
-                <li className="facts__pair">
-                  <span className="facts__ic" aria-hidden="true">
-                    <Clock3 size={18} />
-                  </span>
-                  <span>
-                    <b>Giờ nhận phòng:</b> Theo cấu hình nơi lưu trú
-                  </span>
-                  <span className="facts__ic" aria-hidden="true">
-                    <CalendarCheck size={17} />
-                  </span>
-                  <span>
-                    <b>Giờ trả phòng:</b> Theo cấu hình nơi lưu trú
-                  </span>
-                </li>
-                <li>
-                  <span className="facts__ic" aria-hidden="true">
-                    <UserRoundCheck size={18} />
-                  </span>
-                  <span>
-                    Thông tin nhận phòng sẽ được xác nhận sau khi đặt
-                  </span>
-                </li>
-                <li>
-                  <span className="facts__ic" aria-hidden="true">
-                    <Coffee size={17} />
-                  </span>
-                  <span>
-                    <b>Bữa sáng:</b> Theo loại phòng đã chọn
-                  </span>
-                </li>
-                <li>
-                  <span className="facts__ic" aria-hidden="true">
-                    <Compass size={18} />
-                  </span>
-                  <span>Tiện ích và dịch vụ theo nội dung đã xuất bản</span>
-                </li>
+                {checkInLabel && stay.checkInTime && <li><span className="facts__ic" aria-hidden="true"><Clock3 size={18} /></span><span><b>{checkInLabel}:</b> {stay.checkInTime}</span></li>}
+                {checkOutLabel && stay.checkOutTime && <li><span className="facts__ic" aria-hidden="true"><CalendarCheck size={17} /></span><span><b>{checkOutLabel}:</b> {stay.checkOutTime}</span></li>}
+                {breakfastLabel && <li><span className="facts__ic" aria-hidden="true"><Coffee size={17} /></span><span><b>{breakfastLabel}:</b> {breakfastValue}</span></li>}
               </ul>
-            </section>
-            <NotesPaper notes={stay.notes ?? []} />
+            </section>}
+            <NotesPaper notes={stay.notes ?? []} title={publicText(detail.notesTitle)} thanks={publicText(detail.notesThanks)} />
           </div>
-
-          <section className="nearby" aria-labelledby="nearby-t">
-            <div className="dsec-head">
-              <h2 className="dsec-title" id="nearby-t">
-                Địa điểm xung quanh <SmallLeaf className="section-title__leaf" />
-              </h2>
-              <Link href="/diem-den" className="link-more">
-                Xem tất cả <span className="sr-only">điểm đến</span> <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
-            <ul className="nearby__list">
-              {nearby.map((d) => {
-                const img = d.nearbyImage ?? d.image;
-                return (
-                  <li key={d.id}>
-                    <Link href={`/diem-den?d=${d.id}`} className="nearby__card">
-                      <span className="nearby__media">
-                        <Image src={img.src} alt={img.alt} fill sizes="(max-width: 767px) 45vw, 145px" />
-                      </span>
-                      <span className="nearby__name">{d.name}</span>
-                      {d.fromStay && (
-                        <span className="nearby__meta">
-                          <span>
-                            <MapPin size={11} aria-hidden="true" /> {d.fromStay.distance}
-                          </span>
-                          <span>
-                            <Clock3 size={11} aria-hidden="true" /> {d.fromStay.time}
-                          </span>
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
           <div className="rules-row">
-            <HouseRules rules={stay.houseRules ?? []} />
+            <HouseRules rules={stay.houseRules ?? []} title={publicText(detail.houseRulesTitle)} />
             <SupportCard />
           </div>
         </div>

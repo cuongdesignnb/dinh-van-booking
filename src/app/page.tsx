@@ -44,7 +44,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function HomePage({ searchParams }: Props) {
   const [query, stays, destinations, combos, reviews, site] = await Promise.all([
     searchParams,
-    getPublicStays(true),
+    getPublicStays(),
     getPublicDestinations(),
     getPublicCombos(),
     getPublicReviews(),
@@ -67,6 +67,7 @@ export default async function HomePage({ searchParams }: Props) {
     faq: publicSetting(site, 'home.faq'),
     contact: publicSetting(site, 'home.contactPanel'),
   };
+  const selectedStays = configs.featured.selectionMode === 'featured' ? stays.filter((item) => item.popularity > 0) : stays;
   const selectedDestinations = configs.destinations.selectionMode === 'featured' ? destinations.filter((item) => item.featured) : destinations;
   const renderSection = (key: string) => {
     if (publicSectionHidden(site, key)) return null;
@@ -74,7 +75,7 @@ export default async function HomePage({ searchParams }: Props) {
       case 'hero': return <HeroSection key={key} config={configs.hero} image={publicAsset(site, configs.hero.imageMediaId)} mobileImage={publicAsset(site, configs.hero.mobileImageMediaId)} />;
       case 'search': return <section key={key} className="home-search content-shell"><BookingSearch /></section>;
       case 'trust': return <TrustStrip key={key} config={configs.trust} />;
-      case 'featured': return <FeaturedStays key={key} stays={stays} config={configs.featured} />;
+      case 'featured': return <FeaturedStays key={key} stays={selectedStays} config={configs.featured} />;
       case 'combos': return <HomeCombos key={key} combos={combos} config={configs.combos} />;
       case 'why': return <WhyChooseUs key={key} config={configs.why} />;
       case 'destinations': return <DestinationGrid key={key} destinations={selectedDestinations} config={configs.destinations} />;

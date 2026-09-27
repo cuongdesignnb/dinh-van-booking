@@ -89,6 +89,7 @@ function CategoryIcon({ id }: { id: DestinationCategory | 'all' }) {
 /** Category filter + destination cards + detail dialog (URL: ?loai=, ?d=). */
 export function DestinationExplorer({ destinations, config }: { destinations: Destination[]; config: PublicRecord }) {
   const listTitle = publicText(config.listTitle);
+  const advisorCtaLabel = publicText(config.advisorCtaLabel);
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -129,17 +130,17 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
   };
 
   let body;
-  if (!list.length)
-    body = (
+  if (!list.length) {
+    const emptyTitle = publicText(config.emptyTitle);
+    const emptyDescription = config.emptyDescription;
+    body = emptyTitle || richDocumentHasContent(emptyDescription) ? (
       <div className="state-box" role="status">
-        <p>
-          <strong>Chưa có điểm đến trong nhóm này.</strong>
-        </p>
-        <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>
-          Xem tất cả điểm đến
-        </button>
+        {emptyTitle && <strong>{emptyTitle}</strong>}
+        {richDocumentHasContent(emptyDescription) && <div><RichContentRenderer document={emptyDescription as RichDocument} /></div>}
+        {category !== 'all' && <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>Xem tất cả điểm đến</button>}
       </div>
-    );
+    ) : <p className="state-box" role="status">Không có kết quả.</p>;
+  }
   else
     body = (
       <ul className="dest-grid">
@@ -209,7 +210,7 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
       </section>
 
       <AllDestinations destinations={destinations} open={all} onClose={() => setAll(false)} onPick={openDest} />
-      <DestinationDialog destination={open} onClose={closeDest} />
+      <DestinationDialog destination={open} onClose={closeDest} advisorCtaLabel={advisorCtaLabel} />
     </>
   );
 }
@@ -251,7 +252,7 @@ function AllDestinations({ destinations, open, onClose, onPick }: { destinations
   );
 }
 
-export function DestinationDialog({ destination, onClose }: { destination: Destination | null; onClose: () => void }) {
+export function DestinationDialog({ destination, onClose, advisorCtaLabel }: { destination: Destination | null; onClose: () => void; advisorCtaLabel: string }) {
   const id = useId();
   const [copied, setCopied] = useState<string | null>(null);
   const d = destination;
@@ -290,9 +291,9 @@ export function DestinationDialog({ destination, onClose }: { destination: Desti
             {d.slug && <Link className="btn btn--light" href={d.publicPath ?? `/diem-den/${d.slug}`}>
               Xem trang điểm đến <ArrowRight size={16} aria-hidden="true" />
             </Link>}
-            <Link className="btn btn--primary" href={`/lien-he?intent=destination&item=${d.id}`} data-autofocus>
-              Nhờ Đinh Vân gợi ý lịch trình <ArrowRight size={16} aria-hidden="true" />
-            </Link>
+            {advisorCtaLabel && <Link className="btn btn--primary" href={`/lien-he?intent=destination&item=${d.id}`} data-autofocus>
+              {advisorCtaLabel} <ArrowRight size={16} aria-hidden="true" />
+            </Link>}
             <Link className="btn btn--light" href="/phong-nghi">
               Tìm phòng nghỉ
             </Link>

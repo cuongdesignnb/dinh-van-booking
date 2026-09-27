@@ -281,7 +281,7 @@
   right: 0;
   bottom: 0;
   height: 190px;
-  background: url('/images/dinh-van-booking/hero-cuc-phuong.webp') center 30% / cover no-repeat;
+  background: linear-gradient(180deg, #dfe8d4 0%, #b5c9a8 58%, #829d7b 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%);
   mask-image: linear-gradient(180deg, transparent, #000 45%);
   opacity: 0.62;

@@ -37,6 +37,11 @@ export function ConsultationForm() {
   const site = useSiteData();
   const contactPage = publicSetting(site.publicSite, 'contact.page');
   const formTitle = publicText(contactPage.formTitle);
+  const messageLabel = publicText(contactPage.formMessageLabel) || 'Nhu cầu hoặc lời nhắn';
+  const messagePlaceholder = publicText(contactPage.formMessagePlaceholder) || 'Chia sẻ thông tin để chúng tôi hiểu nhu cầu của bạn.';
+  const submitLabel = publicText(contactPage.formSubmitLabel) || 'Gửi yêu cầu';
+  const successMessage = contactPage.formSuccessMessage;
+  const privacyNote = contactPage.formPrivacyNote;
   const uid = useId();
   const params = useSearchParams();
   const [context, setContext] = useState(() => resolveContext(params));
@@ -259,7 +264,7 @@ export function ConsultationForm() {
         </div>
         <div className="cfield cfield--wide">
           <label className="cfield__label" htmlFor={`${uid}-msg`}>
-            Nhu cầu hoặc lời nhắn cho Đinh Vân
+            {messageLabel}
           </label>
           <span className="cfield__box cfield__box--area" data-invalid={err('message') ? '' : undefined}>
             <MessageSquareText size={21} aria-hidden="true" />
@@ -269,7 +274,7 @@ export function ConsultationForm() {
               name="message"
               rows={5}
               value={message}
-              placeholder={'Ví dụ: Gia đình mình có trẻ nhỏ, muốn phòng yên tĩnh, gần rừng...\nBạn cứ chia sẻ thoải mái nhé!'}
+              placeholder={messagePlaceholder}
               aria-invalid={!!err('message')}
               aria-describedby={`${uid}-msg-c${err('message') ? ` ${uid}-msg-e` : ''}`}
               onChange={(e) => {
@@ -298,11 +303,9 @@ export function ConsultationForm() {
 
       <button type="submit" className="btn btn--primary cform__submit btn-shine" disabled={status === 'validating'} aria-busy={status === 'validating'}>
         <Send size={20} aria-hidden="true" />
-        {status === 'validating' ? 'Đang kiểm tra thông tin…' : 'Gửi yêu cầu tư vấn ngay'}
+        {status === 'validating' ? 'Đang kiểm tra thông tin…' : submitLabel}
       </button>
-      <p className="cform__privacy">
-        <LockKeyhole size={13} aria-hidden="true" /> Thông tin của bạn chỉ dùng để tư vấn chuyến đi.
-      </p>
+      {richDocumentHasContent(privacyNote) && <div className="cform__privacy"><LockKeyhole size={13} aria-hidden="true" /><RichContentRenderer document={privacyNote as RichDocument} /></div>}
 
       <Popover id={`${uid}-cal`} label="Chọn ngày dự kiến" anchorRef={refs.date} open={open === 'date'} onClose={() => setOpen(null)}>
         <DateRangePicker
@@ -339,7 +342,7 @@ export function ConsultationForm() {
           Đã nhận yêu cầu tư vấn
         </h2>
         <p className="dialog__pending" role="status">
-          Yêu cầu đã được lưu vào hệ thống tư vấn. Đinh Vân sẽ xem và phản hồi theo thông tin liên hệ đã cấu hình.
+          {richDocumentHasContent(successMessage) ? <RichContentRenderer document={successMessage as RichDocument} /> : 'Yêu cầu của bạn đã được lưu.'}
         </p>
         <ul className="preview-list">
           {summary.map((l) => (

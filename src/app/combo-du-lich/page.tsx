@@ -21,7 +21,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const query = await searchParams;
   // notFound() supplies its own noindex robots directive. Omitting route-level
   // robots here avoids duplicate tags for legacy query routes that resolve 404.
-  if (query.combo !== undefined) return { title: 'Không tìm thấy combo — Đinh Vân Booking' };
+  if (query.combo !== undefined) return { title: 'Không tìm thấy combo' };
   const [combos, site, urls] = await Promise.all([getPublicCombos(), getPublicSite(), getPublicSeoUrls()]);
   const page = publicSetting(site, 'catalog.combosPage');
   return buildPageMetadata({ path: '/combo-du-lich', eligible: publicText(page.heroTitle) !== '' && urls.some((entry) => entry.path === '/combo-du-lich') && combos.length > 0, searchParams: query });
@@ -97,7 +97,7 @@ export default async function CombosPage({ searchParams }: { searchParams: Promi
     </section>}
 
     {stepsTitle && steps.length > 0 && <section className="combo-process content-shell" aria-labelledby="combo-process-t">
-      <div className="combo-process__intro"><h2 id="combo-process-t">{stepsTitle}</h2>{publicText(page.stepsSubtitle) && <p>{publicText(page.stepsSubtitle)}</p>}</div>
+      <div className="combo-process__intro"><h2 id="combo-process-t">{stepsTitle}</h2>{richDocumentHasContent(page.stepsSubtitle) ? <div><RichContentRenderer document={page.stepsSubtitle as RichDocument} /></div> : publicText(page.stepsSubtitle) && <p>{publicText(page.stepsSubtitle)}</p>}</div>
       <ol className="combo-process__steps">{steps.map((step, index) => <li key={step.id} data-reveal="fade-up" style={{ '--d': `${index * 120}ms` } as React.CSSProperties}><span className="combo-process__num" aria-hidden="true">{index + 1}</span><span><strong>{step.title}</strong>{step.description && <span>{step.description}</span>}</span>{index < steps.length - 1 && <MoveRight className="combo-process__arrow" size={26} strokeWidth={1.5} aria-hidden="true" />}</li>)}</ol>
     </section>}
 

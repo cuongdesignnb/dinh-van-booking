@@ -82,6 +82,9 @@ const sortCombos = (list: Combo[], sort: ComboSort) => [...list].sort((a, b) => 
 
 export function ComboExplorer({ combos, config }: { combos: Combo[]; config: PublicRecord }) {
   const listTitle = publicText(config.listTitle);
+  const emptyTitle = publicText(config.emptyTitle);
+  const emptyCtaLabel = publicText(config.emptyCtaLabel);
+  const advisorCtaLabel = publicText(config.advisorCtaLabel);
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -121,21 +124,16 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
 
   let body;
   if (!list.length)
-    body = (
+    body = emptyTitle || emptyCtaLabel || richDocumentHasContent(config.emptyDescription) ? (
       <div className="state-box" role="status">
-        <p>
-          <strong>Chưa có combo phù hợp với lựa chọn này.</strong> Đinh Vân có thể thiết kế hành trình riêng cho bạn.
-        </p>
+        {emptyTitle && <strong>{emptyTitle}</strong>}
+        {richDocumentHasContent(config.emptyDescription) && <div><RichContentRenderer document={config.emptyDescription as RichDocument} /></div>}
         <div className="state-box__actions">
-          <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>
-            Xem tất cả combo
-          </button>
-          <Link className="btn btn--primary" href="/lien-he?intent=combo">
-            Nhận tư vấn riêng
-          </Link>
+          {category !== 'all' && <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>Xem tất cả combo</button>}
+          {emptyCtaLabel && <Link className="btn btn--primary" href="/lien-he?intent=combo">{emptyCtaLabel}</Link>}
         </div>
       </div>
-    );
+    ) : <p className="state-box" role="status">Không có kết quả.</p>;
   else
     body = (
       <ul className="combo-grid">
@@ -232,21 +230,21 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
         {body}
       </section>
 
-      <ComboDetailDialog combo={open} onClose={closeCombo} />
+      <ComboDetailDialog combo={open} onClose={closeCombo} advisorCtaLabel={advisorCtaLabel} />
     </>
   );
 }
 
-function ComboDetailDialog({ combo, onClose }: { combo: Combo | null; onClose: () => void }) {
+function ComboDetailDialog({ combo, onClose, advisorCtaLabel }: { combo: Combo | null; onClose: () => void; advisorCtaLabel: string }) {
   const id = useId();
   return (
     <Modal open={!!combo} onClose={onClose} labelledBy={id} size="lg" className="dialog--combo">
-      {combo && <ComboDetail key={combo.id} combo={combo} titleId={id} />}
+      {combo && <ComboDetail key={combo.id} combo={combo} titleId={id} advisorCtaLabel={advisorCtaLabel} />}
     </Modal>
   );
 }
 
-function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
+function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleId: string; advisorCtaLabel: string }) {
   const router = useRouter();
   const [date, setDate] = useState<string | null>(null);
   const [guests, setGuests] = useState(2);
@@ -370,7 +368,7 @@ function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
         <Link className="btn btn--light" href={combo.publicPath ?? `/combo-du-lich/${combo.slug}`}>
           Xem trang hành trình <ArrowRight size={16} aria-hidden="true" />
         </Link>
-        <button
+        {advisorCtaLabel && <button
           type="button"
           className="btn btn--primary"
           data-autofocus
@@ -381,8 +379,8 @@ function ComboDetail({ combo, titleId }: { combo: Combo; titleId: string }) {
             router.push(`/lien-he?${p}`);
           }}
         >
-          Nhờ Đinh Vân tư vấn combo này <ArrowRight size={16} aria-hidden="true" />
-        </button>
+          {advisorCtaLabel} <ArrowRight size={16} aria-hidden="true" />
+        </button>}
         <p className="combo-d__hint">
           <Info size={14} aria-hidden="true" /> Chưa đặt chỗ hay thanh toán — chỉ gửi nhu cầu sang trang tư vấn.
         </p>

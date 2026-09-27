@@ -49,9 +49,12 @@ export interface Stay {
   area: 'cuc-phuong' | 'trang-an';
   rating: number;
   reviewCount: number;
+  checkInTime?: string;
+  checkOutTime?: string;
   location: string;
   address: string;
   amenities: AmenityId[];
+  amenityLabels?: Record<string, string>;
   cardFeatures: CardFeature[];
   cardSummary: string;
   tagline: string;

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-27T12:33:40.653Z",
-  "baseSha": "81b65712469a49c77858a4e1624f6e989232c13a",
+  "generatedAt": "2026-09-27T13:50:43.028Z",
+  "baseSha": "2a0364fbf50fb4bb0ccaed362422dd6b270d8326",
   "policy": "Runtime public/admin paths must not read commercial fixture records or browser-persisted business data.",
   "scannedRoots": [
     "src/app",
@@ -8,18 +8,8 @@
     "src/lib",
     "src/config"
   ],
-  "findingCount": 43,
+  "findingCount": 42,
   "findings": [
-    {
-      "file": "src/app/phong-nghi/[slug]/page.tsx",
-      "line": 37,
-      "kind": "fixture-import",
-      "classification": "type-only-review",
-      "scope": "runtime-type-only",
-      "disposition": "allowed: erased type import; no runtime fixture dependency",
-      "evidence": "import type is erased by the TypeScript build",
-      "excerpt": "import type { Destination } from '@/data/destinations';"
-    },
     {
       "file": "src/components/admin/bookings/BookingDetail.tsx",
       "line": 7,

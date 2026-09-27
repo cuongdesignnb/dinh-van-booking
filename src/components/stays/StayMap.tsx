@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useId, useState } from 'react';
 import { DemoNote, Modal } from '@/components/ui/Modal';
 import type { Stay } from '@/data/stays';
+import type { PublicMediaAsset } from '@/lib/api/public';
 import { formatVnd } from '@/lib/format';
 
 const fromPrice = (stay: Stay) => Math.min(...stay.roomTypes.map((room) => room.pricePerNight));
@@ -26,21 +27,18 @@ function MapCanvas({
   onSelect,
   query,
   large,
+  image,
 }: {
   stays: Stay[];
   active: Stay | null;
   onSelect: (id: string) => void;
   query: string;
   large?: boolean;
+  image: PublicMediaAsset;
 }) {
   return (
     <div className={`smap${large ? ' smap--large' : ''}`}>
-      <Image src="/images/dinh-van-booking/pages/map-stays.webp" alt="" fill sizes={large ? '720px' : '266px'} className="smap__bg" />
-      <span className="smap__label" aria-hidden="true">
-        Vườn quốc gia
-        <br />
-        Cúc Phương
-      </span>
+      <Image src={image.src} alt={image.alt ?? ''} fill sizes={large ? '720px' : '266px'} className="smap__bg" unoptimized />
       <span className="smap__badge">Bản đồ minh họa</span>
       {stays.filter((s) => s.mapPin).map((s) => (
         <button
@@ -73,18 +71,18 @@ function MapCanvas({
   );
 }
 
-export function StayMapCard({ stays, query }: { stays: Stay[]; query: string }) {
+export function StayMapCard({ stays, query, image }: { stays: Stay[]; query: string; image: PublicMediaAsset | null }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const titleId = useId();
-  if (!stays.some((stay) => stay.mapPin)) return null;
+  if (!image?.src || !stays.some((stay) => stay.mapPin)) return null;
   const active = stays.find((s) => s.id === activeId) ?? stays[0] ?? null;
   return (
     <section className="side-card map-card" aria-labelledby={`${titleId}-card`} data-reveal="slide-left">
       <h2 className="side-card__title" id={`${titleId}-card`}>
         Xem vị trí trên bản đồ
       </h2>
-      <MapCanvas stays={stays} active={active} onSelect={setActiveId} query={query} />
+      <MapCanvas stays={stays} active={active} onSelect={setActiveId} query={query} image={image} />
       <button type="button" className="btn btn--primary map-card__cta btn-shine" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         Xem bản đồ lớn <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
       </button>
@@ -94,7 +92,7 @@ export function StayMapCard({ stays, query }: { stays: Stay[]; query: string }) 
           Bản đồ chỗ nghỉ
         </h2>
         <DemoNote>Bản đồ minh họa — vị trí các điểm chỉ mang tính tương đối, chưa dùng để chỉ đường.</DemoNote>
-        <MapCanvas stays={stays} active={active} onSelect={setActiveId} query={query} large />
+        <MapCanvas stays={stays} active={active} onSelect={setActiveId} query={query} large image={image} />
         <ul className="map-list" aria-label="Danh sách chỗ nghỉ trên bản đồ">
           {stays.map((s) => (
             <li key={s.id}>
