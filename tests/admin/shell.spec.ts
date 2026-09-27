@@ -32,6 +32,12 @@ test('đăng nhập hiển thị đúng danh tính API và không còn control d
   await expect(page.locator('#admin-user')).toContainText(user.email);
   await expect(page.locator('#admin-user')).toContainText('backend kiểm tra');
 
+  await page.reload();
+  await expect(page.locator('.atop__user')).toBeVisible();
+  const afterReload = await browserApi(page, '/auth/me');
+  expect(afterReload.status).toBe(200);
+  await expect(page.locator('.atop__user')).toContainText(user.fullName);
+
   const anonymous = await page.evaluate(async () => {
     const response = await fetch('/api/v1/settings', { credentials: 'omit' });
     return response.status;
@@ -98,10 +104,28 @@ test('route API-backed hiển thị bản ghi PostgreSQL và các empty state th
   await page.goto('/admin/menu');
   await expect(page.locator('.menu-manager__item')).toHaveCount(5);
   await page.goto('/admin/thu-vien-anh');
-  await expect(page.locator('.media-library__hint')).toContainText('0 ảnh');
+  const mediaList = await browserApi(page, '/media');
+  expect(mediaList.status).toBe(200);
+  await expect(page.locator('.media-library__hint')).toContainText(`${(mediaList.body as { total: number }).total} ảnh`);
   await page.goto('/admin/cai-dat');
   await expect(page.locator('.settings-item').first()).toBeVisible();
   await expect(page.locator('.settings-screen')).not.toContainText(/\{\s*"/);
+  const localAdminState = await page.evaluate(() => Object.keys(localStorage).filter((key) => /dvb:admin|admin.*(booking|content|customer|property)/i.test(key)));
+  expect(localAdminState).toEqual([]);
+});
+
+test('API lỗi hiển thị retry state thay vì giả rằng danh sách rỗng', async ({ page }) => {
+  await signInAsOwner(page);
+  const contentRequest = /\/api\/v1\/content\?kind=article/;
+  await page.route(contentRequest, (route) => route.abort());
+  await page.goto('/admin/noi-dung');
+  await expect(page.locator('.settings-screen__message--error')).toBeVisible();
+  await expect(page.locator('.content-manager__error-state')).toContainText('Không tải được nội dung từ API');
+  await expect(page.locator('.content-manager__empty')).toHaveCount(0);
+
+  await page.unroute(contentRequest);
+  await page.getByRole('button', { name: 'Tải lại' }).click();
+  await expect(page.locator('.content-manager__empty')).toContainText('Chưa có bài viết');
 });
 
 test('phòng nghỉ và nội dung mở form ở route riêng, có nút quay lại danh sách', async ({ page }) => {

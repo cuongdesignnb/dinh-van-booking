@@ -32,15 +32,18 @@ export function InquiryInbox() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const load = async () => {
     setLoading(true);
     setError(null);
+    setLoadFailed(false);
     try {
       const result = await apiRequest<{ items: Inquiry[]; total: number }>('/inquiries?page=1&pageSize=100');
       setItems(result.items);
     } catch (reason) {
       setError(reason instanceof ApiError && reason.status === 403 ? 'Tài khoản không có quyền xem CRM.' : reason instanceof Error ? reason.message : 'Không tải được yêu cầu.');
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -76,7 +79,7 @@ export function InquiryInbox() {
         <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || !!busy}>Tải lại</button>
       </div>
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
-      {loading ? <div className="acard apending">Đang tải yêu cầu…</div> : !items.length ? <div className="acard apending">Chưa có yêu cầu tư vấn.</div> : (
+      {loading ? <div className="acard apending">Đang tải yêu cầu…</div> : loadFailed ? <div className="acard apending inquiry-inbox__error-state">Không tải được yêu cầu từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending">Chưa có yêu cầu tư vấn.</div> : (
         <div className="settings-screen__list">
           {items.map((item) => (
             <article className="acard settings-item" key={item.id}>

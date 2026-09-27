@@ -47,8 +47,8 @@ export function SettingsScreen() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
-  const load = useCallback(async () => {
-    setMessage(null);
+  const load = useCallback(async (preserveMessage = false) => {
+    if (!preserveMessage) setMessage(null);
     try {
       const next = await apiRequest<SettingsPayload>('/settings');
       setPayload(next);
@@ -87,11 +87,11 @@ export function SettingsScreen() {
         body: JSON.stringify({ value, expectedVersion: item.version }),
       });
       setMessage({ tone: 'success', text: `Đã lưu cài đặt “${item.label}”.` });
-      await load();
+      await load(true);
     } catch (reason) {
       const conflict = reason instanceof ApiError && reason.status === 409;
       setMessage({ tone: 'error', text: conflict ? 'Cài đặt vừa được thay đổi ở nơi khác. Đã tải lại bản mới.' : reason instanceof Error ? reason.message : 'Không lưu được cài đặt.' });
-      if (conflict) await load();
+      if (conflict) await load(true);
     } finally {
       setBusyKey(null);
     }
@@ -104,11 +104,11 @@ export function SettingsScreen() {
     try {
       await apiRequest(`/settings/${encodeURIComponent(item.key)}?expectedVersion=${item.version}`, { method: 'DELETE' });
       setMessage({ tone: 'success', text: `Đã khôi phục “${item.label}” về mặc định.` });
-      await load();
+      await load(true);
     } catch (reason) {
       const conflict = reason instanceof ApiError && reason.status === 409;
       setMessage({ tone: 'error', text: conflict ? 'Cài đặt vừa được thay đổi ở nơi khác. Đã tải lại bản mới.' : reason instanceof Error ? reason.message : 'Không khôi phục được cài đặt.' });
-      if (conflict) await load();
+      if (conflict) await load(true);
     } finally {
       setBusyKey(null);
     }

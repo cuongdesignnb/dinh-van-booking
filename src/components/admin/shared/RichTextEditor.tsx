@@ -279,6 +279,7 @@ export function RichTextEditor({
 }) {
   const id = useId();
   const onChangeRef = useRef(onChange);
+  const previewSelection = useRef<{ from: number; to: number } | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [previewDocument, setPreviewDocument] = useState<RichDocument>(value ?? EMPTY_DOCUMENT);
   const [aiOpen, setAiOpen] = useState(false);
@@ -325,6 +326,26 @@ export function RichTextEditor({
     editor?.setEditable(!disabled);
   }, [editor, disabled]);
 
+  const togglePreview = useCallback(() => {
+    if (!editor) return;
+    if (!previewMode) {
+      const { from, to } = editor.state.selection;
+      previewSelection.current = { from, to };
+      setPreviewDocument(editor.getJSON());
+      setPreviewMode(true);
+      return;
+    }
+
+    setPreviewMode(false);
+    requestAnimationFrame(() => {
+      const selection = previewSelection.current;
+      if (!selection) return;
+      editor.commands.focus();
+      editor.commands.setTextSelection(selection);
+      previewSelection.current = null;
+    });
+  }, [editor, previewMode]);
+
   const pickImage = onPickImage
     ? () =>
         onPickImage((attrs) => {
@@ -350,8 +371,11 @@ export function RichTextEditor({
       </label>
       {hint ? <span className="afield__hint">{hint}</span> : null}
       <div className={`rte${disabled ? ' is-disabled' : ''}`}>
-        <Toolbar editor={editor} onPickImage={pickImage} previewMode={previewMode} onTogglePreview={() => setPreviewMode((current) => !current)} onAiWrite={!disabled ? () => setAiOpen(true) : undefined} />
-        {previewMode ? <RichContentRenderer document={previewDocument} className="rte__preview" /> : <EditorContent id={id} editor={editor} className="rte__body" />}
+        <Toolbar editor={editor} onPickImage={pickImage} previewMode={previewMode} onTogglePreview={togglePreview} onAiWrite={!disabled ? () => setAiOpen(true) : undefined} />
+        {previewMode && <RichContentRenderer document={previewDocument} className="rte__preview" />}
+        <div className="rte__body" hidden={previewMode}>
+          <EditorContent id={id} editor={editor} />
+        </div>
         <p className="rte__meta">{words} từ</p>
       </div>
       <AiContentAssistant

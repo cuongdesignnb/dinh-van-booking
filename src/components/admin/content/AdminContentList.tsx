@@ -187,17 +187,18 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
   const [busy, setBusy] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const inlineInsert = useRef<((attrs: { src: string; alt?: string; mediaId?: string }) => void) | null>(null);
   const initializedCreateFor = useRef<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setLoadFailed(false);
     try {
       const result = await apiRequest<{ items: ContentItem[] }>(`/content?kind=${kind}&page=1&pageSize=100`);
       setItems(result.items);
-    } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
+    } catch (reason) { setError(errorMessage(reason)); setLoadFailed(true); } finally { setLoading(false); }
   }, [kind]);
 
   useEffect(() => { void load(); }, [load]);
@@ -449,7 +450,7 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
       )}
 
       {editorMode && !form && <div className="acard apending">{loading || busy ? 'Đang tải dữ liệu…' : 'Không tìm thấy nội dung cần chỉnh sửa.'}</div>}
-      {!editorMode && (loading ? <div className="acard apending">Đang tải dữ liệu thật…</div> : !items.length ? <div className="acard apending content-manager__empty"><FilePenLine size={22} aria-hidden="true" /><div><h3>Chưa có {KIND_LABEL[kind].toLowerCase()}</h3><p>Bấm “Tạo mới” để mở editor và tạo bản ghi đầu tiên trong PostgreSQL.</p></div></div> : <div className="settings-screen__list">
+      {!editorMode && (loading ? <div className="acard apending">Đang tải dữ liệu thật…</div> : loadFailed ? <div className="acard apending content-manager__error-state">Không tải được nội dung từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending content-manager__empty"><FilePenLine size={22} aria-hidden="true" /><div><h3>Chưa có {KIND_LABEL[kind].toLowerCase()}</h3><p>Bấm “Tạo mới” để mở editor và tạo bản ghi đầu tiên trong PostgreSQL.</p></div></div> : <div className="settings-screen__list">
         {items.map((item) => <article className="acard settings-item content-manager__item" key={item.id}>
           <div className="settings-item__head"><div><h3>{item.title}</h3><code>{item.path ?? item.slug ?? item.id}</code></div><span className="settings-item__meta">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · v{item.version}</span></div>
           {item.excerpt && <p>{item.excerpt}</p>}<p className="ahint">Cập nhật {new Date(item.updatedAt).toLocaleString('vi-VN')} · {item.media.length} media</p>

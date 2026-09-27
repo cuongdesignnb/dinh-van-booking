@@ -179,16 +179,19 @@ export function PropertyCatalogScreen() {
   const [inlinePickerOpen, setInlinePickerOpen] = useState(false);
   const inlineInsert = useRef<((attrs: { src: string; alt?: string; mediaId?: string }) => void) | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setLoadFailed(false);
     try {
       const response = await apiRequest<{ items: PropertyItem[] }>('/properties');
       setItems(response.items);
     } catch (reason) {
       setError(errorMessage(reason));
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -333,6 +336,25 @@ export function PropertyCatalogScreen() {
         body: JSON.stringify({ status: 'published', expectedVersion: item.contentVersion }),
       });
       setNotice(`Đã xuất bản “${item.title}”.`);
+      await load();
+    } catch (reason) {
+      setError(errorMessage(reason));
+    } finally {
+      setPublishing(null);
+    }
+  };
+
+  const unpublish = async (item: PropertyItem) => {
+    if (!window.confirm(`Gỡ “${item.title}” khỏi website công khai và đưa về bản nháp?`)) return;
+    setPublishing(item.id);
+    setError(null);
+    setNotice(null);
+    try {
+      await apiRequest(`/content/${encodeURIComponent(item.contentId)}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'draft', expectedVersion: item.contentVersion }),
+      });
+      setNotice(`Đã gỡ xuất bản “${item.title}” và đưa về bản nháp.`);
       await load();
     } catch (reason) {
       setError(errorMessage(reason));
@@ -669,8 +691,8 @@ export function PropertyCatalogScreen() {
         </form>
       )}
 
-      {editorMode && !createMode && !editing && <div className="acard apending">{loading ? 'Đang tải thông tin nơi lưu trú…' : 'Không tìm thấy nơi lưu trú cần chỉnh sửa.'}</div>}
-      {!editorMode && (loading ? <div className="acard apending">Đang tải danh sách thật…</div> : !items.length ? (
+      {editorMode && !createMode && !editing && <div className="acard apending">{loading ? 'Đang tải thông tin nơi lưu trú…' : loadFailed ? 'Không tải được dữ liệu từ API. Hãy tải lại danh sách rồi thử lại.' : 'Không tìm thấy nơi lưu trú cần chỉnh sửa.'}</div>}
+      {!editorMode && (loading ? <div className="acard apending">Đang tải danh sách thật…</div> : loadFailed ? <div className="acard apending property-catalog__error-state">Không tải được danh sách nơi lưu trú. Bấm “Tải lại” để thử lại.</div> : !items.length ? (
         <div className="acard apending">
           <BedDouble size={22} aria-hidden="true" />
           <div><h3>Chưa có nơi lưu trú</h3><p>Bấm “Thêm phòng nghỉ” để tạo bản ghi đầu tiên trong PostgreSQL.</p></div>
@@ -697,7 +719,15 @@ export function PropertyCatalogScreen() {
                         <Trash2 size={14} aria-hidden="true" /> {deleting === item.id ? 'Đang xoá…' : 'Xoá'}
                       </button>}
                     </div>
-                    {item.publicationStatus !== 'published' && <button type="button" className="abtn abtn--primary abtn--sm" onClick={() => void publish(item)} disabled={publishing === item.id}>{publishing === item.id ? 'Đang xuất bản…' : 'Xuất bản'}</button>}
+                    {item.publicationStatus === 'published' ? (
+                      <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void unpublish(item)} disabled={publishing === item.id}>
+                        {publishing === item.id ? 'Đang gỡ…' : 'Gỡ xuất bản'}
+                      </button>
+                    ) : (
+                      <button type="button" className="abtn abtn--primary abtn--sm" onClick={() => void publish(item)} disabled={publishing === item.id}>
+                        {publishing === item.id ? 'Đang xuất bản…' : 'Xuất bản'}
+                      </button>
+                    )}
                     <span className="ahint">{item.path ?? `/${item.slug ?? ''}`}</span>
                   </div>
                 </div>

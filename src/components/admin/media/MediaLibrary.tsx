@@ -90,6 +90,7 @@ export function MediaLibrary({
   const [savingMeta, setSavingMeta] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
   const [altText, setAltText] = useState(initialAltText);
@@ -101,6 +102,7 @@ export function MediaLibrary({
     if (!active) return;
     setLoading(true);
     setError('');
+    setLoadFailed(false);
     try {
       const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
       if (query.trim()) params.set('search', query.trim());
@@ -110,6 +112,7 @@ export function MediaLibrary({
       setDetailId((current) => (current && result.items.some((item) => item.id === current) ? current : null));
     } catch (reason) {
       setError(errorMessage(reason));
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -255,6 +258,8 @@ export function MediaLibrary({
         <section className="media-library__list" aria-label="Danh sách ảnh">
           {loading ? (
             <div className="media-library__empty">Đang tải thư viện ảnh…</div>
+          ) : loadFailed ? (
+            <div className="media-library__empty media-library__error-state">Không tải được thư viện ảnh. Bấm “Tải lại” để thử lại.</div>
           ) : items.length ? (
             <ul className="media-library__grid">
               {items.map((asset) => (

@@ -32,11 +32,13 @@ export function MenuManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setLoadFailed(false);
     try {
       const [menu, content] = await Promise.all([
         apiRequest<MenuPayload>('/navigation/primary'),
@@ -47,6 +49,7 @@ export function MenuManager() {
       setPages(content.items.filter((page) => !page.publishAt || new Date(page.publishAt).getTime() <= Date.now()));
     } catch (reason) {
       setError(messageFor(reason));
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -139,8 +142,8 @@ export function MenuManager() {
         </div>
         <div className="menu-manager__head-actions">
           <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || saving}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
-          {!isDefault && <button type="button" className="abtn abtn--ghost" onClick={() => void reset()} disabled={loading || saving}><RotateCcw size={15} aria-hidden="true" /> Khôi phục mặc định</button>}
-          <button type="button" className="abtn abtn--primary" onClick={() => void save()} disabled={loading || saving}><Save size={15} aria-hidden="true" /> {saving ? 'Đang lưu…' : 'Lưu Menu'}</button>
+          {!loading && !loadFailed && !isDefault && <button type="button" className="abtn abtn--ghost" onClick={() => void reset()} disabled={saving}><RotateCcw size={15} aria-hidden="true" /> Khôi phục mặc định</button>}
+          <button type="button" className="abtn abtn--primary" onClick={() => void save()} disabled={loading || saving || loadFailed}><Save size={15} aria-hidden="true" /> {saving ? 'Đang lưu…' : 'Lưu Menu'}</button>
         </div>
       </div>
 
@@ -160,7 +163,7 @@ export function MenuManager() {
         <Link href="/admin/chuyen-trang?action=create" className="menu-manager__create-link"><FilePlus2 size={15} aria-hidden="true" /> Tạo chuyên trang mới</Link>
       </div>
 
-      {loading ? <div className="acard apending">Đang tải Menu website…</div> : !items.length ? <div className="acard apending menu-manager__empty"><Link2 size={21} aria-hidden="true" /><div><h3>Menu hiện chưa có mục nào</h3><p>Chọn một chuyên trang đã xuất bản ở phía trên để thêm liên kết.</p></div></div> : (
+      {loading ? <div className="acard apending">Đang tải Menu website…</div> : loadFailed ? <div className="acard apending menu-manager__error-state">Không tải được Menu từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending menu-manager__empty"><Link2 size={21} aria-hidden="true" /><div><h3>Menu hiện chưa có mục nào</h3><p>Chọn một chuyên trang đã xuất bản ở phía trên để thêm liên kết.</p></div></div> : (
         <div className="menu-manager__list">
           {items.map((item, index) => (
             <article className="acard menu-manager__item" key={item.id}>

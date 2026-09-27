@@ -2,7 +2,8 @@
 // Run from a container on the compose network:
 //   scripts/smoke.sh
 // Checks: health, login + session cookie, CSRF enforcement, permissions,
-// settings read/write/reset, and that an uploaded JPEG is stored as WebP only.
+// settings, catalog property CRUD/versioning, navigation save/restore, media
+// WebP processing, and the content publication/route lifecycle.
 import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 
@@ -15,8 +16,10 @@ const PASSWORD = readFileSync(process.env.OWNER_PASSWORD_FILE ?? '/run/secrets/o
 let passed = 0;
 let failed = 0;
 let testContentId = null;
+let testPropertyId = null;
 let testContactBaseline = null;
 let testContactVersion = null;
+let testNavigationBaseline = null;
 const testMediaIds = new Set();
 const check = (label, ok, detail = '') => {
   if (ok) {
@@ -78,6 +81,17 @@ async function cleanup() {
     testContentId = null;
   }
 
+  if (testPropertyId) {
+    const current = await call(`/properties/${testPropertyId}`);
+    if (current.status === 200) {
+      const removed = await call(`/properties/${testPropertyId}?expectedVersion=${current.body.version}`, { method: 'DELETE' });
+      check('test property and room/catalog rows are cleaned up', removed.status === 204, `got ${removed.status}`);
+    } else {
+      check('test property is already absent', current.status === 404, `got ${current.status}`);
+    }
+    testPropertyId = null;
+  }
+
   if (testContactBaseline && testContactVersion !== null) {
     const restored = testContactBaseline.body.isDefault
       ? await call(`/settings/brand.contact?expectedVersion=${testContactVersion}`, { method: 'DELETE' })
@@ -91,6 +105,27 @@ async function cleanup() {
       : JSON.stringify(restored.body?.value) === JSON.stringify(testContactBaseline.body.value);
     check('test setting restored to its original value', restored.status === 200 && baselineRestored, `got ${restored.status}`);
     testContactVersion = null;
+  }
+
+  if (testNavigationBaseline) {
+    const baseline = testNavigationBaseline;
+    const restored = baseline.isDefault
+      ? await call('/navigation/primary', { method: 'DELETE' })
+      : await call('/navigation/primary', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            items: baseline.items.map((item) => ({
+              ...(item.id && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(item.id) ? { id: item.id } : {}),
+              label: item.label,
+              contentId: item.contentId,
+              externalUrl: item.externalUrl,
+              enabled: item.enabled,
+            })),
+          }),
+        });
+    check('test navigation menu restored to its original links', restored.status === 200);
+    testNavigationBaseline = null;
   }
 
   for (const id of testMediaIds) {
@@ -221,6 +256,92 @@ async function main() {
   if (removed.status === 204) testMediaIds.delete(upload.body.id);
   const goneFile = await fetch(`${MEDIA_BASE}${upload.body.url}`);
   check('deleted file is gone from the volume', goneFile.status === 404, `got ${goneFile.status}`);
+
+  console.log('\nproperty/catalog');
+  const propertyStamp = Date.now();
+  const propertySlug = `atg-smoke-${propertyStamp}`;
+  const propertyCreated = await call('/properties', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      title: `ATG smoke property ${propertyStamp}`,
+      code: `ATG-SMOKE-${propertyStamp}`,
+      kind: 'Homestay',
+      area: 'Cúc Phương, Ninh Bình (kiểm thử local)',
+      address: 'Bản ghi tự động kiểm thử; không phải nơi lưu trú bán thật.',
+      slug: propertySlug,
+      description: `Catalog API smoke marker ${propertyStamp}.`,
+      roomCode: `ROOM-${propertyStamp}`,
+      roomName: 'Phòng kiểm thử API',
+      maxAdults: 2,
+      unitCount: 1,
+      rateVnd: 1000,
+    }),
+  });
+  if (propertyCreated.body?.id) testPropertyId = propertyCreated.body.id;
+  check('catalog property, room type, unit and rate are created',
+    propertyCreated.status === 201 && propertyCreated.body?.roomTypes?.[0]?.unitCount === 1 && propertyCreated.body?.roomTypes?.[0]?.rate?.baseRateVnd === 1000,
+    JSON.stringify(propertyCreated.body).slice(0, 300));
+
+  if (testPropertyId) {
+    const propertyList = await call('/properties');
+    check('catalog list reads the inserted PostgreSQL property', propertyList.status === 200 && propertyList.body?.items?.some((item) => item.id === testPropertyId));
+    const initialProperty = propertyCreated.body;
+    const propertyUpdate = await call(`/properties/${testPropertyId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: `${initialProperty.title} updated`,
+        expectedVersion: initialProperty.version,
+        expectedContentVersion: initialProperty.contentVersion,
+      }),
+    });
+    check('catalog property update persists with optimistic version', propertyUpdate.status === 200 && propertyUpdate.body?.version > initialProperty.version);
+    const staleProperty = await call(`/properties/${testPropertyId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Stale property overwrite must fail',
+        expectedVersion: initialProperty.version,
+        expectedContentVersion: initialProperty.contentVersion,
+      }),
+    });
+    check('stale catalog version is rejected with 409', staleProperty.status === 409, `got ${staleProperty.status}`);
+    const publicDraft = await call(`/public/stays/${propertySlug}`);
+    check('draft property stays hidden from public catalogue', publicDraft.status === 404, `got ${publicDraft.status}`);
+    const deleted = await call(`/properties/${testPropertyId}?expectedVersion=${propertyUpdate.body?.version}`, { method: 'DELETE' });
+    check('catalog test property and dependants can be removed', deleted.status === 204, `got ${deleted.status}`);
+    if (deleted.status === 204) testPropertyId = null;
+  }
+
+  console.log('\nnavigation');
+  const navigationBaseline = await call('/navigation/primary');
+  if (navigationBaseline.status === 200) testNavigationBaseline = navigationBaseline.body;
+  check('admin navigation reads the persisted menu', navigationBaseline.status === 200 && Array.isArray(navigationBaseline.body?.items));
+  if (testNavigationBaseline?.items?.length) {
+    const navigationStamp = Date.now();
+    const changedLabel = `Trang chủ ATG ${navigationStamp}`;
+    const updateItems = testNavigationBaseline.items.map((item, index) => ({
+      ...(item.id && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(item.id) ? { id: item.id } : {}),
+      label: index === 0 ? changedLabel : item.label,
+      contentId: item.contentId,
+      externalUrl: item.externalUrl,
+      enabled: item.enabled,
+    }));
+    const menuUpdate = await call('/navigation/primary', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items: updateItems }),
+    });
+    check('navigation mutation is accepted by the API', menuUpdate.status === 200, `got ${menuUpdate.status}`);
+    const publicMenu = await call('/public/navigation/primary');
+    check('public navigation reflects the saved menu', publicMenu.status === 200 && publicMenu.body?.some((item) => item.label === changedLabel));
+    await cleanup();
+    const restoredMenu = await call('/public/navigation/primary');
+    check('public navigation returns to baseline after cleanup', restoredMenu.status === 200 && !restoredMenu.body?.some((item) => item.label === changedLabel));
+  } else {
+    check('navigation baseline has an editable menu item', false, 'no menu items returned');
+  }
 
   console.log('\ncontent');
   const hostile = {
