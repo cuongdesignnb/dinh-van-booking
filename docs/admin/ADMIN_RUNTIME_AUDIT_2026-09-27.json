@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-27T11:46:13.150Z",
+  "generatedAt": "2026-09-27T12:33:40.232Z",
   "routeCount": 17,
-  "reachableSourceCount": 62,
+  "reachableSourceCount": 63,
   "pendingAdminRouteCount": 0,
   "reachablePendingModuleCount": 0,
   "reachableDemoComponentCount": 0,
@@ -58,6 +58,7 @@
     "src/components/admin/AdminAuthGate.tsx",
     "src/components/admin/content/AdminContentList.tsx",
     "src/components/admin/crm/InquiryInbox.tsx",
+    "src/components/admin/media/AdminMediaField.tsx",
     "src/components/admin/media/MediaLibrary.tsx",
     "src/components/admin/media/MediaPicker.tsx",
     "src/components/admin/navigation/MenuManager.tsx",

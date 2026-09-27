@@ -24,6 +24,6 @@ Canonical matrix required by the run-to-goal task. “API” lists the primary r
 
 ## Runtime and worker cross-check
 
-- App module registers the operations module and all controllers/services listed above. Runtime import graph: 17 route entries / 62 reachable modules; pending routes/modules, demo components, runtime fixture fallback, fake KPI, browser business-state writes and unresolved internal imports are all zero.
+- App module registers the operations module and all controllers/services listed above. Runtime import graph: 17 route entries / 63 reachable modules; pending routes/modules, demo components, runtime fixture fallback, fake KPI, browser business-state writes and unresolved internal imports are all zero.
 - Worker runs one BullMQ queue, `dvb-admin-operations`, with scheduled `expire-booking-holds` jobs every 15 seconds, five attempts and exponential backoff. The worker calls the same idempotent hold-expiry service; the browser test backdates an isolated hold and observes it expire and inventory release.
 - Exactly six permission codes were added: `dashboard.read`, `inventory.read`, `coupon.read`, `coupon.write`, `refund.approve`, `report.read`. The seed is idempotent and does not modify users/passwords.

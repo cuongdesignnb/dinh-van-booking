@@ -29,7 +29,7 @@ bash scripts/compose.sh up -d --build
 
 Thứ tự compose tự lo: `postgres` + `redis` healthy → `migrate` chạy xong (exit 0) →
 `api` healthy → `worker` và `web` → `gateway`. Port host đọc trong `.env.ports`;
-stack local xác minh ngày 27/09/2026 đang dùng `http://127.0.0.1:18474`.
+stack local xác minh ngày 27/09/2026 đang dùng `http://127.0.0.1:18473`.
 
 Một số lệnh hay dùng:
 

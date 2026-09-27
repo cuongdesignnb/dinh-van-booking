@@ -4,7 +4,7 @@ Ngày: 27/09/2026. Đây là bàn giao kiểm thử môi trường local, không
 
 ## Trạng thái local
 
-- URL: [http://127.0.0.1:18474](http://127.0.0.1:18474) (gateway local, đọc cổng hiện hành trong `.env.ports`).
+- URL: [http://127.0.0.1:18473](http://127.0.0.1:18473) (gateway local, đọc cổng hiện hành trong `.env.ports`).
 - Docker Compose project `dvb-booking`: API, web, worker, gateway, PostgreSQL và Redis đang chạy; API/PostgreSQL healthy. Homepage và `/api/v1/health` trả HTTP 200. PostgreSQL, Redis và media volumes không bị xoá/recreate.
 - Đăng nhập admin tại `/admin`. Owner email: `halabcreative@gmail.com`. Mật khẩu vẫn nằm trong file local ignored `.secrets/owner_password`; không ghi vào Git, log hay tài liệu này.
 - SEO indexing giữ đóng: setting/policy trả `indexingAllowed=false`; homepage có `X-Robots-Tag: noindex, follow` và meta robots `noindex, follow`; sitemap chưa chứa URL indexable; public API chỉ trả projection đã publish. Cấu hình robots cho phép bot crawl trang công khai để đọc noindex, nhưng chặn `/admin/` và `/api/`.
@@ -15,13 +15,13 @@ Ngày: 27/09/2026. Đây là bàn giao kiểm thử môi trường local, không
 |---|---|
 | `npm run lint -- --no-warn-ignored` | PASS |
 | `npm run typecheck` | PASS |
-| `npm run audit:admin-runtime` | PASS — 17 route entry, 62 reachable modules; không còn pending/fallback/demo trong graph hoạt động |
+| `npm run audit:admin-runtime` | PASS — 17 route entry, 63 reachable modules; không còn pending/fallback/demo trong graph hoạt động |
 | `npm ci` (Node 24) | PASS |
 | `npm run build` | PASS — optimized Next production build |
-| `npm test` trong `backend` | PASS — 22/22; backend build chạy mới ngay trước unit suite |
+| `npm test` trong `backend` | PASS — 23/23; có regression test merge giá trị `null` thành tài liệu TipTap; backend build chạy mới ngay trước unit suite |
 | Backend build (`npm run build` trong `backend`) | PASS — Nest build; Docker image also built with Node 24 from lockfile |
 | API smoke qua Docker network (`node scripts/smoke.mjs`) | PASS — 69/69, chạy lại sau full E2E/restart |
-| Full browser suite với `BASE_URL=http://127.0.0.1:18474`, `DVB_ADMIN_RESTART_STACK=1` | PASS — 38/38, gồm full-completion route/API/CSRF E2E, coupon discount/reject-invalid/reject-expired, restart persistence và 1440/1024/768/390 px |
+| Full browser suite với `BASE_URL=http://127.0.0.1:18473`, `DVB_ADMIN_RESTART_STACK=1` | PASS — 38/38, gồm settings rich-text save/conflict, full-completion route/API/CSRF E2E, coupon discount/reject-invalid/reject-expired, restart persistence và 1440/1024/768/390 px |
 | `npm audit` (root/backend), `npm audit --omit=dev` (root/backend) | PASS — cả bốn lượt đều báo 0 vulnerabilities |
 | `npm run audit:no-hardcode` | PASS — 43 phát hiện đã phân loại: 6 local preference, 21 type-only, 16 legacy/compatibility ngoài route graph; crawler xác nhận không có nội dung demo/pending trên route đang chạy |
 | SEO | PASS — gate, robots/sitemap, draft isolation, admin/API noindex, 404/filtered URLs |
@@ -34,6 +34,7 @@ Public homepage hiện không có section/hero được cấu hình trong DB (`h
 
 - Đã nối màn admin vào API thật, bao gồm CRM, đặt phòng/tồn, coupon, offline finance/refund, báo cáo, CMS, thư viện ảnh, menu, settings và AI configuration. `tests/admin/full-completion.spec.ts` crawl đủ 16 route, đối soát dashboard với API và chứng minh POST thiếu CSRF bị từ chối; suite operations xác minh mã hợp lệ giảm đúng giá phía server, mã không tồn tại/hết hạn bị từ chối, cùng CRUD/version conflict/disable, race tồn, booking lifecycle, ledger/refund và báo cáo. Ma trận screen → action → API → service → Prisma → permission → browser test ở [full-completion-matrix.md](admin/full-completion-matrix.md); tóm tắt tại [ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md](admin/ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md).
 - Không có schema change/migration trong lượt hoàn tất này; chi tiết ở [admin-full-completion-schema-delta.md](backend/admin-full-completion-schema-delta.md).
+- Sửa lỗi backend khi Settings merge một trường mặc định `null` thành tài liệu TipTap; API settings PUT và round-trip public đã được kiểm tra lại.
 - Không gọi cổng thanh toán, không thu tiền thật, không gửi hàng loạt, không truy cập/sửa production, DNS hoặc dịch vụ bên ngoài. Không deploy production.
 - Thư viện ảnh kiểm thử và fixture của Playwright được cleanup; bản ghi hiện hữu không bị ghi đè. Không force-push.
 - Trước production rollout vẫn cần backup PostgreSQL/media và thử phục hồi, chốt domain/canonical, xác minh dữ liệu cơ sở lưu trú và quy trình payment thực tế. SEO index chỉ được bật sau phê duyệt riêng.
@@ -90,9 +91,9 @@ RESPONSIVE_QA=PASS
 ## Database / operations / deployment preparation
 
 ```text
-START_SHA=e8bc0a17221b9a0af84655b4ed264e862496631d
-REMOTE_MAIN_BEFORE=e8bc0a17221b9a0af84655b4ed264e862496631d
-IMPLEMENTATION_COMMIT=8ec8751a3dd46e1f382c3e7a16c9a2987736c9f8
+START_SHA=81b65712469a49c77858a4e1624f6e989232c13a
+REMOTE_MAIN_BEFORE=81b65712469a49c77858a4e1624f6e989232c13a (fresh fetch; equal to HEAD before this task's changes)
+PREVIOUS_ADMIN_IMPLEMENTATION_COMMIT=8ec8751a3dd46e1f382c3e7a16c9a2987736c9f8
 NEW_MIGRATIONS=0
 MIGRATION_FILES=NONE
 DATA_BACKFILL=NO
@@ -100,17 +101,17 @@ NEW_PERMISSIONS=6: dashboard.read, inventory.read, coupon.read, coupon.write, re
 SEED_REQUIRED=YES (idempotent vocabulary/grant seed; run before admin permission-dependent rollout)
 WORKER_CHANGES=YES (BullMQ hold-expiry processor, retry/backoff, graceful drain)
 NEW_QUEUES=1 (dvb-admin-operations; scheduled expire-booking-holds job)
-ENV_CHANGES=NONE tracked; local DVB_HTTP_PORT=18474 and PUBLIC_ORIGINS loopback 18473/18474; SEO_INDEXING_ALLOWED=false
+ENV_CHANGES=NONE tracked; local DVB_HTTP_PORT=18473; SEO_INDEXING_ALLOWED=false
 NEW_SECRETS_REQUIRED=NO
 
-DEPLOY_FROM_SHA=987c03606fbb8acc632f17ae77233b099e6e14b5
-DEPLOY_TO_SHA=8ec8751a3dd46e1f382c3e7a16c9a2987736c9f8 (no schema change; no production deployment performed)
+PRODUCTION_BASELINE_SHA=987c03606fbb8acc632f17ae77233b099e6e14b5
+PRODUCTION_DEPLOYMENT=NO (no production deployment performed)
 REBUILD_WEB=YES
 REBUILD_API=YES
 REBUILD_WORKER=YES
 RUN_MIGRATION=NO
 RUN_SEED=YES (new permission vocabulary)
-RESTART_GATEWAY=NO (local gateway remained on 18474; restart-persistence force-recreated api/web/worker only)
+RESTART_GATEWAY=NO (local gateway remained on 18473; restart-persistence force-recreated api/web/worker only)
 
 LIVE_PAYMENT_PROVIDER_ENABLED=NO
 SEO_INDEXING_ALLOWED=false

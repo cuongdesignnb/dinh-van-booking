@@ -34,7 +34,7 @@ Ma trận chi tiết bắt buộc theo screen → action → API → service →
 ## Kết quả kiểm chứng
 
 - `npm run typecheck`: đạt; `npm run lint`: đạt; `npm run audit:admin-runtime`: đạt; `git diff --check`: đạt.
-- Backend unit: 22/22; API smoke qua gateway: 69/69; Playwright full có restart opt-in: 38/38. `tests/admin/full-completion.spec.ts` kiểm route crawler, dashboard reconciliation và CSRF; booking/status, inquiries, customer, publication, payment/refund được đối chiếu với endpoint list; report totals đối chiếu với fixture nghiệp vụ. PostgreSQL/media volumes được giữ nguyên qua restart.
+- Backend unit: 23/23 (bao gồm regression test settings null → TipTap); API smoke qua gateway: 69/69; Playwright full có restart opt-in: 38/38. `tests/admin/full-completion.spec.ts` kiểm route crawler, dashboard reconciliation và CSRF; booking/status, inquiries, customer, publication, payment/refund được đối chiếu với endpoint list; report totals đối chiếu với fixture nghiệp vụ. PostgreSQL/media volumes được giữ nguyên qua restart.
 - Dependency audit: root/backend, full/prod đều 0 vulnerability.
 - Local URL `http://127.0.0.1:18473`; homepage, API health, `robots.txt` trả 200.
 - SEO gate đang đóng: `indexingAllowed=false`; trang trả `X-Robots-Tag: noindex, follow` và meta robots noindex; canonical/sitemap URL indexable đang vắng; public API không trả draft.

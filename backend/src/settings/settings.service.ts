@@ -16,13 +16,15 @@ export interface SettingView {
 }
 
 /** Deep merge that lets a stored value omit keys added by a later default. */
-function mergeWithDefault(defaultValue: unknown, stored: unknown): unknown {
+export function mergeWithDefault(defaultValue: unknown, stored: unknown): unknown {
   // `null` is an explicit business value (for example an intentionally
   // blank phone or social URL). Only an absent key should inherit a default.
   if (stored === undefined) return defaultValue;
   if (stored === null) return null;
   if (Array.isArray(defaultValue) || Array.isArray(stored)) return stored;
-  if (typeof defaultValue !== 'object' || typeof stored !== 'object') return stored;
+  // A field with a null default may legitimately change shape later, e.g. a
+  // text setting upgraded to a TipTap document. Null has no child keys to merge.
+  if (defaultValue === null || typeof defaultValue !== 'object' || typeof stored !== 'object') return stored;
   const merged: Record<string, unknown> = { ...(defaultValue as Record<string, unknown>) };
   for (const [key, value] of Object.entries(stored as Record<string, unknown>)) {
     merged[key] = mergeWithDefault((defaultValue as Record<string, unknown>)[key], value);

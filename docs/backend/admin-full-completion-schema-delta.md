@@ -23,6 +23,6 @@ Ngày kiểm tra: 27/09/2026. Stack local `dvb-booking`.
 
 ## Xác minh
 
-- Backend unit: 22/22.
+- Backend unit: 23/23, bao gồm kiểm thử regression để cài đặt mặc định `null` nhận được tài liệu TipTap mà không lỗi khi merge; explicit `null` vẫn được giữ nguyên.
 - API smoke chạy qua gateway: 69/69; kiểm auth/CSRF, media WebP/giới hạn upload/path traversal, property CRUD/version, menu restore, CMS sanitizer/publish/redirect và cleanup.
 - Browser operations test kiểm booking/hold concurrency, inventory, CRM, coupon, offline finance và báo cáo trực tiếp trên PostgreSQL.

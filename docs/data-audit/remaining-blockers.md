@@ -1,4 +1,6 @@
-# Remaining blockers
+# Remaining blockers — historical snapshot
+
+> Snapshot từ audit trước đợt Admin Full Completion. Các mục trạng thái bên dưới không còn là báo cáo hiện hành; chúng được giữ lại để lưu lịch sử. Kết quả mới nhất ngày 27/09/2026, gồm 38/38 browser E2E, 23/23 backend unit, 69/69 API smoke và 4 dependency audit sạch, nằm trong [local full-completion handoff](../ADMIN_FULL_COMPLETION_HANDOFF_2026-09-27.md) và [ma trận admin](../admin/full-completion-matrix.md).
 
 Các mục sau không được gắn PASS trong báo cáo cuối:
 

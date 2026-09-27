@@ -295,7 +295,11 @@ test('settings UI lưu PostgreSQL, công khai thay đổi và không ghi đè ph
     const card = page.locator('.settings-item').filter({ has: page.getByRole('heading', { name: 'Thương hiệu', exact: true }) });
     const nameField = card.getByLabel('Tên thương hiệu');
     await nameField.fill(firstName);
+    const firstSaveResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/api/v1/settings/brand.identity') && response.request().method() === 'PUT',
+    );
     await card.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    expect((await firstSaveResponse).status()).toBe(200);
     await expect(page.getByRole('status')).toContainText('Đã lưu cài đặt');
 
     const publicAfterSave = await browserApi(page, '/settings/public');
@@ -374,7 +378,7 @@ test('form liên hệ tạo inquiry thật, admin nhận và cập nhật stage 
     expect(item!.stage).toBe('new');
 
     await page.goto('/admin/yeu-cau-tu-van');
-    const card = page.locator('.settings-item').filter({ hasText: name });
+    const card = page.locator('.settings-item').filter({ hasText: name }).filter({ hasText: phone });
     await expect(card).toBeVisible();
     await card.getByLabel('Trạng thái').selectOption('contacted');
     await expect(card.getByLabel('Trạng thái')).toHaveValue('contacted');
@@ -396,7 +400,7 @@ test('form liên hệ tạo inquiry thật, admin nhận và cập nhật stage 
     expect(protectedItem?.version).toBe(updatedItem!.version);
 
     await page.reload();
-    await expect(page.locator('.settings-item').filter({ hasText: name }).getByLabel('Trạng thái')).toHaveValue('contacted');
+    await expect(page.locator('.settings-item').filter({ hasText: name }).filter({ hasText: phone }).getByLabel('Trạng thái')).toHaveValue('contacted');
   } finally {
     if (inquiryId) cleanupLocalTestInquiry({ id: inquiryId, name, phone, marker });
   }

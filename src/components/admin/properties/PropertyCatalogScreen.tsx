@@ -551,6 +551,9 @@ export function PropertyCatalogScreen() {
               value={editCover?.url}
               mediaId={editCover?.id}
               label={editCover ? 'Đổi ảnh đại diện' : 'Chọn ảnh đại diện'}
+              recommendedWidth={1200}
+              recommendedHeight={800}
+              recommendedRatio={1.5}
               uploadAltText={editForm.title}
               onMediaChange={(asset) => setEditCover(asset ? { id: asset.id, url: asset.url, altText: asset.altText } : null)}
             />
@@ -677,6 +680,9 @@ export function PropertyCatalogScreen() {
                 value={coverMedia?.url}
                 mediaId={coverMedia?.id}
                 label="Chọn ảnh đại diện"
+                recommendedWidth={1200}
+                recommendedHeight={800}
+                recommendedRatio={1.5}
                 uploadAltText={form.title}
                 onMediaChange={(asset) => setCoverMedia(asset ? { id: asset.id, url: asset.url, altText: asset.altText } : null)}
               />
