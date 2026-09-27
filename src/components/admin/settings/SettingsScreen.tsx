@@ -35,8 +35,20 @@ interface SeoPolicyPayload {
   };
 }
 
+function stableValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, entry]) => [key, stableValue(entry)]),
+    );
+  }
+  return value;
+}
+
 function sameValue(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return JSON.stringify(stableValue(left)) === JSON.stringify(stableValue(right));
 }
 
 export function SettingsScreen() {
@@ -150,7 +162,7 @@ export function SettingsScreen() {
               const changed = !sameValue(draft, item.value);
               const busy = busyKey === item.key;
               return (
-                <article className="acard settings-item" key={item.key}>
+                <article className="acard settings-item" key={item.key} data-setting-key={item.key}>
                   <div className="settings-item__head">
                     <div>
                       <h3>{item.label}</h3>

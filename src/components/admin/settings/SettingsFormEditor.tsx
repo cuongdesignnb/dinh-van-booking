@@ -806,7 +806,7 @@ export function SettingsFormEditor({ settingKey, value, disabled, onChange }: { 
           const option = SECTIONS.find((item) => item.value === id);
           if (!option) return null;
           return (
-            <li key={id} draggable onDragStart={(event) => { event.dataTransfer.setData('text/plain', id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
+            <li key={id} data-home-section={id} draggable onDragStart={(event) => { event.dataTransfer.setData('text/plain', id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
               event.preventDefault();
               const moving = event.dataTransfer.getData('text/plain');
               const from = order.indexOf(moving);
@@ -816,7 +816,7 @@ export function SettingsFormEditor({ settingKey, value, disabled, onChange }: { 
               <span className="settings-form__order-number">{index + 1}</span>
               <strong>{option.label}</strong>
               <label className="atoggle settings-home-sections__toggle">
-                <input type="checkbox" checked={!hidden.includes(id)} disabled={disabled} onChange={(event) => onChange({ ...root, order, hidden: event.target.checked ? hidden.filter((item) => item !== id) : [...new Set([...hidden, id])] })} />
+                <input type="checkbox" aria-label={'Hiện ' + option.label} checked={!hidden.includes(id)} disabled={disabled} onChange={(event) => onChange({ ...root, order, hidden: event.target.checked ? hidden.filter((item) => item !== id) : [...new Set([...hidden, id])] })} />
                 <span className="atoggle__track"><span className="atoggle__thumb" /></span>
                 <span className="atoggle__text"><strong>{hidden.includes(id) ? 'Ẩn' : 'Hiện'}</strong></span>
               </label>
