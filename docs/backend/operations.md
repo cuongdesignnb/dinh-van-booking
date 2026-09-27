@@ -92,7 +92,7 @@ Ràng buộc nào Prisma không diễn đạt được thì viết tay, xem
 
 ```bash
 bash scripts/smoke.sh      # 69 kiểm tra API thật qua gateway
-npx playwright test        # 34 đạt; bài restart persistence bật riêng bằng cờ opt-in
+npx playwright test        # 35 đạt khi bật persistence bằng DVB_ADMIN_RESTART_STACK=1
 ```
 
 `smoke.sh` chạy trong container trên network của stack, đăng nhập bằng tài khoản chủ sở

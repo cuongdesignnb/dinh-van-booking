@@ -1,6 +1,6 @@
 # Admin legacy findings — 2026-09-27
 
-> **Lưu ý cập nhật:** các kết luận “pending” trong snapshot này thuộc lần audit trước khi hoàn thiện module vận hành. Những file fixture được liệt kê vẫn tồn tại nhưng nằm ngoài import graph hoạt động. Trạng thái mới được đo bằng `npm run audit:admin-runtime`; xem [ma trận hoàn tất](./ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md). Không dùng bảng pending cũ để suy ra route đang chạy.
+> **Lưu ý cập nhật:** các kết luận “pending” trong snapshot này thuộc lần audit trước khi hoàn thiện module vận hành. Những file fixture được liệt kê vẫn tồn tại nhưng nằm ngoài import graph hoạt động. Trạng thái mới được đo bằng `npm run audit:admin-runtime`; xem [ma trận chi tiết](./full-completion-matrix.md). Không dùng bảng pending cũ để suy ra route đang chạy.
 
 Audit scope: active route import graph under `src/app/admin/**`, source findings from `npm run audit:no-hardcode`, and `localStorage` use. `Reachable?` means reachable from a current `/admin` route, not merely importable by a legacy file. No source was deleted during this audit.
 

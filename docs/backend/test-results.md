@@ -1,6 +1,6 @@
 # Kết quả kiểm thử
 
-> **Kết quả hiện hành 27/09/2026:** lượt kiểm tra mới đạt backend unit 22/22, API smoke 69/69, Playwright 34 đạt (bài restart-only skip ở lượt thường; persistence test đạt trong lượt opt-in), typecheck/lint đạt, 4 dependency audits đều 0 vulnerability. Chi tiết ở [local full-completion handoff](../ADMIN_FULL_COMPLETION_HANDOFF_2026-09-27.md). Phần còn lại bên dưới là snapshot lịch sử ngày 20/09/2026, không phải số liệu hiện tại.
+> **Kết quả hiện hành 27/09/2026:** lượt kiểm tra mới đạt backend unit 22/22, API smoke 69/69, Playwright 35/35 với persistence opt-in, typecheck/lint đạt, 4 dependency audits đều 0 vulnerability. Chi tiết ở [local full-completion handoff](../ADMIN_FULL_COMPLETION_HANDOFF_2026-09-27.md). Phần còn lại bên dưới là snapshot lịch sử ngày 20/09/2026, không phải số liệu hiện tại.
 
 Chạy ngày 2026-09-20 trên stack local (compose project `dvb-booking`, gateway 18473).
 Mọi con số dưới đây là output thật của lệnh, không phải mô tả mong muốn.

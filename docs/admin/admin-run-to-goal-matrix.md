@@ -1,6 +1,6 @@
 # Admin run-to-goal matrix — 2026-09-27
 
-> **Snapshot cũ đã được thay thế.** Bảng bên dưới ghi trạng thái trước đợt hoàn tất admin và không còn phản ánh các route hiện hành. Dùng [ma trận hoàn tất mới](./ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md) và [handoff local](../ADMIN_FULL_COMPLETION_HANDOFF_2026-09-27.md) làm nguồn chính thức.
+> **Snapshot cũ đã được thay thế.** Bảng bên dưới ghi trạng thái trước đợt hoàn tất admin và không còn phản ánh các route hiện hành. Dùng [ma trận chi tiết](./full-completion-matrix.md), [tóm tắt route](./ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md) và [handoff local](../ADMIN_FULL_COMPLETION_HANDOFF_2026-09-27.md) làm nguồn chính thức.
 
 Trạng thái dựa trên route/component đang được import thật, API và schema PostgreSQL; không coi fixture cũ là chức năng. `REAL_API` nghĩa là có đường thao tác API thật; cột Browser test ghi đúng mức đã chạy, không suy diễn từ unit/API smoke thành browser coverage.
 

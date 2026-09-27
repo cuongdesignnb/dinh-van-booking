@@ -398,7 +398,46 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
 
     await page.goto('/admin/bao-cao');
     await expect(page.locator('[data-admin-section="reports"]')).toContainText('chưa gắn với từng nơi lưu trú');
-    const dashboard = await opsApi<{ recordedPaymentsVnd: string }>(page, '/admin/dashboard/summary');
+    const dashboard = await opsApi<{
+      bookings: { total: number; byStatus: Record<string, number> };
+      newInquiries: number;
+      customers: number;
+      published: { stays: number; combos: number; destinations: number };
+      content: { draft: number; review: number; published: number };
+      payments: Record<string, number>;
+      refunds: Record<string, number>;
+      recordedPaymentsVnd: string;
+    }>(page, '/admin/dashboard/summary');
+    const [bookingTotals, customerTotals, inquiryTotals, propertyCatalog, publishedCombos, publishedDestinations] = await Promise.all([
+      opsApi<{ total: number }>(page, '/admin/bookings?page=1&pageSize=1'),
+      opsApi<{ total: number }>(page, '/admin/customers?page=1&pageSize=1'),
+      opsApi<{ total: number }>(page, '/inquiries?stage=new&page=1&pageSize=1'),
+      opsApi<{ items: Array<{ operatingStatus: string; publicationStatus: string }> }>(page, '/properties'),
+      opsApi<{ total: number }>(page, '/content?kind=combo&status=published&page=1&pageSize=1'),
+      opsApi<{ total: number }>(page, '/content?kind=destination&status=published&page=1&pageSize=1'),
+    ]);
+    expect(dashboard.body.bookings.total).toBe(bookingTotals.body.total);
+    for (const [status, count] of Object.entries(dashboard.body.bookings.byStatus)) {
+      const statusTotals = await opsApi<{ total: number }>(page, `/admin/bookings?status=${encodeURIComponent(status)}&page=1&pageSize=1`);
+      expect(statusTotals.body.total, `dashboard booking status ${status}`).toBe(count);
+    }
+    expect(dashboard.body.customers).toBe(customerTotals.body.total);
+    expect(dashboard.body.newInquiries).toBe(inquiryTotals.body.total);
+    expect(dashboard.body.published.stays).toBe(propertyCatalog.body.items.filter((item) => item.operatingStatus === 'active' && item.publicationStatus === 'published').length);
+    expect(dashboard.body.published.combos).toBe(publishedCombos.body.total);
+    expect(dashboard.body.published.destinations).toBe(publishedDestinations.body.total);
+    for (const status of ['draft', 'review', 'published'] as const) {
+      const contentTotals = await opsApi<{ total: number }>(page, `/content?status=${status}&page=1&pageSize=1`);
+      expect(dashboard.body.content[status], `dashboard content status ${status}`).toBe(contentTotals.body.total);
+    }
+    for (const [status, count] of Object.entries(dashboard.body.payments)) {
+      const statusTotals = await opsApi<{ total: number }>(page, `/admin/payments?status=${encodeURIComponent(status)}&page=1&pageSize=1`);
+      expect(statusTotals.body.total, `dashboard payment status ${status}`).toBe(count);
+    }
+    for (const [status, count] of Object.entries(dashboard.body.refunds)) {
+      const statusTotals = await opsApi<{ total: number }>(page, `/admin/refunds?status=${encodeURIComponent(status)}&page=1&pageSize=1`);
+      expect(statusTotals.body.total, `dashboard refund status ${status}`).toBe(count);
+    }
     let pageNumber = 1;
     let postedSum = BigInt(0);
     let paymentPages = 1;

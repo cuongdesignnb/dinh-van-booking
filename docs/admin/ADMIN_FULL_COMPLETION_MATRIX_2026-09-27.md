@@ -2,6 +2,8 @@
 
 Trạng thái xác minh local ngày 27/09/2026. Đây là nguồn hiện hành thay cho các snapshot audit cũ trong thư mục này. Phạm vi là toàn bộ đường admin đang được route thật; module chưa có dịch vụ ngoài (ví dụ cổng thanh toán) được ghi rõ, không giả lập là đã tích hợp.
 
+Ma trận chi tiết bắt buộc theo screen → action → API → service → Prisma → permission → browser test ở [full-completion-matrix.md](./full-completion-matrix.md).
+
 | Khu vực | Route | Màn hình và thao tác đã nối API | Bằng chứng chính |
 |---|---|---|---|
 | Tổng quan | `/admin` | KPI và hoạt động lấy từ PostgreSQL; không dùng KPI demo | `tests/admin/operations.spec.ts`; runtime audit |
@@ -32,7 +34,7 @@ Trạng thái xác minh local ngày 27/09/2026. Đây là nguồn hiện hành t
 ## Kết quả kiểm chứng
 
 - `npm run typecheck`: đạt; `npm run lint`: đạt; `npm run audit:admin-runtime`: đạt; `git diff --check`: đạt.
-- Backend unit: 22/22; API smoke qua gateway: 69/69; Playwright full: 34 đạt, 1 bài restart-only được skip trong lượt thường. Bài restart persistence đã chạy riêng ở full restart run và đạt; PostgreSQL/media volumes được giữ nguyên.
+- Backend unit: 22/22; API smoke qua gateway: 69/69; Playwright full có restart opt-in: 35/35. Dashboard booking/status, inquiries, customer, publication, payment/refund được đối chiếu với endpoint list; report totals đối chiếu với fixture nghiệp vụ. PostgreSQL/media volumes được giữ nguyên qua restart.
 - Dependency audit: root/backend, full/prod đều 0 vulnerability.
 - Local URL `http://127.0.0.1:18474`; homepage, API health, `robots.txt` trả 200.
 - SEO gate đang đóng: `indexingAllowed=false`; trang trả `X-Robots-Tag: noindex, follow` và meta robots noindex; canonical/sitemap URL indexable đang vắng; public API không trả draft.
