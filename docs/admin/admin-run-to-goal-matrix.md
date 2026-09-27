@@ -25,6 +25,6 @@ Trạng thái dựa trên route/component đang được import thật, API và 
 - `src/app/admin/layout.tsx` bọc route bằng `AdminAuthGate` và `AdminShell`; không mount `AdminStoreProvider`. Xác thực/permission đến từ API/session, không phải local role.
 - Legacy screen còn trong source nhưng không được route hiện hành import; chi tiết từng file, dòng và mức reachable ở `admin-legacy-findings.md`.
 - Public catalog chỉ lấy nội dung đã xuất bản từ API. Dữ liệu local hiện có 11 nơi lưu trú draft/chờ xác minh; không tự public/index. SEO index gate hiện đóng.
-- Local browser suite chạy 34/34; API smoke 65/65; backend unit 14/14. Persistence test force-recreate `api`, `web`, `worker` nhưng giữ PostgreSQL/Redis/media volumes.
+- Local browser suite chạy 34/34; API smoke 67/67 (bao gồm vượt giới hạn byte upload và chặn media path traversal); backend unit 14/14. Persistence test force-recreate `api`, `web`, `worker` nhưng giữ PostgreSQL/Redis/media volumes.
 - Gateway phân giải Docker service names động (`127.0.0.11`) để không giữ IP upstream cũ khi Compose recreate container; API và web đều trả 200 sau khi recreate API.
-- Stack local được test ở `http://127.0.0.1:18473`; không có thay đổi production. Kết quả đầy đủ và giới hạn xem `docs/ADMIN_RUN_TO_GOAL_HANDOFF_2026-09-26.md` và `docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md`.
+- Stack local được test ở `http://127.0.0.1:18474`; homepage, `/api/v1/health` và robots trả 200; không có thay đổi production. Kết quả đầy đủ và giới hạn xem `docs/ADMIN_RUN_TO_GOAL_HANDOFF_2026-09-26.md` và `docs/PRODUCTION_SYNC_HANDOFF_2026-09-26.md`.

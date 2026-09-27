@@ -12,17 +12,20 @@ BRANCH=main
 START_SHA=30ca32dade747b6592f427ec45d559cb1d8ffbad
 FINAL_SHA=c8fe7a94303ce81cb109cc3a35c8587dbe9b3369 (implementation commit)
 REMOTE_MAIN_AFTER_IMPLEMENTATION_PUSH=c8fe7a94303ce81cb109cc3a35c8587dbe9b3369
+LATEST_TEST_COMMIT=c1f14205f309706183c65c6ba96c1bc65f367683 (media upload boundary/path traversal smoke coverage only)
 DOCS_ONLY_FOLLOWUP=separate docs/report commit; final origin/main SHA is reported in the task result
 WORKTREE_FINAL=CLEAN after docs-only commit and push; final state verified in task result
 LOCAL_HEAD_BEFORE=30ca32dade747b6592f427ec45d559cb1d8ffbad
 REMOTE_MAIN_BEFORE=30ca32dade747b6592f427ec45d559cb1d8ffbad
 LOCAL_AHEAD_BEFORE=0
 LOCAL_DIRTY_BEFORE=YES (liên quan admin run-to-goal từ lượt làm việc trước; giữ nguyên và audit, không reset)
-COMMIT_CREATED=YES (implementation c8fe7a9 plus separate docs-only follow-up)
-PUSHED_TO_MAIN=YES (implementation push verified; docs-only push/final tip verified in task result)
+COMMIT_CREATED=YES (implementation c8fe7a9, media smoke-test commit c1f1420, plus separate docs-only follow-ups)
+LATEST_SOURCE_TEST_SHA=c1f14205f309706183c65c6ba96c1bc65f367683
+REMOTE_MAIN_AFTER_LATEST_SOURCE_PUSH=c1f14205f309706183c65c6ba96c1bc65f367683
+PUSHED_TO_MAIN=YES (implementation and latest smoke-test coverage pushed; handoff-only push/final tip verified in task result)
 </pre>
 
-Local app: [http://127.0.0.1:18473](http://127.0.0.1:18473), API health và homepage đều HTTP 200 sau khi force-recreate API. Tài khoản Owner là `halabcreative@gmail.com`; mật khẩu chỉ nằm trong `.secrets/owner_password`, không đưa vào tài liệu/commit.
+Local app: [http://127.0.0.1:18474](http://127.0.0.1:18474), homepage, API `/api/v1/health` và robots đều HTTP 200 sau khi force-recreate API. Tài khoản Owner là `halabcreative@gmail.com`; mật khẩu chỉ nằm trong `.secrets/owner_password`, không đưa vào tài liệu/commit.
 
 ## Module matrix
 
@@ -94,7 +97,7 @@ Sau cleanup, PostgreSQL local có 11 content nodes / 11 properties; cả 11 lưu
 | Frontend build | PASS | `npm run build`; Docker web production image build cũng PASS |
 | Backend build | PASS | Source build trong Node 24 Docker runner và Compose API build |
 | Backend unit | PASS | `scripts/backend.sh test`: 14/14 |
-| API smoke | PASS | `scripts/smoke.sh`: 65/65 auth, CSRF, permissions, settings, media/WebP, content, navigation, inquiry, property/catalog và cleanup |
+| API smoke | PASS | `scripts/smoke.sh`: 67/67 auth, CSRF, permissions, settings, media/WebP, upload byte-limit/traversal security, content, navigation, inquiry, property/catalog và cleanup |
 | Admin browser E2E | PASS | Playwright 34/34, `--workers=1`, full local gateway/API stack |
 | Responsive QA | PASS | 1440, 1024, 768, 390 px; không tràn ngang, mobile sidebar/logout |
 | Version conflict | PASS | CMS content, settings, property và inquiry stage stale-version cases |
@@ -109,7 +112,7 @@ Sau cleanup, PostgreSQL local có 11 content nodes / 11 properties; cả 11 lưu
 
 `npm ci` chạy sạch bằng Node 24; lint/typecheck/build đều PASS. Frontend full dependency tree báo 3 advisories (2 high, 1 critical). `npm audit --omit=dev` không lấy được kết quả từ registry nên chưa xác định được production-only severity. Backend install báo 17 advisories (1 low, 8 moderate, 8 high). Không ép nâng dependency trong task này.
 
-Preflight port chạy read-only: 18473 đang được stack này dùng, 18474 đang trống. Không chạy `--write`, vì sẽ đổi `.env.ports` và làm gián đoạn URL đang dùng. Env/secrets thật được giữ nguyên.
+Preflight port đã chạy với `--write`: 18473 đang bận nên `.env.ports` chuyển sang 18474. `.env.runtime` là file ignored, cập nhật riêng `PUBLIC_ORIGINS` để khớp cổng mới và giữ nguyên kiểm tra same-origin/CSRF. `prepare-local-secrets.py` giữ nguyên các secret hiện có; không có secret nào được commit. Compose hiện đủ 6 service up, API/PostgreSQL healthy; migration job đã hoàn thành. URL local hiện tại là `http://127.0.0.1:18474`.
 
 ## Migration/config/production impact
 

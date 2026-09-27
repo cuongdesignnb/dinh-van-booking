@@ -1,6 +1,6 @@
 # Production sync handoff — 2026-09-27
 
-This is a review handoff only. No production host, database, DNS, environment, indexing setting, or service was accessed or changed. The deploy target is the implementation SHA below; a documentation-only follow-up commit will update this handoff after the target push.
+This is a review handoff only. No production host, database, DNS, environment, indexing setting, or service was accessed or changed. The latest source/test commit is listed below; the separate documentation-only follow-up is not runtime code. The final task result records the exact remote tip after that follow-up (a commit cannot embed its own SHA).
 
 ## 1. Git state
 
@@ -8,18 +8,19 @@ This is a review handoff only. No production host, database, DNS, environment, i
 REPO=https://github.com/cuongdesignnb/dinh-van-booking.git
 BRANCH=main
 PRODUCTION_BASELINE_SHA=54c246bbe9f70ed3bf298401e39df3e30a73057c
-REMOTE_MAIN_BEFORE=30ca32dade747b6592f427ec45d559cb1d8ffbad
-LOCAL_HEAD_BEFORE=30ca32dade747b6592f427ec45d559cb1d8ffbad
-LOCAL_DIRTY_BEFORE=YES (related admin audit/handoff work already in progress; preserved)
+REMOTE_MAIN_BEFORE=cb79bd3088ef6129bba250d2662e7267882b4b7a
+LOCAL_HEAD_BEFORE=cb79bd3088ef6129bba250d2662e7267882b4b7a
+LOCAL_DIRTY_BEFORE=YES (backend/scripts/smoke.mjs media boundary tests; a verified transient Chromium debug.log was removed, not committed)
 LOCAL_AHEAD_BEFORE=0
-FINAL_SHA=c8fe7a94303ce81cb109cc3a35c8587dbe9b3369 (implementation/deployment target; docs-only follow-up is not runtime code)
-REMOTE_MAIN_AFTER_IMPLEMENTATION_PUSH=c8fe7a94303ce81cb109cc3a35c8587dbe9b3369
-DOCS_ONLY_FOLLOWUP=separate docs/report commit; its exact SHA and final origin/main tip are reported in the task result
-WORKTREE_FINAL=CLEAN after docs-only follow-up; verified in task result
-PUSH_RESULT=PASS for implementation push; docs-only push and final origin/main tip verified in task result
+FINAL_SHA=c1f14205f309706183c65c6ba96c1bc65f367683 (latest source/test commit; latest runtime implementation remains c8fe7a94303ce81cb109cc3a35c8587dbe9b3369)
+REMOTE_MAIN_AFTER=c1f14205f309706183c65c6ba96c1bc65f367683 (immediately after source/test push; a docs-only handoff commit follows and its exact final tip is reported in the task result)
+REMOTE_MAIN_AFTER_SOURCE_PUSH=c1f14205f309706183c65c6ba96c1bc65f367683
+DOCS_ONLY_FOLLOWUP=separate handoff refresh commit; exact final origin/main tip is reported in task result
+WORKTREE_FINAL=CLEAN after the docs-only push; verified in task result
+PUSH_RESULT=PASS only after origin/main is fetched and verified equal to the source commit, followed by the docs-only push (exact final tip in task result)
 </pre>
 
-At task start, local main and origin/main both pointed to `30ca32dade747b6592f427ec45d559cb1d8ffbad`; there were no local-only commits. The implementation/audit commit is `c8fe7a94303ce81cb109cc3a35c8587dbe9b3369`. The handoff is refreshed separately in a docs-only commit; production code-review/deploy target remains c8fe7a9.
+At the start of this sync pass, local main and origin/main both pointed to `cb79bd3088ef6129bba250d2662e7267882b4b7a`; there were no local-only commits. This pass adds a smoke-only test commit `c1f1420` on top of the previously pushed implementation `c8fe7a9`. The handoff is refreshed separately; production code review should cover the stated baseline through the final source/test SHA, while recognizing c1f1420 changes test coverage only.
 
 ## 2. Changes present after the production baseline
 
@@ -30,6 +31,7 @@ At task start, local main and origin/main both pointed to `30ca32dade747b6592f42
 - **SEO/Schema:** index gate defaults closed; canonical and metadata policy; server-rendered JSON-LD builders; robots/sitemap; public route/redirect resolution; draft isolation. Primary areas: src/lib/seo/**, src/app/robots.ts, src/app/sitemap.ts, backend/src/public/**, infra/gateway/default.conf.
 - **Operations:** safe .env.docker.example and .env.runtime.example; compose wiring; backend runner builds from source in a disposable Node container before seed/create-owner/test; no actual environment or secret file is tracked.
 - **Tests:** Playwright public/admin/SEO/pricing and lifecycle tests; backend unit tests; API smoke; no-hardcode scanner and data audit docs.
+- **Latest audit delta:** `backend/scripts/smoke.mjs` now explicitly rejects an upload above the configured byte limit and encoded media path traversal; it changes test coverage only, not runtime behavior.
 - **Documentation:** data lineage, AI guide, technical SEO, admin route matrix and legacy findings, local/production handoffs.
 
 ## 3. Commits since production baseline
@@ -41,10 +43,13 @@ At task start, local main and origin/main both pointed to `30ca32dade747b6592f42
 | 702d97e46203fef1843426574f05ee33aa79cfc1 | fix(admin): close local API audit gaps | Authenticated shell/menu, article projection/media guard, API smoke hardening and admin audit | NO |
 | 093cb06a83dc4ff4bfd2795a348a74248fc5b861 | docs: refresh production sync handoff | Handoff refresh | NO |
 | 30f24f7a3c3de6ab3ff37783950a2b4d45e2a45f | test(admin): verify API-backed catalogue workflows | Remove live AdminStore shell dependency, exercise real stay/combo/destination CRUD lifecycle, refresh admin evidence | NO |
+| 30ca32dade747b6592f427ec45d559cb1d8ffbad | docs: finalize production sync handoff | Production handoff refresh | NO |
 | c8fe7a94303ce81cb109cc3a35c8587dbe9b3369 | fix(admin): close run-to-goal gaps and gateway restart | Admin/API/browser run-to-goal closure, Nginx dynamic Docker DNS resolver, persistence and permission QA | NO |
-| docs-only follow-up SHA in final result | docs: finalize admin and production handoffs | Handoff updates and refreshed scanner report only | NO |
+| cb79bd3088ef6129bba250d2662e7267882b4b7a | docs: finalize admin and production handoffs | Admin evidence and handoff refresh | NO |
+| c1f14205f309706183c65c6ba96c1bc65f367683 | test(media): cover upload limits and path traversal | Add configured upload-size and encoded path-traversal API smoke assertions | NO |
+| docs-only follow-up SHA in final result | docs: refresh local/production audit handoffs | Correct local runtime facts and final test counts | NO |
 
-Production code review/deploy target is the range `54c246bbe9f70ed3bf298401e39df3e30a73057c..c8fe7a94303ce81cb109cc3a35c8587dbe9b3369`. The final remote main additionally contains a docs-only follow-up; its exact tip is stated in the task result.
+Production code review/deploy target is the range `54c246bbe9f70ed3bf298401e39df3e30a73057c..c1f14205f309706183c65c6ba96c1bc65f367683`. The final remote main additionally contains a docs-only follow-up; its exact tip is stated in the task result. The source commit c1f1420 changes smoke-test coverage only.
 
 ## 4. Database impact
 
@@ -70,7 +75,7 @@ CHANGED_ENV_VARS=Compose forwards SEO gate/canonical origin to web and API; defa
 NEW_SECRET_REQUIRED=NO (provider keys are optional; AI key encryption falls back to the existing SESSION_SECRET)
 </pre>
 
-If a dedicated AI_SETTINGS_ENCRYPTION_KEY is configured, persist the same key across restarts; do not rotate SESSION_SECRET during this source sync. AI provider keys and canonical origin require owner approval. Never enable indexing as part of this deploy. Both example files were tested in a disposable fresh-clone fixture: first run created the env/secrets, second run preserved every file byte-for-byte. The real local env/secret files were kept and are not tracked.
+If a dedicated AI_SETTINGS_ENCRYPTION_KEY is configured, persist the same key across restarts; do not rotate SESSION_SECRET during this source sync. AI provider keys and canonical origin require owner approval. Never enable indexing as part of this deploy. Both example files were tested in a disposable fresh-clone fixture: first run created the env/secrets, second run preserved every file byte-for-byte. Actual local env files remain ignored/untracked: `.env.ports` and `.env.runtime` were adjusted only for the active local port/origin as detailed in section 6; existing secret values were kept unchanged.
 
 ## 6. Docker/operations impact
 
@@ -86,7 +91,7 @@ ENV_EXAMPLE_FIX=PASS
 BACKEND_SH_SEED_FIX=PASS
 </pre>
 
-The Compose command built images for api, web and worker. Backend image layers were unchanged/cached and those containers stayed up; the changed web image was recreated, and the migration job completed. PostgreSQL, Redis and media volumes were not removed or reset. API health and local homepage/robots returned HTTP 200. The read-only port preflight found 18473 occupied by this local stack and 18474 free. The preflight `--write` mode was not run because rewriting `.env.ports` would interrupt the active test URL. Local env/secrets were preserved.
+The Compose command `docker compose --env-file .env.docker --env-file .env.ports up -d --build` built/recreated the local app stack and the migration job exited 0. PostgreSQL, Redis and media volumes were preserved; no reset/down -v occurred. All six services are currently up; API and PostgreSQL report healthy. Homepage, `/api/v1/health`, and `/robots.txt` return HTTP 200; robots remains `noindex, follow`. Port preflight `--write` selected 18474 because 18473 was occupied. Local-only `.env.ports` now sets `DVB_HTTP_PORT=18474`, and ignored `.env.runtime` `PUBLIC_ORIGINS` was updated to the matching localhost origins after the port change so owner mutations pass same-origin/CSRF checks. Secret values were not changed; `prepare-local-secrets.py` kept existing env/secrets. None of these actual local env files are tracked or committed.
 
 scripts/backend.sh seed and the existing-owner create-owner guard were exercised through the wrapper. The wrapper copies checked-in source to a fresh container filesystem, runs npm ci, Prisma generate and Nest build, then executes the command; it does not depend on host backend/dist. Seed completed twice with unchanged counts. create-owner built successfully and safely refused the already-existing email; no Owner account was changed or created. The actual password was never printed or committed.
 
@@ -101,7 +106,7 @@ scripts/backend.sh seed and the existing-owner create-owner guard were exercised
 | Backend build | PASS | Source build inside Node 24 Docker runner and Compose API build |
 | Backend tests | PASS | 14/14, including permission-guard cases |
 | Docker config | PASS | `docker compose --env-file .env.docker --env-file .env.ports config --quiet` |
-| API smoke | PASS | 65/65: auth/CSRF/permissions, settings/version conflict, media/WebP/ALT, content/navigation/inquiry/property/catalog and cleanup |
+| API smoke | PASS | 67/67: previous auth/CSRF/permissions, settings, media/WebP/ALT, content/navigation/inquiry/property/catalog checks plus configured upload-size rejection and encoded media path-traversal rejection |
 | SEO audit | PASS WITH LIMITATION | Robots, sitemap, canonical/noindex/draft isolation, redirects and true 404 pass; positive published-content JSON-LD was not exercised because there is no approved public content |
 | Env examples | PASS | Fresh-clone creation + idempotent rerun, no overwrite |
 | Backend seed/owner wrapper | PASS | Seed twice; duplicate-owner guard rejected without DB mutation |
@@ -114,7 +119,7 @@ The new browser tests use unique ATG-* records and remove them; final local aggr
 
 <pre>
 DEPLOY_FROM_SHA=54c246bbe9f70ed3bf298401e39df3e30a73057c
-DEPLOY_TO_SHA=c8fe7a94303ce81cb109cc3a35c8587dbe9b3369
+DEPLOY_TO_SHA=c1f14205f309706183c65c6ba96c1bc65f367683 (c1f1420 adds smoke coverage only on top of c8fe7a9)
 SAFE_TO_PREPARE_DEPLOY_COMMAND=NO
 BLOCKERS=3 frontend full-tree advisories (2 high, 1 critical) with prod-only status unverified; 17 backend advisories (8 high); booking/inventory/customer/promotion/payment/report incomplete; production DB migration state, backup/restore, HTTPS/TLS, CSRF and CDN not inspected; route backfill needs reviewed backup/forward-fix plan; no approved live content for positive JSON-LD verification
 </pre>
@@ -123,7 +128,7 @@ No production deploy, migration, seed/import, index opening, DNS update or servi
 
 ## 9. Exact changed-file output
 
-Exact `git diff --name-status 54c246bbe9f70ed3bf298401e39df3e30a73057c c8fe7a94303ce81cb109cc3a35c8587dbe9b3369` captured after the implementation commit (225 tracked paths). The docs-only follow-up changes no path set relative to this production baseline.
+Exact `git diff --name-status 54c246bbe9f70ed3bf298401e39df3e30a73057c c1f14205f309706183c65c6ba96c1bc65f367683` (225 tracked paths) follows. Commit c1f1420 changes the content of an already-listed smoke-test path, so the path set remains 225; the later handoff-only refresh also changes no path set relative to this production baseline.
 
 <pre>
 A	.env.docker.example
