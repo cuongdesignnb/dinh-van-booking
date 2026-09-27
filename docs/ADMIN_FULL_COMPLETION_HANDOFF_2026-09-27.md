@@ -4,7 +4,7 @@ Ngày: 27/09/2026. Đây là bàn giao kiểm thử môi trường local, không
 
 ## Trạng thái local
 
-- URL: [http://127.0.0.1:18474](http://127.0.0.1:18474) (gateway local, đọc cổng hiện hành trong `.env.ports`).
+- URL: [http://127.0.0.1:18473](http://127.0.0.1:18473) (gateway local, đọc cổng hiện hành trong `.env.ports`).
 - Docker Compose project `dvb-booking`: API, web, worker, gateway, PostgreSQL và Redis đang chạy; API/PostgreSQL healthy. Homepage và `/api/v1/health` trả HTTP 200. PostgreSQL, Redis và media volumes không bị xoá/recreate.
 - Đăng nhập admin tại `/admin`. Owner email: `halabcreative@gmail.com`. Mật khẩu vẫn nằm trong file local ignored `.secrets/owner_password`; không ghi vào Git, log hay tài liệu này.
 - SEO indexing giữ đóng: setting/policy trả `indexingAllowed=false`; homepage có `X-Robots-Tag: noindex, follow` và meta robots `noindex, follow`; sitemap chưa chứa URL indexable; public API chỉ trả projection đã publish. Cấu hình robots cho phép bot crawl trang công khai để đọc noindex, nhưng chặn `/admin/` và `/api/`.
@@ -16,16 +16,19 @@ Ngày: 27/09/2026. Đây là bàn giao kiểm thử môi trường local, không
 | `npm run typecheck` | PASS |
 | `npm run lint` | PASS |
 | `npm run audit:admin-runtime` | PASS — 17 route entry, 62 reachable modules; không còn pending/fallback/demo trong graph hoạt động |
-| `npm test` trong `backend` | PASS — 22/22 |
-| API smoke qua gateway | PASS — 69/69 |
-| `npx playwright test --workers=1 --reporter=line` với `DVB_ADMIN_RESTART_STACK=1` | PASS — 35/35, bao gồm restart persistence và responsive |
-| Dependency audit | PASS — root/backend, full và production-only đều báo 0 vulnerabilities |
+| `npm ci` (Node 24) | PASS |
+| `npm run build` | PASS — optimized Next production build |
+| `npm test` trong `backend` | PASS — 22/22; backend build chạy mới ngay trước unit suite |
+| API smoke qua gateway (`scripts/smoke.sh`) | PASS — 69/69, chạy lại sau full E2E/restart |
+| `npm test -- --workers=1` với `BASE_URL=http://127.0.0.1:18473` và `DVB_ADMIN_RESTART_STACK=1` | PASS — 38/38, gồm full-completion route/API/CSRF E2E, coupon discount/reject-invalid/reject-expired, restart persistence và 1440/1024/768/390 px |
+| `npm audit`; root/backend `npm audit --omit=dev` | PASS — root/backend full và production-only đều báo 0 vulnerabilities |
+| `npm run audit:no-hardcode` | PASS — 43 phát hiện đã phân loại: 6 local preference, 21 type-only, 16 legacy/compatibility ngoài route graph; crawler xác nhận không có nội dung demo/pending trên route đang chạy |
 | SEO | PASS — gate, robots/sitemap, draft isolation, admin/API noindex, 404/filtered URLs |
 | Docker build | PASS — Next và backend build trong image local |
 
 ## Phạm vi và ranh giới
 
-- Đã nối màn admin vào API thật, bao gồm CRM, đặt phòng/tồn, coupon, offline finance/refund, báo cáo, CMS, thư viện ảnh, menu, settings và AI configuration. Ma trận screen → action → API → service → Prisma → permission → browser test ở [full-completion-matrix.md](admin/full-completion-matrix.md); tóm tắt tại [ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md](admin/ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md).
+- Đã nối màn admin vào API thật, bao gồm CRM, đặt phòng/tồn, coupon, offline finance/refund, báo cáo, CMS, thư viện ảnh, menu, settings và AI configuration. `tests/admin/full-completion.spec.ts` crawl đủ 16 route, đối soát dashboard với API và chứng minh POST thiếu CSRF bị từ chối; suite operations xác minh mã hợp lệ giảm đúng giá phía server, mã không tồn tại/hết hạn bị từ chối, cùng CRUD/version conflict/disable, race tồn, booking lifecycle, ledger/refund và báo cáo. Ma trận screen → action → API → service → Prisma → permission → browser test ở [full-completion-matrix.md](admin/full-completion-matrix.md); tóm tắt tại [ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md](admin/ADMIN_FULL_COMPLETION_MATRIX_2026-09-27.md).
 - Không có schema change/migration trong lượt hoàn tất này; chi tiết ở [admin-full-completion-schema-delta.md](backend/admin-full-completion-schema-delta.md).
 - Không gọi cổng thanh toán, không thu tiền thật, không gửi hàng loạt, không truy cập/sửa production, DNS hoặc dịch vụ bên ngoài. Không deploy production.
 - Thư viện ảnh kiểm thử và fixture của Playwright được cleanup; bản ghi hiện hữu không bị ghi đè. Không force-push.
@@ -83,8 +86,8 @@ RESPONSIVE_QA=PASS
 ## Database / operations / deployment preparation
 
 ```text
-START_SHA=987c03606fbb8acc632f17ae77233b099e6e14b5
-IMPLEMENTATION_COMMIT=0dce494475240545c67da1cc4c35ad9a7ddae533
+START_SHA=ac20af35fdf50d603d72c479effafb57429b6c32
+IMPLEMENTATION_COMMIT=ef64ddd8a9225cde7e9ef5132c27caf66bfea0fe
 NEW_MIGRATIONS=0
 MIGRATION_FILES=NONE
 DATA_BACKFILL=NO
@@ -92,22 +95,22 @@ NEW_PERMISSIONS=6: dashboard.read, inventory.read, coupon.read, coupon.write, re
 SEED_REQUIRED=YES (idempotent vocabulary/grant seed; run before admin permission-dependent rollout)
 WORKER_CHANGES=YES (BullMQ hold-expiry processor, retry/backoff, graceful drain)
 NEW_QUEUES=1 (dvb-admin-operations; scheduled expire-booking-holds job)
-ENV_CHANGES=NONE tracked; local port DVB_HTTP_PORT=18474; SEO_INDEXING_ALLOWED=false
+ENV_CHANGES=NONE tracked; local DVB_HTTP_PORT=18473 and PUBLIC_ORIGINS loopback 18473/18474; SEO_INDEXING_ALLOWED=false
 NEW_SECRETS_REQUIRED=NO
 
 DEPLOY_FROM_SHA=987c03606fbb8acc632f17ae77233b099e6e14b5
-DEPLOY_TO_SHA=0dce494475240545c67da1cc4c35ad9a7ddae533 (implementation; no schema change)
+DEPLOY_TO_SHA=ef64ddd8a9225cde7e9ef5132c27caf66bfea0fe (implementation; no schema change; no production deployment performed)
 REBUILD_WEB=YES
 REBUILD_API=YES
 REBUILD_WORKER=YES
 RUN_MIGRATION=NO
 RUN_SEED=YES (new permission vocabulary)
-RESTART_GATEWAY=NO (gateway config unchanged)
+RESTART_GATEWAY=YES (local gateway port moved 18474→18473; no production gateway change)
 
 LIVE_PAYMENT_PROVIDER_ENABLED=NO
 SEO_INDEXING_ALLOWED=false
 COMMIT_CREATED=YES
-PUSHED_TO_MAIN=YES
+PUSHED_TO_MAIN=YES (implementation commit ef64ddd8a9225cde7e9ef5132c27caf66bfea0fe; fast-forward, no force)
 SAFE_TO_PREPARE_PRODUCTION_DEPLOY=NO
 BLOCKERS=Production PostgreSQL/media backup-and-restore rehearsal; owner approval of canonical/brand/contact/content and live payment policy. No local code/test blocker.
 ```
