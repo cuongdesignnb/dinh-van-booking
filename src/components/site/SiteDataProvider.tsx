@@ -3,6 +3,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { emptySiteData, type RuntimeSiteData } from '@/config/site';
 import type { PublicSiteData } from '@/lib/api/public';
+import { richDocumentToText } from '@/lib/content/rich-document';
 
 const SiteDataContext = createContext<RuntimeSiteData>(emptySiteData);
 
@@ -15,7 +16,7 @@ export function SiteDataProvider({ data, navigation, children }: { data: PublicS
     name: typeof identity.name === 'string' ? identity.name : '',
     shortName: typeof identity.shortName === 'string' ? identity.shortName : '',
     tagline: typeof identity.tagline === 'string' ? identity.tagline : '',
-    description: typeof identity.description === 'string' ? identity.description : '',
+    description: richDocumentToText(identity.description),
     contact: {
       phone: contact.phone ?? null,
       hotline: contact.hotline ?? null,

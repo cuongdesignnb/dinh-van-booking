@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import type { ImageAsset } from '@/data/types';
 import { getPublicSite, type PublicSiteData } from '@/lib/api/public';
 import { canonicalUrl, classifySeoQuery, getSeoPolicy, getSiteName } from './policy';
+import { richDocumentToText } from '@/lib/content/rich-document';
 
 type MetadataOptions = {
   path: string;
@@ -25,8 +26,7 @@ function object(value: unknown): Record<string, unknown> {
 }
 
 function clean(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  const result = value.replace(/\s+/g, ' ').trim();
+  const result = richDocumentToText(value);
   return result || undefined;
 }
 

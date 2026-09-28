@@ -18,6 +18,7 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 import { isSeoSchemaAllowed } from '@/lib/seo/policy';
 import { buildSiteGraph } from '@/lib/seo/schema';
 import { publicAsset, publicSectionHidden, publicSectionOrder, publicSetting } from '@/lib/public-content';
+import { richDocumentToText } from '@/lib/content/rich-document';
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -35,7 +36,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return buildPageMetadata({
     path: '/',
     title: typeof site.seo.defaultTitle === 'string' ? site.seo.defaultTitle : site.identity.name,
-    description: typeof site.seo.defaultDescription === 'string' ? site.seo.defaultDescription : site.identity.description,
+    description: typeof site.seo.defaultDescription === 'string' ? site.seo.defaultDescription : richDocumentToText(site.identity.description),
     eligible,
     searchParams: query,
   });
@@ -53,7 +54,7 @@ export default async function HomePage({ searchParams }: Props) {
   const hasIndexableContent = stays.some((stay) => !stay.noindex && isSubstantivePublicContent(stay.descriptionDocument ?? stay.description))
     || destinations.some((destination) => !destination.noindex && isSubstantivePublicContent(destination.body ?? destination.description));
   const structuredData = isSeoSchemaAllowed(site, '/', { eligible: hasIndexableContent, searchParams: query })
-    ? buildSiteGraph(site, { path: '/', title: typeof site.seo.defaultTitle === 'string' ? site.seo.defaultTitle : site.identity.name!, description: typeof site.seo.defaultDescription === 'string' ? site.seo.defaultDescription : site.identity.description })
+    ? buildSiteGraph(site, { path: '/', title: typeof site.seo.defaultTitle === 'string' ? site.seo.defaultTitle : site.identity.name!, description: typeof site.seo.defaultDescription === 'string' ? site.seo.defaultDescription : richDocumentToText(site.identity.description) })
     : null;
   const configs = {
     hero: publicSetting(site, 'home.hero'),

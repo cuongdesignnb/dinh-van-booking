@@ -7,6 +7,7 @@ import type { PublicArticleRecord } from '@/lib/api/public';
 import { canonicalUrl, getSiteName, normalizeApprovedOrigin } from './policy';
 import { getSeoPolicy } from './policy';
 import { isSubstantivePublicContent } from './content';
+import { richDocumentToText } from '@/lib/content/rich-document';
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
@@ -58,7 +59,7 @@ export function buildSiteGraph(site: PublicSiteData, options: { path: string; ti
     '@id': organizationId,
     name,
     url: `${origin}/`,
-    ...(site.identity.description ? { description: site.identity.description } : {}),
+    ...(richDocumentToText(site.identity.description) ? { description: richDocumentToText(site.identity.description) } : {}),
     ...(logo ? { logo: { '@type': 'ImageObject', url: logo } } : {}),
     ...(socialUrls.length ? { sameAs: socialUrls } : {}),
   });

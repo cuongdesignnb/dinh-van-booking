@@ -14,7 +14,8 @@
     "seed": "node scripts/run-with-db-url.mjs node dist/scripts/seed.js",
     "test": "node scripts/test.mjs",
     "create-owner": "node scripts/run-with-db-url.mjs node dist/scripts/create-owner.js",
-    "import:business:cuc-phuong": "node scripts/run-with-db-url.mjs node dist/scripts/import-cuc-phuong.js"
+    "import:business:cuc-phuong": "node scripts/run-with-db-url.mjs node dist/scripts/import-cuc-phuong.js",
+    "seed:public-bootstrap": "node scripts/run-with-db-url.mjs node dist/scripts/seed-public-bootstrap.js"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",

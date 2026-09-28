@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { getPublicSite } from '@/lib/api/public';
 import { motionBootScript } from '@/components/ui/MotionController';
 import { metadataForSite } from '@/lib/seo/metadata';
+import { richDocumentToText } from '@/lib/content/rich-document';
 import './globals.css';
 import '@/styles/pages.css';
 import '@/styles/mobile-nav.css';
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const metadata = metadataForSite(site, {
     path: '/',
     title: typeof site.seo.defaultTitle === 'string' ? site.seo.defaultTitle : site.identity.name,
-    description: typeof site.seo.defaultDescription === 'string' ? site.seo.defaultDescription : site.identity.description,
+    description: typeof site.seo.defaultDescription === 'string' ? site.seo.defaultDescription : richDocumentToText(site.identity.description),
     eligible: true,
     canonical: false,
   });

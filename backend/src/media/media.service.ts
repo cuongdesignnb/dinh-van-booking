@@ -45,6 +45,22 @@ export interface MediaView {
   createdAt: string;
 }
 
+/** Shared by uploads and the read-only bootstrap preview for identical SHA dedupe. */
+export async function encodeMediaWebp(
+  source: Buffer,
+  rules: MediaProcessingSettings,
+  targetWidth: number,
+  animated: boolean,
+): Promise<{ data: Buffer; width: number; height: number }> {
+  let pipeline = sharp(source, { animated }).rotate();
+  if (rules.stripMetadata === false) pipeline = pipeline.withMetadata();
+  pipeline = pipeline.resize({ width: targetWidth, withoutEnlargement: true });
+  const { data, info } = await pipeline
+    .webp({ quality: Math.min(Math.max(rules.quality, 40), 100), effort: 4 })
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
+}
+
 @Injectable()
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
@@ -81,7 +97,7 @@ export class MediaService {
     }
     if (!probe.width || !probe.height) throw new BadRequestException('Không đọc được kích thước ảnh');
 
-    const encoded = await this.encodeWebp(file.buffer, rules, rules.maxWidth, file.mimetype === 'image/gif');
+    const encoded = await encodeMediaWebp(file.buffer, rules, rules.maxWidth, file.mimetype === 'image/gif');
     const sha = createHash('sha256').update(encoded.data).digest('hex');
 
     // The same picture uploaded twice reuses one file instead of filling the volume.
@@ -97,7 +113,7 @@ export class MediaService {
     const renditions: Record<string, { url: string; width: number }> = {};
     for (const rendition of rules.renditions) {
       if (rendition.width >= encoded.width) continue;
-      const variant = await this.encodeWebp(file.buffer, rules, rendition.width, file.mimetype === 'image/gif');
+      const variant = await encodeMediaWebp(file.buffer, rules, rendition.width, file.mimetype === 'image/gif');
       const key = `${folder}/${baseName}-${rendition.name}.webp`;
       await this.writeFile(key, variant.data);
       renditions[rendition.name] = { url: this.publicUrl(key), width: variant.width };
@@ -139,21 +155,6 @@ export class MediaService {
       `Stored ${storageKey} as WebP (${file.mimetype} ${file.buffer.byteLength}B -> ${encoded.data.byteLength}B)`,
     );
     return this.toView(asset);
-  }
-
-  private async encodeWebp(
-    source: Buffer,
-    rules: MediaProcessingSettings,
-    targetWidth: number,
-    animated: boolean,
-  ): Promise<{ data: Buffer; width: number; height: number }> {
-    let pipeline = sharp(source, { animated }).rotate();
-    if (rules.stripMetadata === false) pipeline = pipeline.withMetadata();
-    pipeline = pipeline.resize({ width: targetWidth, withoutEnlargement: true });
-    const { data, info } = await pipeline
-      .webp({ quality: Math.min(Math.max(rules.quality, 40), 100), effort: 4 })
-      .toBuffer({ resolveWithObject: true });
-    return { data, width: info.width, height: info.height };
   }
 
   private async writeFile(storageKey: string, data: Buffer): Promise<void> {

@@ -9,11 +9,11 @@ test('public API hides the draft-only catalogue instead of falling back to fixtu
   }
 
   await page.goto('/');
-  // This local database has no configured homepage sections. The public page
-  // should keep its shell while rendering no fallback catalogue or fake hero.
+  // Presentation settings may be bootstrapped, but must never synthesize
+  // catalogue cards or a fixture-backed business hero.
   await expect(page.locator('main')).toHaveCount(1);
   await expect(page.locator('.home-content-order')).toHaveCount(1);
-  await expect(page.locator('.home-content-order > *')).toHaveCount(0);
+  await expect(page.locator('.stay-card, .lcard, .review-card')).toHaveCount(0);
   const homeText = await page.locator('body').innerText();
   expect(homeText).not.toMatch(/Mộc Sơn Homestay|An Nhiên Retreat|bản sao demo|Cẩm nang 48 giờ ở Cúc Phương/);
 

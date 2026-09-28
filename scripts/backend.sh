@@ -32,6 +32,23 @@ case "$1" in
     ;;
 esac
 
+if [ "$1" = "seed:public-bootstrap" ]; then
+  MEDIA_VOLUME="${COMPOSE_PROJECT_NAME:-dvb-booking}_media-data"
+  docker volume inspect "$MEDIA_VOLUME" >/dev/null
+  MEDIA_MODE=ro
+  for arg in "$@"; do
+    if [ "$arg" = "--apply" ]; then MEDIA_MODE=rw; fi
+  done
+  DOCKER_ARGS+=(
+    -v "${MEDIA_VOLUME}:/var/lib/dvb/media:${MEDIA_MODE}"
+    -v "$(pwd)/public/images/dinh-van-booking:/bootstrap-assets:ro"
+    -e DVB_BOOTSTRAP_ASSETS_DIR=/bootstrap-assets
+  )
+  if [ -n "${DVB_BOOTSTRAP_ACTOR_EMAIL:-}" ]; then
+    DOCKER_ARGS+=(-e "DVB_BOOTSTRAP_ACTOR_EMAIL=${DVB_BOOTSTRAP_ACTOR_EMAIL}")
+  fi
+fi
+
 MSYS_NO_PATHCONV=1 exec docker "${DOCKER_ARGS[@]}" "$IMAGE" sh -ec '
     mkdir -p /app/src
     cp /src/package.json /src/package-lock.json /src/nest-cli.json /src/prisma.config.ts /src/tsconfig.json /app/

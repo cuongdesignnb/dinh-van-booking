@@ -2429,6 +2429,12 @@ svg {
   align-content: start;
 }
 
+@media (min-width: 1200px) {
+  .footer__main--no-social {
+    grid-template-columns: 306px 254px 316px minmax(0, 1fr);
+  }
+}
+
 .footer__bottom {
   min-height: 52px;
   display: flex;

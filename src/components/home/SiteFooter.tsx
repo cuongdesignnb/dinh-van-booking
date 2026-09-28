@@ -30,30 +30,30 @@ export function SiteFooter({ variant = 'default', navigation }: { variant?: 'def
       <ForestSilhouette className="footer__forest" />
       <LeafSprig className="footer__leaf" />
       <div className="footer__inner">
-        <div className="footer__main">
+        <div className={`footer__main${activeSocial.length ? '' : ' footer__main--no-social'}`}>
           <div className="footer__brand">
             <BrandLogo variant="footer" />
           </div>
 
-          <nav className="footer__col" aria-labelledby="f-links">
+          {navigation.length > 0 && <nav className="footer__col" aria-labelledby="f-links">
             <h2 className="footer__title" id="f-links">
               Liên kết nhanh
             </h2>
-            {navigation.length > 0 && <ul className="footer__links">
+            <ul className="footer__links">
               {navigation.map((item) => <li key={`${item.href}-${item.label}`}><Link href={item.href}>{item.label}</Link></li>)}
-            </ul>}
-          </nav>
+            </ul>
+          </nav>}
 
-          <div className="footer__col">
+          {contacts.length > 0 && <div className="footer__col">
             <h2 className="footer__title">Thông tin liên hệ</h2>
-            {contacts.length > 0 && <ul className="footer__contact">
+            <ul className="footer__contact">
               {contacts.map((item) => <li key={item.key}>{item.icon}{item.href ? <a href={item.href}>{item.label}</a> : <span>{item.label}</span>}</li>)}
-            </ul>}
-          </div>
+            </ul>
+          </div>}
 
-          <div className="footer__col">
+          {activeSocial.length > 0 && <div className="footer__col">
             <h2 className="footer__title">Theo dõi mình</h2>
-            {activeSocial.length > 0 && <ul className="footer__social">
+            <ul className="footer__social">
               {activeSocial.map((name) => {
                 const url = social[name];
                 if (!url) return null;
@@ -71,8 +71,8 @@ export function SiteFooter({ variant = 'default', navigation }: { variant?: 'def
                   </li>
                 );
               })}
-            </ul>}
-          </div>
+            </ul>
+          </div>}
 
           {(quote || quoteAuthor) && <div className="footer__quote">
             {quote && <p className="handwritten">{quote}</p>}

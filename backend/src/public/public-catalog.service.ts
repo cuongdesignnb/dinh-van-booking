@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { loadConfig } from '../common/config/env';
+import { documentToText } from '../content/document';
 
 type AssetRow = {
   storageKey: string;
@@ -278,7 +279,8 @@ export class PublicCatalogService {
     if (!origin) blockedReasons.push('Tên miền chính thức chưa phải origin HTTPS hợp lệ.');
     if (!approved || origin !== approved) blockedReasons.push('Tên miền chưa khớp origin được Owner duyệt ở môi trường triển khai.');
     if (dataMode.usesDemoData === true) blockedReasons.push('Nội dung website đang chờ xác minh.');
-    if (typeof identity.name !== 'string' || !identity.name.trim() || typeof identity.description !== 'string' || !identity.description.trim()) {
+    const identityDescription = documentToText(identity.description) || (typeof identity.description === 'string' ? identity.description.trim() : '');
+    if (typeof identity.name !== 'string' || !identity.name.trim() || !identityDescription) {
       blockedReasons.push('Thiếu tên hoặc mô tả thương hiệu đã xác nhận.');
     }
     return {
@@ -288,7 +290,7 @@ export class PublicCatalogService {
         && origin === approved
         && dataMode.usesDemoData !== true
         && typeof identity.name === 'string' && !!identity.name.trim()
-        && typeof identity.description === 'string' && !!identity.description.trim(),
+        && !!identityDescription,
       canonicalOrigin: origin && origin === approved ? origin : null,
       blockedReasons,
       structuredData: {

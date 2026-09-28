@@ -60,7 +60,7 @@ async function setCheckbox(checkbox: Locator, checked: boolean): Promise<void> {
 
 async function openMediaPicker(setting: Locator, mediaLabel: string): Promise<Locator> {
   const field = setting.locator('.settings-form__field').filter({ hasText: mediaLabel }).first();
-  await field.getByRole('button', { name: 'Chọn từ thư viện ảnh', exact: true }).click();
+  await field.getByRole('button', { name: /^(Chọn từ thư viện ảnh|Thay ảnh từ thư viện)$/ }).click();
   return setting.page().locator('.media-library-dialog:visible').last();
 }
 
@@ -119,7 +119,6 @@ test.describe('public content final acceptance', () => {
       // Keep a distinct anonymous browser context open while Admin saves.
       await publicPage.goto('/');
       await expect(publicPage.locator('.home-content-order')).toHaveCount(1);
-      await expect(publicPage.locator('.home-content-order > *')).toHaveCount(0);
 
       const desiredVisible = new Set(['hero', 'promo', 'faq', 'contact']);
       await saveCard(page, 'home.sections', async (setting) => {
@@ -208,9 +207,9 @@ test.describe('public content final acceptance', () => {
         await setCheckbox(setting.getByLabel('Hiển thị FAQ'), true);
         await setting.getByLabel('Tiêu đề FAQ').fill(marker + ' FAQ');
         await setting.getByRole('button', { name: 'Thêm mục' }).click();
-        await setting.getByLabel('Câu hỏi').fill(marker + ' question?');
-        const editor = setting.locator('.ProseMirror[contenteditable="true"]');
-        await expect(editor).toHaveCount(1);
+        await setting.getByLabel('Câu hỏi').last().fill(marker + ' question?');
+        const editor = setting.locator('.ProseMirror[contenteditable="true"]').last();
+        await expect(editor).toBeVisible();
         await editor.fill(marker + ' rich FAQ answer');
       });
       await saveCard(page, 'site.header', async (setting) => {
@@ -290,31 +289,57 @@ test.describe('public content final acceptance', () => {
   });
 
   test('empty business settings and empty public catalog render no demo or hardcoded business content', async ({ page, request }) => {
-    const siteResponse = await request.get('/api/v1/public/site');
-    expect(siteResponse.status()).toBe(200);
-    const site = await siteResponse.json() as { settings: Record<string, unknown> };
-    const settings = site.settings;
-    for (const key of ['brand.identity', 'brand.contact', 'brand.social', 'brand.businessHours', 'site.header', 'site.footer']) {
-      const value = settings[key];
-      expect(value, key).toBeTruthy();
-      expect(Object.values(value as Record<string, unknown>).every((entry) => entry === null)).toBe(true);
+    await signInAsOwner(page);
+    const keys = [
+      'brand.identity', 'brand.contact', 'site.header', 'site.footer', 'home.sections',
+      'home.hero', 'home.trust', 'home.why', 'home.featured', 'home.combos',
+      'home.destinations', 'home.testimonials', 'home.promo', 'home.contactPanel',
+      'home.faq', 'contact.page', 'catalog.staysPage', 'catalog.destinationsPage',
+      'catalog.combosPage', 'catalog.bookingPage', 'catalog.staticPages',
+      'catalog.articlesPage', 'seo.defaults', 'seo.pages',
+    ];
+    const original = await readSettings(page);
+    const snapshots = keys.map((key) => {
+      const item = original.find((candidate) => candidate.key === key);
+      if (!item) throw new Error('Thiếu setting cần bảo vệ: ' + key);
+      return { key, value: structuredClone(item.value), isDefault: item.isDefault };
+    });
+    try {
+      for (const key of keys) {
+        const current = (await readSettings(page)).find((item) => item.key === key)!;
+        if (!current.isDefault) {
+          const result = await browserApi(page, '/settings/' + encodeURIComponent(key) + '?expectedVersion=' + current.version, 'DELETE');
+          expect(result.status, key).toBe(200);
+        }
+      }
+      const siteResponse = await request.get('/api/v1/public/site');
+      expect(siteResponse.status()).toBe(200);
+      const site = await siteResponse.json() as { settings: Record<string, unknown> };
+      const settings = site.settings;
+      for (const key of ['brand.identity', 'brand.contact', 'brand.social', 'brand.businessHours', 'site.header', 'site.footer']) {
+        const value = settings[key];
+        expect(value, key).toBeTruthy();
+        expect(Object.values(value as Record<string, unknown>).every((entry) => entry === null)).toBe(true);
+      }
+      for (const key of ['home.hero', 'home.promo', 'home.contactPanel', 'home.faq']) {
+        const value = settings[key] as Record<string, unknown>;
+        expect(value.enabled, key + '.enabled').toBe(false);
+      }
+      expect((settings['home.sections'] as { order: unknown[] }).order).toEqual([]);
+      for (const path of ['stays', 'combos', 'destinations', 'articles', 'pages']) {
+        const response = await request.get('/api/v1/public/' + path);
+        expect(response.status(), path).toBe(200);
+        expect((await response.json()).items, path).toEqual([]);
+      }
+      await page.goto('/');
+      await expect(page.locator('.home-content-order > *')).toHaveCount(0);
+      const text = await page.locator('body').innerText();
+      expect(text).not.toMatch(/Mộc Sơn Homestay|An Nhiên Retreat|Cẩm nang 48 giờ ở Cúc Phương|PUBLIC ACCEPTANCE/i);
+      await page.goto('/phong-nghi');
+      await expect(page.locator('.stay-card, .lcard')).toHaveCount(0);
+      expect(await page.locator('body').innerText()).not.toMatch(/Mộc Sơn Homestay|An Nhiên Retreat|bản sao demo/i);
+    } finally {
+      await restoreBaseline(page, snapshots);
     }
-    for (const key of ['home.hero', 'home.promo', 'home.contactPanel', 'home.faq']) {
-      const value = settings[key] as Record<string, unknown>;
-      expect(value.enabled, key + '.enabled').toBe(false);
-    }
-    expect((settings['home.sections'] as { order: unknown[] }).order).toEqual([]);
-    for (const path of ['stays', 'combos', 'destinations', 'articles', 'pages']) {
-      const response = await request.get('/api/v1/public/' + path);
-      expect(response.status(), path).toBe(200);
-      expect((await response.json()).items, path).toEqual([]);
-    }
-    await page.goto('/');
-    await expect(page.locator('.home-content-order > *')).toHaveCount(0);
-    const text = await page.locator('body').innerText();
-    expect(text).not.toMatch(/Mộc Sơn Homestay|An Nhiên Retreat|Cẩm nang 48 giờ ở Cúc Phương|PUBLIC ACCEPTANCE/i);
-    await page.goto('/phong-nghi');
-    await expect(page.locator('.stay-card, .lcard')).toHaveCount(0);
-    expect(await page.locator('body').innerText()).not.toMatch(/Mộc Sơn Homestay|An Nhiên Retreat|bản sao demo/i);
   });
 });

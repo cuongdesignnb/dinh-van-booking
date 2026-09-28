@@ -50,7 +50,7 @@ export function BrandLogo({ variant = 'header' }: { variant?: 'header' | 'footer
   if (!logo?.src && !site.name && !site.tagline) return null;
   return (
     <span className={`brand brand--${variant}`}>
-      {logo?.src ? <Image className="brand__mark" src={logo.src} alt={logo.alt ?? site.name} width={logo.width ?? 600} height={logo.height ?? 200} unoptimized /> : null}
+      {logo?.src ? <Image className="brand__mark" src={logo.src} alt={logo.alt ?? site.name} width={logo.width ?? 600} height={logo.height ?? 200} unoptimized /> : <DinhVanMark className="brand__mark" />}
       <span className="brand__text">
         {site.name && <span className="brand-wordmark">{site.name}</span>}
         {site.tagline && <span className="brand__tagline">{site.tagline}</span>}

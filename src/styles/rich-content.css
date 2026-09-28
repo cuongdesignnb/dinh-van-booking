@@ -7,6 +7,16 @@
   overflow-wrap: anywhere;
 }
 
+/* Compact marketing panels inherit their authored contrast and type scale. */
+.hero__sub .rich-content,
+.why__text .rich-content,
+.promo__text .rich-content,
+.contact__text .rich-content {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
 .rich-content > div > * + *,
 .rich-content > * + * {
   margin-top: 1rem;

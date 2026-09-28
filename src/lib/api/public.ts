@@ -25,7 +25,7 @@ export interface PublicSiteData {
     name?: string;
     shortName?: string;
     tagline?: string;
-    description?: string;
+    description?: string | RichDocument;
     logoMediaId?: string | null;
     faviconMediaId?: string | null;
   };

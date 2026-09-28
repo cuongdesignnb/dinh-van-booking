@@ -36,7 +36,11 @@ test('robots and sitemap expose no draft or unapproved URL', async ({ request })
 
   const urlsResponse = await request.get('/api/v1/public/seo/urls');
   expect(urlsResponse.status()).toBe(200);
-  expect((await urlsResponse.json()).items).toEqual([]);
+  const siteResponse = await request.get('/api/v1/public/site');
+  expect(siteResponse.status()).toBe(200);
+  const site = await siteResponse.json() as { settings: Record<string, { enabled?: boolean }> };
+  const paths = ((await urlsResponse.json()) as { items: Array<{ path: string }> }).items.map((item) => item.path);
+  expect(paths).toEqual(site.settings['contact.page']?.enabled ? ['/lien-he'] : []);
 });
 
 test('public API returns only the currently published database projection', async ({ request }) => {
