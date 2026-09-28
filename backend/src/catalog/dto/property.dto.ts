@@ -324,8 +324,8 @@ export class UpdateRoomDto {
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(1000)
   areaSqm?: number;
 
-  @Type(() => Number) @IsInt() @Min(0)
-  rateVnd!: number;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0)
+  rateVnd?: number;
 
   /** Existing rooms may add sellable units; reductions require inventory review. */
   @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(100)

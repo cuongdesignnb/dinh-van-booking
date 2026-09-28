@@ -499,6 +499,9 @@ export class PropertiesService {
     if (room.version !== input.expectedVersion) throw new ConflictException('Hạng phòng đã được người khác sửa. Tải lại rồi lưu lại.');
     const name = input.name.trim();
     if (!name) throw new BadRequestException('Tên hạng phòng không được để trống');
+    if (input.rateVnd === undefined && input.weekendRateVnd !== undefined) {
+      throw new BadRequestException('Cần giá ngày thường trước khi đặt giá cuối tuần');
+    }
     await this.prisma.$transaction(async (tx) => {
       await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
       const existingUnits = input.unitCount === undefined ? [] : await tx.roomUnit.findMany({
@@ -527,10 +530,12 @@ export class PropertiesService {
         }
         await tx.roomUnit.createMany({ data: newUnits });
       }
-      if (room.ratePlans[0]) {
-        await tx.ratePlan.update({ where: { id: room.ratePlans[0].id }, data: { baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, version: { increment: 1 } } });
-      } else {
-        await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
+      if (input.rateVnd !== undefined) {
+        if (room.ratePlans[0]) {
+          await tx.ratePlan.update({ where: { id: room.ratePlans[0].id }, data: { baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, version: { increment: 1 } } });
+        } else {
+          await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
+        }
       }
       if (input.galleryMediaIds !== undefined) await this.replaceGallery(tx, room.property.contentId, `room:${roomId}`, input.galleryMediaIds);
       await tx.contentNode.update({ where: { id: room.property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: room.property.content.publicationStatus === 'published' ? new Date() : undefined } });

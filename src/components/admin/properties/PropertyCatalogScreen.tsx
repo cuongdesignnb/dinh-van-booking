@@ -490,6 +490,7 @@ export function PropertyCatalogScreen() {
           <h2>{roomParam ? 'Quản lý hạng phòng' : createMode ? 'Thêm nơi lưu trú' : 'Chỉnh sửa nơi lưu trú'}</h2>
           <p className="ahint">{createMode ? 'Tạo thông tin phòng nghỉ trên trang riêng; dữ liệu chỉ được lưu khi bấm nút lưu.' : 'Cập nhật thông tin nơi lưu trú trên trang riêng.'}</p>
         </div>
+        {!createMode && editing && !roomParam && <a className="abtn abtn--primary admin-form-page__rooms-link" href="#hang-phong"><BedDouble size={15} aria-hidden="true" /> Đến hạng phòng ({editing.roomTypes.length})</a>}
       </div>}
 
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
@@ -569,7 +570,7 @@ export function PropertyCatalogScreen() {
             </label>
           </div>
           <div className="property-form__section" id="hang-phong">
-            <div className="album-editor__head"><div><h4>Hạng phòng ({editing.roomTypes.length})</h4><p className="ahint">Mỗi hạng phòng có giá, sức chứa và album riêng. Quỹ phòng theo ngày quản lý ở mục “Quỹ phòng”.</p></div><button type="button" className="abtn abtn--primary abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=create`, { scroll: false })}><Plus size={15} /> Thêm hạng phòng</button></div>
+            <div className="album-editor__head"><div><h4>Hạng phòng ({editing.roomTypes.length})</h4><p className="ahint">Mỗi hạng phòng có giá, sức chứa và album riêng. Quỹ phòng theo ngày quản lý ở mục “Quỹ phòng”.</p></div><div className="property-form__room-actions"><Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}`}>Xem danh sách hạng phòng</Link><button type="button" className="abtn abtn--primary abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=create`, { scroll: false })}><Plus size={15} /> Thêm hạng phòng</button></div></div>
             {editing.roomTypes.length ? <div className="property-catalog__list">{editing.roomTypes.map((room) => <div className="property-card" key={room.id}><div className="property-card__body"><strong>{room.name}</strong><p className="ahint">{room.code} · {room.status === 'active' ? 'Đang hoạt động' : 'Tạm ẩn'} · {room.unitCount} phòng · {room.rate?.baseRateVnd === 0 ? 'Liên hệ để nhận giá' : money(room.rate?.baseRateVnd)} · {room.gallery?.length ?? 0} ảnh album</p><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=${encodeURIComponent(room.id)}`, { scroll: false })}><Pencil size={14} /> Sửa hạng phòng</button></div></div>)}</div> : <p className="ahint">Chưa có hạng phòng; bấm “Thêm hạng phòng”.</p>}
             <div className="property-form__toggles">
               <label className="atoggle">
@@ -751,7 +752,8 @@ export function PropertyCatalogScreen() {
       ) : (
         <div className="property-catalog__list">
           {items.map((item) => {
-            const room = item.roomTypes[0];
+            const roomCount = item.roomTypes.length;
+            const roomPreview = item.roomTypes.slice(0, 3).map((room) => room.name).join(' · ');
             return (
               <article className="acard property-card" key={item.id}>
                 <div className="property-card__cover">
@@ -760,14 +762,14 @@ export function PropertyCatalogScreen() {
                 <div className="property-card__body">
                   <div className="property-card__head"><div><h3>{item.title}</h3><p className="ahint">{item.code} · {KIND_LABEL[item.kind] ?? item.kind}</p><p className="ahint">{item.featured ? 'Nổi bật trang chủ' : item.publicationStatus === 'published' ? 'Chưa chọn nổi bật' : null}</p></div><span className="abadge abadge--neutral">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · {OPERATING_STATUS_LABEL[item.operatingStatus] ?? item.operatingStatus}</span></div>
                   <p>{item.area} · {item.address}</p>
-                  <p className="ahint">{room ? `${room.name} · ${room.unitCount} đơn vị · ${money(room.rate?.baseRateVnd)}` : 'Chưa có loại phòng'}</p>
+                  <p className="property-card__rooms"><strong>Hạng phòng ({roomCount})</strong><span>{roomCount ? `${roomPreview}${roomCount > 3 ? ` · +${roomCount - 3} hạng phòng khác` : ''}` : 'Chưa có hạng phòng — cần bổ sung thông tin đã xác minh'}</span></p>
                   <div className="property-card__actions">
                     <div className="property-card__action-group">
                       <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => openEdit(item)} disabled={editBusy || !!deleting || !!publishing}>
                         <Pencil size={14} aria-hidden="true" /> Sửa
                       </button>
-                      <Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(item.id)}`}>
-                        <BedDouble size={14} aria-hidden="true" /> Hạng phòng ({item.roomTypes.length})
+                      <Link className="abtn abtn--ghost abtn--sm" href={roomCount ? `/admin/hang-phong?property=${encodeURIComponent(item.id)}` : `/admin/hang-phong?property=${encodeURIComponent(item.id)}&room=create`}>
+                        <BedDouble size={14} aria-hidden="true" /> {roomCount ? `Hạng phòng (${roomCount})` : 'Thêm hạng phòng'}
                       </Link>
                       {item.publicationStatus !== 'published' && <button type="button" className="abtn abtn--danger abtn--sm" onClick={() => void remove(item)} disabled={deleting === item.id || editBusy || !!publishing}>
                         <Trash2 size={14} aria-hidden="true" /> {deleting === item.id ? 'Đang xoá…' : 'Xoá'}

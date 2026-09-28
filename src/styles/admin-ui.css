@@ -1199,6 +1199,8 @@ textarea.ainput {
   margin: 0;
 }
 
+.admin-form-page__rooms-link { justify-self: start; }
+
 .property-catalog {
   display: grid;
   gap: 16px;
@@ -1246,6 +1248,8 @@ textarea.ainput {
 .property-form__section h4 {
   font-size: 14px;
 }
+
+.property-form__room-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .property-form__grid {
   display: grid;
@@ -1314,6 +1318,14 @@ textarea.ainput {
   display: grid;
   gap: 12px;
 }
+
+.property-card__rooms { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0; color: var(--dvb-admin-muted); font-size: 12px; overflow-wrap: anywhere; }
+.property-card__rooms strong { color: #1c4a2c; }
+
+.room-catalog__summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.room-catalog__summary > div { display: grid; gap: 3px; padding: 12px 14px; border: 1px solid var(--dvb-admin-border); border-radius: 10px; background: #fff; }
+.room-catalog__summary strong { color: #194c2d; font-size: 22px; line-height: 1; }
+.room-catalog__summary span { color: var(--dvb-admin-muted); font-size: 12px; }
 
 .room-catalog__toolbar {
   display: grid;
@@ -1404,6 +1416,7 @@ textarea.ainput {
 }
 
 @media (max-width: 720px) {
+  .room-catalog__summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .room-catalog__toolbar,
   .room-catalog__card { grid-template-columns: 1fr; }
   .room-catalog__image { max-height: 180px; }

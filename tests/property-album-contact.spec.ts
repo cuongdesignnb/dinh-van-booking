@@ -32,9 +32,26 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
   const mineral = (seedCatalog.body as { items: Array<{ id: string; code: string; roomTypes: unknown[] }> }).items
     .find((item) => item.code === 'CP-MINERAL-RETREAT');
   expect(mineral?.roomTypes).toHaveLength(5);
+  await page.goto('/admin/hang-phong');
+  await expect(page.locator('.room-catalog__summary')).toContainText('Hạng phòng đã tạo');
+  await expect(page.locator('.room-catalog__card')).toHaveCount(5);
+  await page.getByRole('button', { name: 'Thêm hạng phòng' }).click();
+  await expect(page.locator('.room-catalog__instruction')).toContainText('Hãy chọn nơi lưu trú');
+  await expect(page.getByLabel('Nơi lưu trú')).toBeFocused();
   await page.goto(`/admin/hang-phong?property=${mineral!.id}`);
   await expect(page.locator('.room-catalog__card')).toHaveCount(5);
   await expect(page.locator('.room-catalog__card').first()).toContainText('Sức chứa chờ xác minh');
+  await page.locator('.room-catalog__card').first().getByRole('button', { name: 'Sửa hạng phòng' }).click();
+  await expect(page.getByLabel('Giá ngày thường (VND)')).toHaveValue('');
+  await page.getByRole('button', { name: 'Quay lại danh sách hạng phòng' }).first().click();
+  await page.goto('/admin/phong-nghi');
+  const unconfiguredProperty = page.locator('.property-card', { hasText: 'CP-AN-GARDEN' });
+  await expect(unconfiguredProperty.locator('.property-card__rooms')).toContainText('Hạng phòng (0)');
+  await unconfiguredProperty.getByRole('link', { name: 'Thêm hạng phòng' }).click();
+  await expect(page).toHaveURL(/\/admin\/hang-phong\?property=[^&]+&room=create/);
+  await expect(page.getByRole('heading', { name: 'Thêm hạng phòng' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Quay lại danh sách hạng phòng' }).first().click();
+  await page.goto(`/admin/hang-phong?property=${mineral!.id}`);
   if (process.env.DVB_ROOM_VISUAL_ARTIFACTS === '1') {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(250);
@@ -64,6 +81,14 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
 
     await page.goto('/admin/phong-nghi');
     const propertyCard = page.locator('.property-card', { hasText: `ALBUM-QA ${stamp}` });
+    await expect(propertyCard.locator('.property-card__rooms')).toContainText('Hạng phòng (1)');
+    await expect(propertyCard.locator('.property-card__rooms')).toContainText('Hạng phòng liên hệ A');
+    await propertyCard.getByRole('button', { name: 'Sửa', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Đến hạng phòng (1)' })).toBeVisible();
+    await page.getByRole('link', { name: 'Đến hạng phòng (1)' }).click();
+    await expect(page.locator('#hang-phong')).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Xem danh sách hạng phòng' })).toHaveAttribute('href', `/admin/hang-phong?property=${property.id}`);
+    await page.getByRole('button', { name: 'Quay lại danh sách', exact: true }).click();
     await propertyCard.getByRole('link', { name: 'Hạng phòng (1)' }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/hang-phong\\?property=${property.id}`));
     await expect(page.locator('.room-catalog__card')).toHaveCount(1);
@@ -76,6 +101,9 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     await expect(page).toHaveURL(/room=create/);
     await page.getByLabel('Mã hạng phòng *').fill('ROOM-B');
     await page.getByLabel('Tên hạng phòng *').fill('Hạng phòng liên hệ B');
+    await page.getByLabel('Người lớn tối đa *').fill('2');
+    await page.getByLabel('Trẻ em tối đa *').fill('0');
+    await page.getByLabel('Số phòng bán được *').fill('1');
     await page.getByLabel('Giá ngày thường (VND) *').fill('250000');
     const album = page.locator('.album-editor');
     await album.getByRole('button', { name: 'Thêm ảnh' }).click();

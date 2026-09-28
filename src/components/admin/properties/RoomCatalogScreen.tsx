@@ -4,7 +4,7 @@ import { ArrowLeft, BedDouble, ImagePlus, Pencil, Plus, RefreshCw } from 'lucide
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiRequest } from '@/lib/api/client';
 import { RoomTypeEditor, type PropertyRoom } from './RoomTypeEditor';
 
@@ -29,6 +29,8 @@ export function RoomCatalogScreen() {
   const roomId = searchParams.get('room');
   const [properties, setProperties] = useState<Property[]>([]);
   const [search, setSearch] = useState('');
+  const propertySelectRef = useRef<HTMLSelectElement>(null);
+  const [promptProperty, setPromptProperty] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -54,9 +56,13 @@ export function RoomCatalogScreen() {
     .filter(({ property, room }) => (!propertyId || property.id === propertyId)
       && `${property.title} ${property.code} ${room.name} ${room.code}`.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi'))), [properties, propertyId, search]);
   const withoutRooms = properties.filter((property) => property.roomTypes.length === 0 && (!propertyId || property.id === propertyId));
+  const totalRooms = properties.reduce((count, property) => count + property.roomTypes.length, 0);
+  const hiddenRooms = properties.reduce((count, property) => count + property.roomTypes.filter((room) => room.status !== 'active').length, 0);
+  const missingProperties = properties.filter((property) => property.roomTypes.length === 0).length;
   const goToList = () => router.push(propertyId ? `${pathname}?property=${encodeURIComponent(propertyId)}` : pathname);
   const openRoom = (targetPropertyId: string, targetRoomId: string) => {
     setNotice(null);
+    setPromptProperty(false);
     router.push(`${pathname}?property=${encodeURIComponent(targetPropertyId)}&room=${encodeURIComponent(targetRoomId)}`);
   };
   const afterSaved = async () => {
@@ -81,12 +87,18 @@ export function RoomCatalogScreen() {
       : !selected || (roomId !== 'create' && !editing) ? <div className="acard apending">Không tìm thấy hạng phòng hoặc nơi lưu trú. <button type="button" className="abtn abtn--ghost" onClick={() => router.push(pathname)}>Về danh sách</button></div>
         : <RoomTypeEditor key={`${selected.id}-${roomId}`} propertyId={selected.id} room={editing} onSaved={afterSaved} onCancel={goToList} />)
       : <>
+        {!loading && <div className="room-catalog__summary" role="group" aria-label="Tổng quan hạng phòng">
+          <div><strong>{properties.length}</strong><span>Nơi lưu trú</span></div>
+          <div><strong>{totalRooms}</strong><span>Hạng phòng đã tạo</span></div>
+          <div><strong>{hiddenRooms}</strong><span>Hạng phòng tạm ẩn</span></div>
+          <div><strong>{missingProperties}</strong><span>Nơi lưu trú chưa có hạng phòng</span></div>
+        </div>}
         <div className="acard room-catalog__toolbar">
           <label className="afield"><span>Tìm hạng phòng</span><input className="ainput" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tên, mã hạng phòng hoặc nơi lưu trú" /></label>
-          <label className="afield"><span>Nơi lưu trú</span><select className="ainput" value={propertyId} onChange={(event) => router.replace(event.target.value ? `${pathname}?property=${encodeURIComponent(event.target.value)}` : pathname)}><option value="">Tất cả nơi lưu trú</option>{properties.map((property) => <option value={property.id} key={property.id}>{property.title} ({property.roomTypes.length})</option>)}</select></label>
-          <button type="button" className="abtn abtn--primary" disabled={!selected} onClick={() => selected && openRoom(selected.id, 'create')}><Plus size={16} aria-hidden="true" /> Thêm hạng phòng</button>
+          <label className="afield"><span>Nơi lưu trú</span><select ref={propertySelectRef} className="ainput" value={propertyId} onChange={(event) => { setPromptProperty(false); router.replace(event.target.value ? `${pathname}?property=${encodeURIComponent(event.target.value)}` : pathname); }}><option value="">Tất cả nơi lưu trú</option>{properties.map((property) => <option value={property.id} key={property.id}>{property.title} ({property.roomTypes.length})</option>)}</select></label>
+          <button type="button" className="abtn abtn--primary" onClick={() => { if (selected) openRoom(selected.id, 'create'); else { setPromptProperty(true); propertySelectRef.current?.focus(); } }}><Plus size={16} aria-hidden="true" /> Thêm hạng phòng</button>
         </div>
-        {!selected && !loading && <p className="ahint room-catalog__instruction">Chọn một nơi lưu trú ở trên để thêm hạng phòng; hoặc dùng nút “Thêm” ở danh sách nơi lưu trú chưa có hạng phòng bên dưới.</p>}
+        {!selected && !loading && <p className="ahint room-catalog__instruction" role={promptProperty ? 'status' : undefined}>{promptProperty ? 'Hãy chọn nơi lưu trú trong ô phía trên, rồi bấm “Thêm hạng phòng”.' : 'Đang xem tất cả hạng phòng. Chọn nơi lưu trú ở trên để thêm hạng phòng; bản nháp/tạm ẩn chưa hiện ngoài website.'}</p>}
         {loading ? <div className="acard apending">Đang tải danh sách hạng phòng…</div> : <>
           <p className="ahint room-catalog__count">{rooms.length} hạng phòng · {withoutRooms.length} nơi lưu trú chưa có hạng phòng{search && ' · kết quả theo từ khóa'}</p>
           {rooms.length > 0 ? <div className="property-catalog__list">
