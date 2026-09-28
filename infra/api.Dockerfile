@@ -37,11 +37,11 @@ FROM base AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN mkdir -p /var/lib/dvb/media && chown -R node:node /var/lib/dvb/media
-COPY --from=runtime-deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY backend/package.json ./
-COPY backend/prisma ./prisma
-COPY backend/scripts ./scripts
+COPY --chown=node:node --from=runtime-deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/dist ./dist
+COPY --chown=node:node backend/package.json ./
+COPY --chown=node:node backend/prisma ./prisma
+COPY --chown=node:node backend/scripts ./scripts
 USER node
 EXPOSE 3001
 CMD ["node", "dist/main.js"]

@@ -124,3 +124,11 @@ Phục hồi phải thử thật trên database trống rồi mới tính là xo
 Ranh giới an toàn: không ghi vào database production, đổi DNS, chạy giao dịch tiền thật,
 gửi email hàng loạt, deploy production hoặc restart dịch vụ dự án khác. Chỉ push Git khi
 request của người dùng cho phép rõ ràng. PostgreSQL và Redis không publish ra host.
+
+Khi đồng bộ source trên host, không dùng `umask 077` bao quanh `git fetch`, `git merge`,
+`git checkout`, `git pull` hoặc lúc chuẩn bị Docker build context: file mới có thể thành
+`0600 root:root`. Dùng umask thông thường cho source (ví dụ `umask 022` trong subshell
+chỉ chạy các lệnh Git), còn bảo vệ secret/backup theo đúng từng target bằng
+`install -d -m 700 "$BACKUP_DIR"` và `chmod 600` cho từng file dump/archive. Không mở
+rộng quyền của secret. Runtime Dockerfile vẫn phải chịu được source `0600`; kiểm tra bằng
+`bash scripts/audit-docker-runtime-permissions.sh` trước khi phát hành image mới.

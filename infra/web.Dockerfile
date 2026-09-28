@@ -16,10 +16,10 @@ RUN npm run build
 FROM ${NODE_IMAGE} AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY package.json next.config.ts ./
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/.next ./.next
+COPY --chown=node:node --from=build /app/public ./public
+COPY --chown=node:node package.json next.config.ts ./
 # The runtime is intentionally unprivileged; Next Image still needs to write
 # its optimisation cache when a public/admin page renders an image.
 RUN chown -R node:node /app/.next

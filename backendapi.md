@@ -2125,22 +2125,22 @@ Field quan trọng còn thiếu phải có màn cấu hình trong admin và tr�
 
 Bảo vệ **PostgreSQL + media + cấu hình cần thiết**. DB dump không chứa nội dung file media; chỉ backup volume database sống bằng `cp` tùy tiện không thay thế quy trình backup DB.
 
-Agent tạo `scripts/backup.sh` chạy đúng Compose project, dùng `pg_dump -Fc` vào thư mục riêng ngoài webroot, `umask 077`, tên có timestamp UTC, kiểm tra exit code và checksum. Custom-format dump được khôi phục bằng `pg_restore`; cần kiểm thử restore, không chỉ thấy file dump tồn tại.[S13]
+Agent tạo `scripts/backup.sh` chạy đúng Compose project, dùng `pg_dump -Fc` vào thư mục riêng ngoài webroot với quyền thư mục `0700` và từng file `0600`, tên có timestamp UTC, kiểm tra exit code và checksum. Không đặt `umask 077` toàn cục quanh bước đồng bộ Git/build context. Custom-format dump được khôi phục bằng `pg_restore`; cần kiểm thử restore, không chỉ thấy file dump tồn tại.[S13]
 
 Ví dụ logic backup local, sau khi kiểm tra quyền/DB hiện tại:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-umask 077
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 BACKUP_DIR="${DVB_BACKUP_DIR:-$ROOT/.backups}"
-mkdir -p "$BACKUP_DIR"
+install -d -m 700 "$BACKUP_DIR"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$BACKUP_DIR/dvb-booking-${STAMP}.dump"
 PART="$OUT.partial"
 trap 'rm -f -- "$PART"' EXIT
+install -m 600 /dev/null "$PART"
 
 bash scripts/compose.sh exec -T postgres sh -ec '
   export PGPASSWORD="$(cat /run/secrets/postgres_bootstrap_password)"
@@ -2149,6 +2149,7 @@ bash scripts/compose.sh exec -T postgres sh -ec '
 ' > "$PART"
 test -s "$PART"
 mv -- "$PART" "$OUT"
+install -m 600 /dev/null "$OUT.sha256"
 sha256sum "$OUT" > "$OUT.sha256"
 echo "Đã tạo DB dump: $OUT"
 echo "Cần backup media và xác nhận bản sao ngoài máy chủ theo runbook."
