@@ -1,5 +1,7 @@
 # Bản đồ màn hình → API
 
+> Snapshot lịch sử ngày 2026-09-20. Các cột “Nguồn hiện tại” và “Trạng thái” bên dưới không phản ánh runtime sau các đợt tích hợp API; xem [kế hoạch và gate end-to-end 2026-09-28](../END_TO_END_COMPLETION_PLAN_2026-09-28.md).
+
 Cột **Trạng thái** nói đúng những gì đã chạy được tính đến 2026-09-20:
 ✅ có endpoint thật và đã kiểm thử · 🔧 bảng đã có, chưa có endpoint · ⬜ chưa bắt đầu.
 

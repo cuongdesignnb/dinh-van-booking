@@ -1,5 +1,7 @@
 # Implementation status — 6 inner screens (2026-09-19)
 
+> Snapshot lịch sử của giai đoạn UI fixture. Không dùng bảng trạng thái bên dưới để đánh giá runtime hiện tại; xem [kế hoạch và gate end-to-end 2026-09-28](END_TO_END_COMPLETION_PLAN_2026-09-28.md).
+
 Status legend: **DONE** = layout + states + responsive + tests verified in a browser;
 **PARTIAL** = works, with differences listed. Nothing here is deployed; no commits or pushes were made.
 

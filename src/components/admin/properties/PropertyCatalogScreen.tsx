@@ -2,6 +2,7 @@
 
 import { ArrowLeft, BedDouble, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
@@ -471,6 +472,7 @@ export function PropertyCatalogScreen() {
           <p className="ahint">Danh sách thật từ API catalog và PostgreSQL. Bản nháp chưa xuất hiện trên website công khai.</p>
         </div>
         <div className="property-catalog__head-actions">
+          <Link className="abtn abtn--ghost" href="/admin/hang-phong"><BedDouble size={15} aria-hidden="true" /> Quản lý hạng phòng</Link>
           <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || busy || !!publishing}>
             <RefreshCw size={15} aria-hidden="true" /> Tải lại
           </button>
@@ -764,9 +766,9 @@ export function PropertyCatalogScreen() {
                       <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => openEdit(item)} disabled={editBusy || !!deleting || !!publishing}>
                         <Pencil size={14} aria-hidden="true" /> Sửa
                       </button>
-                      <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => { fillEditForm(item); router.push(`${pathname}?edit=${encodeURIComponent(item.id)}#hang-phong`, { scroll: false }); }} disabled={editBusy || !!deleting || !!publishing}>
+                      <Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(item.id)}`}>
                         <BedDouble size={14} aria-hidden="true" /> Hạng phòng ({item.roomTypes.length})
-                      </button>
+                      </Link>
                       {item.publicationStatus !== 'published' && <button type="button" className="abtn abtn--danger abtn--sm" onClick={() => void remove(item)} disabled={deleting === item.id || editBusy || !!publishing}>
                         <Trash2 size={14} aria-hidden="true" /> {deleting === item.id ? 'Đang xoá…' : 'Xoá'}
                       </button>}

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { browserApi, createUniqueTestPng, signInAsOwner } from './admin/helpers';
 
 type Media = { id: string; url: string; originalFilename: string; altText: string };
-type Property = { id: string; contentId: string; slug: string; version: number; contentVersion: number; roomTypes: Array<{ id: string; name: string; gallery: Array<{ mediaId: string }> }> };
+type Property = { id: string; contentId: string; slug: string; version: number; contentVersion: number; roomTypes: Array<{ id: string; name: string; version: number; unitCount: number; maxAdults: number; maxChildren: number; status: string; gallery: Array<{ mediaId: string }>; rate: { baseRateVnd: number } | null }> };
 type Content = { id: string; slug: string; version: number };
 
 async function upload(page: Page, stamp: number, index: number): Promise<Media> {
@@ -28,6 +28,20 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
   const baseURL = String(test.info().project.use.baseURL ?? process.env.BASE_URL ?? '');
   expect(baseURL).toMatch(/^http:\/\/(127\.0\.0\.1|localhost):\d+$/);
   await signInAsOwner(page);
+  const seedCatalog = await browserApi(page, '/properties');
+  const mineral = (seedCatalog.body as { items: Array<{ id: string; code: string; roomTypes: unknown[] }> }).items
+    .find((item) => item.code === 'CP-MINERAL-RETREAT');
+  expect(mineral?.roomTypes).toHaveLength(5);
+  await page.goto(`/admin/hang-phong?property=${mineral!.id}`);
+  await expect(page.locator('.room-catalog__card')).toHaveCount(5);
+  await expect(page.locator('.room-catalog__card').first()).toContainText('Sức chứa chờ xác minh');
+  if (process.env.DVB_ROOM_VISUAL_ARTIFACTS === '1') {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: 'artifacts/admin-room-catalog-390.png', fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.screenshot({ path: 'artifacts/admin-room-catalog-1440.png', fullPage: true });
+  }
   const stamp = Date.now();
   const assets: Media[] = [];
   let propertyId: string | null = null;
@@ -48,8 +62,16 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     propertyId = property.id;
     expect(property.roomTypes[0].gallery.map((item) => item.mediaId)).toEqual([assets[2].id]);
 
-    await page.goto(`/admin/phong-nghi?edit=${property.id}`);
-    await expect(page.getByText('Hạng phòng (1)')).toBeVisible();
+    await page.goto('/admin/phong-nghi');
+    const propertyCard = page.locator('.property-card', { hasText: `ALBUM-QA ${stamp}` });
+    await propertyCard.getByRole('link', { name: 'Hạng phòng (1)' }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/hang-phong\\?property=${property.id}`));
+    await expect(page.locator('.room-catalog__card')).toHaveCount(1);
+    expect(await page.getByRole('button', { name: 'Thêm hạng phòng' }).evaluate((element) => getComputedStyle(element).color)).toBe('rgb(255, 255, 255)');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(250);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.getByRole('button', { name: 'Thêm hạng phòng' }).click();
     await expect(page).toHaveURL(/room=create/);
     await page.getByLabel('Mã hạng phòng *').fill('ROOM-B');
@@ -62,13 +84,30 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     await expect(dialog.locator('.media-library__card')).toHaveCount(1);
     await dialog.locator('.media-library__card').click();
     await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
-    await expect(page.getByText('Hạng phòng (2)')).toBeVisible();
+    await expect(page.locator('.room-catalog__card')).toHaveCount(2);
     const updated = await browserApi(page, `/properties/${property.id}`);
     expect(updated.status).toBe(200);
     const current = updated.body as Property;
     expect(current.roomTypes.find((room) => room.name === 'Hạng phòng liên hệ B')?.gallery.map((item) => item.mediaId)).toEqual([assets[3].id]);
 
-    const published = await browserApi(page, `/content/${property.contentId}/status`, 'PATCH', { status: 'published', expectedVersion: current.contentVersion });
+    const roomCard = page.locator('.room-catalog__card', { hasText: 'Hạng phòng liên hệ B' });
+    await roomCard.getByRole('button', { name: 'Sửa hạng phòng' }).click();
+    await page.getByLabel('Số phòng bán được').fill('2');
+    await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
+    await expect(page.locator('.room-catalog__card', { hasText: 'Hạng phòng liên hệ B' })).toContainText('2 phòng');
+    const afterUnits = await browserApi(page, `/properties/${property.id}`);
+    expect(afterUnits.status).toBe(200);
+    const withUnits = afterUnits.body as Property;
+    const roomB = withUnits.roomTypes.find((room) => room.name === 'Hạng phòng liên hệ B');
+    expect(roomB?.unitCount).toBe(2);
+    expect((await browserApi(page, `/properties/${property.id}/rooms/${roomB!.id}`, 'PATCH', {
+      name: roomB!.name, maxAdults: roomB!.maxAdults, maxChildren: roomB!.maxChildren,
+      rateVnd: roomB!.rate!.baseRateVnd, status: roomB!.status, unitCount: 1, expectedVersion: roomB!.version,
+    })).status).toBe(409);
+    const afterRejectedDecrease = await browserApi(page, `/properties/${property.id}`);
+    expect((afterRejectedDecrease.body as Property).roomTypes.find((room) => room.id === roomB!.id)?.unitCount).toBe(2);
+
+    const published = await browserApi(page, `/content/${property.contentId}/status`, 'PATCH', { status: 'published', expectedVersion: withUnits.contentVersion });
     expect(published.status).toBe(200);
     const publicStay = await browserApi(page, `/public/stays/${property.slug}`);
     expect(publicStay.status).toBe(200);

@@ -98,7 +98,7 @@ export default async function ContactPage() {
             {richDocumentHasContent(page.quickIntro) && <RichContentRenderer document={page.quickIntro as RichDocument} />}
             <ul>
               {phone && <li><a href={`tel:${phone}`}>{phone}</a></li>}
-              {hotline && <li><a href={`tel:${hotline}`}>{hotline}</a></li>}
+              {hotline && hotline !== phone && <li><a href={`tel:${hotline}`}>{hotline}</a></li>}
               {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
               {address && <li>{mapUrl ? <a href={mapUrl} target="_blank" rel="noopener noreferrer">{address}</a> : address}</li>}
               {zaloUrl && <li><a href={zaloUrl} target="_blank" rel="noopener noreferrer">Zalo</a></li>}

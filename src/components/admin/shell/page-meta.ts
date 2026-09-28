@@ -21,6 +21,11 @@ const META: Record<string, AdminPageMeta> = {
     subtitle: 'Quản lý hồ sơ nơi lưu trú, nội dung, ảnh và trạng thái xác minh.',
     script: 'Làm du lịch\nbằng cả trái tim ♡',
   },
+  '/admin/hang-phong': {
+    title: 'Quản lý hạng phòng',
+    subtitle: 'Danh sách hạng phòng theo nơi lưu trú, giá, sức chứa, số phòng và album ảnh.',
+    script: 'Chăm chút từng phòng\ntrọn vẹn trải nghiệm ♡',
+  },
   '/admin/ton-phong': {
     title: 'Quỹ phòng',
     subtitle: 'Mở tồn theo ngày, thiết lập sức chứa, khoá phòng và trạng thái dừng bán.',

@@ -501,12 +501,32 @@ export class PropertiesService {
     if (!name) throw new BadRequestException('Tên hạng phòng không được để trống');
     await this.prisma.$transaction(async (tx) => {
       await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
+      const existingUnits = input.unitCount === undefined ? [] : await tx.roomUnit.findMany({
+        where: { roomTypeId: roomId }, select: { code: true, active: true },
+      });
+      const activeUnitCount = existingUnits.filter((unit) => unit.active).length;
+      if (input.unitCount !== undefined && input.unitCount < activeUnitCount) {
+        throw new ConflictException('Không thể giảm số phòng tại đây vì có thể ảnh hưởng tồn và đơn đặt. Hãy kiểm tra Quỹ phòng.');
+      }
       const changed = await tx.roomType.updateMany({ where: { id: roomId, version: input.expectedVersion }, data: {
         name, description: input.description?.trim() || null, maxAdults: input.maxAdults, maxChildren: input.maxChildren,
         maxOccupancy: input.maxAdults + input.maxChildren, bedSummary: input.bedSummary?.trim() || null,
         areaSqm: input.areaSqm ?? null, status: input.status, version: { increment: 1 },
       } });
       if (changed.count !== 1) throw new ConflictException('Hạng phòng đã thay đổi. Vui lòng tải lại.');
+      if (input.unitCount !== undefined && input.unitCount > activeUnitCount) {
+        const usedCodes = new Set(existingUnits.map((unit) => unit.code));
+        const newUnits: Array<{ roomTypeId: string; code: string; label: string; active: boolean }> = [];
+        let suffix = 1;
+        while (newUnits.length < input.unitCount - activeUnitCount) {
+          const code = `${room.code}-${String(suffix).padStart(2, '0')}`;
+          suffix += 1;
+          if (usedCodes.has(code)) continue;
+          usedCodes.add(code);
+          newUnits.push({ roomTypeId: room.id, code, label: `${name} ${activeUnitCount + newUnits.length + 1}`, active: true });
+        }
+        await tx.roomUnit.createMany({ data: newUnits });
+      }
       if (room.ratePlans[0]) {
         await tx.ratePlan.update({ where: { id: room.ratePlans[0].id }, data: { baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, version: { increment: 1 } } });
       } else {

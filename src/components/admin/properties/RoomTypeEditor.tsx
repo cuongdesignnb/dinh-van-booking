@@ -44,11 +44,12 @@ export function RoomTypeEditor({ propertyId, room, onSaved, onCancel }: {
         name: form.name.trim(), description: form.description.trim(), maxAdults: Number(form.maxAdults),
         maxChildren: Number(form.maxChildren), bedSummary: form.bedSummary.trim(),
         areaSqm: form.areaSqm ? Number(form.areaSqm) : undefined, rateVnd: Number(form.rateVnd),
+        unitCount: Number(form.unitCount),
         weekendRateVnd: form.weekendRateVnd ? Number(form.weekendRateVnd) : undefined,
         breakfastIncluded: form.breakfastIncluded, galleryMediaIds: form.gallery.map((item) => item.mediaId),
       };
       if (room) await apiRequest(`/properties/${propertyId}/rooms/${room.id}`, { method: 'PATCH', body: JSON.stringify({ ...common, status: form.status, expectedVersion: room.version }) });
-      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, code: form.code.trim().toUpperCase(), unitCount: Number(form.unitCount) }) });
+      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, code: form.code.trim().toUpperCase() }) });
       await onSaved();
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Không thể lưu hạng phòng.'); }
     finally { setSaving(false); }
@@ -64,7 +65,7 @@ export function RoomTypeEditor({ propertyId, room, onSaved, onCancel }: {
       <label className="afield"><span>Trẻ em tối đa *</span><input className="ainput" type="number" min="0" max="30" value={form.maxChildren} onChange={(event) => patch('maxChildren', event.target.value)} required /></label>
       <label className="afield"><span>Giường / view</span><input className="ainput" value={form.bedSummary} onChange={(event) => patch('bedSummary', event.target.value)} maxLength={120} /></label>
       <label className="afield"><span>Diện tích (m²)</span><input className="ainput" type="number" min="1" value={form.areaSqm} onChange={(event) => patch('areaSqm', event.target.value)} /></label>
-      <label className="afield"><span>Số phòng bán được</span><input className="ainput" type="number" min="1" max="100" value={form.unitCount} onChange={(event) => patch('unitCount', event.target.value)} disabled={!!room} required /></label>
+      <label className="afield"><span>Số phòng bán được</span><input className="ainput" type="number" min={room ? '0' : '1'} max="100" value={form.unitCount} onChange={(event) => patch('unitCount', event.target.value)} required /><small className="ahint">{room ? 'Có thể bổ sung phòng. Không giảm tại đây để tránh ảnh hưởng đơn đặt và quỹ phòng.' : 'Số phòng ban đầu; quỹ phòng theo ngày được quản lý riêng.'}</small></label>
       {room && <label className="afield"><span>Hiển thị hạng phòng</span><select className="ainput" value={form.status} onChange={(event) => patch('status', event.target.value)}><option value="active">Đang hoạt động</option><option value="inactive">Tạm ẩn</option></select></label>}
       <label className="afield"><span>Giá ngày thường (VND) *</span><input className="ainput" type="number" min="0" value={form.rateVnd} onChange={(event) => patch('rateVnd', event.target.value)} required /></label>
       <label className="afield"><span>Giá cuối tuần (VND)</span><input className="ainput" type="number" min="0" value={form.weekendRateVnd} onChange={(event) => patch('weekendRateVnd', event.target.value)} /></label>

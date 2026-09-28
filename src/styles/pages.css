@@ -67,6 +67,17 @@
   text-shadow: 0 1px 6px rgb(0 0 0 / 35%);
 }
 
+/* Rich content in a photo hero must keep the hero's light contrast. */
+.phero__text .rich-content {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.phero__text .rich-content :is(h2, h3, h4, strong, a, blockquote) {
+  color: inherit;
+}
+
 /* ---------- Breadcrumb ---------- */
 
 .crumbs ol {

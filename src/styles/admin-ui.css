@@ -222,12 +222,12 @@
   font-size: 12.2px;
 }
 
-.abtn--primary {
+.dvb-admin .abtn--primary {
   background: linear-gradient(180deg, #2a6f3e, #1a5330);
   color: #fff;
 }
 
-.abtn--primary:hover {
+.dvb-admin .abtn--primary:hover {
   background: linear-gradient(180deg, #2f7d46, #1d5c35);
 }
 
@@ -246,7 +246,7 @@
   color: var(--dvb-admin-green-800);
 }
 
-.abtn--danger {
+.dvb-admin .abtn--danger {
   background: #fff;
   border-color: #eccfd1;
   color: var(--dvb-admin-danger);
@@ -1315,6 +1315,48 @@ textarea.ainput {
   gap: 12px;
 }
 
+.room-catalog__toolbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.room-catalog__toolbar .afield { margin: 0; }
+.room-catalog__instruction,
+.room-catalog__count { margin: 0; }
+
+.room-catalog__card {
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px;
+}
+
+.room-catalog__image {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  min-height: 108px;
+  border-radius: 10px;
+  background: #f1f4ed;
+  color: var(--dvb-admin-muted);
+  font-size: 12px;
+}
+
+.room-catalog__image img { width: 100%; height: 100%; object-fit: cover; }
+.room-catalog__image span { display: grid; justify-items: center; gap: 5px; }
+.room-catalog__body { display: grid; gap: 7px; min-width: 0; }
+.room-catalog__body p { margin: 0; }
+.room-catalog__title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.room-catalog__title h3 { margin: 0; color: #16301f; font-size: 17px; }
+.room-catalog__facts,
+.room-catalog__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.room-catalog__facts span { display: inline-flex; align-items: center; gap: 4px; }
+.room-catalog__missing h3 { margin: 0 0 5px; color: #16301f; font-size: 16px; }
+.room-catalog__missing ul { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.room-catalog__missing li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #edf0e9; padding-top: 8px; }
+
 .property-card {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
@@ -1362,6 +1404,10 @@ textarea.ainput {
 }
 
 @media (max-width: 720px) {
+  .room-catalog__toolbar,
+  .room-catalog__card { grid-template-columns: 1fr; }
+  .room-catalog__image { max-height: 180px; }
+  .room-catalog__title { flex-wrap: wrap; }
   .property-form__grid,
   .property-form__upload {
     grid-template-columns: 1fr;
