@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-28T01:26:52.037Z",
+  "generatedAt": "2026-09-28T08:15:24.341Z",
   "routeCount": 17,
-  "reachableSourceCount": 63,
+  "reachableSourceCount": 64,
   "pendingAdminRouteCount": 0,
   "reachablePendingModuleCount": 0,
   "reachableDemoComponentCount": 0,
@@ -78,6 +78,7 @@
     "src/components/site/SiteDataProvider.tsx",
     "src/components/ui/BrandLogo.tsx",
     "src/components/ui/Decor.tsx",
+    "src/components/ui/ManagedImage.tsx",
     "src/components/ui/Modal.tsx",
     "src/components/ui/Popover.tsx",
     "src/config/site.ts",

@@ -1,5 +1,5 @@
 import { ArrowRight, Headset, Heart, Route } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import type { RichDocument } from '@/lib/content/rich-document';

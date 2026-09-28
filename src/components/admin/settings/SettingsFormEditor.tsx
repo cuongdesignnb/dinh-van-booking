@@ -5,8 +5,8 @@ import { AdminMediaField } from '../media/AdminMediaField';
 import { MediaLibrary } from '../media/MediaLibrary';
 import { RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
 
-type Option = { value: string; label: string };
-type FieldKind = 'text' | 'textarea' | 'rich' | 'number' | 'time' | 'email' | 'url' | 'route' | 'tel' | 'select' | 'boolean' | 'media' | 'bytes' | 'multi' | 'ordered';
+type Option = { value: string; label: string; description?: string };
+type FieldKind = 'text' | 'textarea' | 'rich' | 'number' | 'time' | 'email' | 'url' | 'route' | 'tel' | 'select' | 'radio' | 'boolean' | 'media' | 'bytes' | 'multi' | 'ordered';
 type FieldMeta = {
   label: string;
   kind?: FieldKind;
@@ -185,7 +185,10 @@ const FIELD_META: Record<string, FieldMeta> = {
   'home.featured.ctaLabel': { label: 'Nhãn liên kết' },
   'home.featured.ctaTarget': { label: 'Đường dẫn nội bộ', kind: 'route', placeholder: '/phong-nghi' },
   'home.featured.limit': { label: 'Số nơi lưu trú tối đa', kind: 'number', min: 1, max: 12, step: 1, required: true },
-  'home.featured.selectionMode': { label: 'Nguồn lựa chọn', kind: 'select', options: [{ value: 'featured', label: 'Nơi lưu trú nổi bật đã xuất bản' }] },
+  'home.featured.selectionMode': { label: 'Phạm vi phòng nghỉ trên trang chủ', kind: 'radio', options: [
+    { value: 'featured', label: 'Chỉ phòng nổi bật', description: 'Cần bật “Nổi bật trên trang chủ” ở từng nơi lưu trú.' },
+    { value: 'all', label: 'Tất cả phòng đã xuất bản', description: 'Hiển thị mọi nơi lưu trú đủ điều kiện public.' },
+  ] },
   'home.combos.enabled': { label: 'Hiển thị combo nổi bật', kind: 'boolean' },
   'home.combos.title': { label: 'Tiêu đề khối combo' },
   'home.combos.subtitle': { label: 'Mô tả ngắn' },
@@ -749,6 +752,22 @@ function ValueField({
           <span className="atoggle__text"><strong>{label}</strong>{meta?.help && <small>{meta.help}</small>}</span>
         </label>
       </div>
+    );
+  }
+
+  if (kind === 'radio') {
+    return (
+      <fieldset className="settings-form__array settings-form__radio" aria-label={label}>
+        <legend>{label}</legend>
+        <div className="settings-form__choices">
+          {(meta?.options ?? []).map((option) => (
+            <label className="settings-form__choice" key={option.value}>
+              <input type="radio" name={`${settingKey}.${path}`} value={option.value} checked={value === option.value} disabled={disabled} onChange={() => onChange(option.value)} />
+              <span><strong>{option.label}</strong>{option.description && <small>{option.description}</small>}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
     );
   }
 

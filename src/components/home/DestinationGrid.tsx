@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { SmallLeaf } from '@/components/ui/Decor';
 import type { Destination } from '@/data/destinations';
@@ -14,7 +14,7 @@ export function DestinationGrid({ destinations, config }: { destinations: Destin
   const visibleDestinations = destinations.slice(0, limit);
   if (config.enabled !== true || !title || !visibleDestinations.length) return null;
   return (
-    <section className="explore content-shell" id="diem-den" aria-labelledby="explore-title">
+    <section className="explore" id="diem-den" aria-labelledby="explore-title">
       <div
         className="section-head section-head--tight"
         data-reveal="fade-up"

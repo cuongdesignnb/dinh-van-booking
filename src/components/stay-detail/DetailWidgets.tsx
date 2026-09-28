@@ -13,7 +13,7 @@ import {
   Star,
   Wifi,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useId, useState, type ElementType } from 'react';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { SmallLeaf } from '@/components/ui/Decor';

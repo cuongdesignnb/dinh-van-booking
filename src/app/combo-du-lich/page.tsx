@@ -1,6 +1,6 @@
 import { Gem, Heart, Leaf, MoveRight, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { ComboExplorer } from '@/components/combos/ComboExplorer';
 import { ComboReviews } from '@/components/combos/ComboReviews';

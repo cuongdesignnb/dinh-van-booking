@@ -711,6 +711,7 @@ export class PublicCatalogService {
       body: node.bodyDocument,
       highlights: list(body.highlights).filter((item): item is string => typeof item === 'string'),
       badge: node.featured ? 'Nổi bật' : undefined,
+      featured: node.featured,
       popularity: node.featured ? 1 : 0,
       image,
       home: image ? { image, location, tags: amenities.slice(0, 2).map((item) => item.label) } : undefined,

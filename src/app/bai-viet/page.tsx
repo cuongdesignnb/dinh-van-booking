@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/PageShell';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';

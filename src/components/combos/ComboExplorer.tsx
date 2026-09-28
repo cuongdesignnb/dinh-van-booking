@@ -21,7 +21,7 @@ import {
   Users,
   UsersRound,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';

@@ -63,6 +63,8 @@ export interface Stay {
   descriptionDocument?: RichDocument;
   highlights: string[];
   badge?: string;
+  /** Explicit public projection; published and homepage-featured are separate states. */
+  featured?: boolean;
   popularity: number;
   image: ImageAsset;
   home?: { image: ImageAsset; location: string; tags: string[] };

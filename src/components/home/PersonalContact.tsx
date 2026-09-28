@@ -1,7 +1,7 @@
 'use client';
 
 import { Phone, Users } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { LeafSprig } from '@/components/ui/Decor';
 import { useSiteData } from '@/components/site/SiteDataProvider';
@@ -22,7 +22,7 @@ export function PersonalContact({ config, image }: { config: PublicRecord; image
   if (config.enabled !== true || !title) return null;
   return (
     <section
-      className="contact content-shell"
+      className={`contact${image?.src ? '' : ' contact--no-image'}`}
       id="lien-he"
       aria-labelledby="contact-title"
       data-reveal="zoom"

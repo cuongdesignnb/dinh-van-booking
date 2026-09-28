@@ -234,7 +234,7 @@ test.describe('public content final acceptance', () => {
 
       await publicPage.reload();
       await expect(publicPage.getByRole('heading', { level: 1 })).toContainText(marker + ' HERO');
-      await expect(publicPage.locator('.home-promo')).toContainText(marker + ' PROMO');
+      await expect(publicPage.locator('.promo')).toContainText(marker + ' PROMO');
       await expect(publicPage.locator('.home-faq')).toContainText(marker + ' FAQ');
       await expect(publicPage.locator('.home-faq')).toContainText(marker + ' rich FAQ answer');
       await expect(publicPage.locator('.contact')).toContainText(marker + ' ADVISOR');
@@ -242,8 +242,8 @@ test.describe('public content final acceptance', () => {
       await expect(publicPage.locator('.site-header__actions')).toContainText(marker + ' HEADER CTA');
       await expect(publicPage.locator('.footer__quote')).toContainText(marker + ' FOOTER QUOTE');
       await expect(publicPage.locator('.footer__motto')).toContainText(marker + ' FOOTER MOTTO');
-      const orderedClasses = await publicPage.locator('.home-content-order > *').evaluateAll((items) => items.map((item) => item.className));
-      expect(orderedClasses).toEqual(['hero', 'home-promo content-shell', 'home-faq content-shell', 'contact content-shell']);
+      const orderedGroups = await publicPage.locator('.home-content-order > *').evaluateAll((items) => items.map((item) => item.getAttribute('data-home-group')));
+      expect(orderedGroups).toEqual(['hero', 'featured', 'lower', 'faq']);
       for (const selector of ['.hero__img', '.promo__img', '.contact__img']) {
         await expect(publicPage.locator(selector)).toBeVisible();
         await expect(publicPage.locator(selector)).toHaveAttribute('src', uploadedMediaUrl!);

@@ -1,5 +1,5 @@
 import { ArrowRight, Star } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import type { Stay } from '@/data/stays';
@@ -20,7 +20,7 @@ const Sprig = () => (
   </svg>
 );
 
-export function StayCard({ stay, index }: { stay: Stay; index: number }) {
+export function StayCard({ stay, index, wide = false }: { stay: Stay; index: number; wide?: boolean }) {
   const home = stay.home ?? { image: stay.image, location: stay.location, tags: [stay.highlights[0], stay.highlights[1]] };
   return (
     <article
@@ -35,7 +35,7 @@ export function StayCard({ stay, index }: { stay: Stay; index: number }) {
           src={home.image.src}
           alt={home.image.alt}
           fill
-          sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 264px"
+          sizes={wide ? '(max-width: 767px) 92vw, (max-width: 1023px) 55vw, 650px' : '(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 264px'}
           className="stay__img"
           style={home.image.position ? { objectPosition: home.image.position } : undefined}
         />

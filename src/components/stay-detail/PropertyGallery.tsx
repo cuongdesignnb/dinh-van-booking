@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, Images } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import type { ImageAsset } from '@/data/types';

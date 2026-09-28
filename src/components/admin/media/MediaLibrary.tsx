@@ -2,7 +2,7 @@
 
 import { Images, Pencil, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useId, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { Modal } from '@/components/ui/Modal';
 
@@ -95,6 +95,12 @@ export function MediaLibrary({
   const [detailId, setDetailId] = useState<string | null>(null);
   const [altText, setAltText] = useState(initialAltText);
   const [caption, setCaption] = useState('');
+  const wasOpen = useRef(false);
+
+  useEffect(() => {
+    if (isModal && open && !wasOpen.current) setAltText(initialAltText);
+    wasOpen.current = isModal ? open : false;
+  }, [initialAltText, isModal, open]);
 
   const detail = items.find((item) => item.id === detailId) ?? null;
 

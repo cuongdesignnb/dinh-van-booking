@@ -942,6 +942,20 @@ textarea.ainput {
   accent-color: var(--dvb-admin-green-700);
 }
 
+.settings-form__radio {
+  grid-column: 1 / -1;
+}
+
+.settings-form__radio .settings-form__choice span {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-form__radio .settings-form__choice small {
+  color: var(--dvb-admin-muted);
+  line-height: 1.4;
+}
+
 .settings-form__array > h4 {
   margin: 0 0 8px;
 }

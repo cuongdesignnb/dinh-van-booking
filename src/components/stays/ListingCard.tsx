@@ -1,5 +1,5 @@
 import { ArrowRight, MapPin, Star } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { AmenityIcon } from '@/components/shared/AmenityIcon';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';

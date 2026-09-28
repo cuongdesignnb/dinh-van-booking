@@ -541,7 +541,7 @@ export function PropertyCatalogScreen() {
               <label className="atoggle">
                 <input type="checkbox" checked={editForm.featured} onChange={(event) => updateEdit('featured', event.target.checked)} />
                 <span className="atoggle__track"><span className="atoggle__thumb" /></span>
-                <span className="atoggle__text"><strong>Nổi bật</strong><small>Chỉ có tác dụng khi nội dung đủ điều kiện xuất bản.</small></span>
+                <span className="atoggle__text"><strong>Nổi bật trên trang chủ</strong><small>Khi khối “Phòng nghỉ nổi bật” dùng chế độ “Chỉ phòng nổi bật”, chỉ nơi lưu trú bật tùy chọn này mới xuất hiện trên trang chủ.</small></span>
               </label>
             </div>
           </div>
@@ -713,7 +713,7 @@ export function PropertyCatalogScreen() {
                   {item.cover ? <Image src={item.cover.url} alt={item.cover.alt} width={180} height={126} className="property-card__image" unoptimized /> : <div className="property-card__placeholder"><ImagePlus size={22} aria-hidden="true" /><span>Chưa có ảnh</span></div>}
                 </div>
                 <div className="property-card__body">
-                  <div className="property-card__head"><div><h3>{item.title}</h3><p className="ahint">{item.code} · {KIND_LABEL[item.kind] ?? item.kind}</p></div><span className="abadge abadge--neutral">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · {OPERATING_STATUS_LABEL[item.operatingStatus] ?? item.operatingStatus}</span></div>
+                  <div className="property-card__head"><div><h3>{item.title}</h3><p className="ahint">{item.code} · {KIND_LABEL[item.kind] ?? item.kind}</p><p className="ahint">{item.featured ? 'Nổi bật trang chủ' : item.publicationStatus === 'published' ? 'Chưa chọn nổi bật' : null}</p></div><span className="abadge abadge--neutral">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · {OPERATING_STATUS_LABEL[item.operatingStatus] ?? item.operatingStatus}</span></div>
                   <p>{item.area} · {item.address}</p>
                   <p className="ahint">{room ? `${room.name} · ${room.unitCount} đơn vị · ${money(room.rate?.baseRateVnd)}` : 'Chưa có loại phòng'}</p>
                   <div className="property-card__actions">

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { ConsultationForm } from '@/components/contact/ConsultationForm';
 import { PageShell } from '@/components/layout/PageShell';
 import { FaqList } from '@/components/shared/FaqList';

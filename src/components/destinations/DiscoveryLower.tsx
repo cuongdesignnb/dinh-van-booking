@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import type { PublicMediaAsset } from '@/lib/api/public';
 import { publicRecord, publicText, richDocumentHasContent } from '@/lib/public-content';

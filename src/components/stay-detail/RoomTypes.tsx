@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Mountain, Scaling, UserRound, Users } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { SmallLeaf } from '@/components/ui/Decor';
 import { formatVnd } from '@/lib/format';
 import { ROOMS_ANCHOR } from './BookingCard';

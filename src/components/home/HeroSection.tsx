@@ -1,14 +1,15 @@
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { FallingLeaves } from '@/components/ui/Decor';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import type { PublicMediaAsset } from '@/lib/api/public';
 import type { PublicRecord } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { richDocumentHasContent } from '@/lib/public-content';
+import { BookingSearch } from './BookingSearch';
 
 const d = (ms: number) => ({ '--d': `${ms}ms` }) as React.CSSProperties;
 
-export function HeroSection({ config, image, mobileImage }: { config: PublicRecord; image: PublicMediaAsset | null; mobileImage: PublicMediaAsset | null }) {
+export function HeroSection({ config, image, mobileImage, showSearch = false }: { config: PublicRecord; image: PublicMediaAsset | null; mobileImage: PublicMediaAsset | null; showSearch?: boolean }) {
   const titleLine1 = typeof config.titleLine1 === 'string' ? config.titleLine1.trim() : '';
   const titleLine2 = typeof config.titleLine2 === 'string' ? config.titleLine2.trim() : '';
   const kicker = typeof config.kicker === 'string' ? config.kicker.trim() : '';
@@ -55,6 +56,7 @@ export function HeroSection({ config, image, mobileImage }: { config: PublicReco
         </div>
 
         {note && <p className="hero__note handwritten" data-reveal="write" style={d(1100)}>{note}</p>}
+        {showSearch && <div className="hero__search" data-reveal="rise-soft" style={d(950)}><BookingSearch /></div>}
       </div>
     </section>
   );

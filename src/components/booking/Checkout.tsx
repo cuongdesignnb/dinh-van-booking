@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState, type ReactNode } from 'react';

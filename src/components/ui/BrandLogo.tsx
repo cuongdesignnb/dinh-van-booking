@@ -1,7 +1,7 @@
 'use client';
 
 import { useSiteData } from '@/components/site/SiteDataProvider';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 
 /** Mountain + forest mark. Kept as SVG so it stays crisp at any size. */
 export function DinhVanMark({ className }: { className?: string }) {

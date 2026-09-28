@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useState } from 'react';
 import type { ImageAsset } from '@/data/types';
 import { openDialog } from '@/lib/events';
@@ -26,7 +26,7 @@ export function Testimonials({ testimonials, config }: { testimonials: Testimoni
   if (config.enabled !== true || !title || !visible.length) return null;
 
   return (
-    <section className="reviews content-shell" aria-labelledby="reviews-title" aria-roledescription="carousel">
+    <section className="reviews" aria-labelledby="reviews-title" aria-roledescription="carousel">
       <div className="section-head section-head--tight" data-reveal="fade-up" style={{ '--d': '1500ms' } as React.CSSProperties}>
         <h2 className="section-title section-title--sm" id="reviews-title">{title}</h2>
         {ctaLabel && <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => openDialog({ type: 'reviews' })}>{ctaLabel} <ArrowRight size={15} strokeWidth={2} aria-hidden="true" /></button>}

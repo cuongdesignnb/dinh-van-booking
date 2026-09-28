@@ -8,6 +8,7 @@ import { SettingsService } from '../settings/settings.service';
 import { SETTINGS_BY_KEY } from '../settings/settings.registry';
 import { loadConfig } from '../common/config/env';
 import type { Paginated } from '../common/types';
+import { normalizeUploadMetadata } from './media-upload-metadata';
 
 function settingMediaReferences(value: unknown, id: string, path = ''): string[] {
   if (Array.isArray(value)) return value.flatMap((item, index) => settingMediaReferences(item, id, `${path}[${index}]`));
@@ -99,6 +100,7 @@ export class MediaService {
 
     const encoded = await encodeMediaWebp(file.buffer, rules, rules.maxWidth, file.mimetype === 'image/gif');
     const sha = createHash('sha256').update(encoded.data).digest('hex');
+    const uploadMetadata = normalizeUploadMetadata(file.filename, meta.altText, meta.caption);
 
     // The same picture uploaded twice reuses one file instead of filling the volume.
     const existing = await this.prisma.mediaAsset.findFirst({ where: { sha256: sha } });
@@ -122,14 +124,14 @@ export class MediaService {
     const asset = await this.prisma.mediaAsset.create({
       data: {
         storageKey,
-        originalFilename: file.filename.slice(0, 255),
+        originalFilename: uploadMetadata.originalFilename,
         // What we stored, not what was uploaded: the original format is gone.
         mimeType: 'image/webp',
         byteSize: BigInt(encoded.data.byteLength),
         width: encoded.width,
         height: encoded.height,
-        altText: meta.altText?.slice(0, 500) ?? null,
-        caption: meta.caption?.slice(0, 1000) ?? null,
+        altText: uploadMetadata.altText,
+        caption: uploadMetadata.caption,
         sha256: sha,
         renditions: renditions as object,
         processingStatus: 'ready',

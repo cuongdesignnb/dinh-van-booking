@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { DestinationExplorer } from '@/components/destinations/DestinationExplorer';
 import { DestinationNote, ItineraryTabs, Seasons } from '@/components/destinations/DiscoveryLower';

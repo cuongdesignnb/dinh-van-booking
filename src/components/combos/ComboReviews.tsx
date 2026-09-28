@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useId, useState } from 'react';
 import { Stars } from '@/components/shared/Stars';
 import { Modal } from '@/components/ui/Modal';

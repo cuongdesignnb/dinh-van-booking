@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import type { PublicMediaAsset } from '@/lib/api/public';
 import type { PublicRecord } from '@/lib/public-content';

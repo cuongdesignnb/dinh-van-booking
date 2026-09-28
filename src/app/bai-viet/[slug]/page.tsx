@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { PageShell } from '@/components/layout/PageShell';

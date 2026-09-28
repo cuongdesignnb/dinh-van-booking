@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import type { PublicMediaAsset } from '@/lib/api/public';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
