@@ -355,7 +355,8 @@ export class PublicCatalogService {
     if (!current || current === normalizedPath || !current.startsWith('/') || current.startsWith('//')) {
       throw new NotFoundException('Không tìm thấy đường dẫn công khai');
     }
-    return { kind: 'redirect', path: current, status: route.redirectStatus === 301 ? 301 : 308 };
+    // Normalize historic 301 rows at read time; no production data rewrite.
+    return { kind: 'redirect', path: current, status: 308 };
   }
 
   /** Resolve old query-dialog URLs only to a currently public database route. */

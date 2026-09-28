@@ -23,6 +23,10 @@ export function slugify(input: string): string {
   return base || 'muc';
 }
 
+export function isReservedSlug(input: string): boolean {
+  return RESERVED.has(slugify(input));
+}
+
 /** Appends -2, -3 … until the slug is free within its section. */
 export function uniqueSlug(desired: string, taken: Set<string>): string {
   const base = slugify(desired);

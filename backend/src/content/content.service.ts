@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { documentMediaIds, documentToText, sanitizeDocument, type RichNode } from './document';
 import { pathForContent, uniqueSlug } from './slug';
+import { resolveUpdatedSlug, switchCurrentRoute } from './slug-routes';
 import type { Paginated } from '../common/types';
 
 export const CONTENT_KINDS = ['stay', 'combo', 'destination', 'article', 'page'] as const;
@@ -161,7 +162,7 @@ export class ContentService {
     if (!CONTENT_KINDS.includes(kind as ContentKind)) throw new BadRequestException('Loại nội dung không hợp lệ');
     if (!input.title?.trim()) throw new BadRequestException('Thiếu tiêu đề');
 
-    const slug = await this.reserveSlug(kind, input.slug ?? input.title);
+    const slug = await this.reserveSlug(kind, input.slug?.trim() || input.title);
     const body = await this.cleanBody(input.body);
 
     const created = await this.prisma.$transaction(async (tx) => {
@@ -180,7 +181,7 @@ export class ContentService {
           publicationStatus: 'draft',
         },
       });
-      await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent(kind, slug) } });
+      await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent(kind, slug), redirectStatus: 308 } });
       if (input.media?.length) await this.replaceMedia(tx, node.id, input.media);
       await this.syncDetails(tx, node.id, kind, input.details);
       await tx.contentRevision.create({
@@ -206,17 +207,14 @@ export class ContentService {
     this.assertVersion(current.version, input.expectedVersion);
 
     const body = input.body === undefined ? null : await this.cleanBody(input.body);
-    const nextSlug =
-      input.slug && input.slug !== current.slugSource
-        ? await this.reserveSlug(current.kind, input.slug, id)
-        : null;
+    const nextSlug = resolveUpdatedSlug(current.slugSource ?? '', input.slug);
 
     await this.prisma.$transaction(async (tx) => {
       const update = await tx.contentNode.updateMany({
         where: { id, version: input.expectedVersion },
         data: {
           title: input.title?.trim().slice(0, 300) ?? undefined,
-          slugSource: nextSlug ?? undefined,
+          slugSource: nextSlug !== current.slugSource ? nextSlug : undefined,
           excerpt: input.excerpt === undefined ? undefined : input.excerpt?.slice(0, 500) ?? null,
           bodyDocument: body === null ? undefined : (body as object),
           metaTitle: input.metaTitle === undefined ? undefined : input.metaTitle?.slice(0, 200) ?? null,
@@ -231,20 +229,7 @@ export class ContentService {
       });
       if (update.count !== 1) await this.throwWriteConflict(tx, id, input.expectedVersion!);
 
-      if (nextSlug) {
-        // The old path keeps working as a redirect instead of turning into a 404.
-        await tx.publicRoute.updateMany({ where: { contentId: id, isCurrent: true }, data: { isCurrent: false, redirectStatus: 308 } });
-        const path = pathForContent(current.kind, nextSlug);
-        const existing = await tx.publicRoute.findUnique({ where: { path } });
-        if (existing && existing.contentId !== id) {
-          throw new ConflictException('Đường dẫn này đã thuộc về nội dung khác');
-        }
-        await tx.publicRoute.upsert({
-          where: { path },
-          create: { contentId: id, path, isCurrent: true },
-          update: { isCurrent: true },
-        });
-      }
+      if (nextSlug !== current.slugSource) await switchCurrentRoute(tx, id, current.kind, nextSlug);
 
       if (input.media) await this.replaceMedia(tx, id, input.media);
       if (input.details) await this.syncDetails(tx, id, current.kind, input.details);
@@ -264,7 +249,7 @@ export class ContentService {
       });
     });
 
-    await this.audit(userId, 'content.update', id, { slug: nextSlug ?? current.slugSource });
+    await this.audit(userId, 'content.update', id, { slug: nextSlug });
     return this.getOne(id);
   }
 
@@ -467,7 +452,10 @@ export class ContentService {
       const snapshot = revision.contentSnapshot && typeof revision.contentSnapshot === 'object' && !Array.isArray(revision.contentSnapshot)
         ? revision.contentSnapshot as Record<string, unknown>
         : null;
-      const nextSlug = snapshot && typeof snapshot.slugSource === 'string' ? snapshot.slugSource : current.slugSource;
+      const nextSlug = resolveUpdatedSlug(
+        current.slugSource ?? '',
+        snapshot && typeof snapshot.slugSource === 'string' ? snapshot.slugSource : undefined,
+      );
       const body = snapshot?.bodyDocument ?? revision.documentSnapshot;
       const saved = await tx.contentNode.updateMany({
         where: { id, version: expectedVersion },
@@ -487,17 +475,7 @@ export class ContentService {
       });
       if (saved.count !== 1) await this.throwWriteConflict(tx, id, expectedVersion);
 
-      if (nextSlug && nextSlug !== current.slugSource) {
-        const path = pathForContent(current.kind, nextSlug);
-        const owner = await tx.publicRoute.findUnique({ where: { path } });
-        if (owner && owner.contentId !== id) throw new ConflictException('Đường dẫn của phiên bản đã thuộc về nội dung khác');
-        await tx.publicRoute.updateMany({ where: { contentId: id, isCurrent: true }, data: { isCurrent: false, redirectStatus: 308 } });
-        await tx.publicRoute.upsert({
-          where: { path },
-          create: { contentId: id, path, isCurrent: true },
-          update: { isCurrent: true },
-        });
-      }
+      if (nextSlug !== current.slugSource) await switchCurrentRoute(tx, id, current.kind, nextSlug);
 
       if (snapshot && Array.isArray(snapshot.media)) {
         const media = snapshot.media.flatMap((item) => {
@@ -714,16 +692,16 @@ export class ContentService {
     return route?.path ?? null;
   }
 
-  private async reserveSlug(kind: string, desired: string, ignoreId?: string): Promise<string> {
+  private async reserveSlug(kind: string, desired: string): Promise<string> {
     const [siblings, routes] = await Promise.all([
       this.prisma.contentNode.findMany({
-        where: { kind, ...(ignoreId ? { id: { not: ignoreId } } : {}) },
+        where: { kind },
         select: { slugSource: true },
       }),
       // Renaming a node leaves its old path behind as a redirect, and that row
       // still owns the path. Reusing the freed slug would collide with it.
       this.prisma.publicRoute.findMany({
-        where: { path: { startsWith: `${pathForContent(kind, '')}` }, ...(ignoreId ? { contentId: { not: ignoreId } } : {}) },
+        where: { path: { startsWith: pathForContent(kind, '') } },
         select: { path: true },
       }),
     ]);

@@ -60,6 +60,16 @@ const fixtureFallbacks = matches(/(?:from\s*["'][^"']*(?:fixture|mock-data|demo-
 const localStorageBusiness = matches(/localStorage\.(?:setItem|removeItem|clear)\s*\(/g);
 const fakeKpis = matches(/\b(?:fake|mock|demo|sample)[A-Za-z_-]*kpi\b|\b(?:mock|fake|demo)[A-Za-z_-]*stat(?:s|istic)?\b/gi);
 const adminStoreMutations = matches(/\buseAdmin\s*\(|\bAdminStoreProvider\b|from\s*["'][^"']*AdminStore["']/g);
+const legacySlugEditors = reachable.filter(({ relative: path }) =>
+  /src\/components\/admin\/(?:properties\/(?:PropertiesScreen|PropertyEditor)|combos\/(?:CombosScreen|ComboEditor)|content\/(?:ContentScreen|DestinationEditor))\.tsx$/.test(path),
+).map(({ relative: path }) => path);
+const activeSlugScreens = [
+  'src/components/admin/properties/PropertyCatalogScreen.tsx',
+  'src/components/admin/content/AdminContentList.tsx',
+];
+const activeSlugScreenMissing = activeSlugScreens.filter((path) =>
+  !reachable.some((file) => file.relative === path && file.source.includes('AdminSlugField')),
+);
 
 const report = {
   generatedAt: new Date().toISOString(),
@@ -72,6 +82,10 @@ const report = {
   localStorageBusinessDataCount: localStorageBusiness.reduce((sum, item) => sum + item.count, 0),
   fakeKpiCount: fakeKpis.reduce((sum, item) => sum + item.count, 0),
   adminStoreBusinessMutationCount: adminStoreMutations.reduce((sum, item) => sum + item.count, 0),
+  legacySlugEditorReachableCount: legacySlugEditors.length,
+  activeSlugScreenMissingCount: activeSlugScreenMissing.length,
+  legacySlugEditors,
+  activeSlugScreenMissing,
   reachableDemoComponentFiles: demoComponents,
   evidence: { pending, fixtureFallbacks, localStorageBusiness, fakeKpis, adminStoreMutations },
   unresolvedLocalImports: unresolved,
@@ -82,4 +96,4 @@ const report = {
 mkdirSync(dirname(evidencePath), { recursive: true });
 writeFileSync(evidencePath, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify({ ...report, reachableFiles: report.reachableFiles.length, routes: report.routes.length }, null, 2));
-if (unresolved.length || pending.length || demoComponents.length || fixtureFallbacks.length || localStorageBusiness.length || fakeKpis.length || adminStoreMutations.length) process.exitCode = 1;
+if (unresolved.length || pending.length || demoComponents.length || fixtureFallbacks.length || localStorageBusiness.length || fakeKpis.length || adminStoreMutations.length || legacySlugEditors.length || activeSlugScreenMissing.length) process.exitCode = 1;

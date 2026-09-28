@@ -5,9 +5,11 @@ import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
+import { withTitle, type SlugMode } from '@/lib/slug';
 import { MediaPicker } from '../media/MediaPicker';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
+import { AdminSlugField } from '../shared/AdminSlugField';
 
 type PropertyItem = {
   id: string;
@@ -44,6 +46,8 @@ type PropertyItem = {
 
 type FormState = {
   title: string;
+  slug: string;
+  slugMode: SlugMode;
   code: string;
   kind: string;
   area: string;
@@ -83,6 +87,8 @@ type SelectedMedia = Pick<MediaAsset, 'id' | 'url' | 'altText'>;
 
 const EMPTY_FORM: FormState = {
   title: '',
+  slug: '',
+  slugMode: 'auto',
   code: '',
   kind: 'homestay',
   area: 'Cúc Phương, Ninh Bình',
@@ -249,7 +255,9 @@ export function PropertyCatalogScreen() {
   };
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((current) => ({ ...current, [key]: value }));
+    setForm((current) => key === 'title'
+      ? withTitle(current, value as string, true)
+      : { ...current, [key]: value });
   };
 
   const updateEdit = <K extends keyof EditFormState>(key: K, value: EditFormState[K]) => {
@@ -294,6 +302,7 @@ export function PropertyCatalogScreen() {
         method: 'POST',
         body: JSON.stringify({
           title: form.title,
+          slug: form.slug.trim() || undefined,
           code: form.code,
           kind: form.kind,
           area: form.area,
@@ -382,7 +391,7 @@ export function PropertyCatalogScreen() {
           kind: editForm.kind,
           area: editForm.area,
           address: editForm.address,
-          slug: editForm.slug || undefined,
+          slug: editForm.slug,
           excerpt: editForm.excerpt || null,
           description: editForm.description,
           descriptionDocument: editForm.descriptionDocument,
@@ -495,10 +504,10 @@ export function PropertyCatalogScreen() {
               <span>Địa chỉ *</span>
               <input className="ainput" value={editForm.address} onChange={(event) => updateEdit('address', event.target.value)} required maxLength={300} />
             </label>
-            <label className="afield">
-              <span>Slug</span>
-              <input className="ainput" value={editForm.slug} onChange={(event) => updateEdit('slug', event.target.value)} maxLength={160} />
-            </label>
+            <AdminSlugField
+              title={editForm.title} value={editForm.slug} originalValue={editing.slug}
+              mode="edit" kind="stay" onChange={(slug) => updateEdit('slug', slug)} disabled={editBusy}
+            />
             <label className="afield">
               <span>Trích yếu</span>
               <input className="ainput" value={editForm.excerpt} onChange={(event) => updateEdit('excerpt', event.target.value)} maxLength={500} />
@@ -580,6 +589,10 @@ export function PropertyCatalogScreen() {
               <span>Tên nơi lưu trú *</span>
               <input className="ainput" value={form.title} onChange={(event) => update('title', event.target.value)} required maxLength={300} placeholder="Ví dụ: Nhà sàn Đinh Vân" />
             </label>
+            <AdminSlugField
+              title={form.title} value={form.slug} mode="create" kind="stay"
+              onChange={(slug) => setForm((current) => ({ ...current, slug, slugMode: 'manual' }))} disabled={busy}
+            />
             <label className="afield">
               <span>Mã nơi lưu trú *</span>
               <input className="ainput" value={form.code} onChange={(event) => update('code', event.target.value.toUpperCase())} required pattern="[A-Za-z0-9_-]+" placeholder="DV-HOMESTAY-01" />
@@ -608,8 +621,7 @@ export function PropertyCatalogScreen() {
                 disabled={busy}
                 aiContext={{ kind: 'stay', title: form.title }}
                 onAiGenerated={(generated) => setForm((current) => ({
-                  ...current,
-                  title: generated.title,
+                  ...withTitle(current, generated.title, true),
                   description: generated.excerpt,
                 }))}
               />

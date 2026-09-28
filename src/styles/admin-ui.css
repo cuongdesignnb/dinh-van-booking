@@ -494,6 +494,17 @@
   color: #33423a;
 }
 
+.admin-slug-field { grid-column: 1 / -1; gap: 6px; }
+.admin-slug-field__row { display: flex; align-items: stretch; gap: 8px; }
+.admin-slug-field__row .ainput { flex: 1; min-width: 0; }
+.admin-slug-field__row .abtn { white-space: nowrap; }
+.admin-slug-field__preview { color: #405d4a; font-size: 12px; overflow-wrap: anywhere; }
+.admin-slug-field__preview code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.admin-slug-field__warning { display: flex; gap: 7px; align-items: flex-start; margin: 3px 0 8px; color: #8c5820; font-size: 12px; }
+.admin-slug-field__warning svg { flex: none; }
+.admin-slug-field__invalid { color: var(--dvb-admin-danger); font-size: 11px; }
+@media (max-width: 650px) { .admin-slug-field__row { flex-direction: column; } }
+
 .ainput {
   width: 100%;
   min-height: 34px;

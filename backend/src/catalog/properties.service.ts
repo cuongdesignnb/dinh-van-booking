@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { documentMediaIds, sanitizeDocument } from '../content/document';
 import { pathForContent, uniqueSlug } from '../content/slug';
+import { resolveUpdatedSlug, switchCurrentRoute } from '../content/slug-routes';
 import type { CreatePropertyDto, DeletePropertyQuery, UpdatePropertyDto } from './dto/property.dto';
 
 function documentToText(value: unknown): string {
@@ -212,7 +213,7 @@ export class PropertiesService {
           },
         });
 
-        await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent('stay', slug) } });
+        await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent('stay', slug), redirectStatus: 308 } });
         await tx.contentRevision.create({
           data: { contentId: node.id, documentSnapshot: body, note: 'Tạo nơi lưu trú mới', authorId: userId },
         });
@@ -349,10 +350,7 @@ export class PropertiesService {
         : paragraphDocument(description);
     const bodyText = body === undefined ? undefined : documentToText(body);
     const nextDescription = description ?? bodyText;
-    const nextSlug =
-      input.slug === undefined
-        ? current.content.slugSource
-        : await this.reserveSlug(input.slug.trim() || title, current.contentId);
+    const nextSlug = resolveUpdatedSlug(current.content.slugSource ?? '', input.slug);
 
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -366,21 +364,15 @@ export class PropertiesService {
           }
         }
 
-        if (nextSlug && nextSlug !== current.content.slugSource) {
-          const path = pathForContent('stay', nextSlug);
-          const existingRoute = await tx.publicRoute.findUnique({ where: { path }, select: { contentId: true } });
-          if (existingRoute && existingRoute.contentId !== current.contentId) {
-            throw new ConflictException('Đường dẫn này đã thuộc về nơi lưu trú khác');
-          }
-          await tx.publicRoute.updateMany({ where: { contentId: current.contentId, isCurrent: true }, data: { isCurrent: false } });
-          await tx.publicRoute.create({ data: { contentId: current.contentId, path, isCurrent: true } });
+        if (nextSlug !== current.content.slugSource) {
+          await switchCurrentRoute(tx, current.contentId, 'stay', nextSlug);
         }
 
         await tx.contentNode.update({
           where: { id: current.contentId },
           data: {
             title,
-            slugSource: nextSlug ?? undefined,
+            slugSource: nextSlug !== current.content.slugSource ? nextSlug : undefined,
             excerpt:
               input.excerpt === undefined
                 ? undefined
@@ -523,10 +515,10 @@ export class PropertiesService {
     });
   }
 
-  private async reserveSlug(desired: string, ignoreContentId?: string): Promise<string> {
+  private async reserveSlug(desired: string): Promise<string> {
     const [siblings, routes] = await Promise.all([
       this.prisma.contentNode.findMany({
-        where: { kind: 'stay', ...(ignoreContentId ? { id: { not: ignoreContentId } } : {}) },
+        where: { kind: 'stay' },
         select: { slugSource: true },
       }),
       this.prisma.publicRoute.findMany({
