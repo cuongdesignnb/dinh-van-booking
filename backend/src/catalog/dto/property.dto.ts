@@ -1,6 +1,8 @@
 import { Type } from 'class-transformer';
 import {
   Allow,
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsInt,
   IsIn,
@@ -11,7 +13,18 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+export class RoomGalleryDto {
+  @IsUUID()
+  roomTypeId!: string;
+
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsUUID('4', { each: true })
+  mediaIds!: string[];
+}
 
 export class CreatePropertyDto {
   @IsString()
@@ -73,6 +86,18 @@ export class CreatePropertyDto {
   @IsUUID()
   coverMediaId?: string;
 
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsUUID('4', { each: true })
+  galleryMediaIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsUUID('4', { each: true })
+  roomGalleryMediaIds?: string[];
+
   @IsString()
   @MaxLength(40)
   @Matches(/^[A-Za-z0-9_-]+$/, { message: 'Mã loại phòng chỉ gồm chữ, số, gạch ngang hoặc gạch dưới' })
@@ -130,7 +155,7 @@ export class CreatePropertyDto {
 
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   rateVnd!: number;
 
   @Type(() => Number)
@@ -212,6 +237,18 @@ export class UpdatePropertyDto {
   @IsUUID()
   coverMediaId?: string | null;
 
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsUUID('4', { each: true })
+  galleryMediaIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RoomGalleryDto)
+  roomGalleries?: RoomGalleryDto[];
+
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -227,5 +264,81 @@ export class DeletePropertyQuery {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  expectedVersion!: number;
+}
+
+export class CreateRoomDto {
+  @IsString() @MaxLength(40) @Matches(/^[A-Za-z0-9_-]+$/)
+  code!: string;
+
+  @IsString() @MaxLength(160)
+  name!: string;
+
+  @IsOptional() @IsString() @MaxLength(500)
+  description?: string;
+
+  @Type(() => Number) @IsInt() @Min(1) @Max(30)
+  maxAdults!: number;
+
+  @Type(() => Number) @IsInt() @Min(0) @Max(30)
+  maxChildren!: number;
+
+  @IsOptional() @IsString() @MaxLength(120)
+  bedSummary?: string;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(1000)
+  areaSqm?: number;
+
+  @Type(() => Number) @IsInt() @Min(1) @Max(100)
+  unitCount!: number;
+
+  @Type(() => Number) @IsInt() @Min(0)
+  rateVnd!: number;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0)
+  weekendRateVnd?: number;
+
+  @IsOptional() @IsBoolean()
+  breakfastIncluded?: boolean;
+
+  @IsOptional() @IsArray() @ArrayMaxSize(30) @IsUUID('4', { each: true })
+  galleryMediaIds?: string[];
+}
+
+export class UpdateRoomDto {
+  @IsString() @MaxLength(160)
+  name!: string;
+
+  @IsOptional() @IsString() @MaxLength(500)
+  description?: string;
+
+  @Type(() => Number) @IsInt() @Min(1) @Max(30)
+  maxAdults!: number;
+
+  @Type(() => Number) @IsInt() @Min(0) @Max(30)
+  maxChildren!: number;
+
+  @IsOptional() @IsString() @MaxLength(120)
+  bedSummary?: string;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(1000)
+  areaSqm?: number;
+
+  @Type(() => Number) @IsInt() @Min(0)
+  rateVnd!: number;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0)
+  weekendRateVnd?: number;
+
+  @IsOptional() @IsBoolean()
+  breakfastIncluded?: boolean;
+
+  @IsIn(['active', 'inactive'])
+  status!: string;
+
+  @IsOptional() @IsArray() @ArrayMaxSize(30) @IsUUID('4', { each: true })
+  galleryMediaIds?: string[];
+
+  @Type(() => Number) @IsInt() @Min(1)
   expectedVersion!: number;
 }

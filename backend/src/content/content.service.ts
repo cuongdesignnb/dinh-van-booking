@@ -413,11 +413,11 @@ export class ContentService {
         const roomTypes = property.roomTypes ?? [];
         if (!roomTypes.length) problems.push('Chưa có hạng phòng hoạt động');
         if (!roomTypes.some((room) => room.units.length > 0)) problems.push('Chưa có đơn vị phòng hoạt động');
-        if (!roomTypes.some((room) => room.ratePlans.some((rate) => rate.baseRateVnd > BigInt(0)))) {
-          problems.push('Chưa có giá phòng hợp lệ');
+        if (!roomTypes.some((room) => room.ratePlans.some((rate) => rate.baseRateVnd >= 0n))) {
+          problems.push('Chưa có bảng giá phòng');
         }
-        if (!roomTypes.some((room) => room.units.length > 0 && room.ratePlans.some((rate) => rate.baseRateVnd > BigInt(0)))) {
-          problems.push('Cần ít nhất một hạng phòng có cả đơn vị phòng và giá hợp lệ');
+        if (!roomTypes.some((room) => room.units.length > 0 && room.ratePlans.some((rate) => rate.baseRateVnd >= 0n))) {
+          problems.push('Cần ít nhất một hạng phòng có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)');
         }
       }
     }

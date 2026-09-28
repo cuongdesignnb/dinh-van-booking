@@ -5,7 +5,7 @@ import { SettingsService } from '../settings/settings.service';
 import { documentMediaIds, sanitizeDocument } from '../content/document';
 import { pathForContent, uniqueSlug } from '../content/slug';
 import { resolveUpdatedSlug, switchCurrentRoute } from '../content/slug-routes';
-import type { CreatePropertyDto, DeletePropertyQuery, UpdatePropertyDto } from './dto/property.dto';
+import type { CreatePropertyDto, CreateRoomDto, DeletePropertyQuery, UpdatePropertyDto, UpdateRoomDto } from './dto/property.dto';
 
 function documentToText(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -29,7 +29,7 @@ const PROPERTY_INCLUDE = {
     include: {
       routes: { where: { isCurrent: true }, take: 1 },
       media: {
-        where: { role: 'cover', media: { isDemo: false, visibility: 'public', processingStatus: 'ready' } },
+        where: { media: { isDemo: false, visibility: 'public', processingStatus: 'ready' } },
         include: { media: { select: { storageKey: true, altText: true, originalFilename: true } } },
         orderBy: { position: 'asc' as const },
       },
@@ -69,7 +69,7 @@ type PropertyRow = {
     excerpt: string | null;
     featured: boolean;
     routes: Array<{ path: string }>;
-    media: Array<{ mediaId: string; media: { storageKey: string; altText: string | null; originalFilename: string } }>;
+    media: Array<{ mediaId: string; role: string; position: number; media: { storageKey: string; altText: string | null; originalFilename: string } }>;
   };
   roomTypes: Array<{
     id: string;
@@ -82,6 +82,7 @@ type PropertyRow = {
     bedSummary: string | null;
     areaSqm: number | null;
     status: string;
+    version: number;
     units: Array<{ id: string; code: string; label: string; active: boolean }>;
     ratePlans: Array<{
       id: string;
@@ -119,6 +120,7 @@ export interface PropertyView {
   version: number;
   updatedAt: string;
   cover: { mediaId: string; url: string; alt: string } | null;
+  gallery: Array<{ mediaId: string; url: string; alt: string }>;
   roomTypes: Array<{
     id: string;
     code: string;
@@ -130,6 +132,9 @@ export interface PropertyView {
     bedSummary: string | null;
     areaSqm: number | null;
     unitCount: number;
+    status: string;
+    version: number;
+    gallery: Array<{ mediaId: string; url: string; alt: string }>;
     rate: {
       id: string;
       code: string;
@@ -197,6 +202,7 @@ export class PropertiesService {
             throw new BadRequestException('Ảnh đại diện không tồn tại hoặc chưa sẵn sàng');
           }
         }
+        await this.assertGalleryMedia(tx, [...(input.galleryMediaIds ?? []), ...(input.roomGalleryMediaIds ?? [])]);
 
         const node = await tx.contentNode.create({
           data: {
@@ -273,6 +279,8 @@ export class PropertiesService {
             data: { contentId: node.id, mediaId: input.coverMediaId, role: 'cover', position: 0 },
           });
         }
+        await this.replaceGallery(tx, node.id, 'gallery', input.galleryMediaIds ?? []);
+        await this.replaceGallery(tx, node.id, `room:${roomType.id}`, input.roomGalleryMediaIds ?? []);
 
         await tx.auditLog.create({
           data: {
@@ -363,6 +371,12 @@ export class PropertiesService {
             throw new BadRequestException('Ảnh đại diện không tồn tại hoặc chưa sẵn sàng');
           }
         }
+        const roomGalleries = input.roomGalleries ?? [];
+        const ownedRooms = await tx.roomType.findMany({ where: { propertyId: id, id: { in: roomGalleries.map((item) => item.roomTypeId) } }, select: { id: true } });
+        if (ownedRooms.length !== roomGalleries.length || new Set(roomGalleries.map((item) => item.roomTypeId)).size !== roomGalleries.length) {
+          throw new BadRequestException('Album hạng phòng không thuộc nơi lưu trú này');
+        }
+        await this.assertGalleryMedia(tx, [...(input.galleryMediaIds ?? []), ...roomGalleries.flatMap((item) => item.mediaIds)]);
 
         if (nextSlug !== current.content.slugSource) {
           await switchCurrentRoute(tx, current.contentId, 'stay', nextSlug);
@@ -407,6 +421,8 @@ export class PropertiesService {
             });
           }
         }
+        if (input.galleryMediaIds !== undefined) await this.replaceGallery(tx, current.contentId, 'gallery', input.galleryMediaIds);
+        for (const gallery of roomGalleries) await this.replaceGallery(tx, current.contentId, `room:${gallery.roomTypeId}`, gallery.mediaIds);
 
         if (body !== undefined) {
           await this.attachInlineMedia(tx, current.contentId, body, input.coverMediaId ?? null);
@@ -445,6 +461,62 @@ export class PropertiesService {
     }
 
     return this.getOne(id);
+  }
+
+  async createRoom(propertyId: string, input: CreateRoomDto, userId: string): Promise<PropertyView> {
+    const property = await this.prisma.property.findUnique({ where: { id: propertyId }, select: { id: true, contentId: true, content: { select: { publicationStatus: true } } } });
+    if (!property) throw new NotFoundException('Không tìm thấy nơi lưu trú');
+    const code = input.code.trim().toUpperCase();
+    const name = input.name.trim();
+    if (!code || !name) throw new BadRequestException('Cần mã và tên hạng phòng');
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
+        const room = await tx.roomType.create({ data: {
+          propertyId, code, name, description: input.description?.trim() || null,
+          maxAdults: input.maxAdults, maxChildren: input.maxChildren, maxOccupancy: input.maxAdults + input.maxChildren,
+          bedSummary: input.bedSummary?.trim() || null, areaSqm: input.areaSqm ?? null,
+          position: await tx.roomType.count({ where: { propertyId } }), status: 'active',
+        } });
+        await tx.roomUnit.createMany({ data: Array.from({ length: input.unitCount }, (_, index) => ({
+          roomTypeId: room.id, code: `${code}-${String(index + 1).padStart(2, '0')}`, label: `${name} ${index + 1}`, active: true,
+        })) });
+        await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
+        await this.replaceGallery(tx, property.contentId, `room:${room.id}`, input.galleryMediaIds ?? []);
+        await tx.contentNode.update({ where: { id: property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: property.content.publicationStatus === 'published' ? new Date() : undefined } });
+        await tx.auditLog.create({ data: { actorId: userId, action: 'room.create', entityType: 'content_node', entityId: property.contentId, diff: { roomName: name, roomCode: code } as object } });
+      });
+      return this.getOne(propertyId);
+    } catch (error) {
+      if (this.isUniqueViolation(error)) throw new ConflictException('Mã hạng phòng đã tồn tại trong nơi lưu trú này');
+      throw error;
+    }
+  }
+
+  async updateRoom(propertyId: string, roomId: string, input: UpdateRoomDto, userId: string): Promise<PropertyView> {
+    const room = await this.prisma.roomType.findUnique({ where: { id: roomId }, include: { property: { select: { contentId: true, content: { select: { publicationStatus: true } } } }, ratePlans: { where: { active: true }, orderBy: { createdAt: 'asc' }, take: 1 } } });
+    if (!room || room.propertyId !== propertyId) throw new NotFoundException('Không tìm thấy hạng phòng');
+    if (room.version !== input.expectedVersion) throw new ConflictException('Hạng phòng đã được người khác sửa. Tải lại rồi lưu lại.');
+    const name = input.name.trim();
+    if (!name) throw new BadRequestException('Tên hạng phòng không được để trống');
+    await this.prisma.$transaction(async (tx) => {
+      await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
+      const changed = await tx.roomType.updateMany({ where: { id: roomId, version: input.expectedVersion }, data: {
+        name, description: input.description?.trim() || null, maxAdults: input.maxAdults, maxChildren: input.maxChildren,
+        maxOccupancy: input.maxAdults + input.maxChildren, bedSummary: input.bedSummary?.trim() || null,
+        areaSqm: input.areaSqm ?? null, status: input.status, version: { increment: 1 },
+      } });
+      if (changed.count !== 1) throw new ConflictException('Hạng phòng đã thay đổi. Vui lòng tải lại.');
+      if (room.ratePlans[0]) {
+        await tx.ratePlan.update({ where: { id: room.ratePlans[0].id }, data: { baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, version: { increment: 1 } } });
+      } else {
+        await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
+      }
+      if (input.galleryMediaIds !== undefined) await this.replaceGallery(tx, room.property.contentId, `room:${roomId}`, input.galleryMediaIds);
+      await tx.contentNode.update({ where: { id: room.property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: room.property.content.publicationStatus === 'published' ? new Date() : undefined } });
+      await tx.auditLog.create({ data: { actorId: userId, action: 'room.update', entityType: 'content_node', entityId: room.property.contentId, diff: { roomName: name, roomCode: room.code, status: input.status } as object } });
+    });
+    return this.getOne(propertyId);
   }
 
   async remove(id: string, query: DeletePropertyQuery, userId: string): Promise<void> {
@@ -491,6 +563,19 @@ export class PropertiesService {
   private async cleanDescriptionDocument(input: unknown): Promise<object> {
     const editor = await this.settings.get<{ allowedBlocks: string[] }>('content.editor');
     return sanitizeDocument(input, { allowedBlocks: editor.allowedBlocks });
+  }
+
+  private async assertGalleryMedia(tx: Prisma.TransactionClient, ids: string[]): Promise<void> {
+    const unique = [...new Set(ids)];
+    if (!unique.length) return;
+    const found = await tx.mediaAsset.count({ where: { id: { in: unique }, isDemo: false, visibility: 'public', processingStatus: 'ready' } });
+    if (found !== unique.length) throw new BadRequestException('Album có ảnh không tồn tại hoặc chưa sẵn sàng');
+  }
+
+  private async replaceGallery(tx: Prisma.TransactionClient, contentId: string, role: string, ids: string[]): Promise<void> {
+    if (new Set(ids).size !== ids.length) throw new BadRequestException('Một album không được chọn trùng ảnh');
+    await tx.contentMedia.deleteMany({ where: { contentId, role } });
+    if (ids.length) await tx.contentMedia.createMany({ data: ids.map((mediaId, position) => ({ contentId, mediaId, role, position })) });
   }
 
   private async attachInlineMedia(
@@ -546,7 +631,8 @@ export class PropertiesService {
   }
 
   private toView(row: PropertyRow): PropertyView {
-    const cover = row.content.media[0];
+    const cover = row.content.media.find((item) => item.role === 'cover');
+    const imageView = (item: PropertyRow['content']['media'][number]) => ({ mediaId: item.mediaId, url: `/media/${item.media.storageKey}`, alt: item.media.altText ?? item.media.originalFilename });
     return {
       id: row.id,
       contentId: row.contentId,
@@ -571,8 +657,9 @@ export class PropertiesService {
       version: row.version,
       updatedAt: row.updatedAt.toISOString(),
       cover: cover
-        ? { mediaId: cover.mediaId, url: `/media/${cover.media.storageKey}`, alt: cover.media.altText ?? cover.media.originalFilename }
+        ? imageView(cover)
         : null,
+      gallery: row.content.media.filter((item) => item.role === 'gallery').map(imageView),
       roomTypes: row.roomTypes.map((room) => {
         const rate = room.ratePlans[0];
         return {
@@ -586,6 +673,9 @@ export class PropertiesService {
           bedSummary: room.bedSummary,
           areaSqm: room.areaSqm,
           unitCount: room.units.filter((unit) => unit.active).length,
+          status: room.status,
+          version: room.version,
+          gallery: row.content.media.filter((item) => item.role === `room:${room.id}`).map(imageView),
           rate: rate
             ? {
                 id: rate.id,

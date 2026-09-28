@@ -76,7 +76,7 @@ async function updateProperty(page: Page, id: string, patch: Record<string, unkn
 }
 
 async function createProperty(page: Page, suffix: string, coverMediaId: string): Promise<Property> {
-  const title = `HOME-QA ${suffix}`;
+  const title = `HOME-QA ${suffix} — Nhà sàn Cúc Phương cho gia đình`;
   const description = `Bản ghi kiểm thử bố cục ${suffix}; đây không phải nơi lưu trú thật và sẽ được xoá sau khi kiểm thử.`;
   const result = await browserApi(page, '/properties', 'POST', {
     title, code: `HOME-QA-${suffix}`, kind: 'homestay', area: 'Cúc Phương, Ninh Bình',
@@ -114,6 +114,66 @@ async function assertNoHorizontalOverflow(page: Page): Promise<void> {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+async function assertDensityGeometry(page: Page, width: number, reasonCount = 4): Promise<void> {
+  const card = await page.locator('.featured .stay').first().boundingBox();
+  const media = await page.locator('.featured .stay__media').first().boundingBox();
+  const body = await page.locator('.featured .stay__body').first().boundingBox();
+  if (!card || !media || !body) throw new Error(`Stay geometry missing at ${width}px`);
+  expect(card.width).toBeLessThanOrEqual(width < 768 ? width : 300);
+  expect(card.height).toBeGreaterThan(card.width * 0.9);
+  expect(media.y + media.height).toBeLessThanOrEqual(body.y + 2);
+  expect(media.width / media.height).toBeGreaterThan(1.7);
+  expect(media.width / media.height).toBeLessThan(1.9);
+
+  const intro = await page.locator('.why__intro').boundingBox();
+  const list = await page.locator('.why__list').boundingBox();
+  if (!intro || !list) throw new Error(`Why geometry missing at ${width}px`);
+  if (intro.x + intro.width <= list.x + 1) {
+    expect(list.x - intro.x - intro.width).toBeGreaterThanOrEqual(23);
+  } else {
+    expect(list.y - intro.y - intro.height).toBeGreaterThanOrEqual(23);
+  }
+  const introTitle = await page.locator('.why__intro .section-title').boundingBox();
+  const introText = await page.locator('.why__text').boundingBox();
+  if (introTitle && introText) expect(introText.y - introTitle.y - introTitle.height).toBeGreaterThanOrEqual(11);
+  const items = page.locator('.why__item');
+  const labels = page.locator('.why__label');
+  await expect(items).toHaveCount(reasonCount);
+  const itemBoxes = await Promise.all((await items.all()).map((item) => item.boundingBox()));
+  const labelBoxes = await Promise.all((await labels.all()).map((label) => label.boundingBox()));
+  const iconBoxes = await Promise.all((await page.locator('.why__icon').all()).map((icon) => icon.boundingBox()));
+  for (let i = 0; i < labelBoxes.length; i++) {
+    const label = labelBoxes[i];
+    const icon = iconBoxes[i];
+    if (!label || !icon) throw new Error(`Reason ${i} geometry missing at ${width}px`);
+    expect(label.y - icon.y - icon.height).toBeGreaterThanOrEqual(9);
+    for (let j = i + 1; j < labelBoxes.length; j++) {
+      const other = labelBoxes[j];
+      const item = itemBoxes[i];
+      const otherItem = itemBoxes[j];
+      if (!other || !item || !otherItem) throw new Error('Reason box missing');
+      const overlapX = Math.min(label.x + label.width, other.x + other.width) - Math.max(label.x, other.x);
+      const overlapY = Math.min(label.y + label.height, other.y + other.height) - Math.max(label.y, other.y);
+      expect(overlapX <= 0 || overlapY <= 0, `Reason labels ${i}/${j} intersect at ${width}px`).toBe(true);
+      if (Math.abs(item.y - otherItem.y) < 2) {
+        expect(Math.abs(item.x - otherItem.x) - Math.min(item.width, otherItem.width)).toBeGreaterThanOrEqual(15);
+      }
+    }
+  }
+
+  const contactContent = await page.locator('.contact__content').boundingBox();
+  const contactNote = await page.locator('.contact__note').boundingBox();
+  const contact = await page.locator('.contact').boundingBox();
+  if (contactContent && contact) expect(contactContent.y + contactContent.height).toBeLessThanOrEqual(contact.y + contact.height);
+  if (contactContent && contactNote) {
+    expect(contactNote.y - contactContent.y - contactContent.height).toBeGreaterThanOrEqual(9);
+    if (contact) expect(contactNote.y + contactNote.height).toBeLessThanOrEqual(contact.y + contact.height);
+  }
+  const contactTitle = await page.locator('.contact__title').boundingBox();
+  const contactText = await page.locator('.contact__text').boundingBox();
+  if (contactTitle && contactText) expect(contactText.y - contactTitle.y - contactTitle.height).toBeGreaterThanOrEqual(7);
+}
+
 test('classic homepage slots, direct public media, featured modes and safe upload metadata', async ({ browser, page }) => {
   test.setTimeout(240_000);
   const baseURL = String(test.info().project.use.baseURL ?? process.env.BASE_URL ?? '');
@@ -135,8 +195,23 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
     await putSetting(page, 'home.trust', { enabled: true, items: [{ id: 'home-qa', icon: 'leaf', line1: 'Kiểm thử', line2: 'bố cục' }] });
     await putSetting(page, 'home.featured', { enabled: true, title: 'Phòng nghỉ nổi bật', selectionMode: 'featured', limit: 6 });
     await putSetting(page, 'home.promo', { enabled: true, titleLine1: 'Khám phá', titleLine2: 'Cúc Phương' });
-    await putSetting(page, 'home.why', { enabled: true, title: 'Vì sao chọn chúng tôi', reasons: [{ id: 'home-qa', icon: 'user', title: 'Kiểm thử bố cục', description: 'Dữ liệu tạm thời' }] });
-    await putSetting(page, 'home.contactPanel', { enabled: true, title: 'Tư vấn hành trình' });
+    const longReasons = [
+      { id: 'home-qa-local', icon: 'user', title: 'Người địa phương', description: 'Tư vấn gần gũi, dễ trao đổi' },
+      { id: 'home-qa-stay', icon: 'house', title: 'Gợi ý lưu trú phù hợp', description: 'Theo nhu cầu và lịch trình thực tế' },
+      { id: 'home-qa-support', icon: 'message', title: 'Hỗ trợ trực tiếp', description: 'Qua điện thoại khi cần' },
+      { id: 'home-qa-trip', icon: 'map', title: 'Đồng hành cùng chuyến đi', description: 'Từ lúc tìm hiểu đến khi khởi hành' },
+      { id: 'home-qa-value', icon: 'tag', title: 'Thông tin rõ ràng', description: 'Giúp gia đình chuẩn bị chuyến đi thuận tiện hơn' },
+    ];
+    await putSetting(page, 'home.why', {
+      enabled: true, title: 'Vì sao chọn Đinh Vân Booking?',
+      intro: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Từ kinh nghiệm bản địa đến hỗ trợ trong suốt hành trình, chúng tôi giúp bạn lên kế hoạch phù hợp với nhu cầu thực tế của gia đình.' }] }] },
+      reasons: longReasons.slice(0, 4),
+    });
+    await putSetting(page, 'home.contactPanel', {
+      enabled: true, title: 'Bạn cần tư vấn riêng cho chuyến đi Cúc Phương?',
+      description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hãy chia sẻ nhu cầu lưu trú và lịch trình dự kiến để nhận gợi ý phù hợp cho từng người trong đoàn.' }] }] },
+      note: 'Hẹn gặp bạn ở Cúc Phương!',
+    });
     await putSetting(page, 'home.faq', { enabled: true, title: 'FAQ', items: [{ id: 'home-qa', question: 'Kiểm thử?', answer: 'Nội dung tạm thời.' }] });
 
     const badUpload = await upload(page, 'undefined.jpg', 'undefined.jpg', stamp);
@@ -159,7 +234,8 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
     const b = await createProperty(page, `${stamp}-B`, coverMediaId);
     createdIds.push(b.id);
     await updateProperty(page, a.id, { operatingStatus: 'active', featured: false });
-    await updateProperty(page, b.id, { operatingStatus: 'active', featured: true });
+    const longDetail = Array.from({ length: 13 }, () => 'Trải nghiệm lưu trú tại Cúc Phương cần thông tin rõ ràng cho từng gia đình.').join(' ');
+    await updateProperty(page, b.id, { operatingStatus: 'active', featured: true, excerpt: longDetail.slice(0, 490), description: longDetail });
     await status(page, a.id, 'published');
     await status(page, b.id, 'published');
 
@@ -202,9 +278,10 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
     expect(await publicPage.locator('.home-content-order > *').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-home-group'))))
       .toEqual(['hero', 'trust', 'featured', 'lower', 'faq']);
 
-    for (const [width, height] of [[390, 844], [768, 1024], [1024, 768], [1440, 900], [1920, 1080]]) {
+    for (const [width, height] of [[390, 844], [768, 1024], [1024, 768], [1440, 900], [1600, 900], [1920, 1080]]) {
       await publicPage.setViewportSize({ width, height });
       await assertNoHorizontalOverflow(publicPage);
+      await assertDensityGeometry(publicPage, width);
       const hero = await publicPage.locator('.hero').boundingBox();
       const search = await publicPage.locator('.hero__search').boundingBox();
       if (!hero || !search) throw new Error('Hero search missing at ' + width);
@@ -218,11 +295,26 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
       const promoCta = await publicPage.locator('.featured .promo .btn').boundingBox();
       if (promoCta) expect(promoCta.x + promoCta.width).toBeLessThanOrEqual(width + 1);
       if (width < 1024) expect(promo.y).toBeGreaterThanOrEqual(main.y + main.height - 1);
-      if (process.env.DVB_HOME_VISUAL_ARTIFACTS === '1' && width !== 1024) {
+      if (process.env.DVB_HOME_VISUAL_ARTIFACTS === '1' && width !== 1024 && width !== 1600) {
         mkdirSync('artifacts', { recursive: true });
         await publicPage.screenshot({ path: `artifacts/homepage-restored-${width}.png`, fullPage: true, animations: 'disabled' });
       }
+      if (process.env.DVB_HOME_DENSITY_ARTIFACTS === '1' && width !== 1600) {
+        mkdirSync('artifacts', { recursive: true });
+        await publicPage.screenshot({ path: `artifacts/home-real-density-${width}.png`, fullPage: true, animations: 'disabled' });
+      }
     }
+
+    for (const count of [3, 5]) {
+      await putSetting(page, 'home.why', { reasons: longReasons.slice(0, count) });
+      await publicPage.reload();
+      for (const width of [390, 768, 1440]) {
+        await publicPage.setViewportSize({ width, height: 900 });
+        await assertDensityGeometry(publicPage, width, count);
+        await assertNoHorizontalOverflow(publicPage);
+      }
+    }
+    await putSetting(page, 'home.why', { reasons: longReasons.slice(0, 4) });
 
     await publicPage.setViewportSize({ width: 1440, height: 900 });
     await publicPage.goto('/phong-nghi');
@@ -232,16 +324,66 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
     if (process.env.DVB_HOME_VISUAL_ARTIFACTS === '1') await publicPage.screenshot({ path: 'artifacts/stays-media-1440.png', fullPage: true, animations: 'disabled' });
     await publicPage.goto(`/phong-nghi/${b.slug}`);
     await assertDirectMedia(publicPage, '.gallery__main .gallery__img');
+    await expect(publicPage.locator('.menu-float')).toHaveCount(0);
+    for (const [width, height] of [[390, 844], [768, 1024], [1024, 768], [1440, 900], [1920, 1080]]) {
+      await publicPage.setViewportSize({ width, height });
+      await assertNoHorizontalOverflow(publicPage);
+      const galleryBox = await publicPage.locator('.detail-top__gallery').boundingBox();
+      const headBox = await publicPage.locator('.detail-head').boundingBox();
+      const bookBox = await publicPage.locator('.detail-top__book').boundingBox();
+      const infoBox = await publicPage.locator('.detail-top__info').boundingBox();
+      if (!galleryBox || !headBox || !bookBox || !infoBox) throw new Error(`Missing detail geometry at ${width}px`);
+      const intersects = (a: typeof galleryBox, b: typeof galleryBox) => Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 2
+        && Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 2;
+      expect(intersects(galleryBox, headBox), `Gallery/head overlap at ${width}`).toBe(false);
+      expect(intersects(infoBox, bookBox), `Info/booking overlap at ${width}`).toBe(false);
+      const support = publicPage.locator('.support');
+      if (await support.count()) {
+        const supportBox = await support.boundingBox();
+        const titleBox = await support.locator('.support__title').boundingBox();
+        const actionsBox = await support.locator('.support__actions').boundingBox();
+        if (supportBox && titleBox && actionsBox) {
+          expect(titleBox.x).toBeGreaterThanOrEqual(supportBox.x - 1);
+          expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(supportBox.x + supportBox.width + 1);
+          expect(actionsBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height - 1);
+          expect(actionsBox.y + actionsBox.height).toBeLessThanOrEqual(supportBox.y + supportBox.height + 1);
+        }
+      }
+      if (process.env.DVB_HOME_DENSITY_ARTIFACTS === '1' && [390, 1440].includes(width)) {
+        await publicPage.screenshot({ path: `artifacts/stay-detail-density-${width}.png`, fullPage: true, animations: 'disabled' });
+      }
+    }
 
     await featuredCard.getByRole('radio', { name: /Tất cả phòng đã xuất bản/ }).check();
+    const featuredSave = page.waitForResponse((response) => response.url().includes('/api/v1/settings/home.featured') && response.request().method() === 'PUT');
     await featuredCard.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    expect((await featuredSave).status()).toBe(200);
+    expect((await settings(page)).find((item) => item.key === 'home.featured')?.value.selectionMode).toBe('all');
     await publicPage.goto('/');
     await expect(publicPage.locator('.featured .stay')).toHaveCount(2);
     await expect(publicPage.locator('.featured')).toContainText(a.title);
     await expect(publicPage.locator('.featured')).toContainText(b.title);
+    for (const stay of await publicPage.locator('.featured .stay').all()) {
+      const media = await stay.locator('.stay__media').boundingBox();
+      const body = await stay.locator('.stay__body').boundingBox();
+      if (!media || !body) throw new Error('Multi-card stay geometry missing');
+      expect(media.y + media.height).toBeLessThanOrEqual(body.y + 2);
+    }
 
-    await status(page, a.id, 'draft');
-    await status(page, b.id, 'draft');
+    for (const label of ['C', 'D']) {
+      const extra = await createProperty(page, `${stamp}-${label}`, coverMediaId);
+      createdIds.push(extra.id);
+      await updateProperty(page, extra.id, { operatingStatus: 'active', featured: false });
+      await status(page, extra.id, 'published');
+    }
+    await publicPage.reload();
+    await expect(publicPage.locator('.featured .stay')).toHaveCount(4);
+    const fourCards = await Promise.all((await publicPage.locator('.featured .stay').all()).map((item) => item.boundingBox()));
+    if (fourCards.some((item) => !item)) throw new Error('Four-card layout missing');
+    expect(Math.max(...fourCards.map((item) => item!.y)) - Math.min(...fourCards.map((item) => item!.y))).toBeLessThan(2);
+    await assertNoHorizontalOverflow(publicPage);
+
+    for (const id of createdIds) await status(page, id, 'draft');
     await publicPage.reload();
     await expect(publicPage.locator('.featured__main')).toHaveCount(0);
     await expect(publicPage.locator('.featured .promo')).toBeVisible();

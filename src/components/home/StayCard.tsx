@@ -20,7 +20,7 @@ const Sprig = () => (
   </svg>
 );
 
-export function StayCard({ stay, index, wide = false }: { stay: Stay; index: number; wide?: boolean }) {
+export function StayCard({ stay, index }: { stay: Stay; index: number }) {
   const home = stay.home ?? { image: stay.image, location: stay.location, tags: [stay.highlights[0], stay.highlights[1]] };
   return (
     <article
@@ -35,7 +35,7 @@ export function StayCard({ stay, index, wide = false }: { stay: Stay; index: num
           src={home.image.src}
           alt={home.image.alt}
           fill
-          sizes={wide ? '(max-width: 767px) 92vw, (max-width: 1023px) 55vw, 650px' : '(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 264px'}
+          sizes="(max-width: 767px) 92vw, 255px"
           className="stay__img"
           style={home.image.position ? { objectPosition: home.image.position } : undefined}
         />
@@ -43,9 +43,7 @@ export function StayCard({ stay, index, wide = false }: { stay: Stay; index: num
         <FavoriteButton id={stay.id} name={stay.name} />
       </div>
       <div className="stay__body">
-        <h3 className="stay__name" id={`${stay.id}-name`}>
-          {stay.name}
-        </h3>
+        <h3 className="stay__name" id={`${stay.id}-name`}><Link href={`/phong-nghi/${stay.slug}`}>{stay.name}</Link></h3>
         {stay.reviewCount > 0 && <p className="stay__rating"><Star size={14} className="star" aria-hidden="true" /><strong>{stay.rating.toFixed(1)}</strong><span>({stay.reviewCount} đánh giá)</span></p>}
         <p className="stay__meta">
           <PinCheck />
@@ -56,11 +54,9 @@ export function StayCard({ stay, index, wide = false }: { stay: Stay; index: num
           {home.tags.map((tag, index) => <span key={`${tag}-${index}`}>{index > 0 && <i aria-hidden="true">•</i>}{tag}</span>)}
         </p>
         <div className="stay__foot">
-          <p className="stay__price">
-            Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span>
-          </p>
-          <Link href={`/phong-nghi/${stay.slug}`} className="btn btn--primary btn--sm btn-arrow">
-            Xem chi tiết <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
+          <p className="stay__price">{fromPrice(stay) > 0 ? <>Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}</p>
+          <Link href={fromPrice(stay) > 0 ? `/phong-nghi/${stay.slug}` : '/lien-he'} className="btn btn--primary btn--sm btn-arrow">
+            {fromPrice(stay) > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
             <span className="sr-only"> {stay.name}</span>
           </Link>
         </div>

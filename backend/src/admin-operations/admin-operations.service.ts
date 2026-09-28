@@ -4,6 +4,7 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SETTINGS_BY_KEY } from '../settings/settings.registry';
 import type { AuthenticatedUser } from '../common/types';
 import type {
   CreateCouponDto, CreateFollowUpDto, CreateInteractionDto, CreateManualPaymentDto,
@@ -133,12 +134,64 @@ export class AdminOperationsService {
     const [events, inquiries, audit] = await Promise.all([
       this.prisma.bookingEvent.findMany({ where: { booking: { isDemo: false } }, include: { booking: { select: { publicCode: true } } }, orderBy: { createdAt: 'desc' }, take: 12 }),
       this.prisma.inquiry.findMany({ where: { isDemo: false }, include: { customer: { select: { fullName: true } } }, orderBy: { createdAt: 'desc' }, take: 8 }),
-      this.prisma.auditLog.findMany({ where: { action: { not: { contains: 'secret' } } }, orderBy: { createdAt: 'desc' }, take: 12 }),
+      this.prisma.auditLog.findMany({ where: { AND: [{ action: { not: { contains: 'secret' } } }, { action: { not: { startsWith: 'public-bootstrap.' } } }] }, include: { actor: { select: { fullName: true } } }, orderBy: { createdAt: 'desc' }, take: 12 }),
     ]);
+    const ids = (type: string) => audit.filter((item) => item.entityType === type && item.entityId).map((item) => item.entityId!);
+    const [properties, contents, media, menus, rooms, customers, bookings, coupons] = await Promise.all([
+      this.prisma.property.findMany({ where: { id: { in: ids('property') } }, select: { id: true, content: { select: { title: true } } } }),
+      this.prisma.contentNode.findMany({ where: { id: { in: ids('content_node') } }, select: { id: true, title: true } }),
+      this.prisma.mediaAsset.findMany({ where: { id: { in: ids('media_asset') } }, select: { id: true, altText: true, originalFilename: true } }),
+      this.prisma.navigationMenu.findMany({ where: { id: { in: ids('navigation_menu') } }, select: { id: true, name: true } }),
+      this.prisma.roomType.findMany({ where: { id: { in: ids('room_type') } }, select: { id: true, name: true } }),
+      this.prisma.customer.findMany({ where: { id: { in: ids('customer') } }, select: { id: true, fullName: true } }),
+      this.prisma.booking.findMany({ where: { id: { in: ids('booking') } }, select: { id: true, publicCode: true } }),
+      this.prisma.coupon.findMany({ where: { id: { in: ids('coupon') } }, select: { id: true, name: true } }),
+    ]);
+    const names = new Map<string, string>([
+      ...properties.map((item) => [item.id, item.content.title] as const),
+      ...contents.map((item) => [item.id, item.title] as const),
+      ...media.map((item) => [item.id, item.altText || item.originalFilename] as const),
+      ...menus.map((item) => [item.id, item.name] as const),
+      ...rooms.map((item) => [item.id, item.name] as const),
+      ...customers.map((item) => [item.id, item.fullName] as const),
+      ...bookings.map((item) => [item.id, item.publicCode] as const),
+      ...coupons.map((item) => [item.id, item.name] as const),
+    ]);
+    const actionLabels: Record<string, string> = {
+      'property.create': 'Đã tạo nơi lưu trú', 'property.update': 'Đã sửa nơi lưu trú', 'property.delete': 'Đã xoá nơi lưu trú',
+      'content.create': 'Đã tạo nội dung', 'content.update': 'Đã sửa nội dung', 'content.published': 'Đã xuất bản nội dung',
+      'content.unpublished': 'Đã gỡ xuất bản nội dung', 'content.delete': 'Đã xoá nội dung',
+      'content.draft': 'Đã đưa nội dung về bản nháp', 'content.archived': 'Đã lưu trữ nội dung', 'content.restore': 'Đã khôi phục nội dung',
+      'room.create': 'Đã thêm hạng phòng', 'room.update': 'Đã sửa hạng phòng',
+      'media.upload': 'Đã tải ảnh lên', 'media.update': 'Đã sửa thông tin ảnh', 'media.delete': 'Đã xoá ảnh',
+      'settings.update': 'Đã cập nhật cài đặt', 'settings.reset': 'Đã đặt lại cài đặt',
+      'ai.settings.update': 'Đã cập nhật cài đặt AI',
+      'navigation.primary.update': 'Đã cập nhật menu chính', 'navigation.primary.reset': 'Đã đặt lại menu chính',
+      'public-bootstrap.create': 'Đã khởi tạo nội dung website', 'public-bootstrap.media-meta': 'Đã bổ sung thông tin ảnh',
+      'business_import.cuc_phuong': 'Đã nhập dữ liệu lưu trú Cúc Phương',
+      'booking.hold_created': 'Đã giữ chỗ cho đơn', 'booking.status_changed': 'Đã đổi trạng thái đơn', 'booking.note_added': 'Đã ghi chú đơn', 'booking.hold_expired': 'Đơn giữ chỗ đã hết hạn',
+      'inventory.bulk_updated': 'Đã cập nhật quỹ phòng', 'customer.updated': 'Đã sửa khách hàng', 'customer.interaction_added': 'Đã ghi nhận trao đổi với khách',
+      'customer.follow_up_created': 'Đã tạo nhắc chăm sóc khách', 'customer.follow_up_updated': 'Đã cập nhật nhắc chăm sóc khách',
+      'coupon.created': 'Đã tạo khuyến mãi', 'coupon.updated': 'Đã sửa khuyến mãi',
+      'payment.manual_recorded': 'Đã ghi nhận thanh toán', 'refund.requested': 'Đã yêu cầu hoàn tiền', 'refund.status_changed': 'Đã cập nhật hoàn tiền',
+    };
+    const bookingLabels: Record<string, string> = {
+      created: 'Đã tạo đơn đặt phòng', confirmed: 'Đã xác nhận đơn', checked_in: 'Khách đã nhận phòng',
+      completed: 'Đã hoàn tất đơn', cancelled: 'Đã huỷ đơn', expired: 'Đơn đã hết hạn',
+    };
+    const stageLabels: Record<string, string> = { new: 'Mới', contacted: 'Đã liên hệ', quoted: 'Đã báo giá', won: 'Thành công', lost: 'Không tiếp tục' };
     return { items: [
-      ...events.map((item) => ({ id: item.id, at: item.createdAt.toISOString(), kind: 'booking', title: `${item.booking.publicCode}: ${item.eventType}`, detail: item.detail })),
-      ...inquiries.map((item) => ({ id: item.id, at: item.createdAt.toISOString(), kind: 'inquiry', title: `Yêu cầu tư vấn từ ${item.customer.fullName}`, detail: item.stage })),
-      ...audit.map((item) => ({ id: item.id, at: item.createdAt.toISOString(), kind: 'admin', title: `${item.action} · ${item.entityType}`, detail: item.entityId })),
+      ...events.map((item) => ({ id: item.id, at: item.createdAt.toISOString(), kind: 'booking', title: `${bookingLabels[item.eventType] ?? 'Đã cập nhật đơn'} ${item.booking.publicCode}`, detail: item.detail })),
+      ...inquiries.map((item) => ({ id: item.id, at: item.createdAt.toISOString(), kind: 'inquiry', title: `Yêu cầu tư vấn từ ${item.customer.fullName}`, detail: `Trạng thái: ${stageLabels[item.stage] ?? 'Đang xử lý'}` })),
+      ...audit.map((item) => {
+        const diff = item.diff && typeof item.diff === 'object' && !Array.isArray(item.diff) ? item.diff as Record<string, unknown> : {};
+        const settingKey = typeof diff.key === 'string' ? diff.key : null;
+        const objectName = item.entityId ? names.get(item.entityId) : null;
+        const subject = item.action.startsWith('room.') && typeof diff.roomName === 'string' ? diff.roomName
+          : objectName || (settingKey ? SETTINGS_BY_KEY.get(settingKey)?.label ?? 'Cài đặt website' : null);
+        const detail = [subject, item.actor?.fullName ? `Bởi ${item.actor.fullName}` : null].filter(Boolean).join(' · ');
+        return { id: item.id, at: item.createdAt.toISOString(), kind: 'admin', title: actionLabels[item.action] ?? 'Đã cập nhật hệ thống', detail: detail || null };
+      }),
     ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 20) };
   }
 
@@ -154,6 +207,7 @@ export class AdminOperationsService {
     }
     const rate = input.ratePlanId ? room.ratePlans.find((candidate) => candidate.id === input.ratePlanId) : room.ratePlans[0];
     if (!rate) throw new ConflictException('Chưa có bảng giá đang hoạt động cho hạng phòng này');
+    if (rate.baseRateVnd <= 0n) throw new ConflictException('Hạng phòng này chỉ nhận yêu cầu liên hệ, chưa thể đặt trực tuyến');
     const adults = input.adults ?? 1;
     const children = input.children ?? 0;
     if (adults > room.maxAdults * input.quantity || children > room.maxChildren * input.quantity || adults + children > room.maxOccupancy * input.quantity) {

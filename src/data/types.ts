@@ -31,6 +31,8 @@ export interface RoomType {
   description: string;
   pricePerNight: number;
   image: ImageAsset;
+  /** Photos specific to this room category; inventory dates have no photos. */
+  gallery?: ImageAsset[];
   badge?: string;
   breakfastIncluded: boolean;
   /** Most rooms of this type that may be requested in one booking draft. */

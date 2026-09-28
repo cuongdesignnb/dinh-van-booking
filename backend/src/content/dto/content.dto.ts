@@ -21,7 +21,7 @@ export class ContentMediaDto {
   mediaId!: string;
 
   @IsString()
-  @MaxLength(40)
+  @MaxLength(80)
   role!: string;
 
   @IsInt()

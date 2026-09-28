@@ -111,22 +111,6 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
         </div>
       </div>
 
-      <button
-        type="button"
-        className="menu-float"
-        data-open={menuOpen || undefined}
-        aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
-        aria-expanded={menuOpen}
-        aria-controls="mobile-drawer"
-        onClick={(e) => {
-          toggleRef.current = e.currentTarget;
-          setMenuOpen((v) => !v);
-        }}
-      >
-        {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
-        <span className="menu-float__label">Menu</span>
-      </button>
-
       <div
         className="drawer"
         data-open={menuOpen || undefined}

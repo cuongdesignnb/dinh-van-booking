@@ -94,7 +94,8 @@ type Group = 'price' | 'types' | 'amenities' | 'rating' | 'guests';
 
 function passes(stay: Stay, f: StayFilters, guests: number, skip?: Group) {
   const p = fromPrice(stay);
-  if (skip !== 'price' && (p < f.priceMin || (f.priceMax < PRICE_BOUNDS.max && p > f.priceMax))) return false;
+  const priceSelected = f.priceMin !== PRICE_BOUNDS.min || f.priceMax !== PRICE_BOUNDS.max;
+  if (skip !== 'price' && priceSelected && (p <= 0 || p < f.priceMin || (f.priceMax < PRICE_BOUNDS.max && p > f.priceMax))) return false;
   if (skip !== 'types' && f.types.length && !f.types.includes(stay.type)) return false;
   if (skip !== 'amenities' && f.amenities.length && !f.amenities.some((a) => stay.amenities.includes(a))) {
     return false;

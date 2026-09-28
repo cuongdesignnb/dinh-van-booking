@@ -66,11 +66,9 @@ export function ListingCard({
         </ul>
         <p className="lcard__sum">{stay.cardSummary}</p>
         <div className="lcard__foot">
-          <p className="lcard__price">
-            Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span>
-          </p>
-          <Link href={href} className="btn btn--primary btn--sm btn-arrow">
-            Xem chi tiết <ArrowRight size={13} strokeWidth={2.3} aria-hidden="true" />
+          <p className="lcard__price">{fromPrice(stay) > 0 ? <>Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}</p>
+          <Link href={fromPrice(stay) > 0 ? href : '/lien-he'} className="btn btn--primary btn--sm btn-arrow">
+            {fromPrice(stay) > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={13} strokeWidth={2.3} aria-hidden="true" />
             <span className="sr-only"> {stay.name}</span>
           </Link>
         </div>

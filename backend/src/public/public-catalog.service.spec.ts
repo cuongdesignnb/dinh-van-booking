@@ -4,11 +4,11 @@ import { hasSellableStayRoom } from './public-catalog.service';
 import { PublicCatalogService } from './public-catalog.service';
 import type { PrismaService } from '../prisma/prisma.service';
 
-test('public stay needs an active room unit and a positive active rate on the same room type', () => {
+test('public stay needs an active room unit and active rate; zero means contact-only', () => {
   assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), true);
   assert.equal(hasSellableStayRoom([{ units: [], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
   assert.equal(hasSellableStayRoom([{ units: [{ active: false }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
-  assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 0n }] }]), false);
+  assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 0n }] }]), true);
   assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: false, baseRateVnd: 500000n }] }]), false);
   assert.equal(hasSellableStayRoom([
     { units: [{ active: true }], ratePlans: [] },

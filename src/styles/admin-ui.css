@@ -853,7 +853,25 @@ textarea.ainput {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 14px;
+  align-items: start;
 }
+
+/* Nested repeaters must not occupy one half of an indefinitely tall row. */
+.settings-form__grid > .settings-form__section,
+.settings-form__grid > .settings-form__array {
+  grid-column: 1 / -1;
+}
+.settings-form__grid > .settings-form__toggle-field:has(+ .settings-form__array) { grid-column: 1 / -1; }
+
+.album-editor { display: grid; gap: 12px; min-width: 0; }
+.album-editor__head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.album-editor__head h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
+.album-editor__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.album-editor__list li { display: grid; gap: 6px; min-width: 0; padding: 8px; border: 1px solid var(--dvb-admin-border); border-radius: 10px; background: #fff; }
+.album-editor__list img { width: 100%; height: 112px; object-fit: cover; border-radius: 6px; }
+.album-editor__name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; }
+.album-editor__actions { display: flex; gap: 6px; }
+.album-editor__empty { margin: 0; padding: 16px; border: 1px dashed var(--dvb-admin-border); border-radius: 9px; color: var(--dvb-admin-muted); }
 
 .settings-form__field {
   margin: 0;

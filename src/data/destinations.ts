@@ -43,6 +43,7 @@ export interface Destination {
   activities: string[];
   notes: string[];
   image: ImageAsset;
+  gallery?: ImageAsset[];
   homeImage?: ImageAsset;
   nearbyImage?: ImageAsset;
   /** Distance/time from Cúc Phương Forest Homestay — demo copy. */

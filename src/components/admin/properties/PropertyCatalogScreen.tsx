@@ -8,6 +8,8 @@ import { ApiError, apiRequest } from '@/lib/api/client';
 import { withTitle, type SlugMode } from '@/lib/slug';
 import { MediaPicker } from '../media/MediaPicker';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
+import { AlbumEditor, type AlbumItem } from '../media/AlbumEditor';
+import { RoomTypeEditor, type PropertyRoom } from './RoomTypeEditor';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
 import { AdminSlugField } from '../shared/AdminSlugField';
 
@@ -34,14 +36,8 @@ type PropertyItem = {
   version: number;
   updatedAt: string;
   cover: { mediaId: string; url: string; alt: string } | null;
-  roomTypes: Array<{
-    id: string;
-    code: string;
-    name: string;
-    maxOccupancy: number;
-    unitCount: number;
-    rate: { baseRateVnd: number; weekendRateVnd: number | null; breakfastIncluded: boolean } | null;
-  }>;
+  gallery: AlbumItem[];
+  roomTypes: PropertyRoom[];
 };
 
 type FormState = {
@@ -170,6 +166,7 @@ export function PropertyCatalogScreen() {
   const searchParams = useSearchParams();
   const createMode = searchParams.get('action') === 'create';
   const editId = searchParams.get('edit');
+  const roomParam = searchParams.get('room');
   const editorMode = createMode || Boolean(editId);
   const [items, setItems] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,6 +175,8 @@ export function PropertyCatalogScreen() {
   const [editForm, setEditForm] = useState<EditFormState>(EMPTY_EDIT_FORM);
   const [coverMedia, setCoverMedia] = useState<SelectedMedia | null>(null);
   const [editCover, setEditCover] = useState<SelectedMedia | null>(null);
+  const [gallery, setGallery] = useState<AlbumItem[]>([]);
+  const [roomGallery, setRoomGallery] = useState<AlbumItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [editBusy, setEditBusy] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -225,6 +224,7 @@ export function PropertyCatalogScreen() {
       featured: item.featured,
     });
     setEditCover(item.cover ? { id: item.cover.mediaId, url: item.cover.url, altText: item.cover.alt } : null);
+    setGallery(item.gallery ?? []);
   }, []);
 
   useEffect(() => {
@@ -233,11 +233,19 @@ export function PropertyCatalogScreen() {
     if (item) fillEditForm(item);
   }, [editId, editing?.id, fillEditForm, items]);
 
+  useEffect(() => {
+    if (!editing || roomParam || window.location.hash !== '#hang-phong') return;
+    const frame = requestAnimationFrame(() => document.getElementById('hang-phong')?.scrollIntoView({ block: 'start' }));
+    return () => cancelAnimationFrame(frame);
+  }, [editing, roomParam]);
+
   const goToList = () => router.replace(pathname, { scroll: false });
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
     setCoverMedia(null);
+    setGallery([]);
+    setRoomGallery([]);
     setEditing(null);
     setError(null);
     setNotice(null);
@@ -249,6 +257,8 @@ export function PropertyCatalogScreen() {
     setForm(EMPTY_FORM);
     setCoverMedia(null);
     setEditCover(null);
+    setGallery([]);
+    setRoomGallery([]);
     setError(null);
     setNotice(null);
     goToList();
@@ -321,11 +331,15 @@ export function PropertyCatalogScreen() {
           weekendRateVnd: form.weekendRateVnd ? Number(form.weekendRateVnd) : undefined,
           breakfastIncluded: form.breakfastIncluded,
           coverMediaId: coverMedia?.id ?? undefined,
+          galleryMediaIds: gallery.map((item) => item.mediaId),
+          roomGalleryMediaIds: roomGallery.map((item) => item.mediaId),
         }),
       });
       setNotice('Đã tạo nơi lưu trú và lưu vào PostgreSQL ở trạng thái bản nháp.');
       setForm(EMPTY_FORM);
       setCoverMedia(null);
+      setGallery([]);
+      setRoomGallery([]);
       goToList();
       await load();
     } catch (reason) {
@@ -401,6 +415,7 @@ export function PropertyCatalogScreen() {
           noindex: editForm.noindex,
           featured: editForm.featured,
           coverMediaId: editCover?.id ?? null,
+          galleryMediaIds: gallery.map((item) => item.mediaId),
           expectedVersion: editing.version,
           expectedContentVersion: editing.contentVersion,
         }),
@@ -438,6 +453,16 @@ export function PropertyCatalogScreen() {
     }
   };
 
+  const returnToProperty = () => editing && router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}#hang-phong`, { scroll: false });
+  const afterRoomSaved = async () => {
+    if (!editing) return;
+    const fresh = await apiRequest<PropertyItem>(`/properties/${encodeURIComponent(editing.id)}`);
+    setItems((current) => current.map((item) => item.id === fresh.id ? fresh : item));
+    fillEditForm(fresh);
+    setNotice('Đã lưu hạng phòng và album.');
+    router.replace(`${pathname}?edit=${encodeURIComponent(fresh.id)}#hang-phong`, { scroll: false });
+  };
+
   return (
     <section className="property-catalog">
       {!editorMode && <div className="settings-screen__head">
@@ -460,7 +485,7 @@ export function PropertyCatalogScreen() {
           <ArrowLeft size={16} aria-hidden="true" /> Quay lại danh sách
         </button>
         <div className="admin-form-page__title">
-          <h2>{createMode ? 'Thêm nơi lưu trú' : 'Chỉnh sửa nơi lưu trú'}</h2>
+          <h2>{roomParam ? 'Quản lý hạng phòng' : createMode ? 'Thêm nơi lưu trú' : 'Chỉnh sửa nơi lưu trú'}</h2>
           <p className="ahint">{createMode ? 'Tạo thông tin phòng nghỉ trên trang riêng; dữ liệu chỉ được lưu khi bấm nút lưu.' : 'Cập nhật thông tin nơi lưu trú trên trang riêng.'}</p>
         </div>
       </div>}
@@ -468,7 +493,9 @@ export function PropertyCatalogScreen() {
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}
 
-      {editorMode && !createMode && editing && (
+      {roomParam && editing && (roomParam === 'create' || editing.roomTypes.some((room) => room.id === roomParam)) && <RoomTypeEditor key={`${editing.id}-${roomParam}`} propertyId={editing.id} room={editing.roomTypes.find((room) => room.id === roomParam)} onSaved={afterRoomSaved} onCancel={returnToProperty} />}
+
+      {editorMode && !createMode && editing && !roomParam && (
         <form className="acard property-form" onSubmit={saveEdit}>
           <div className="property-form__title">
             <div>
@@ -539,8 +566,9 @@ export function PropertyCatalogScreen() {
               <input className="ainput" value={editForm.metaDescription} onChange={(event) => updateEdit('metaDescription', event.target.value)} maxLength={320} />
             </label>
           </div>
-          <div className="property-form__section">
-            <p className="ahint">{editing.roomTypes.length ? `Đang có ${editing.roomTypes.length} hạng phòng trong property; màn này chưa tự động đổi hạng phòng, đơn vị hoặc giá.` : 'Chưa có hạng phòng. Có thể bổ sung sau khi xác minh.'}</p>
+          <div className="property-form__section" id="hang-phong">
+            <div className="album-editor__head"><div><h4>Hạng phòng ({editing.roomTypes.length})</h4><p className="ahint">Mỗi hạng phòng có giá, sức chứa và album riêng. Quỹ phòng theo ngày quản lý ở mục “Quỹ phòng”.</p></div><button type="button" className="abtn abtn--primary abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=create`, { scroll: false })}><Plus size={15} /> Thêm hạng phòng</button></div>
+            {editing.roomTypes.length ? <div className="property-catalog__list">{editing.roomTypes.map((room) => <div className="property-card" key={room.id}><div className="property-card__body"><strong>{room.name}</strong><p className="ahint">{room.code} · {room.status === 'active' ? 'Đang hoạt động' : 'Tạm ẩn'} · {room.unitCount} phòng · {room.rate?.baseRateVnd === 0 ? 'Liên hệ để nhận giá' : money(room.rate?.baseRateVnd)} · {room.gallery?.length ?? 0} ảnh album</p><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=${encodeURIComponent(room.id)}`, { scroll: false })}><Pencil size={14} /> Sửa hạng phòng</button></div></div>)}</div> : <p className="ahint">Chưa có hạng phòng; bấm “Thêm hạng phòng”.</p>}
             <div className="property-form__toggles">
               <label className="atoggle">
                 <input type="checkbox" checked={editForm.noindex} onChange={(event) => updateEdit('noindex', event.target.checked)} />
@@ -568,6 +596,7 @@ export function PropertyCatalogScreen() {
             />
             <p className="ahint">Có thể bỏ ảnh để giữ bản nháp chưa hoàn thiện. Ảnh mới luôn được xử lý thành WebP trong Media Library.</p>
           </div>
+          <div className="property-form__section"><AlbumEditor label="Album nơi lưu trú" items={gallery} onChange={setGallery} /></div>
           <div className="property-form__actions">
             <button type="button" className="abtn abtn--ghost" onClick={closeEditor} disabled={editBusy}>Huỷ</button>
             <button type="submit" className="abtn abtn--primary" disabled={editBusy}>{editBusy ? 'Đang lưu…' : 'Lưu thay đổi'}</button>
@@ -671,7 +700,7 @@ export function PropertyCatalogScreen() {
               </label>
               <label className="afield">
                 <span>Giá ngày thường (VND) *</span>
-                <input className="ainput" type="number" min="1" value={form.rateVnd} onChange={(event) => update('rateVnd', event.target.value)} required placeholder="650000" />
+                <input className="ainput" type="number" min="0" value={form.rateVnd} onChange={(event) => update('rateVnd', event.target.value)} required placeholder="0 = Liên hệ để nhận giá" />
               </label>
               <label className="afield">
                 <span>Giá cuối tuần (VND)</span>
@@ -701,6 +730,8 @@ export function PropertyCatalogScreen() {
               <p className="ahint"><ImagePlus size={14} aria-hidden="true" /> Ảnh được chọn lại từ thư viện dùng chung; ảnh mới sẽ được chuyển thành WebP và lưu vào media storage thật.</p>
             </div>
           </div>
+          <div className="property-form__section"><AlbumEditor label="Album nơi lưu trú" items={gallery} onChange={setGallery} /></div>
+          <div className="property-form__section"><AlbumEditor label={`Album hạng phòng: ${form.roomName || 'Phòng đầu tiên'}`} items={roomGallery} onChange={setRoomGallery} /></div>
 
           <div className="property-form__actions">
             <button type="button" className="abtn abtn--ghost" onClick={closeEditor} disabled={busy}>Hủy</button>
@@ -732,6 +763,9 @@ export function PropertyCatalogScreen() {
                     <div className="property-card__action-group">
                       <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => openEdit(item)} disabled={editBusy || !!deleting || !!publishing}>
                         <Pencil size={14} aria-hidden="true" /> Sửa
+                      </button>
+                      <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => { fillEditForm(item); router.push(`${pathname}?edit=${encodeURIComponent(item.id)}#hang-phong`, { scroll: false }); }} disabled={editBusy || !!deleting || !!publishing}>
+                        <BedDouble size={14} aria-hidden="true" /> Hạng phòng ({item.roomTypes.length})
                       </button>
                       {item.publicationStatus !== 'published' && <button type="button" className="abtn abtn--danger abtn--sm" onClick={() => void remove(item)} disabled={deleting === item.id || editBusy || !!publishing}>
                         <Trash2 size={14} aria-hidden="true" /> {deleting === item.id ? 'Đang xoá…' : 'Xoá'}

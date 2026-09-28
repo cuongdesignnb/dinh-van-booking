@@ -82,6 +82,7 @@ export function BookingProvider({ stay, children }: { stay: Stay; children: Reac
     proceed: () => {
       let next: BookingIssue | null = null;
       if (!room) next = { kind: 'room', message: 'Vui lòng chọn loại phòng trước khi đặt.' };
+      else if (room.pricePerNight <= 0) next = { kind: 'room', message: 'Hạng phòng này chỉ nhận yêu cầu liên hệ.' };
       else {
         const d = dateError(selection);
         if (d) next = { kind: 'dates', ...d };

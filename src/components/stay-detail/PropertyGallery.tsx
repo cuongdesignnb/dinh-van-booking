@@ -69,7 +69,7 @@ export function PropertyGallery({ images, note, name }: { images: ImageAsset[]; 
   );
 }
 
-function GalleryDialog({
+export function GalleryDialog({
   images,
   index,
   onIndex,

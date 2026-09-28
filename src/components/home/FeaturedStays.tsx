@@ -29,7 +29,7 @@ export function FeaturedStays({ stays, config, promo = null }: { stays: Stay[]; 
         </div>
         <div className="stay-grid" data-count={visibleStays.length}>
           {visibleStays.map((s, i) => (
-            <StayCard key={s.id} stay={s} index={i} wide={visibleStays.length === 1} />
+            <StayCard key={s.id} stay={s} index={i} />
           ))}
         </div>
       </div>}

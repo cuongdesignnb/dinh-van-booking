@@ -1,11 +1,21 @@
 'use client';
 
-import { Check, Mountain, Scaling, UserRound, Users } from 'lucide-react';
+import { Check, Images, Mountain, Scaling, UserRound, Users } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
+import Link from 'next/link';
+import { useState } from 'react';
 import { SmallLeaf } from '@/components/ui/Decor';
+import type { ImageAsset } from '@/data/types';
 import { formatVnd } from '@/lib/format';
 import { ROOMS_ANCHOR } from './BookingCard';
 import { capacityIssue, useBooking } from './BookingContext';
+import { GalleryDialog } from './PropertyGallery';
+
+function RoomAlbum({ images, name }: { images: ImageAsset[]; name: string }) {
+  const [index, setIndex] = useState<number | null>(null);
+  if (!images.length) return null;
+  return <><button type="button" className="rtype__gallery" onClick={() => setIndex(0)}><Images size={15} aria-hidden="true" /> Xem {images.length} ảnh</button><GalleryDialog images={images} index={index} onIndex={setIndex} name={name} /></>;
+}
 
 export function RoomTypes({ title }: { title?: string }) {
   const { stay, room, selection, chooseRoom, issue } = useBooking();
@@ -27,6 +37,7 @@ export function RoomTypes({ title }: { title?: string }) {
             <li key={r.id} className="rtype" data-selected={selected || undefined} data-reveal="card" style={{ '--d': `${i * 80}ms` } as React.CSSProperties}>
               <div className="rtype__media">
                 <Image src={r.image.src} alt={r.image.alt} fill sizes="(max-width: 767px) 92vw, 236px" className="rtype__img" />
+                <RoomAlbum images={r.gallery ?? []} name={r.name} />
                 {r.badge && <span className="rtype__badge">{r.badge}</span>}
                 {selected && (
                   <span className="rtype__chosen">
@@ -55,10 +66,8 @@ export function RoomTypes({ title }: { title?: string }) {
                   </p>
                 )}
                 <div className="rtype__foot">
-                  <p className="rtype__price">
-                    <strong>{formatVnd(r.pricePerNight)}</strong> / đêm
-                  </p>
-                  <button
+                  <p className="rtype__price">{r.pricePerNight > 0 ? <><strong>{formatVnd(r.pricePerNight)}</strong> / đêm</> : <strong>Liên hệ để nhận giá</strong>}</p>
+                  {r.pricePerNight === 0 ? <Link href="/lien-he" className="btn btn--primary rtype__btn">Liên hệ</Link> : <button
                     type="button"
                     className="btn btn--primary rtype__btn"
                     aria-pressed={selected}
@@ -72,7 +81,7 @@ export function RoomTypes({ title }: { title?: string }) {
                     ) : (
                       'Chọn phòng'
                     )}
-                  </button>
+                  </button>}
                 </div>
               </div>
             </li>

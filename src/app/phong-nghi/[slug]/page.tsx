@@ -138,9 +138,7 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
           <BookingCard />
         </aside>
 
-        <div className="detail-top__host">
-          {stay.host && <HostCard host={stay.host} />}
-        </div>
+        {stay.host && <div className="detail-top__host"><HostCard host={stay.host} /></div>}
 
         <div className="detail-top__info">
           <section className="intro" aria-labelledby="intro-t">

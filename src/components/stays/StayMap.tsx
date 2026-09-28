@@ -63,7 +63,7 @@ function MapCanvas({
             {active.name}
           </Link>
           <span>
-            Từ <b>{formatVnd(fromPrice(active))}</b> / đêm
+            {fromPrice(active) > 0 ? <>Từ <b>{formatVnd(fromPrice(active))}</b> / đêm</> : 'Liên hệ để nhận giá'}
           </span>
         </div>
       )}
@@ -105,7 +105,7 @@ export function StayMapCard({ stays, query, image }: { stays: Stay[]; query: str
               >
                 <strong>{s.name}</strong>
                 <span>
-                  {s.location} · Từ {formatVnd(fromPrice(s))}
+                  {s.location} · {fromPrice(s) > 0 ? `Từ ${formatVnd(fromPrice(s))}` : 'Liên hệ để nhận giá'}
                 </span>
               </button>
               <Link href={`/phong-nghi/${s.slug}${query ? `?${query}` : ''}`} className="map-list__link">

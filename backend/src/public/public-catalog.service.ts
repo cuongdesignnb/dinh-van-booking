@@ -168,7 +168,7 @@ export function hasSellableStayRoom(
 ): boolean {
   return roomTypes.some(
     (room) => room.units.some((unit) => unit.active)
-      && room.ratePlans.some((rate) => rate.active && rate.baseRateVnd > 0n),
+      && room.ratePlans.some((rate) => rate.active && rate.baseRateVnd >= 0n),
   );
 }
 
@@ -451,7 +451,7 @@ export class PublicCatalogService {
         if (path.includes('?') || path.includes('#') || path.startsWith('//') || path !== `/${path.split('/').filter(Boolean).join('/')}`) continue;
         const kindEligible = row.kind === 'stay'
           ? row.property?.operatingStatus === 'active'
-            && row.property.roomTypes.some((room) => room.units.length > 0 && room.ratePlans.some((rate) => rate.baseRateVnd > BigInt(0)))
+            && row.property.roomTypes.some((room) => room.units.length > 0 && room.ratePlans.some((rate) => rate.baseRateVnd >= 0n))
           : row.kind === 'combo'
             ? !!row.combo?.days.length
             : row.kind === 'destination'
@@ -667,7 +667,8 @@ export class PublicCatalogService {
     const image = this.asset(media.find((item) => item.role === 'cover') ?? media[0]);
     const amenities = property.amenities.map((item) => item.amenity);
     const rooms = property.roomTypes.filter((room) => hasSellableStayRoom([room])).map((room) => {
-      const rate = room.ratePlans.find((plan) => plan.active && plan.baseRateVnd > 0n)!;
+      const rate = room.ratePlans.find((plan) => plan.active && plan.baseRateVnd >= 0n)!;
+      const roomGallery = media.filter((item) => item.role === `room:${room.id}`).map((item) => this.asset(item)).filter((item): item is Record<string, unknown> => !!item);
       return {
         id: room.id,
         name: room.name,
@@ -676,7 +677,8 @@ export class PublicCatalogService {
         view: room.bedSummary ?? '',
         description: room.description ?? '',
         pricePerNight: Number(rate.baseRateVnd),
-        image,
+        image: roomGallery[0] ?? image,
+        gallery: roomGallery,
         breakfastIncluded: rate?.breakfastIncluded ?? false,
         maxRooms: room.units.filter((unit) => unit.active).length,
       };
@@ -716,7 +718,7 @@ export class PublicCatalogService {
       popularity: node.featured ? 1 : 0,
       image,
       home: image ? { image, location, tags: amenities.slice(0, 2).map((item) => item.label) } : undefined,
-      gallery: media.map((item) => this.asset(item)).filter((item): item is Record<string, unknown> => !!item),
+      gallery: media.filter((item) => item.role === 'cover' || item.role === 'gallery').map((item) => this.asset(item)).filter((item): item is Record<string, unknown> => !!item),
       galleryNote: typeof body.galleryNote === 'string' ? body.galleryNote : undefined,
       host: null,
       roomTypes: rooms,
@@ -795,6 +797,7 @@ export class PublicCatalogService {
       description: textFromDocument(node.bodyDocument),
       body: node.bodyDocument,
       image,
+      gallery: media.filter((item) => item.role === 'cover' || item.role === 'gallery').map((item) => this.asset(item)).filter((item): item is Record<string, unknown> => !!item),
       tags: list(body.tags).filter((item): item is string => typeof item === 'string'),
       activities: list(body.activities).filter((item): item is string => typeof item === 'string'),
       notes: list(body.notes).filter((item): item is string => typeof item === 'string'),

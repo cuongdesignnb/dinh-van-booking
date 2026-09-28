@@ -36,7 +36,7 @@ test('stay publish checklist rejects an imported incomplete property', () => {
   assert.ok(problems.includes('Nơi lưu trú chưa được kích hoạt'));
   assert.ok(problems.includes('Chưa có hạng phòng hoạt động'));
   assert.ok(problems.includes('Chưa có đơn vị phòng hoạt động'));
-  assert.ok(problems.includes('Chưa có giá phòng hợp lệ'));
+  assert.ok(problems.includes('Chưa có bảng giá phòng'));
 });
 
 test('stay publish checklist accepts a complete verified fixture', () => {
@@ -55,6 +55,11 @@ test('stay publish checklist accepts a complete verified fixture', () => {
   assert.deepEqual(problems, []);
 });
 
+test('stay publish checklist accepts a zero-priced contact-only room', () => {
+  const problems = service.publishChecklist(node({ operatingStatus: 'active', roomTypes: [{ status: 'active', units: [{ id: 'unit-id' }], ratePlans: [{ baseRateVnd: 0n }] }] }));
+  assert.deepEqual(problems, []);
+});
+
 test('stay publish checklist rejects units and rates that exist only on separate room types', () => {
   const problems = service.publishChecklist(
     node({
@@ -65,7 +70,7 @@ test('stay publish checklist rejects units and rates that exist only on separate
       ],
     }),
   );
-  assert.ok(problems.includes('Cần ít nhất một hạng phòng có cả đơn vị phòng và giá hợp lệ'));
+  assert.ok(problems.includes('Cần ít nhất một hạng phòng có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)'));
 });
 
 test('article content always gets a public projection row when optional details are omitted', async () => {

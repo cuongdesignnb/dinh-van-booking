@@ -18,6 +18,7 @@ import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '@/components/
 import { AdminSlugField } from '@/components/admin/shared/AdminSlugField';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { MediaPicker } from '../media/MediaPicker';
+import { AlbumEditor } from '../media/AlbumEditor';
 
 type ContentKind = 'stay' | 'combo' | 'destination' | 'article' | 'page';
 type MediaRef = { mediaId: string; role: string; position: number; url: string };
@@ -266,7 +267,7 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
     try {
       let media = form.media;
       const referenced = mediaIdsInDocument(form.body);
-      media = media.filter((item) => item.role === 'cover' || referenced.has(item.mediaId));
+      media = media.filter((item) => item.role === 'cover' || item.role === 'gallery' || item.role.startsWith('room:') || referenced.has(item.mediaId));
       const details = kind === 'combo' && form.details.combo
         ? {
             ...form.details,
@@ -459,6 +460,7 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
             />
             <p className="ahint"><ImagePlus size={14} aria-hidden="true" /> Ảnh đại diện và ảnh trong bài đều chọn từ Media Library; ảnh mới được chuyển WebP trước khi lưu.</p>
           </div><label className="atoggle content-editor__noindex"><input type="checkbox" checked={form.noindex} onChange={(event) => updateForm('noindex', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Không cho công cụ tìm kiếm lập chỉ mục</strong><small>Dùng khi trang chưa sẵn sàng xuất hiện trên Google; trang chỉ công khai sau khi xuất bản.</small></span></label></div>
+          {kind === 'destination' && <div className="content-editor__section"><AlbumEditor label="Album điểm đến" items={form.media.filter((item) => item.role === 'gallery').map((item) => ({ mediaId: item.mediaId, url: item.url }))} onChange={(items) => setForm((current) => current ? { ...current, media: [...current.media.filter((item) => item.role !== 'gallery'), ...items.map((item, position) => ({ mediaId: item.mediaId, url: item.url, role: 'gallery', position: position + 1 }))] } : current)} /></div>}
           <div className="content-editor__actions"><button type="button" className="abtn abtn--ghost" onClick={closeEditor} disabled={saving}>Hủy</button><button type="submit" className="abtn abtn--primary" disabled={saving}>{saving ? 'Đang lưu…' : form.id ? 'Lưu thay đổi' : 'Lưu bản nháp'}</button></div>
         </form>
       )}

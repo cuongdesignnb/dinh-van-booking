@@ -30,7 +30,7 @@ export function WhyChooseUs({ config }: { config: PublicRecord }) {
         </h2>
         {richDocumentHasContent(config.intro) && <div className="why__text"><RichContentRenderer document={config.intro as RichDocument} /></div>}
       </div>
-      <ul className="why__list">
+      <ul className="why__list" data-count={reasons.length}>
         {reasons.map((r, i) => {
           const Icon = icons[r.icon];
           return (

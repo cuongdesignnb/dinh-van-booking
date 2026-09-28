@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, CalendarDays, ChevronDown, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { useSiteData } from '@/components/site/SiteDataProvider';
@@ -44,6 +45,13 @@ export function BookingCard() {
 
   const errId = `${uid}-err`;
   const dateInvalid = issue?.kind === 'dates';
+  if ((room ? room.pricePerNight : fromPrice(stay)) <= 0) {
+    return <section className="bcard bcard--contact" id="dat-phong" aria-labelledby={`${uid}-t`}>
+      <h2 id={`${uid}-t`}>Liên hệ để nhận giá</h2>
+      <p>{room ? `Hạng phòng ${room.name}` : stay.name} chưa có giá đặt trực tuyến. Gửi yêu cầu để được tư vấn giá và tình trạng phòng.</p>
+      <Link className="btn btn--primary bcard__cta" href="/lien-he">Liên hệ tư vấn <ArrowRight size={17} aria-hidden="true" /></Link>
+    </section>;
+  }
   return (
     <section className="bcard" id="dat-phong" aria-labelledby={`${uid}-t`}>
       <h2 className="sr-only" id={`${uid}-t`}>
@@ -177,12 +185,14 @@ export function BookingCard() {
 /** Mobile bottom bar: same state, scrolls to the booking card. */
 export function MobileBookingBar() {
   const { stay, room } = useBooking();
+  const price = room ? room.pricePerNight : fromPrice(stay);
+  if (price <= 0) return <div className="mbar"><div className="mbar__price"><strong>Liên hệ để nhận giá</strong></div><Link className="btn btn--primary mbar__cta" href="/lien-he">Liên hệ <ArrowRight size={16} aria-hidden="true" /></Link></div>;
   return (
     <div className="mbar">
       <div className="mbar__price">
         <p>
           {room ? '' : 'Từ '}
-          <strong>{formatVnd(room ? room.pricePerNight : fromPrice(stay))}</strong> / đêm
+          <strong>{formatVnd(price)}</strong> / đêm
         </p>
         {room && <p className="mbar__room">{room.name}</p>}
       </div>

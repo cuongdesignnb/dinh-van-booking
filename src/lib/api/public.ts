@@ -112,6 +112,7 @@ type ApiRoom = {
   description: string;
   pricePerNight: number;
   image: ApiAsset;
+  gallery?: ApiAsset[];
   breakfastIncluded: boolean;
   maxRooms: number;
 };
@@ -132,9 +133,9 @@ function normalizeStay(value: ApiStay): Stay | null {
   const rooms: RoomType[] = (value.roomTypes ?? [])
     .map((room) => {
       const roomImage = asset(room.image) ?? image;
-      return { ...room, image: roomImage };
+      return { ...room, image: roomImage, gallery: (room.gallery ?? []).map(asset).filter((item): item is ImageAsset => !!item) };
     })
-    .filter((room) => Number.isFinite(room.pricePerNight) && room.pricePerNight > 0);
+    .filter((room) => Number.isFinite(room.pricePerNight) && room.pricePerNight >= 0);
   if (!rooms.length) return null;
   const features = (value.cardFeatures ?? []).filter((feature) => !!feature.label?.trim()).slice(0, 3).map((feature) => ({ icon: feature.icon as never, label: feature.label }));
   const gallery = (value.gallery ?? []).map(asset).filter((item): item is ImageAsset => !!item);
@@ -302,7 +303,8 @@ type ApiDestination = {
   summary: string;
   description: string;
   body?: RichDocument | null;
-  image: ApiAsset;
+    image: ApiAsset;
+  gallery?: ApiAsset[];
   tags: string[];
   activities: string[];
   notes: string[];
@@ -343,6 +345,7 @@ const loadPublicDestinations = cache(async (): Promise<Destination[]> => {
       activities: item.activities,
       notes: item.notes,
       image,
+      gallery: (item.gallery ?? []).map(asset).filter((entry): entry is ImageAsset => !!entry),
       featured: item.featured === true,
       isDemo: false,
     } as Destination;
@@ -388,6 +391,7 @@ async function loadPublicDestination(slug: string): Promise<PublicDestinationRec
       activities: item.activities,
       notes: item.notes,
       image,
+      gallery: (item.gallery ?? []).map(asset).filter((entry): entry is ImageAsset => !!entry),
       featured: item.featured === true,
       isDemo: false,
       metaTitle: item.metaTitle ?? null,

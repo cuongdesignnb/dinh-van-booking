@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from '@/components/ui/ManagedImage';
+import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { PageShell } from '@/components/layout/PageShell';
@@ -12,6 +12,7 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 import { isSeoSchemaAllowed } from '@/lib/seo/policy';
 import { buildDestinationGraph } from '@/lib/seo/schema';
 import '@/styles/static-pages.css';
+import '@/styles/stay-detail.css';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -55,7 +56,7 @@ export default async function DestinationDetailPage({ params, searchParams }: Pr
             {destination.subtitle && <p className="static-page__excerpt">{destination.subtitle}</p>}
             {destination.summary && <p className="static-page__lead">{destination.summary}</p>}
           </header>
-          <figure className="static-page__cover"><Image src={destination.image.src} alt={destination.image.alt} width={destination.image.width} height={destination.image.height} unoptimized priority /></figure>
+          <div className="static-page__gallery"><PropertyGallery images={destination.gallery?.length ? destination.gallery : [destination.image]} name={destination.name} /></div>
           {destination.body
             ? <RichContentRenderer document={destination.body} className="static-page__body" />
             : <p className="static-page__body">{destination.description}</p>}

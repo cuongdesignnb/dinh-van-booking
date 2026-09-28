@@ -61,6 +61,14 @@
   background: #eef1e9;
 }
 
+.static-page__gallery { margin: 28px 0; }
+.static-page__gallery .gallery { height: clamp(320px, 42vw, 470px); }
+.static-page__gallery .gallery--1 { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 767px) {
+  .static-page__gallery .gallery { height: auto; }
+  .static-page__gallery .gallery__main { min-height: 230px; }
+}
+
 .static-page__cover img {
   display: block;
   width: 100%;
