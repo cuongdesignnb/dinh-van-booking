@@ -5,6 +5,7 @@
  */
 import type { ImageAsset } from './types';
 import type { RichDocument } from '@/lib/content/rich-document';
+import { compareComboPrices } from '@/lib/catalog/combo-pricing';
 
 const IMG = '/images/dinh-van-booking';
 
@@ -39,8 +40,8 @@ export interface Combo {
   badge: { label: string; icon: 'calendar' | 'family' | 'team' };
   audienceTags: ComboAudience[];
   includedHighlights: ComboLine[];
-  fromPriceVnd: number;
-  priceUnit: 'người';
+  fromPriceVnd: number | null;
+  priceUnit: string;
   popularity: number;
   image: ImageAsset;
   itinerary: { day: string; items: string[] }[];
@@ -231,8 +232,8 @@ export type ComboSort = 'popular' | 'price-asc' | 'price-desc';
 export const sortCombos = (list: Combo[], sort: ComboSort) =>
   [...list].sort((a, b) =>
     sort === 'price-asc'
-      ? a.fromPriceVnd - b.fromPriceVnd
+      ? compareComboPrices(a.fromPriceVnd, b.fromPriceVnd)
       : sort === 'price-desc'
-        ? b.fromPriceVnd - a.fromPriceVnd
+        ? compareComboPrices(a.fromPriceVnd, b.fromPriceVnd, true)
         : b.popularity - a.popularity,
   );

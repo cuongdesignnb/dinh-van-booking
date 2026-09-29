@@ -37,6 +37,7 @@ import type { Combo, ComboCategory, ComboLine, ComboSort } from '@/data/combos';
 import { formatShort } from '@/lib/dates';
 import { setPendingNote } from '@/lib/draft-store';
 import { formatVnd } from '@/lib/format';
+import { compareComboPrices } from '@/lib/catalog/combo-pricing';
 import { readParam } from '@/lib/selection';
 import type { PublicRecord } from '@/lib/public-content';
 import { publicText, richDocumentHasContent } from '@/lib/public-content';
@@ -78,7 +79,7 @@ const SORTS: { id: ComboSort; label: string }[] = [
 const comboMatches = (combo: Combo, category: ComboCategory) =>
   category === 'all' || (category === '2n1d' ? combo.durationDays === 2 && combo.durationNights === 1 : category === '3n2d' ? combo.durationDays === 3 && combo.durationNights === 2 : combo.audienceTags.includes(category));
 
-const sortCombos = (list: Combo[], sort: ComboSort) => [...list].sort((a, b) => sort === 'price-asc' ? a.fromPriceVnd - b.fromPriceVnd : sort === 'price-desc' ? b.fromPriceVnd - a.fromPriceVnd : b.popularity - a.popularity);
+const sortCombos = (list: Combo[], sort: ComboSort) => [...list].sort((a, b) => sort === 'price-asc' ? compareComboPrices(a.fromPriceVnd, b.fromPriceVnd) : sort === 'price-desc' ? compareComboPrices(a.fromPriceVnd, b.fromPriceVnd, true) : b.popularity - a.popularity);
 
 export function ComboExplorer({ combos, config }: { combos: Combo[]; config: PublicRecord }) {
   const listTitle = publicText(config.listTitle);
@@ -161,9 +162,9 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
                   );
                 })}
               </ul>
-              <p className="ccard__price">
-                Từ <strong>{formatVnd(c.fromPriceVnd)}</strong> <span>/ {c.priceUnit}</span>
-              </p>
+              <p className="ccard__price">{c.fromPriceVnd !== null && c.fromPriceVnd > 0
+                ? <>Từ <strong>{formatVnd(c.fromPriceVnd)}</strong> <span>/ {c.priceUnit}</span></>
+                : <strong>Liên hệ để nhận giá</strong>}</p>
               <button type="button" className="btn btn--primary ccard__cta btn-arrow" aria-haspopup="dialog" onClick={() => openCombo(c.id)}>
                 Xem chi tiết <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
                 <span className="sr-only"> {c.title}</span>
@@ -264,9 +265,9 @@ function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleI
         {combo.title}
       </h2>
       <p className="dialog__lead">{combo.subtitle}</p>
-      <p className="dialog__price">
-        Từ <strong>{formatVnd(combo.fromPriceVnd)}</strong> / {combo.priceUnit} (giá tham khảo)
-      </p>
+      <p className="dialog__price">{combo.fromPriceVnd !== null && combo.fromPriceVnd > 0
+        ? <>Từ <strong>{formatVnd(combo.fromPriceVnd)}</strong> / {combo.priceUnit} (giá tham khảo)</>
+        : <strong>Liên hệ để nhận giá</strong>}</p>
 
       {combo.body ? <RichContentRenderer document={combo.body} /> : null}
 
@@ -368,7 +369,7 @@ function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleI
         <Link className="btn btn--light" href={combo.publicPath ?? `/combo-du-lich/${combo.slug}`}>
           Xem trang hành trình <ArrowRight size={16} aria-hidden="true" />
         </Link>
-        {advisorCtaLabel && <button
+        {(advisorCtaLabel || combo.fromPriceVnd === null || combo.fromPriceVnd <= 0) && <button
           type="button"
           className="btn btn--primary"
           data-autofocus
@@ -379,7 +380,7 @@ function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleI
             router.push(`/lien-he?${p}`);
           }}
         >
-          {advisorCtaLabel} <ArrowRight size={16} aria-hidden="true" />
+          {advisorCtaLabel || 'Liên hệ'} <ArrowRight size={16} aria-hidden="true" />
         </button>}
         <p className="combo-d__hint">
           <Info size={14} aria-hidden="true" /> Chưa đặt chỗ hay thanh toán — chỉ gửi nhu cầu sang trang tư vấn.

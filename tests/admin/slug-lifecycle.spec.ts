@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { browserApi, signInAsOwner } from './helpers';
+import { assertLocalPostgresCleanupAvailable, browserApi, signInAsOwner } from './helpers';
 import { slugify } from '../../src/lib/slug';
 
 type Kind = 'stay' | 'combo' | 'destination' | 'article' | 'page';
@@ -77,6 +77,7 @@ async function patchRecord(page: Page, kind: Kind, record: RecordView, patch: Re
 for (const kind of ['stay', 'combo', 'destination', 'article', 'page'] as const) {
   test(`${kind}: create auto/manual/generate; edit stable, explicit rename, conflict and restore`, async ({ page }) => {
     test.setTimeout(180_000);
+    assertLocalPostgresCleanupAvailable();
     await signInAsOwner(page);
     const stamp = Date.now() + Math.floor(Math.random() * 1000);
     const screen = screens[kind];

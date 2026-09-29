@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-28T16:58:14.735Z",
+  "generatedAt": "2026-09-29T00:22:03.323Z",
   "routeCount": 18,
-  "reachableSourceCount": 70,
+  "reachableSourceCount": 71,
   "pendingAdminRouteCount": 0,
   "reachablePendingModuleCount": 0,
   "reachableDemoComponentCount": 0,
@@ -98,6 +98,7 @@
     "src/data/types.ts",
     "src/lib/api/client.ts",
     "src/lib/api/public.ts",
+    "src/lib/catalog/combo-pricing.ts",
     "src/lib/content/rich-document.ts",
     "src/lib/slug.ts",
     "src/styles/admin-ai.css",

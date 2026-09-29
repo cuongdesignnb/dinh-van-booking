@@ -24,6 +24,15 @@ export async function signInAsOwner(page: Page) {
   await expect(page.locator('.atop__user')).toBeVisible();
 }
 
+/** Fail before creating QA records if guarded PostgreSQL cleanup cannot run. */
+export function assertLocalPostgresCleanupAvailable(): void {
+  const result = execFileSync('docker', [
+    'exec', '-i', 'dvb-booking-postgres-1', 'sh', '-lc',
+    'psql -X -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -tAc "SELECT 1"',
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  if (result !== '1') throw new Error('PostgreSQL Docker cleanup is unavailable; refusing to create QA fixtures.');
+}
+
 /** Build a one-pixel PNG whose color is unique to this test run. */
 export function createUniqueTestPng(seed: number): Buffer {
   const color = seed % 0x1000000;

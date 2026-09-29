@@ -57,7 +57,7 @@ async function setStringList(page: Parameters<typeof browserApi>[0], label: stri
   }
 }
 
-test('destination và combo CRUD, publish, public propagation, redirect slug cũ, archive/unpublish', async ({ page }) => {
+test('destination và combo CRUD, publish, public propagation, redirect slug cũ, archive/unpublish', async ({ page, browser }) => {
   test.setTimeout(120_000);
   await signInAsOwner(page);
   page.on('dialog', (dialog) => dialog.accept());
@@ -65,6 +65,13 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
   const stamp = Date.now();
   const coverAlt = `ATG ảnh danh mục ${stamp}`;
   const coverFilename = `atg-catalog-${stamp}.png`;
+  const baseURL = String(test.info().project.use.baseURL ?? process.env.BASE_URL ?? '');
+  const publicContext = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
+  const publicPage = await publicContext.newPage();
+  const pageErrors: string[] = [];
+  const serverErrors: string[] = [];
+  publicPage.on('pageerror', (error) => pageErrors.push(error.message));
+  publicPage.on('response', (response) => { if (response.status() >= 500) serverErrors.push(`${response.status()} ${response.url()}`); });
   let mediaId: string | null = null;
   const records: Array<{ route: string; kind: string; publicRoute: string; title: string; slug: string; renamedSlug: string; id?: string }> = [
     {
@@ -119,7 +126,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       }
 
       await page.locator('.rte [contenteditable="true"]').fill(
-        `Nội dung ${record.kind} kiểm thử được lưu trên PostgreSQL, có revision và chỉ được công khai khi chủ động xuất bản.`,
+        `Nội dung ${record.kind} kiểm thử được lưu trên PostgreSQL, có revision và chỉ được công khai khi chủ động xuất bản. `.repeat(5),
       );
       await page.getByLabel('Tiêu đề SEO *').fill(record.title);
       await page.getByLabel('Mô tả SEO *').fill(`Mô tả SEO kiểm thử cho ${record.kind}, không dùng dữ liệu khách hàng.`);
@@ -136,7 +143,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       const originalVersion = stored!.version;
       const card = page.locator('.content-manager__item', { hasText: record.title });
       await card.getByRole('button', { name: 'Sửa' }).click();
-      const editedTitle = `${record.title} — đã sửa`;
+      const editedTitle = `${record.title} — đã sửa với lịch trình trải nghiệm thiên nhiên Cúc Phương dành cho gia đình nhiều thế hệ`;
       await page.getByLabel('Tiêu đề *').fill(editedTitle);
       if (record.kind === 'destination') {
         await page.getByLabel('Nhóm điểm đến *').fill('Thiên nhiên đã xác minh');
@@ -172,6 +179,82 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
         const publicCombo = published.body as { fromPriceVnd: number | null; departures: unknown[] };
         expect(publicCombo.fromPriceVnd).toBeNull();
         expect(publicCombo.departures).toEqual([]);
+        await publicPage.goto('/combo-du-lich');
+        const card = publicPage.locator('.ccard', { hasText: editedTitle });
+        await expect(card).toBeVisible();
+        await expect(card.locator('.ccard__price')).toContainText('Liên hệ để nhận giá');
+        const cardGeometry = await card.evaluate((element) => ({
+          cardBottom: element.getBoundingClientRect().bottom,
+          titleBottom: element.querySelector('.ccard__title')!.getBoundingClientRect().bottom,
+          priceTop: element.querySelector('.ccard__price')!.getBoundingClientRect().top,
+          buttonBottom: element.querySelector('.ccard__cta')!.getBoundingClientRect().bottom,
+        }));
+        expect(cardGeometry.titleBottom, JSON.stringify(cardGeometry)).toBeLessThan(cardGeometry.priceTop);
+        expect(cardGeometry.buttonBottom, JSON.stringify(cardGeometry)).toBeLessThanOrEqual(cardGeometry.cardBottom);
+        await card.getByRole('button', { name: /Xem chi tiết/ }).click();
+        await expect(publicPage.locator('dialog[open]')).toContainText('Liên hệ để nhận giá');
+        await expect(publicPage.locator('dialog[open]').getByRole('button', { name: /Liên hệ/ })).toBeVisible();
+        await publicPage.locator('dialog[open]').getByRole('button', { name: 'Đóng hộp thoại' }).click();
+        await expect(publicPage.locator('dialog[open]')).toHaveCount(0);
+        await expect(publicPage).toHaveURL(/\/combo-du-lich$/);
+      }
+
+      const detailPath = `/${record.kind === 'destination' ? 'diem-den' : 'combo-du-lich'}/${record.slug}`;
+      for (const width of [390, 768, 1024, 1440, 1920]) {
+        pageErrors.length = 0;
+        serverErrors.length = 0;
+        await publicPage.setViewportSize({ width, height: 900 });
+        const detailResponse = await publicPage.goto(detailPath, { waitUntil: 'load' });
+        expect(detailResponse?.status()).toBe(200);
+        await expect(publicPage.locator('main h1')).toHaveText(editedTitle);
+        const displayFont = await publicPage.evaluate(async () => {
+          await document.fonts.ready;
+          return {
+            family: getComputedStyle(document.querySelector('main h1')!).fontFamily,
+            loaded: document.fonts.check('600 36px "Playfair Display"'),
+          };
+        });
+        expect(displayFont.family).toContain('Playfair Display');
+        expect(displayFont.loaded).toBe(true);
+        await expect(publicPage.locator('footer')).toBeVisible();
+        if (record.kind === 'combo') {
+          await expect(publicPage.locator('.static-page__offer')).toContainText('Liên hệ để nhận giá');
+          await expect(publicPage.locator('.static-page__offer a')).toHaveAttribute('href', `/lien-he?intent=combo&item=${record.slug}`);
+          const offerGeometry = await publicPage.evaluate(() => ({
+            coverHeight: document.querySelector('.static-page__cover')!.getBoundingClientRect().height,
+            coverImageHeight: document.querySelector('.static-page__cover img')!.getBoundingClientRect().height,
+            ctaHeight: document.querySelector('.static-page__offer .btn')!.getBoundingClientRect().height,
+          }));
+          expect(offerGeometry.coverHeight).toBeGreaterThanOrEqual(200);
+          expect(offerGeometry.coverImageHeight).toBeGreaterThanOrEqual(offerGeometry.coverHeight - 1);
+          expect(offerGeometry.ctaHeight).toBeGreaterThanOrEqual(44);
+          await expect(publicPage.locator('.static-page__section').first()).toContainText('Ngày kiểm thử');
+        } else {
+          await expect(publicPage.locator('.static-page__gallery .gallery__all')).toContainText('1 ảnh');
+        }
+        await publicPage.locator('footer').scrollIntoViewIfNeeded();
+        const geometry = await publicPage.evaluate(() => ({
+          document: document.documentElement.scrollWidth,
+          body: document.body.scrollWidth,
+          viewport: window.innerWidth,
+          protruding: [...document.querySelectorAll<HTMLElement>('body *')]
+            .map((element) => ({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === 'string' ? element.className.slice(0, 100) : '',
+              right: Math.round(element.getBoundingClientRect().right),
+              left: Math.round(element.getBoundingClientRect().left),
+            }))
+            .filter((item) => item.right > window.innerWidth + 1 && item.right < window.innerWidth + 150)
+            .sort((a, b) => a.right - b.right)
+            .slice(0, 30),
+        }));
+        expect(geometry.document, JSON.stringify(geometry)).toBeLessThanOrEqual(width + 1);
+        expect(geometry.body, JSON.stringify(geometry)).toBeLessThanOrEqual(width + 1);
+        expect(pageErrors).toEqual([]);
+        expect(serverErrors).toEqual([]);
+        if (process.env.DVB_DETAIL_VISUAL_ARTIFACTS === '1' && (width === 390 || width === 1440)) {
+          await publicPage.screenshot({ path: `artifacts/public-detail-${record.kind}-${width}.png`, fullPage: true });
+        }
       }
 
       await editedCard.getByRole('button', { name: 'Sửa' }).click();
@@ -199,6 +282,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       record.id = undefined;
     }
   } finally {
+    await publicContext.close();
     for (const record of records) {
       if (!record.id) continue;
       const current = await browserApi(page, `/content/${record.id}`);

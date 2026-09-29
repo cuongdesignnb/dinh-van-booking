@@ -4,6 +4,7 @@ import type { Destination } from '@/data/destinations';
 import type { ImageAsset, Review, RoomType } from '@/data/types';
 import type { Stay } from '@/data/stays';
 import type { RichDocument } from '@/lib/content/rich-document';
+import { comboPriceUnitLabel } from '@/lib/catalog/combo-pricing';
 import { ApiError, serverApiRequest } from './client';
 
 export interface PublicMediaAsset {
@@ -260,7 +261,7 @@ const loadPublicCombos = cache(async (): Promise<Combo[]> => {
   return (response?.items ?? []).map((item): Combo | null => {
     if (item.isDemo) return null;
     const image = asset(item.image);
-    if (!image || item.fromPriceVnd === null) return null;
+    if (!image) return null;
     const lines = item.included.slice(0, 3).map((text, index) => ({ icon: (['leaf', 'food', 'route'] as const)[index] ?? 'leaf', text }));
     return {
       id: item.id,
@@ -280,7 +281,7 @@ const loadPublicCombos = cache(async (): Promise<Combo[]> => {
       audienceTags: [],
       includedHighlights: lines,
       fromPriceVnd: item.fromPriceVnd,
-      priceUnit: 'người' as const,
+      priceUnit: comboPriceUnitLabel(item.priceUnit),
       popularity: 0,
       image,
       itinerary: item.itinerary.map((day) => ({ day: `Ngày ${day.day}`, items: day.items })),

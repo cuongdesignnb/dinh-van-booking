@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Image from '@/components/ui/ManagedImage';
+import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { PageShell } from '@/components/layout/PageShell';
@@ -10,6 +11,8 @@ import { isSubstantivePublicContent } from '@/lib/seo/content';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { isSeoSchemaAllowed } from '@/lib/seo/policy';
 import { buildComboGraph } from '@/lib/seo/schema';
+import { comboPriceUnitLabel } from '@/lib/catalog/combo-pricing';
+import { formatVnd } from '@/lib/format';
 import '@/styles/static-pages.css';
 
 type Props = {
@@ -52,6 +55,12 @@ export default async function ComboDetailPage({ params, searchParams }: Props) {
             <p className="static-page__fact">{combo.durationDays} ngày · {combo.durationNights} đêm</p>
           </header>
           {combo.image && <figure className="static-page__cover"><Image src={combo.image.src} alt={combo.image.alt} width={combo.image.width} height={combo.image.height} unoptimized priority /></figure>}
+          <div className="static-page__offer">
+            <p>{combo.fromPriceVnd !== null && combo.fromPriceVnd > 0
+              ? <>Từ <strong>{formatVnd(combo.fromPriceVnd)}</strong> / {comboPriceUnitLabel(combo.priceUnit)} <span>Giá tham khảo; chưa tạo đơn đặt.</span></>
+              : <><strong>Liên hệ để nhận giá</strong><span>Chưa có giá công khai; không đặt hoặc thanh toán trực tuyến.</span></>}</p>
+            <Link className="btn btn--primary" href={`/lien-he?intent=combo&item=${encodeURIComponent(combo.slug)}`}>Liên hệ tư vấn</Link>
+          </div>
           {combo.body && <RichContentRenderer document={combo.body} className="static-page__body" />}
           {combo.itinerary.length > 0 && <section className="static-page__section">
             <h2>Lịch trình</h2>

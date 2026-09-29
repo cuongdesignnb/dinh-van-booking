@@ -34,7 +34,7 @@
   max-width: 18ch;
   margin: 0;
   color: #183b25;
-  font-family: var(--font-display, Georgia, serif);
+  font-family: var(--font-dvb-display, Georgia, serif);
   font-size: clamp(2.1rem, 5vw, 3.55rem);
   font-weight: 500;
   line-height: 1.12;
@@ -57,24 +57,44 @@
 .static-page__cover {
   overflow: hidden;
   margin: 28px 0;
+  aspect-ratio: 16 / 9;
+  max-height: 520px;
   border-radius: 16px;
   background: #eef1e9;
 }
 
-.static-page__gallery { margin: 28px 0; }
-.static-page__gallery .gallery { height: clamp(320px, 42vw, 470px); }
+.static-page__gallery { min-width: 0; margin: 28px 0; }
+.static-page__gallery .gallery { width: 100%; min-width: 0; height: clamp(320px, 42vw, 470px); }
 .static-page__gallery .gallery--1 { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 767px) {
   .static-page__gallery .gallery { height: auto; }
-  .static-page__gallery .gallery__main { min-height: 230px; }
+  .static-page__gallery .gallery__main { width: 100%; min-width: 0; min-height: 230px; aspect-ratio: auto; }
 }
 
 .static-page__cover img {
   display: block;
   width: 100%;
-  max-height: 520px;
+  height: 100%;
   object-fit: cover;
 }
+
+.static-page__offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  margin: 24px 0 0;
+  padding: 16px 20px;
+  border: 1px solid rgba(30, 70, 42, 0.14);
+  border-radius: 14px;
+  background: #f4f7ef;
+}
+
+.static-page__offer p { display: grid; gap: 3px; margin: 0; color: #425e49; }
+.static-page__offer p strong { color: #183b25; font-size: 1.2rem; }
+.static-page__offer p span { font-size: 0.82rem; }
+.static-page__offer .btn { flex-shrink: 0; min-height: 44px; padding: 0 18px; font-size: 0.9rem; font-weight: 700; }
 
 .static-page__body {
   padding-top: 25px;
@@ -161,7 +181,7 @@
 .static-page__section h2 {
   margin: 0 0 14px;
   color: #183b25;
-  font-family: var(--font-display, Georgia, serif);
+  font-family: var(--font-dvb-display, Georgia, serif);
   font-size: clamp(1.4rem, 3vw, 2rem);
   font-weight: 500;
 }
@@ -190,7 +210,7 @@
 .static-page__index-card h2 {
   margin: 0;
   color: #183b25;
-  font-family: var(--font-display, Georgia, serif);
+  font-family: var(--font-dvb-display, Georgia, serif);
   font-size: 1.35rem;
   font-weight: 500;
 }
@@ -218,4 +238,5 @@
   .static-page__index-list { grid-template-columns: 1fr; }
   .static-page__article { margin-top: 28px; }
   .static-page__columns { grid-template-columns: 1fr; }
+  .static-page__offer .btn { width: 100%; }
 }

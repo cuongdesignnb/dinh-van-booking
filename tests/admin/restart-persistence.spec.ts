@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { expect, test } from '@playwright/test';
 import {
+  assertLocalPostgresCleanupAvailable,
   browserApi,
   cleanupLocalTestInquiry,
   createUniqueTestPng,
@@ -18,6 +19,7 @@ type MenuBaseline = { isDefault: boolean; items: MenuItem[] };
 
 test('PostgreSQL và media volume giữ CMS, ảnh, settings, inquiry, catalog và menu sau restart', async ({ page }) => {
   test.setTimeout(180_000);
+  assertLocalPostgresCleanupAvailable();
   await signInAsOwner(page);
 
   const stamp = Date.now();

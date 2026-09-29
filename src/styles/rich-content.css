@@ -30,7 +30,7 @@
 .rich-content h3,
 .rich-content h4 {
   color: var(--dvb-green-deep, #194526);
-  font-family: var(--font-display, Georgia, serif);
+  font-family: var(--font-dvb-display, Georgia, serif);
   line-height: 1.25;
   margin-bottom: 0;
 }
@@ -54,7 +54,7 @@
 .rich-content blockquote {
   border-left: 3px solid var(--dvb-gold, #b8914c);
   color: var(--dvb-muted, #68736c);
-  font-family: var(--font-display, Georgia, serif);
+  font-family: var(--font-dvb-display, Georgia, serif);
   font-size: 1.08em;
   font-style: italic;
   margin-left: 0;

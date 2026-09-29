@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext } from '@playwright/test';
-import { browserApi, cleanupLocalTestInquiry, createUniqueTestPng, signInAsOwner } from './helpers';
+import { assertLocalPostgresCleanupAvailable, browserApi, cleanupLocalTestInquiry, createUniqueTestPng, signInAsOwner } from './helpers';
 
 type MediaAsset = {
   id: string;
@@ -345,6 +345,7 @@ test('settings UI lưu PostgreSQL, công khai thay đổi và không ghi đè ph
 
 test('form liên hệ tạo inquiry thật, admin nhận và cập nhật stage sau reload', async ({ page }) => {
   test.setTimeout(90_000);
+  assertLocalPostgresCleanupAvailable();
   await signInAsOwner(page);
 
   const stamp = Date.now();

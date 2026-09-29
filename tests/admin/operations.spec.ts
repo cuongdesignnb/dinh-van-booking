@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { createUniqueTestPng, signInAsOwner } from './helpers';
+import { assertLocalPostgresCleanupAvailable, createUniqueTestPng, signInAsOwner } from './helpers';
 
 type ApiResult<T> = { status: number; body: T };
 type TestProperty = { id: string; contentId: string; contentVersion: number; version: number; slug: string; roomTypes: Array<{ id: string }> };
@@ -139,6 +139,9 @@ FROM public.booking_lines bl WHERE r.booking_line_id = bl.id AND bl.booking_id =
 
 test('booking, inventory concurrency, CRM, coupons, offline finance and reports reconcile against PostgreSQL', async ({ page }) => {
   test.setTimeout(240_000);
+  // This journey uses direct PostgreSQL for a guarded cleanup and worker expiry.
+  // Fail before writing any fixture if this process cannot reach Docker.
+  assertLocalPostgresCleanupAvailable();
   await signInAsOwner(page);
   const stamp = Date.now();
   const testName = `ATG Ops ${stamp}`;
