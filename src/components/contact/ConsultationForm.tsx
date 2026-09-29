@@ -10,30 +10,20 @@ import { Popover } from '@/components/ui/Popover';
 import { useSiteData } from '@/components/site/SiteDataProvider';
 import { formatShort, fromKey, startOfToday } from '@/lib/dates';
 import { takePendingNote } from '@/lib/draft-store';
-import { parseSelection, readParam } from '@/lib/selection';
-import { apiAdapter, type ConsultationDraft } from '@/lib/services/consultation';
+import { parseSelection } from '@/lib/selection';
+import { apiAdapter, type ConsultationContext, type ConsultationDraft } from '@/lib/services/consultation';
 import { MESSAGE_MAX, validateMessage, validateName, validatePhone } from '@/lib/validation';
 import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import type { RichDocument } from '@/lib/content/rich-document';
+import { clearPendingInquiry, matchesPendingInquiry, newPendingInquiry, readPendingInquiry, savePendingInquiry, type PendingInquiryRecord } from '@/lib/contact/pending-inquiry';
 
 type Field = 'name' | 'phone' | 'date' | 'message';
 type Status = 'editing' | 'validating' | 'submitted' | 'error';
 
-function resolveContext(params: URLSearchParams): ConsultationDraft['context'] {
-  const intent = readParam(params, 'intent');
-  const item = readParam(params, 'item');
-  if (intent === 'combo' && item) return { intent, id: item, label: item };
-  if (intent === 'destination' && item) return { intent, id: item, label: item };
-  if (intent === 'stay' && item) return { intent, id: item, label: item };
-  if (intent === 'stay') return { intent, id: '', label: 'Chọn phòng nghỉ phù hợp' };
-  if (intent === 'combo') return { intent, id: '', label: 'Combo du lịch' };
-  return null;
-}
-
 export const CONTACT_FORM_ID = 'form-tu-van';
 
-export function ConsultationForm() {
+export function ConsultationForm({ initialContext, contextWarning }: { initialContext: ConsultationContext | null; contextWarning: string | null }) {
   const site = useSiteData();
   const contactPage = publicSetting(site.publicSite, 'contact.page');
   const formTitle = publicText(contactPage.formTitle);
@@ -44,13 +34,16 @@ export function ConsultationForm() {
   const privacyNote = contactPage.formPrivacyNote;
   const uid = useId();
   const params = useSearchParams();
-  const [context, setContext] = useState(() => resolveContext(params));
+  const [context, setContext] = useState(initialContext);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [date, setDate] = useState<string | null>(() => parseSelection(params).checkIn);
+  const [checkOut, setCheckOut] = useState<string | null>(() => parseSelection(params).checkOut);
+  const [calendarField, setCalendarField] = useState<'in' | 'out'>('in');
   const [guests, setGuests] = useState<{ adults: number; children: number } | null>(() =>
     params.get('adults') ? { adults: parseSelection(params).adults, children: parseSelection(params).children } : null,
   );
+  const [roomCount, setRoomCount] = useState<number | null>(() => params.get('rooms') ? parseSelection(params).rooms : null);
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
@@ -58,6 +51,8 @@ export function ConsultationForm() {
   const [adapterError, setAdapterError] = useState<string | null>(null);
   const [open, setOpen] = useState<null | 'date' | 'guests'>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const pendingSubmission = useRef<{ record: PendingInquiryRecord; signature?: string } | null>(null);
+  const [recovery, setRecovery] = useState<'checking' | 'none' | 'pending'>('checking');
   const refs = {
     name: useRef<HTMLInputElement>(null),
     phone: useRef<HTMLInputElement>(null),
@@ -70,6 +65,12 @@ export function ConsultationForm() {
   useEffect(() => {
     const note = takePendingNote();
     if (note) setMessage((m) => m || note);
+  }, []);
+
+  useEffect(() => {
+    const record = readPendingInquiry();
+    if (record) pendingSubmission.current = { record };
+    setRecovery(record ? 'pending' : 'none');
   }, []);
 
   const check = (f: Field, value?: string): string | null => {
@@ -91,7 +92,7 @@ export function ConsultationForm() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (status === 'validating') return;
+    if (status === 'validating' || recovery === 'checking') return;
     const next: Partial<Record<Field, string>> = {};
     (['name', 'phone', 'date', 'message'] as Field[]).forEach((f) => {
       const m = check(f);
@@ -106,27 +107,70 @@ export function ConsultationForm() {
     }
     setStatus('validating');
     setAdapterError(null);
-    const result = await apiAdapter.submit({
+    const draft: ConsultationDraft = {
       name,
       phone,
       checkIn: date,
+      checkOut,
       adults: guests?.adults ?? null,
       children: guests?.children ?? null,
+      rooms: roomCount,
       message,
       context,
-    });
-    if (result.status === 'error') {
-      setAdapterError(result.message);
+    };
+    const signature = JSON.stringify(draft);
+    try {
+      let pending = pendingSubmission.current;
+      if (pending && !(pending.signature === signature || await matchesPendingInquiry(pending.record, signature))) {
+        setAdapterError('Yêu cầu trước có thể đã được ghi nhận. Để tránh gửi trùng, hãy mở đúng liên kết tư vấn ban đầu, nhập lại đúng thông tin đã gửi rồi thử lại; nếu không nhớ, vui lòng liên hệ hỗ trợ để kiểm tra.');
+        setStatus('error');
+        return;
+      }
+      if (!pending) {
+        if (!globalThis.crypto?.randomUUID || !globalThis.crypto?.subtle) {
+          setAdapterError('Trình duyệt chưa hỗ trợ gửi yêu cầu an toàn. Hãy cập nhật trình duyệt rồi thử lại.');
+          setStatus('error');
+          return;
+        }
+        const record = await newPendingInquiry(signature);
+        if (!savePendingInquiry(record)) {
+          setAdapterError('Trình duyệt đang chặn lưu mã yêu cầu tạm trong phiên. Hãy cho phép lưu dữ liệu phiên rồi thử lại, hoặc liên hệ hỗ trợ.');
+          setStatus('error');
+          return;
+        }
+        pending = { record, signature };
+        pendingSubmission.current = pending;
+        setRecovery('pending');
+      }
+      const result = await apiAdapter.submit(draft, pending.record.key);
+      if (result.status === 'error') {
+        if (result.definitive) {
+          clearPendingInquiry(pending.record);
+          pendingSubmission.current = null;
+          setRecovery('none');
+        }
+        setAdapterError(result.message);
+        setStatus('error');
+      } else {
+        clearPendingInquiry(pending.record);
+        pendingSubmission.current = null;
+        setRecovery('none');
+        setStatus('submitted');
+      }
+    } catch {
+      setAdapterError('Chưa kiểm tra được yêu cầu trước. Vui lòng thử lại đúng thông tin để tránh gửi trùng.');
       setStatus('error');
-    } else setStatus('submitted');
+    }
   };
 
   const summary = [
     `Họ và tên: ${name.trim()}`,
     `Số điện thoại: ${phone.trim()}`,
     date ? `Ngày dự kiến: ${formatShort(date)}` : null,
+    checkOut ? `Ngày trả phòng: ${formatShort(checkOut)}` : null,
     guests ? `Số khách: ${guests.adults + guests.children}` : null,
-    context ? `Quan tâm: ${context.label}` : null,
+    roomCount ? `Số phòng: ${roomCount}` : null,
+    context ? `Quan tâm: ${context.label}${context.roomLabel ? ` · ${context.roomLabel}` : ''}` : null,
     message.trim() ? `Lời nhắn: ${message.trim()}` : null,
   ].filter(Boolean) as string[];
 
@@ -140,7 +184,7 @@ export function ConsultationForm() {
 
       {context && (
         <p className="cform__context">
-          Tư vấn: <b>{context.label}</b>
+          Tư vấn: <b>{context.label}{context.roomLabel ? ` · ${context.roomLabel}` : ''}</b>
           <button type="button" onClick={() => setContext(null)} aria-label={`Bỏ ngữ cảnh ${context.label}`}>
             <X size={13} aria-hidden="true" />
           </button>
@@ -151,6 +195,13 @@ export function ConsultationForm() {
         <div className="cform__summary" role="alert">
           Vui lòng kiểm tra {errorList.length} mục được đánh dấu bên dưới.
         </div>
+      )}
+      {contextWarning && <p className="cform__adapter-err" role="status">{contextWarning}</p>}
+
+      {recovery === 'pending' && (
+        <p className="dialog__pending" role="status">
+          Yêu cầu trước chưa có xác nhận trên trình duyệt. Vui lòng mở đúng liên kết tư vấn ban đầu, nhập lại <strong>đúng tên, số điện thoại, ngày, số khách và lời nhắn đã gửi</strong> rồi thử lại. Hệ thống sẽ dùng lại mã yêu cầu cũ, không tạo yêu cầu mới.
+        </p>
       )}
 
       <div className="cform__grid">
@@ -229,11 +280,11 @@ export function ConsultationForm() {
             aria-expanded={open === 'date'}
             aria-labelledby={`${uid}-date-l ${uid}-date-v`}
             aria-describedby={err('date') ? `${uid}-date-e` : undefined}
-            onClick={() => setOpen(open === 'date' ? null : 'date')}
+            onClick={() => { setCalendarField('in'); setOpen(open === 'date' ? null : 'date'); }}
           >
             <CalendarDays size={20} aria-hidden="true" />
             <span id={`${uid}-date-v`} data-filled={date ? '' : undefined}>
-              {date ? formatShort(date) : 'Chọn ngày'}
+              {date ? `${formatShort(date)}${checkOut ? ` → ${formatShort(checkOut)}` : ''}` : 'Chọn ngày'}
             </span>
           </button>
           {err('date') && (
@@ -257,7 +308,7 @@ export function ConsultationForm() {
           >
             <Users size={20} aria-hidden="true" />
             <span id={`${uid}-g-v`} data-filled={guests ? '' : undefined}>
-              {guests ? `${guests.adults + guests.children} khách` : 'Ví dụ: 2 khách'}
+              {guests ? `${guests.adults + guests.children} khách${roomCount ? ` · ${roomCount} phòng` : ''}` : 'Ví dụ: 2 khách'}
             </span>
             <ChevronDown className="cfield__chev" size={18} aria-hidden="true" />
           </button>
@@ -301,7 +352,7 @@ export function ConsultationForm() {
         </p>
       )}
 
-      <button type="submit" className="btn btn--primary cform__submit btn-shine" disabled={status === 'validating'} aria-busy={status === 'validating'}>
+      <button type="submit" className="btn btn--primary cform__submit btn-shine" disabled={status === 'validating' || recovery === 'checking'} aria-busy={status === 'validating'}>
         <Send size={20} aria-hidden="true" />
         {status === 'validating' ? 'Đang kiểm tra thông tin…' : submitLabel}
       </button>
@@ -310,25 +361,23 @@ export function ConsultationForm() {
       <Popover id={`${uid}-cal`} label="Chọn ngày dự kiến" anchorRef={refs.date} open={open === 'date'} onClose={() => setOpen(null)}>
         <DateRangePicker
           checkIn={date}
-          checkOut={null}
-          field="in"
-          onFieldChange={() => undefined}
-          onChange={(d) => {
+          checkOut={checkOut}
+          field={calendarField}
+          onFieldChange={setCalendarField}
+          onChange={(d, out) => {
             setDate(d);
+            setCheckOut(out);
             setErrors((x) => ({ ...x, date: undefined }));
-            if (d) {
-              setOpen(null);
-              refs.date.current?.focus();
-            }
           }}
-          onDone={() => setOpen(null)}
+          onDone={() => { setOpen(null); refs.date.current?.focus(); }}
         />
       </Popover>
       <Popover id={`${uid}-gp`} label="Chọn số khách" anchorRef={guestRef} open={open === 'guests'} onClose={() => setOpen(null)}>
         <GuestPicker
           adults={guests?.adults ?? 2}
           childCount={guests?.children ?? 0}
-          onChange={(adults, children) => setGuests({ adults, children })}
+          rooms={roomCount ?? undefined}
+          onChange={(adults, children, rooms) => { setGuests({ adults, children }); if (rooms !== undefined) setRoomCount(rooms); }}
           onDone={() => {
             setGuests((g) => g ?? { adults: 2, children: 0 });
             setOpen(null);

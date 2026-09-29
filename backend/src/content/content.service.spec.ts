@@ -46,6 +46,7 @@ test('stay publish checklist accepts a complete verified fixture', () => {
       roomTypes: [
         {
           status: 'active',
+          capacityVerified: true,
           units: [{ id: 'unit-id' }],
           ratePlans: [{ baseRateVnd: 650000n }],
         },
@@ -56,7 +57,7 @@ test('stay publish checklist accepts a complete verified fixture', () => {
 });
 
 test('stay publish checklist accepts a zero-priced contact-only room', () => {
-  const problems = service.publishChecklist(node({ operatingStatus: 'active', roomTypes: [{ status: 'active', units: [{ id: 'unit-id' }], ratePlans: [{ baseRateVnd: 0n }] }] }));
+  const problems = service.publishChecklist(node({ operatingStatus: 'active', roomTypes: [{ status: 'active', capacityVerified: true, units: [{ id: 'unit-id' }], ratePlans: [{ baseRateVnd: 0n }] }] }));
   assert.deepEqual(problems, []);
 });
 
@@ -65,12 +66,18 @@ test('stay publish checklist rejects units and rates that exist only on separate
     node({
       operatingStatus: 'active',
       roomTypes: [
-        { status: 'active', units: [{ id: 'unit-id' }], ratePlans: [] },
-        { status: 'active', units: [], ratePlans: [{ baseRateVnd: 650000n }] },
+        { status: 'active', capacityVerified: true, units: [{ id: 'unit-id' }], ratePlans: [] },
+        { status: 'active', capacityVerified: true, units: [], ratePlans: [{ baseRateVnd: 650000n }] },
       ],
     }),
   );
-  assert.ok(problems.includes('Cần ít nhất một hạng phòng có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)'));
+  assert.ok(problems.includes('Cần ít nhất một hạng phòng đã xác minh sức chứa, có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)'));
+});
+
+test('stay publish checklist blocks room with technical placeholder capacity even if units and rate exist', () => {
+  const problems = service.publishChecklist(node({ operatingStatus: 'active', roomTypes: [{ status: 'active', capacityVerified: false, units: [{ id: 'unit-id' }], ratePlans: [{ baseRateVnd: 650000n }] }] }));
+  assert.ok(problems.includes('Chưa xác minh sức chứa hạng phòng'));
+  assert.ok(problems.includes('Cần ít nhất một hạng phòng đã xác minh sức chứa, có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)'));
 });
 
 test('article content always gets a public projection row when optional details are omitted', async () => {

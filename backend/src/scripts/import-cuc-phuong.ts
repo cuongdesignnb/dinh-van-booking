@@ -189,9 +189,8 @@ async function createStay(tx: Parameters<Parameters<PrismaClient['$transaction']
     select: { id: true },
   });
 
-  // The schema requires positive capacity fields.  Imported room categories
-  // use the neutral inactive sentinel 1; they cannot be published or booked
-  // until an editor verifies capacity and creates units/rates.
+  // Imported category names are source-backed, but capacity is not. The
+  // required numeric sentinel is hidden in Admin until explicit verification.
   if (item.roomTypes?.length) {
     for (const [position, room] of item.roomTypes.entries()) {
       await tx.roomType.create({
@@ -203,6 +202,7 @@ async function createStay(tx: Parameters<Parameters<PrismaClient['$transaction']
           maxAdults: room.maxAdults,
           maxChildren: room.maxChildren,
           maxOccupancy: room.maxOccupancy,
+          capacityVerified: false,
           areaSqm: room.areaSqm,
           status: 'inactive',
           position,

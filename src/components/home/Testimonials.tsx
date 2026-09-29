@@ -3,13 +3,11 @@
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import { useState } from 'react';
-import type { ImageAsset } from '@/data/types';
+import type { Review } from '@/data/types';
 import { openDialog } from '@/lib/events';
 import type { PublicRecord } from '@/lib/public-content';
 
-type Testimonial = { id: string; quote: string; author: string; context?: string; avatar: ImageAsset | null };
-
-export function Testimonials({ testimonials, config }: { testimonials: Testimonial[]; config: PublicRecord }) {
+export function Testimonials({ testimonials, config }: { testimonials: Review[]; config: PublicRecord }) {
   const title = typeof config.title === 'string' ? config.title.trim() : '';
   const ctaLabel = typeof config.ctaLabel === 'string' ? config.ctaLabel.trim() : '';
   const limit = typeof config.limit === 'number' && config.limit > 0 ? Math.min(config.limit, 20) : 3;
@@ -29,7 +27,7 @@ export function Testimonials({ testimonials, config }: { testimonials: Testimoni
     <section className="reviews" aria-labelledby="reviews-title" aria-roledescription="carousel">
       <div className="section-head section-head--tight" data-reveal="fade-up" style={{ '--d': '1500ms' } as React.CSSProperties}>
         <h2 className="section-title section-title--sm" id="reviews-title">{title}</h2>
-        {ctaLabel && <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => openDialog({ type: 'reviews' })}>{ctaLabel} <ArrowRight size={15} strokeWidth={2} aria-hidden="true" /></button>}
+        {ctaLabel && <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => openDialog({ type: 'reviews', title, items: testimonials.map(({ id, author, quote, context, rating }) => ({ id, author, quote, context, rating })) })}>{ctaLabel} <ArrowRight size={15} strokeWidth={2} aria-hidden="true" /></button>}
       </div>
       {t ? (
         <div className="review-card" data-reveal="card" style={{ '--d': '1600ms' } as React.CSSProperties}>

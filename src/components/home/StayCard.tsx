@@ -3,7 +3,8 @@ import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import type { Stay } from '@/data/stays';
-import { fromPrice } from '@/lib/catalog/pricing';
+import { fromPrice, hasContactOnlyRooms } from '@/lib/catalog/pricing';
+import { stayContactHref } from '@/lib/contact/stay-contact';
 import { formatVnd } from '@/lib/format';
 
 const PinCheck = () => (
@@ -22,6 +23,8 @@ const Sprig = () => (
 
 export function StayCard({ stay, index }: { stay: Stay; index: number }) {
   const home = stay.home ?? { image: stay.image, location: stay.location, tags: [stay.highlights[0], stay.highlights[1]] };
+  const price = fromPrice(stay);
+  const mixedPrices = price > 0 && hasContactOnlyRooms(stay);
   return (
     <article
       className="stay"
@@ -54,9 +57,9 @@ export function StayCard({ stay, index }: { stay: Stay; index: number }) {
           {home.tags.map((tag, index) => <span key={`${tag}-${index}`}>{index > 0 && <i aria-hidden="true">•</i>}{tag}</span>)}
         </p>
         <div className="stay__foot">
-          <p className="stay__price">{fromPrice(stay) > 0 ? <>Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}</p>
-          <Link href={fromPrice(stay) > 0 ? `/phong-nghi/${stay.slug}` : '/lien-he'} className="btn btn--primary btn--sm btn-arrow">
-            {fromPrice(stay) > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
+          <p className="stay__price">{price > 0 ? <>Từ <strong>{formatVnd(price)}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}{mixedPrices && <small className="stay__price-note">Hạng khác cần liên hệ giá</small>}</p>
+          <Link href={price > 0 ? `/phong-nghi/${stay.slug}` : stayContactHref(stay.slug)} className="btn btn--primary btn--sm btn-arrow">
+            {price > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
             <span className="sr-only"> {stay.name}</span>
           </Link>
         </div>

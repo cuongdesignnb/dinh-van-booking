@@ -167,6 +167,7 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
   let refundId = '';
   let guestContext: BrowserContext | null = null;
   let otherGuestContext: BrowserContext | null = null;
+  const publicHoldGuard: { promise: Promise<void> | null } = { promise: null };
   const customerFromBooking = (booking: TestBooking, contactPhone: string) => {
     if (!customerIds.some((item) => item.id === booking.customer.id)) customerIds.push({ id: booking.customer.id, phone: contactPhone });
   };
@@ -260,6 +261,7 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     if (!browser) throw new Error('Playwright browser context is unavailable for the public checkout test.');
     guestContext = await browser.newContext();
     const guestPage = await guestContext.newPage();
+    await guestPage.setViewportSize({ width: 390, height: 844 });
     await guestPage.goto(`/dat-phong?stay=${property.slug}&room=${property.roomTypes[0].id}&checkIn=${checkIn}&checkOut=${checkOut}&adults=2&children=0&rooms=1`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
     await guestPage.waitForLoadState('load', { timeout: 20_000 });
     const publicName = guestPage.getByLabel('Họ và tên');
@@ -268,6 +270,7 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     await expect(publicName).toBeVisible({ timeout: 10_000 });
     await expect(publicPhoneField).toBeVisible({ timeout: 10_000 });
     await expect(publicEmail).toBeVisible({ timeout: 10_000 });
+    expect(await guestPage.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
     await publicName.focus({ timeout: 5_000 });
     await publicName.press('Tab', { timeout: 5_000 });
     await expect(publicName).toHaveAttribute('aria-invalid', 'true', { timeout: 10_000 });
@@ -284,6 +287,18 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     expect(publicQuote.totalVnd).toBe('20000');
     await expect(guestPage.getByRole('heading', { name: 'Kiểm tra thông tin đặt phòng' })).toBeVisible();
     await expect(guestPage.getByText('Giá được tính từ bảng giá đang hoạt động.')).toBeVisible();
+    await guestPage.setViewportSize({ width: 1440, height: 900 });
+    const desktopColumns = await guestPage.evaluate(() => {
+      const main = document.querySelector('.co-main')?.getBoundingClientRect();
+      const summary = document.querySelector('.co-summary')?.getBoundingClientRect();
+      return { mainRight: main?.right ?? 0, summaryLeft: summary?.left ?? 0, scrollWidth: document.documentElement.scrollWidth };
+    });
+    expect(desktopColumns.mainRight).toBeLessThanOrEqual(desktopColumns.summaryLeft);
+    expect(desktopColumns.scrollWidth).toBeLessThanOrEqual(1441);
+    await guestPage.setViewportSize({ width: 390, height: 844 });
+    expect(await guestPage.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+    await expect(guestPage.locator('.co-review__list > div').first()).toHaveCSS('opacity', '1');
+    await guestPage.screenshot({ path: test.info().outputPath('public-checkout-review-390.png'), fullPage: true });
 
     const ownQuote = await guestPage.evaluate(async (id) => {
       const response = await fetch(`/api/v1/quotes/${id}`, { credentials: 'include' });
@@ -311,22 +326,110 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     expect(inaccessibleHold).toBe(404);
 
     await guestPage.getByLabel('Tôi đã kiểm tra các thông tin trên.').check();
-    const publicHoldResponsePromise = guestPage.waitForResponse((response) => response.url().endsWith(`/api/v1/quotes/${publicQuote.id}/hold`) && response.request().method() === 'POST', { timeout: 20_000 });
-    const publicHoldRequestPromise = guestPage.waitForRequest((request) => request.url().endsWith(`/api/v1/quotes/${publicQuote.id}/hold`) && request.method() === 'POST', { timeout: 20_000 });
+    const publicHoldKeys: string[] = [];
+    let committedReceipt: { id: string; publicCode: string; bookingStatus: string } | null = null;
+    let finishFirstHold!: () => void;
+    let failFirstHold!: (reason: unknown) => void;
+    const firstHoldDone = new Promise<void>((resolve, reject) => { finishFirstHold = resolve; failFirstHold = reject; });
+    void firstHoldDone.catch(() => undefined);
+    await guestPage.route(`**/api/v1/quotes/${publicQuote.id}/hold`, async (route) => {
+      publicHoldKeys.push(route.request().headers()['idempotency-key']);
+      if (publicHoldKeys.length === 1) {
+        if (!validUuid(publicHoldKeys[0])) throw new Error('Public checkout did not send a valid random idempotency key.');
+        idempotencyKeys.push(publicHoldKeys[0]);
+        await route.abort('failed');
+      } else if (publicHoldKeys.length === 2) {
+        publicHoldGuard.promise = firstHoldDone;
+        try {
+          const upstream = await route.fetch({ timeout: 20_000 });
+          expect(upstream.status()).toBe(201);
+          committedReceipt = await upstream.json() as { id: string; publicCode: string; bookingStatus: string };
+          bookingIds.push(committedReceipt.id);
+          const committedBooking = await opsApi<TestBooking>(page, `/admin/bookings/${committedReceipt.id}`);
+          expect(committedBooking.status).toBe(200);
+          customerFromBooking(committedBooking.body, publicPhone);
+          await route.abort('failed');
+          finishFirstHold();
+        } catch (error) {
+          await route.abort('failed').catch(() => undefined);
+          failFirstHold(error);
+        }
+      } else {
+        await route.continue();
+      }
+    });
     await guestPage.getByRole('button', { name: 'Giữ phòng & gửi yêu cầu' }).click({ timeout: 10_000 });
-    const publicHoldRequest = await publicHoldRequestPromise;
-    const publicIdempotencyKey = publicHoldRequest.headers()['idempotency-key'];
+    await expect(guestPage.locator('.co-review .co-err[role="alert"]')).toContainText('có thể đã được ghi nhận');
+    await expect(guestPage.getByRole('button', { name: 'Quay lại chỉnh sửa' })).toBeDisabled();
+    await expect(guestPage.getByRole('button', { name: 'Thay đổi lựa chọn phòng' })).toBeDisabled();
+    const publicIdempotencyKey = publicHoldKeys[0];
     if (!publicIdempotencyKey || !validUuid(publicIdempotencyKey)) throw new Error('Public checkout did not send a valid random idempotency key.');
-    idempotencyKeys.push(publicIdempotencyKey);
-    const publicHoldResponse = await publicHoldResponsePromise;
-    expect(publicHoldResponse.status()).toBe(201);
-    const publicReceipt = await publicHoldResponse.json() as Record<string, unknown> & { id: string; publicCode: string; bookingStatus: string };
-    expect(publicReceipt).toMatchObject({ bookingStatus: 'pending_confirmation' });
+    const storedHold = await guestPage.evaluate(() => sessionStorage.getItem('dvb:pending-booking-hold'));
+    expect(storedHold).toContain(publicQuote.id);
+    expect(storedHold).toContain(publicIdempotencyKey);
+    expect(storedHold).not.toContain(publicPhone);
+    expect(storedHold).not.toContain('Khách kiểm thử public');
+    expect(storedHold).not.toContain(`atg-public-${stamp}@example.test`);
+    const noCommitResponsePromise = guestPage.waitForResponse((response) => response.url().endsWith(`/api/v1/quotes/${publicQuote.id}`) && response.request().method() === 'GET', { timeout: 20_000 });
+    await guestPage.reload({ waitUntil: 'domcontentloaded', timeout: 20_000 });
+    const noCommitResponse = await noCommitResponsePromise;
+    expect(noCommitResponse.status()).toBe(200);
+    expect((await noCommitResponse.json() as { booking: unknown }).booking).toBeNull();
+    await expect(guestPage.getByText('Yêu cầu giữ phòng trước chưa có mã xác nhận.')).toBeVisible();
+    let recoveredQuotePosts = 0;
+    guestPage.on('request', (request) => {
+      if (request.url().endsWith('/api/v1/quotes') && request.method() === 'POST') recoveredQuotePosts += 1;
+    });
+    await guestPage.getByLabel('Họ và tên').fill('Khách kiểm thử public');
+    await guestPage.getByLabel('Số điện thoại').fill(publicPhone);
+    await guestPage.getByLabel('Email').fill('sai-thong-tin@example.test');
+    await guestPage.getByRole('button', { name: 'Xem giá & xác nhận' }).first().click();
+    await expect(guestPage.getByText('Để thử lại yêu cầu trước, vui lòng nhập đúng thông tin')).toBeVisible();
+    await guestPage.getByLabel('Email').fill(`atg-public-${stamp}@example.test`);
+    await guestPage.getByRole('button', { name: 'Xem giá & xác nhận' }).first().click();
+    await expect(guestPage.getByRole('heading', { name: 'Kiểm tra thông tin đặt phòng' })).toBeVisible();
+    expect(recoveredQuotePosts).toBe(0);
+    await guestPage.getByLabel('Tôi đã kiểm tra các thông tin trên.').check();
+    await guestPage.getByRole('button', { name: 'Giữ phòng & gửi yêu cầu' }).click({ timeout: 10_000 });
+    await firstHoldDone;
+    await expect(guestPage.locator('.co-review .co-err[role="alert"]')).toContainText('có thể đã được ghi nhận');
+    await expect(guestPage.getByRole('button', { name: 'Quay lại chỉnh sửa' })).toBeDisabled();
+    expect(committedReceipt).toBeTruthy();
+    const recoveryResponsePromise = guestPage.waitForResponse((response) => response.url().endsWith(`/api/v1/quotes/${publicQuote.id}`) && response.request().method() === 'GET', { timeout: 20_000 });
+    await guestPage.reload({ waitUntil: 'domcontentloaded', timeout: 20_000 });
+    const recoveryResponse = await recoveryResponsePromise;
+    expect(recoveryResponse.status()).toBe(200);
+    const recoveredQuote = await recoveryResponse.json() as { booking: { id: string; publicCode: string; bookingStatus: string; expiresAt: string; totalVnd: string } | null };
+    expect(recoveredQuote.booking).toMatchObject({ id: committedReceipt!.id, publicCode: committedReceipt!.publicCode, bookingStatus: 'pending_confirmation', totalVnd: '20000' });
+    await expect(guestPage.getByRole('heading', { name: 'Đã giữ phòng chờ xác nhận' })).toBeVisible();
+    await expect(guestPage.getByText(committedReceipt!.publicCode)).toBeVisible();
+    const publicHoldReplay = await guestPage.evaluate(async ({ quoteId, key, phone, email }) => {
+      const csrf = document.cookie.split('; ').find((part) => part.startsWith('dvb_csrf='))?.slice('dvb_csrf='.length) ?? '';
+      const response = await fetch(`/api/v1/quotes/${quoteId}/hold`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': decodeURIComponent(csrf), 'idempotency-key': key },
+        body: JSON.stringify({ fullName: 'Khách kiểm thử public', phone, email, note: 'Quốc tịch: Việt Nam' }),
+      });
+      return { status: response.status, body: await response.json() };
+    }, { quoteId: publicQuote.id, key: publicIdempotencyKey, phone: publicPhone, email: `atg-public-${stamp}@example.test` });
+    expect(publicHoldReplay.status).toBe(201);
+    expect(publicHoldKeys).toEqual([publicIdempotencyKey, publicIdempotencyKey, publicIdempotencyKey]);
+    const publicReceipt = publicHoldReplay.body as Record<string, unknown> & { id: string; publicCode: string; bookingStatus: string };
+    expect(publicReceipt).toMatchObject({ id: committedReceipt!.id, publicCode: committedReceipt!.publicCode, bookingStatus: 'pending_confirmation' });
     expect(Object.keys(publicReceipt).sort()).toEqual(['adults', 'bookingStatus', 'checkIn', 'checkOut', 'children', 'discountVnd', 'dueNowVnd', 'expiresAt', 'id', 'publicCode', 'subtotalVnd', 'totalVnd'].sort());
     expect(publicReceipt).not.toHaveProperty('customer');
     expect(publicReceipt).not.toHaveProperty('notes');
     expect(publicReceipt).not.toHaveProperty('payments');
-    bookingIds.push(publicReceipt.id);
+    const changedHoldPayload = await guestPage.evaluate(async ({ quoteId, key, phone, email }) => {
+      const csrf = document.cookie.split('; ').find((part) => part.startsWith('dvb_csrf='))?.slice('dvb_csrf='.length) ?? '';
+      const response = await fetch(`/api/v1/quotes/${quoteId}/hold`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': decodeURIComponent(csrf), 'idempotency-key': key },
+        body: JSON.stringify({ fullName: 'Khách kiểm thử public', phone, email, note: 'Nội dung đã thay đổi sau lần giữ phòng' }),
+      });
+      return response.status;
+    }, { quoteId: publicQuote.id, key: publicIdempotencyKey, phone: publicPhone, email: `atg-public-${stamp}@example.test` });
+    expect(changedHoldPayload).toBe(409);
     const publicBooking = await opsApi<TestBooking>(page, `/admin/bookings/${publicReceipt.id}`);
     expect(publicBooking.status).toBe(200);
     customerFromBooking(publicBooking.body, publicPhone);
@@ -334,6 +437,14 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
       status: 'cancelled', expectedVersion: publicBooking.body.version, reason: `Dọn public checkout QA ${stamp}`,
     });
     expect(publicCancelled.status).toBe(201);
+    const cancelledQuoteResponsePromise = guestPage.waitForResponse((response) => response.url().endsWith(`/api/v1/quotes/${publicQuote.id}`) && response.request().method() === 'GET', { timeout: 20_000 });
+    await guestPage.reload({ waitUntil: 'domcontentloaded', timeout: 20_000 });
+    const cancelledQuoteResponse = await cancelledQuoteResponsePromise;
+    expect((await cancelledQuoteResponse.json() as { booking: { bookingStatus: string } }).booking.bookingStatus).toBe('cancelled');
+    await expect(guestPage.getByRole('heading', { name: 'Tình trạng yêu cầu đặt phòng' })).toBeVisible();
+    await expect(guestPage.getByText('Trạng thái: đã hủy.')).toBeVisible();
+    await expect(guestPage.getByText('Giá trị yêu cầu: 20.000đ.')).toBeVisible();
+    await expect(guestPage.getByText('khoản dự kiến khi xác nhận', { exact: false })).toHaveCount(0);
     await guestContext.close();
     guestContext = null;
     await otherGuestContext.close();
@@ -547,6 +658,8 @@ test('booking, inventory concurrency, CRM, coupons, offline finance and reports 
     expect((inventory.body as { items: Array<{ heldCount: number; reservedCount: number }> }).items.every((item) => item.heldCount === 0 && item.reservedCount === 0)).toBe(true);
     expect((await opsApi<{ redemptions: unknown[] }>(page, `/admin/payments/${paymentId}`)).status).toBe(200);
   } finally {
+    // Do not clean the quote/property while an intercepted POST may still commit.
+    await publicHoldGuard.promise?.catch(() => undefined);
     await guestContext?.close().catch(() => undefined);
     await otherGuestContext?.close().catch(() => undefined);
     for (const bookingId of bookingIds) {

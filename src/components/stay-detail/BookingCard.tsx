@@ -8,7 +8,8 @@ import { useSiteData } from '@/components/site/SiteDataProvider';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { GuestPicker } from '@/components/ui/GuestPicker';
 import { Popover } from '@/components/ui/Popover';
-import { fromPrice } from '@/lib/catalog/pricing';
+import { fromPrice, hasContactOnlyRooms } from '@/lib/catalog/pricing';
+import { stayContactHref } from '@/lib/contact/stay-contact';
 import { formatShort } from '@/lib/dates';
 import { formatVnd } from '@/lib/format';
 import { nights } from '@/lib/selection';
@@ -49,7 +50,7 @@ export function BookingCard() {
     return <section className="bcard bcard--contact" id="dat-phong" aria-labelledby={`${uid}-t`}>
       <h2 id={`${uid}-t`}>Liên hệ để nhận giá</h2>
       <p>{room ? `Hạng phòng ${room.name}` : stay.name} chưa có giá đặt trực tuyến. Gửi yêu cầu để được tư vấn giá và tình trạng phòng.</p>
-      <Link className="btn btn--primary bcard__cta" href="/lien-he">Liên hệ tư vấn <ArrowRight size={17} aria-hidden="true" /></Link>
+      <Link className="btn btn--primary bcard__cta" href={stayContactHref(stay.slug, selection, room?.id)}>Liên hệ tư vấn <ArrowRight size={17} aria-hidden="true" /></Link>
     </section>;
   }
   return (
@@ -72,6 +73,7 @@ export function BookingCard() {
       <p className="bcard__badge">
         <ShieldCheck size={15} aria-hidden="true" /> Giá theo hạng phòng đã xuất bản
       </p>
+      {!room && hasContactOnlyRooms(stay) && <p className="bcard__contact-note">Một số hạng khác cần liên hệ để nhận giá.</p>}
 
       <div className="bcard__dates">
         {(
@@ -184,9 +186,9 @@ export function BookingCard() {
 
 /** Mobile bottom bar: same state, scrolls to the booking card. */
 export function MobileBookingBar() {
-  const { stay, room } = useBooking();
+  const { stay, room, selection } = useBooking();
   const price = room ? room.pricePerNight : fromPrice(stay);
-  if (price <= 0) return <div className="mbar"><div className="mbar__price"><strong>Liên hệ để nhận giá</strong></div><Link className="btn btn--primary mbar__cta" href="/lien-he">Liên hệ <ArrowRight size={16} aria-hidden="true" /></Link></div>;
+  if (price <= 0) return <div className="mbar"><div className="mbar__price"><strong>Liên hệ để nhận giá</strong></div><Link className="btn btn--primary mbar__cta" href={stayContactHref(stay.slug, selection, room?.id)}>Liên hệ <ArrowRight size={16} aria-hidden="true" /></Link></div>;
   return (
     <div className="mbar">
       <div className="mbar__price">

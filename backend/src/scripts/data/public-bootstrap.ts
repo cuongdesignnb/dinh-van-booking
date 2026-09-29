@@ -1,4 +1,4 @@
-/** Owner-confirmed presentation copy. No catalogue, commercial or review rows live here. */
+/** Initial presentation copy. No catalogue, commercial or review rows live here. */
 export type BootstrapMediaKey = 'hero' | 'promo' | 'staysHero' | 'destinationsHero' | 'combosHero' | 'bookingHero';
 
 export type BootstrapMediaSource = {
@@ -158,7 +158,7 @@ export function publicBootstrapSettings(media: Record<BootstrapMediaKey, string 
       advisorDescription: paragraphDoc('Gọi cho Đinh Vân để trao đổi về thời gian đi, số người và nhu cầu lưu trú.'),
       advisorCtaLabel: 'Liên hệ Đinh Vân',
       advisorImageMediaId: null,
-      emptyResultTitle: 'Chưa có nơi lưu trú được xuất bản',
+      emptyResultTitle: 'Chỗ nghỉ đang được cập nhật',
       emptyResultDescription: paragraphDoc('Nội dung đang được cập nhật. Bạn có thể liên hệ Đinh Vân để được hỗ trợ.'),
       emptyResultCtaLabel: 'Liên hệ tư vấn',
     },
@@ -168,9 +168,9 @@ export function publicBootstrapSettings(media: Record<BootstrapMediaKey, string 
       heroDescription: paragraphDoc('Gợi ý những điểm đến được cập nhật trên hệ thống cho hành trình gần thiên nhiên.'),
       heroImageMediaId: media.destinationsHero,
       listTitle: 'Khám phá điểm đến',
-      listSubtitle: paragraphDoc('Thông tin điểm đến sẽ hiển thị khi được quản trị viên xuất bản.'),
+      listSubtitle: paragraphDoc('Tìm cảm hứng cho chuyến đi theo cách của riêng bạn.'),
       advisorCtaLabel: 'Liên hệ tư vấn',
-      emptyTitle: 'Chưa có điểm đến được xuất bản',
+      emptyTitle: 'Điểm đến đang được cập nhật',
       emptyDescription: paragraphDoc('Đinh Vân đang cập nhật nội dung. Bạn có thể gọi để được gợi ý trước khi lên đường.'),
     },
     'catalog.combosPage': {
@@ -179,9 +179,9 @@ export function publicBootstrapSettings(media: Record<BootstrapMediaKey, string 
       heroDescription: paragraphDoc('Thông tin combo sẽ được cập nhật sau khi các dịch vụ và điều kiện được xác nhận.'),
       heroImageMediaId: media.combosHero,
       listTitle: 'Combo du lịch',
-      listSubtitle: paragraphDoc('Các lựa chọn sẽ xuất hiện khi được quản trị viên xuất bản.'),
+      listSubtitle: paragraphDoc('Chọn nhịp điệu phù hợp cho chuyến đi của bạn.'),
       advisorCtaLabel: 'Liên hệ tư vấn',
-      emptyTitle: 'Chưa có combo được xuất bản',
+      emptyTitle: 'Combo du lịch đang được chuẩn bị',
       emptyDescription: paragraphDoc('Bạn có thể liên hệ Đinh Vân để chia sẻ nhu cầu chuyến đi.'),
       emptyCtaLabel: 'Liên hệ Đinh Vân',
     },
@@ -196,12 +196,12 @@ export function publicBootstrapSettings(media: Record<BootstrapMediaKey, string 
     'catalog.staticPages': {
       eyebrow: 'Thông tin hữu ích',
       title: 'Chuyên trang',
-      description: paragraphDoc('Thông tin chính sách và hướng dẫn sẽ xuất hiện khi được quản trị viên xuất bản.'),
+      description: paragraphDoc('Những thông tin hữu ích để chuẩn bị chuyến đi thuận tiện hơn.'),
     },
     'catalog.articlesPage': {
       eyebrow: 'Cẩm nang Cúc Phương',
       title: 'Bài viết',
-      description: paragraphDoc('Bài viết và kinh nghiệm khám phá sẽ xuất hiện khi được quản trị viên xuất bản.'),
+      description: paragraphDoc('Góc đọc dành cho những ai yêu hành trình khám phá Cúc Phương – Ninh Bình.'),
     },
     'seo.defaults': {
       defaultTitle: 'Đinh Vân Booking — Cúc Phương, Ninh Bình',

@@ -9,7 +9,7 @@ export interface ImageAsset {
   caption?: string;
 }
 
-export type StayType = 'homestay' | 'eco-lodge' | 'resort' | 'bungalow' | 'nha-san';
+export type StayType = 'homestay' | 'eco-lodge' | 'resort' | 'bungalow' | 'nha-san' | 'villa' | 'glamping' | 'other';
 
 export type AmenityId =
   | 'wifi'
@@ -24,11 +24,16 @@ export type AmenityId =
 export interface RoomType {
   id: string;
   name: string;
+  unitKind?: string | null;
+  bedroomCount?: number | null;
+  bathroomCount?: number | null;
   /** Maximum guests (adults + children) per room. */
   capacity: number;
   areaM2: number;
   view: string;
   description: string;
+  /** Verified facilities specific to this room category, not the whole property. */
+  amenities?: Array<{ code: string; label: string }>;
   pricePerNight: number;
   image: ImageAsset;
   /** Photos specific to this room category; inventory dates have no photos. */

@@ -1512,6 +1512,25 @@ svg {
   width: min(100%, 360px);
 }
 
+.home-promo {
+  display: flex;
+  justify-content: center;
+}
+
+.home-promo .promo {
+  width: min(100%, 780px);
+  min-height: 300px;
+}
+
+.home-promo .promo__content {
+  max-width: 420px;
+  padding: 24px 28px 72px;
+}
+
+.home-promo .promo__text {
+  max-width: 320px;
+}
+
 .featured .section-head {
   padding-right: 6px;
   margin-bottom: 3px;
@@ -1779,6 +1798,15 @@ svg {
   font-size: 11px;
   color: #6b716c;
   margin-left: 2px;
+}
+
+.stay__price-note {
+  display: block;
+  margin-top: 3px;
+  color: #526356;
+  font-size: 10.5px;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .stay .btn--sm {
@@ -2922,12 +2950,25 @@ svg {
 
 .dialog__reviews blockquote {
   font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
 .dialog__reviews p {
   margin-top: 6px;
   font-size: 12.5px;
   color: var(--dvb-muted);
+}
+
+.dialog__reviews cite {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--dvb-text);
+}
+
+.dialog__review-rating {
+  color: #a56a25;
+  letter-spacing: 2px;
+  font-size: 16px;
 }
 
 .field {

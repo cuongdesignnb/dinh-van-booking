@@ -44,11 +44,15 @@ function DialogContent({ req, onDone }: { req: DialogRequest; onDone: () => void
       return (
         <>
           <h2 id="dialog-title" className="dialog__title">
-            Khách hàng nói về {site.name || 'website'}
+            {req.title}
           </h2>
-          <p className="dialog__pending" role="status">
-            Chưa có đánh giá đã được công bố.
-          </p>
+          {req.items.length ? <ul className="dialog__reviews" aria-label="Đánh giá đã công bố">
+            {req.items.map((review) => <li key={review.id}>
+              {review.rating >= 1 && review.rating <= 5 && <span className="dialog__review-rating" aria-label={`${review.rating} trên 5 sao`}>{'★'.repeat(review.rating)}</span>}
+              <blockquote>“{review.quote}”</blockquote>
+              <p><cite>{review.author}</cite>{review.context && <span> · {review.context}</span>}</p>
+            </li>)}
+          </ul> : <p className="dialog__pending" role="status">Chưa có đánh giá đã được công bố.</p>}
         </>
       );
     case 'search':

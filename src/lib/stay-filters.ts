@@ -6,9 +6,10 @@ import type { Stay } from '@/data/stays';
 import type { AmenityId, StayType } from '@/data/types';
 import { readParam } from './selection';
 
-import { fromPrice, maxCapacity } from '@/lib/catalog/pricing';
+import { compareStayPrices, fromPrice, maxCapacity } from '@/lib/catalog/pricing';
+import { STAY_TYPES } from '@/lib/catalog/constants';
 
-export const PRICE_BOUNDS = { min: 300000, max: 2000000, step: 50000 } as const;
+export const PRICE_BOUNDS = { min: 0, max: 2000000, step: 50000 } as const;
 
 export type StaySort = 'popular' | 'price-asc' | 'price-desc' | 'rating';
 export const SORT_OPTIONS: { id: StaySort; label: string }[] = [
@@ -44,7 +45,7 @@ export const DEFAULT_FILTERS: StayFilters = {
   page: 1,
 };
 
-const TYPES: StayType[] = ['homestay', 'eco-lodge', 'resort', 'bungalow', 'nha-san'];
+const TYPES: StayType[] = STAY_TYPES.map((item) => item.id);
 const AMENITY_IDS: AmenityId[] = ['wifi', 'breakfast', 'view', 'kitchen', 'family', 'parking', 'eco', 'pool'];
 
 type Src = Parameters<typeof readParam>[0];
@@ -109,8 +110,8 @@ export function applyFilters(all: Stay[], f: StayFilters, guests: number) {
   const out = all.filter((s) => passes(s, f, guests));
   const by = {
     popular: (a: Stay, b: Stay) => b.popularity - a.popularity,
-    'price-asc': (a: Stay, b: Stay) => fromPrice(a) - fromPrice(b),
-    'price-desc': (a: Stay, b: Stay) => fromPrice(b) - fromPrice(a),
+    'price-asc': (a: Stay, b: Stay) => compareStayPrices(a, b),
+    'price-desc': (a: Stay, b: Stay) => compareStayPrices(a, b, true),
     rating: (a: Stay, b: Stay) => b.rating - a.rating || b.reviewCount - a.reviewCount,
   }[f.sort];
   return out.sort(by);

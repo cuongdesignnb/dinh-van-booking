@@ -12,7 +12,9 @@ const OWNER_PASSWORD = process.env.OWNER_PASSWORD ?? readFileSync(
 
 export async function signInAsOwner(page: Page) {
   await page.goto('/admin');
-  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible();
+  // /auth/me is allowed to complete before presenting login; a real timeout
+  // now shows a retry state at 10s instead of an indefinite spinner.
+  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible({ timeout: 12_000 });
   await page.getByLabel('Email').fill(OWNER_EMAIL);
   await page.getByLabel('Mật khẩu').fill(OWNER_PASSWORD);
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
@@ -21,7 +23,7 @@ export async function signInAsOwner(page: Page) {
     const password = document.querySelector<HTMLInputElement>('input[type="password"]');
     if (password) password.value = '';
   });
-  await expect(page.locator('.atop__user')).toBeVisible();
+  await expect(page.locator('.atop__user')).toBeVisible({ timeout: 12_000 });
 }
 
 /** Fail before creating QA records if guarded PostgreSQL cleanup cannot run. */
@@ -122,6 +124,9 @@ BEGIN
     RAISE EXCEPTION 'Refusing test cleanup: the exact synthetic customer has dependent business records';
   END IF;
 
+  DELETE FROM public.idempotency_keys
+  WHERE operation = 'public.inquiry.create'
+    AND response_snapshot ->> 'id' = '${input.id}';
   DELETE FROM public.audit_logs WHERE entity_type = 'inquiry' AND entity_id = '${input.id}'::uuid;
   DELETE FROM public.inquiries WHERE id = '${input.id}'::uuid AND customer_id = target_customer;
   GET DIAGNOSTICS removed_count = ROW_COUNT;

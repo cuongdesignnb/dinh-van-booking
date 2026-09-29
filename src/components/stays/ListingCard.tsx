@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { AmenityIcon } from '@/components/shared/AmenityIcon';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import type { Stay } from '@/data/stays';
+import { fromPrice, hasContactOnlyRooms } from '@/lib/catalog/pricing';
+import { stayContactHref } from '@/lib/contact/stay-contact';
 import { formatRating, formatVnd } from '@/lib/format';
-
-const fromPrice = (stay: Stay) => Math.min(...stay.roomTypes.map((room) => room.pricePerNight));
+import { parseSelection } from '@/lib/selection';
 
 /**
  * Listing card (grid) and row (list). The name and CTA are the only links;
@@ -24,6 +25,8 @@ export function ListingCard({
   index?: number;
 }) {
   const href = `/phong-nghi/${stay.slug}${query ? `?${query}` : ''}`;
+  const price = fromPrice(stay);
+  const mixedPrices = price > 0 && hasContactOnlyRooms(stay);
   return (
     <article
       className={`lcard lcard--${variant}`}
@@ -47,11 +50,11 @@ export function ListingCard({
         <h3 className="lcard__name" id={`${stay.id}-t`} title={stay.name}>
           <Link href={href}>{stay.name}</Link>
         </h3>
-        <p className="lcard__rating">
+        {stay.reviewCount > 0 && stay.rating > 0 && <p className="lcard__rating">
           <Star size={13} className="star" aria-hidden="true" />
           <strong>{formatRating(stay.rating)}</strong>
           <span>({stay.reviewCount} đánh giá)</span>
-        </p>
+        </p>}
         <p className="lcard__loc">
           <MapPin size={12} aria-hidden="true" />
           {stay.location}
@@ -66,9 +69,9 @@ export function ListingCard({
         </ul>
         <p className="lcard__sum">{stay.cardSummary}</p>
         <div className="lcard__foot">
-          <p className="lcard__price">{fromPrice(stay) > 0 ? <>Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}</p>
-          <Link href={fromPrice(stay) > 0 ? href : '/lien-he'} className="btn btn--primary btn--sm btn-arrow">
-            {fromPrice(stay) > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={13} strokeWidth={2.3} aria-hidden="true" />
+          <p className="lcard__price">{price > 0 ? <>Từ <strong>{formatVnd(price)}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}{mixedPrices && <small className="lcard__price-note">Hạng khác cần liên hệ giá</small>}</p>
+          <Link href={price > 0 ? href : stayContactHref(stay.slug, query ? parseSelection(new URLSearchParams(query)) : undefined)} className="btn btn--primary btn--sm btn-arrow">
+            {price > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={13} strokeWidth={2.3} aria-hidden="true" />
             <span className="sr-only"> {stay.name}</span>
           </Link>
         </div>

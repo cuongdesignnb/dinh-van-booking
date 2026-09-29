@@ -1,12 +1,14 @@
 'use client';
 
-import { Check, ImageOff, Images, Mountain, Scaling, UserRound, Users } from 'lucide-react';
+import { Bath, BedDouble, Check, DoorOpen, House, ImageOff, Images, Scaling, UserRound, Users } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { useState } from 'react';
 import { SmallLeaf } from '@/components/ui/Decor';
 import type { ImageAsset } from '@/data/types';
 import { formatVnd } from '@/lib/format';
+import { stayContactHref } from '@/lib/contact/stay-contact';
+import { roomUnitKindLabel } from '@/lib/room-unit-kind';
 import { ROOMS_ANCHOR } from './BookingCard';
 import { capacityIssue, useBooking } from './BookingContext';
 import { GalleryDialog } from './PropertyGallery';
@@ -55,17 +57,17 @@ export function RoomTypes({ title }: { title?: string }) {
               <div className="rtype__body">
                 <h3 className="rtype__name">{r.name}</h3>
                 <ul className="rtype__meta">
+                  {roomUnitKindLabel(r.unitKind) && <li><House size={14} aria-hidden="true" /> {roomUnitKindLabel(r.unitKind)}</li>}
+                  {r.bedroomCount != null && <li><DoorOpen size={14} aria-hidden="true" /> {r.bedroomCount} phòng ngủ</li>}
+                  {r.bathroomCount != null && <li><Bath size={14} aria-hidden="true" /> {r.bathroomCount} phòng tắm</li>}
                   <li>
                     {r.capacity > 2 ? <Users size={14} aria-hidden="true" /> : <UserRound size={14} aria-hidden="true" />}
                     {r.capacity > 2 && r.capacity < 4 ? `2 - ${r.capacity}` : r.capacity} người
                   </li>
-                  <li>
-                    <Scaling size={13} aria-hidden="true" /> {r.areaM2}m²
-                  </li>
-                  <li>
-                    <Mountain size={14} aria-hidden="true" /> {r.view}
-                  </li>
+                  {r.areaM2 > 0 && <li><Scaling size={13} aria-hidden="true" /> {r.areaM2}m²</li>}
+                  {r.view?.trim() && <li><BedDouble size={14} aria-hidden="true" /> {r.view}</li>}
                 </ul>
+                {!!r.amenities?.length && <ul className="rtype__amenities" aria-label={`Tiện nghi ${r.name}`}>{r.amenities.map((amenity) => <li key={amenity.code}><Check size={13} aria-hidden="true" /> {amenity.label}</li>)}</ul>}
                 <p className="rtype__desc">{r.description}</p>
                 {tooSmall && selected && (
                   <p className="rtype__warn" role="status">
@@ -74,7 +76,7 @@ export function RoomTypes({ title }: { title?: string }) {
                 )}
                 <div className="rtype__foot">
                   <p className="rtype__price">{r.pricePerNight > 0 ? <><strong>{formatVnd(r.pricePerNight)}</strong> / đêm</> : <strong>Liên hệ để nhận giá</strong>}</p>
-                  {r.pricePerNight === 0 ? <Link href="/lien-he" className="btn btn--primary rtype__btn">Liên hệ</Link> : <button
+                  {r.pricePerNight === 0 ? <Link href={stayContactHref(stay.slug, selection, r.id)} className="btn btn--primary rtype__btn">Liên hệ</Link> : <button
                     type="button"
                     className="btn btn--primary rtype__btn"
                     aria-pressed={selected}

@@ -25,7 +25,7 @@ import { PRICE_BOUNDS, SORT_OPTIONS, type StayFilters } from '@/lib/stay-filters
 type Field = 'in' | 'out' | 'guests' | 'price' | 'types' | 'amenities' | 'sort';
 
 const compact = (v: number) =>
-  v >= 1_000_000 ? `${String(Math.round(v / 100_000) / 10).replace('.', ',')}tr` : `${v / 1000}k`;
+  v === 0 ? '0đ' : v >= 1_000_000 ? `${String(Math.round(v / 100_000) / 10).replace('.', ',')}tr` : `${v / 1000}k`;
 
 export const priceLabel = (f: Pick<StayFilters, 'priceMin' | 'priceMax'>) =>
   f.priceMin === PRICE_BOUNDS.min && f.priceMax === PRICE_BOUNDS.max
@@ -297,7 +297,7 @@ function PricePanel({ filters, onApply }: { filters: StayFilters; onApply: (min:
   const [err, setErr] = useState<string | null>(null);
   const apply = (a: number, b: number) => {
     if (!Number.isFinite(a) || !Number.isFinite(b) || a < PRICE_BOUNDS.min || b < a) {
-      setErr('Khoảng giá chưa hợp lệ: giá tối thiểu từ 300.000đ và không lớn hơn giá tối đa.');
+      setErr('Khoảng giá chưa hợp lệ: giá tối thiểu từ 0đ và không lớn hơn giá tối đa.');
       return;
     }
     onApply(a, Math.min(b, PRICE_BOUNDS.max));

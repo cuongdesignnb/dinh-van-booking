@@ -38,7 +38,7 @@ export interface AdminNavItem {
 export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin', label: 'Tổng quan', icon: House, permission: 'dashboard.read' },
   { href: '/admin/dat-phong', label: 'Đặt phòng', icon: CalendarDays, permission: 'booking.read', badge: 'pendingBookings' },
-  { href: '/admin/phong-nghi', label: 'Phòng nghỉ', icon: BedDouble, permission: 'catalog.read' },
+  { href: '/admin/phong-nghi', label: 'Nơi lưu trú', icon: BedDouble, permission: 'catalog.read' },
   { href: '/admin/hang-phong', label: 'Hạng phòng', icon: BedDouble, permission: 'catalog.read' },
   { href: '/admin/ton-phong', label: 'Quỹ phòng', icon: CalendarDays, permission: 'inventory.read' },
   { href: '/admin/combo-du-lich', label: 'Combo du lịch', icon: MapIcon, permission: 'catalog.read' },

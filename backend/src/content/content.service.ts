@@ -382,6 +382,7 @@ export class ContentService {
       operatingStatus: string;
       roomTypes?: Array<{
         status: string;
+        capacityVerified: boolean;
         units: Array<{ id: string }>;
         ratePlans: Array<{ baseRateVnd: bigint }>;
       }>;
@@ -412,12 +413,13 @@ export class ContentService {
         if (property.operatingStatus !== 'active') problems.push('Nơi lưu trú chưa được kích hoạt');
         const roomTypes = property.roomTypes ?? [];
         if (!roomTypes.length) problems.push('Chưa có hạng phòng hoạt động');
+        if (roomTypes.length && !roomTypes.some((room) => room.capacityVerified)) problems.push('Chưa xác minh sức chứa hạng phòng');
         if (!roomTypes.some((room) => room.units.length > 0)) problems.push('Chưa có đơn vị phòng hoạt động');
         if (!roomTypes.some((room) => room.ratePlans.some((rate) => rate.baseRateVnd >= 0n))) {
           problems.push('Chưa có bảng giá phòng');
         }
-        if (!roomTypes.some((room) => room.units.length > 0 && room.ratePlans.some((rate) => rate.baseRateVnd >= 0n))) {
-          problems.push('Cần ít nhất một hạng phòng có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)');
+        if (!roomTypes.some((room) => room.capacityVerified && room.units.length > 0 && room.ratePlans.some((rate) => rate.baseRateVnd >= 0n))) {
+          problems.push('Cần ít nhất một hạng phòng đã xác minh sức chứa, có đơn vị và bảng giá (0đ sẽ hiển thị liên hệ)');
         }
       }
     }

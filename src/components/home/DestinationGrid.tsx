@@ -31,7 +31,7 @@ export function DestinationGrid({ destinations, config }: { destinations: Destin
       <ul className="destination-grid">
         {visibleDestinations.map((d, i) => (
           <li key={d.id} data-reveal="card" style={{ '--d': `${1800 + i * 90}ms` } as React.CSSProperties}>
-            <Link href={`/diem-den?d=${d.id}`} className="dest">
+            <Link href={d.publicPath ?? (d.slug ? `/diem-den/${d.slug}` : '/diem-den')} className="dest">
               <span className="dest__media">
                 <Image
                   src={(d.homeImage ?? d.image).src}

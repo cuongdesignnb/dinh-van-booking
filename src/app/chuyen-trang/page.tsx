@@ -7,6 +7,7 @@ import { getPublicPages, getPublicSeoUrls, getPublicSite } from '@/lib/api/publi
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { buildCollectionGraph } from '@/lib/seo/schema';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import { ContentIndexEmptyState } from '@/components/content/ContentIndexEmptyState';
 import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import '@/styles/static-pages.css';
@@ -36,12 +37,12 @@ export default async function StaticPagesIndex() {
           {title && <h1>{title}</h1>}
           {richDocumentHasContent(config.description) && <div className="static-page__excerpt"><RichContentRenderer document={config.description as RichDocument} /></div>}
         </header>}
-        {pages.length > 0 && <div className="static-page__index-list">
+        {pages.length > 0 ? <div className="static-page__index-list">
           {pages.map((page) => <article className="static-page__index-card" key={page.id}>
             <h2><Link href={page.path}>{page.title}</Link></h2>
             {page.updatedAt && <p>Cập nhật {new Date(page.updatedAt).toLocaleDateString('vi-VN')}</p>}
           </article>)}
-        </div>}
+        </div> : <ContentIndexEmptyState kind="page" />}
       </section>
       <JsonLd data={title ? buildCollectionGraph(site, {
         path: '/chuyen-trang',

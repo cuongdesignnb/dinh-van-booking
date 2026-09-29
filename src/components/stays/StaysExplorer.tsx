@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, LayoutGrid, List, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import { BedDouble, Info, LayoutGrid, List, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { Pagination } from '@/components/shared/Pagination';
@@ -49,12 +49,15 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
   const selection = useMemo(() => parseSelection(params), [params]);
   const filters = useMemo(() => parseFilters(params), [params]);
   const dataset = stays;
+  const hasCatalog = dataset.length > 0;
+  const hasAdvisor = !!publicText(content.advisorTitle);
   const guests = selection.adults + selection.children;
   const results = useMemo(() => applyFilters(dataset, filters, guests), [dataset, filters, guests]);
   const counts = useMemo(() => facetCounts(dataset, filters, guests), [dataset, filters, guests]);
   const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const page = Math.min(filters.page, pages);
   const pageItems = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const hasMap = !!mapImage?.src && pageItems.some((stay) => !!stay.mapPin);
   const query = selectionQuery(selection);
 
   const [drawer, setDrawer] = useState(false);
@@ -97,19 +100,20 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
 
   let body: ReactNode;
   if (!results.length) {
-    const emptyTitle = publicText(content.emptyResultTitle);
+    const emptyTitle = hasCatalog ? 'Không tìm thấy nơi lưu trú phù hợp' : publicText(content.emptyResultTitle) || 'Chưa có nơi lưu trú được công bố';
     const emptyCta = publicText(content.emptyResultCtaLabel);
-    const emptyDescription = content.emptyResultDescription;
-    body = emptyTitle || emptyCta || richDocumentHasContent(emptyDescription) ? (
-      <div className="state-box" role="status">
-        {emptyTitle && <strong>{emptyTitle}</strong>}
+    const emptyDescription = hasCatalog ? null : content.emptyResultDescription;
+    body = (
+      <div className={`state-box stays-empty-state${hasCatalog ? '' : ' stays-empty-state--catalog'}`} role="status">
+        {!hasCatalog && <span className="stays-empty-state__icon" aria-hidden="true"><BedDouble size={27} strokeWidth={1.6} /></span>}
+        <h2 id={hasCatalog ? undefined : 'stays-count'}>{emptyTitle}</h2>
         {richDocumentHasContent(emptyDescription) && <div><RichContentRenderer document={emptyDescription as RichDocument} /></div>}
         <div className="state-box__actions">
-          {activeFilterCount(filters) > 0 && <button type="button" className="btn btn--light" onClick={reset}><RotateCcw size={15} aria-hidden="true" /> Đặt lại bộ lọc</button>}
+          {hasCatalog && activeFilterCount(filters) > 0 && <button type="button" className="btn btn--light" onClick={reset}><RotateCcw size={15} aria-hidden="true" /> Đặt lại bộ lọc</button>}
           {emptyCta && <a className="btn btn--primary" href={`/lien-he?intent=stay&${query}`}>{emptyCta}</a>}
         </div>
       </div>
-    ) : null;
+    );
   }
   else
     body = (
@@ -124,22 +128,22 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
 
   return (
     <>
-      <div className="stays-search content-shell">
+      {hasCatalog && <div className="stays-search content-shell">
         <StaySearchBar
           selection={selection}
           filters={filters}
           onSearch={(sel) => navigate(sel, { ...filters, page: 1 })}
           onFilters={patchFilters}
         />
-      </div>
+      </div>}
 
-      <div className="stays-layout content-shell">
-        <aside className="stays-side stays-side--left" aria-label="Bộ lọc tìm kiếm">
+      <div className={`stays-layout content-shell${hasCatalog ? '' : ` stays-layout--empty${hasAdvisor ? '' : ' stays-layout--empty-single'}`}`}>
+        {hasCatalog && <aside className="stays-side stays-side--left" aria-label="Bộ lọc tìm kiếm">
           <div className="side-card filters-card">{filterPanel}</div>
-        </aside>
+        </aside>}
 
         <section className="stays-main" aria-labelledby="stays-count">
-          <div className="stays-toolbar">
+          {hasCatalog && <div className="stays-toolbar">
             <p className="stays-toolbar__count" id="stays-count" aria-live="polite">
               {`Có ${results.length} kết quả phù hợp`}
             </p>
@@ -156,7 +160,7 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
                 <SlidersHorizontal size={16} aria-hidden="true" /> Lọc
                 {activeFilterCount(filters) > 0 && <span className="tool-btn__badge">{activeFilterCount(filters)}</span>}
               </button>
-              <label className="tool-btn tool-btn--select">
+              {results.length > 0 && <label className="tool-btn tool-btn--select">
                 <span className="sr-only">Sắp xếp</span>
                 <select value={filters.sort} onChange={(e) => patchFilters({ sort: e.target.value as StayFilters['sort'] })}>
                   {SORT_OPTIONS.map((o) => (
@@ -165,12 +169,12 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
                     </option>
                   ))}
                 </select>
-              </label>
-              <a className="tool-btn" href="#ban-do">
+              </label>}
+              {hasMap && <a className="tool-btn" href="#ban-do">
                 <MapIcon size={16} aria-hidden="true" /> Bản đồ
-              </a>
+              </a>}
             </div>
-            <div className="view-toggle" role="group" aria-label="Kiểu hiển thị">
+            {results.length > 0 && <div className="view-toggle" role="group" aria-label="Kiểu hiển thị">
               <button
                 type="button"
                 aria-pressed={filters.view === 'grid'}
@@ -185,9 +189,9 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
               >
                 <List size={14} aria-hidden="true" /> Dạng danh sách
               </button>
-            </div>
-          </div>
-          {chips.length > 0 && (
+            </div>}
+          </div>}
+          {hasCatalog && chips.length > 0 && (
             <ul className="filter-chips" aria-label="Bộ lọc đang áp dụng">
               {chips.map((c) => (
                 <li key={c.key}>
@@ -203,36 +207,36 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
               </li>
             </ul>
           )}
-          {selection.checkIn && (
+          {hasCatalog && selection.checkIn && (
             <p className="stays-note">
               <Info size={14} aria-hidden="true" /> Đây là gợi ý theo nhu cầu; tình trạng phòng sẽ được xác nhận khi tư
               vấn.
             </p>
           )}
           {body}
-          <div className="stays-main__pager">
+          {pages > 1 && <div className="stays-main__pager">
             <Pagination page={page} pages={pages} onChange={(p) => patchFilters({ page: p })} />
-          </div>
+          </div>}
         </section>
 
-        <aside className="stays-side stays-side--right" id="ban-do" aria-label="Bản đồ và tư vấn">
-          <StayMapCard stays={pageItems} query={query} image={mapImage} />
+        {(hasCatalog || hasAdvisor) && <aside className="stays-side stays-side--right" id={hasMap ? 'ban-do' : undefined} aria-label={hasMap ? 'Bản đồ và tư vấn' : 'Tư vấn'}>
+          {hasMap && <StayMapCard stays={pageItems} query={query} image={mapImage} />}
           {advisor}
-        </aside>
+        </aside>}
       </div>
 
       <div className="stays-bottom content-shell">
         <div className="stays-bottom__left">{notFound}</div>
         <div className="stays-bottom__mid">
           {reviews}
-          <div className="stays-bottom__pager">
+          {pages > 1 && <div className="stays-bottom__pager">
             <Pagination page={page} pages={pages} onChange={(p) => patchFilters({ page: p })} />
-          </div>
+          </div>}
         </div>
         <div className="stays-bottom__right">{faq}</div>
       </div>
 
-      <Modal open={drawer} onClose={() => setDrawer(false)} labelledBy={drawerTitle} className="dialog--drawer">
+      {hasCatalog && <Modal open={drawer} onClose={() => setDrawer(false)} labelledBy={drawerTitle} className="dialog--drawer">
         <h2 id={drawerTitle} className="dialog__title">
           Bộ lọc tìm kiếm
         </h2>
@@ -259,7 +263,7 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
             Áp dụng ({draftResults} kết quả)
           </button>
         </div>
-      </Modal>
+      </Modal>}
     </>
   );
 }

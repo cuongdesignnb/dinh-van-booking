@@ -6,6 +6,7 @@ import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { getPublicArticles, getPublicSite } from '@/lib/api/public';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import { ContentIndexEmptyState } from '@/components/content/ContentIndexEmptyState';
 import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { isSubstantivePublicContent } from '@/lib/seo/content';
@@ -40,7 +41,7 @@ export default async function ArticlesPage() {
           {title && <h1>{title}</h1>}
           {richDocumentHasContent(config.description) && <div className="static-page__excerpt"><RichContentRenderer document={config.description as RichDocument} /></div>}
         </header>}
-        {articles.length > 0 && <div className="static-page__index-list">
+        {articles.length > 0 ? <div className="static-page__index-list">
           {articles.map((article) => <article className="static-page__index-card" key={article.id}>
             {article.cover && <Link className="static-page__card-image" href={article.path} aria-label={article.title}>
               <Image src={article.cover.src} alt={article.cover.alt} width={article.cover.width} height={article.cover.height} unoptimized />
@@ -51,7 +52,7 @@ export default async function ArticlesPage() {
               {article.firstPublishedAt && <time dateTime={article.firstPublishedAt}>{new Date(article.firstPublishedAt).toLocaleDateString('vi-VN')}</time>}
             </div>
           </article>)}
-        </div>}
+        </div> : <ContentIndexEmptyState kind="article" />}
       </section>
       <JsonLd data={title ? buildCollectionGraph(site, {
         path: '/bai-viet',

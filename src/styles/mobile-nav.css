@@ -144,11 +144,6 @@ body[data-lock] .menu-float {
     display: none;
   }
 
-  /* The stay-detail price bar stacks directly above the navigation bar. */
-  .mbar {
-    bottom: calc(var(--dvb-mobilebar-h) + env(safe-area-inset-bottom));
-    padding-bottom: 10px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,14 +5,15 @@ import { PublicCatalogService } from './public-catalog.service';
 import type { PrismaService } from '../prisma/prisma.service';
 
 test('public stay needs an active room unit and active rate; zero means contact-only', () => {
-  assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), true);
-  assert.equal(hasSellableStayRoom([{ units: [], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
-  assert.equal(hasSellableStayRoom([{ units: [{ active: false }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
-  assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 0n }] }]), true);
-  assert.equal(hasSellableStayRoom([{ units: [{ active: true }], ratePlans: [{ active: false, baseRateVnd: 500000n }] }]), false);
+  assert.equal(hasSellableStayRoom([{ capacityVerified: true, units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), true);
+  assert.equal(hasSellableStayRoom([{ capacityVerified: false, units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
+  assert.equal(hasSellableStayRoom([{ capacityVerified: true, units: [], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
+  assert.equal(hasSellableStayRoom([{ capacityVerified: true, units: [{ active: false }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), false);
+  assert.equal(hasSellableStayRoom([{ capacityVerified: true, units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 0n }] }]), true);
+  assert.equal(hasSellableStayRoom([{ capacityVerified: true, units: [{ active: true }], ratePlans: [{ active: false, baseRateVnd: 500000n }] }]), false);
   assert.equal(hasSellableStayRoom([
-    { units: [{ active: true }], ratePlans: [] },
-    { units: [], ratePlans: [{ active: true, baseRateVnd: 500000n }] },
+    { capacityVerified: true, units: [{ active: true }], ratePlans: [] },
+    { capacityVerified: true, units: [], ratePlans: [{ active: true, baseRateVnd: 500000n }] },
   ]), false);
 });
 

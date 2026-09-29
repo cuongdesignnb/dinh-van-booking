@@ -17,7 +17,7 @@ import {
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { capacityIssue } from '@/components/stay-detail/BookingContext';
 import { BrandIcon } from '@/components/ui/BrandIcons';
 import { GuestPicker } from '@/components/ui/GuestPicker';
@@ -33,13 +33,14 @@ import {
 } from '@/lib/booking/pricing';
 import { formatDayLabel } from '@/lib/dates';
 import { formatVnd } from '@/lib/format';
-import { apiRequest } from '@/lib/api/client';
+import { ApiError, apiRequest } from '@/lib/api/client';
 import { dateError, nights as nightsOf, parseSelection, readParam, selectionQuery, type Selection } from '@/lib/selection';
 import { validateEmail, validateMessage, validateName, validatePhone } from '@/lib/validation';
 import { publicSetting, publicText } from '@/lib/public-content';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { richDocumentHasContent } from '@/lib/public-content';
+import { clearPendingHold, matchesPendingHold, newPendingHold, readPendingHold, savePendingHold, type PendingHoldRecord } from '@/lib/booking/pending-hold';
 
 const NATIONALITIES = ['Việt Nam', 'Hàn Quốc', 'Nhật Bản', 'Trung Quốc', 'Hoa Kỳ', 'Pháp', 'Úc', 'Khác'];
 const SPECIAL_MAX = 300;
@@ -62,9 +63,21 @@ interface BookingReceipt {
   id: string;
   publicCode: string;
   bookingStatus: string;
-  expiresAt: string;
+  expiresAt: string | null;
   totalVnd: string;
   dueNowVnd: string;
+}
+
+interface RecoveredQuote {
+  id: string;
+  request: { roomTypeId: string; checkIn: string; checkOut: string; quantity: number; adults: number; children: number };
+  subtotalVnd: string;
+  discountVnd: string;
+  totalVnd: string;
+  dueNowVnd: string;
+  expiresAt: string;
+  pricing: ServerQuote['snapshot'];
+  booking: BookingReceipt | null;
 }
 
 function formatServerVnd(value: string | number | bigint): string {
@@ -82,6 +95,21 @@ interface Guest {
   nationality: string;
   special: string;
   note: string;
+}
+
+const EMPTY_GUEST: Guest = { name: '', phone: '', email: '', nationality: 'Việt Nam', special: '', note: '' };
+
+function bookingContact(guest: Guest) {
+  const note = [
+    `Quốc tịch: ${guest.nationality}`,
+    guest.special.trim() ? `Yêu cầu đặc biệt: ${guest.special.trim()}` : '',
+    guest.note.trim() ? `Ghi chú: ${guest.note.trim()}` : '',
+  ].filter(Boolean).join('\n');
+  return { fullName: guest.name.trim(), phone: guest.phone.trim(), email: guest.email.trim(), note };
+}
+
+function holdSignature(quoteId: string, guest: Guest): string {
+  return JSON.stringify({ quoteId, contact: bookingContact(guest) });
 }
 
 const dayLabel = formatDayLabel;
@@ -176,10 +204,11 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
   const router = useRouter();
   const uid = useId();
   const room = initialRoom;
+  const routeKey = JSON.stringify({ stayId: stay.id, roomId: room.id, selection: initial });
   const [sel, setSel] = useState<Selection>(initial);
   const n = nightsOf(sel);
   const guests = sel.adults + sel.children;
-  const [guest, setGuest] = useState<Guest>({ name: '', phone: '', email: '', nationality: 'Việt Nam', special: '', note: '' });
+  const [guest, setGuest] = useState<Guest>(EMPTY_GUEST);
   const [errors, setErrors] = useState<Partial<Record<GuestField | 'capacity' | 'addons', string>>>({});
   const [stage, setStage] = useState<Stage>('editing');
   const [quote, setQuote] = useState<ServerQuote | null>(null);
@@ -189,6 +218,9 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
   const [guestPop, setGuestPop] = useState(false);
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const pendingHold = useRef<{ record: PendingHoldRecord; signature?: string } | null>(null);
+  const [recovery, setRecovery] = useState<'checking' | 'none' | 'needs-contact' | 'unavailable'>('checking');
+  const [recoveryAttempt, setRecoveryAttempt] = useState(0);
   const guestBtn = useRef<HTMLButtonElement>(null);
   const refs = {
     name: useRef<HTMLInputElement>(null),
@@ -198,6 +230,39 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     note: useRef<HTMLTextAreaElement>(null),
   };
   const topRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const record = readPendingHold(routeKey);
+    if (!record) {
+      setRecovery('none');
+      return;
+    }
+    pendingHold.current = { record };
+    let active = true;
+    void apiRequest<RecoveredQuote>(`/quotes/${record.quoteId}`, { cache: 'no-store' }).then((recovered) => {
+      if (!active) return;
+      if (recovered.id !== record.quoteId || recovered.request.roomTypeId !== room.id
+        || recovered.request.checkIn !== initial.checkIn || recovered.request.checkOut !== initial.checkOut
+        || recovered.request.quantity !== initial.rooms || recovered.request.adults !== initial.adults
+        || recovered.request.children !== initial.children) {
+        setRecovery('unavailable');
+        return;
+      }
+      if (recovered.booking) {
+        setBookingReceipt(recovered.booking);
+        setStage('submitted');
+        setRecovery('none');
+      } else {
+        setQuote({
+          id: recovered.id, subtotalVnd: recovered.subtotalVnd, discountVnd: recovered.discountVnd,
+          totalVnd: recovered.totalVnd, dueNowVnd: recovered.dueNowVnd,
+          expiresAt: recovered.expiresAt, snapshot: recovered.pricing,
+        });
+        setRecovery('needs-contact');
+      }
+    }).catch(() => { if (active) setRecovery('unavailable'); });
+    return () => { active = false; };
+  }, [routeKey, recoveryAttempt, room.id, initial.checkIn, initial.checkOut, initial.rooms, initial.adults, initial.children]);
 
   const cap = capacityIssue(room, sel);
   let summary: PriceSummary | null = null;
@@ -236,6 +301,14 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     if (errors[f as GuestField]) setErrors((e) => ({ ...e, [f]: validate(f as GuestField, g) ?? undefined }));
   };
 
+  const showReview = () => {
+    setStage('review');
+    requestAnimationFrame(() => {
+      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      topRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+    });
+  };
+
   const goReview = async () => {
     if (busy) return;
     const next: typeof errors = {};
@@ -259,16 +332,23 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     setBusy(true);
     setSubmitError(null);
     try {
+      const pending = pendingHold.current;
+      if (pending) {
+        if (!quote || quote.id !== pending.record.quoteId
+          || !(await matchesPendingHold(pending.record, holdSignature(quote.id, guest)))) {
+          setSubmitError('Để thử lại yêu cầu trước, vui lòng nhập đúng thông tin liên hệ và ghi chú đã gửi. Nếu không nhớ, hãy liên hệ hỗ trợ để kiểm tra.');
+          return;
+        }
+        setRecovery('none');
+        showReview();
+        return;
+      }
       const nextQuote = await apiRequest<ServerQuote>('/quotes', {
         method: 'POST',
         body: JSON.stringify({ roomTypeId: room.id, checkIn: sel.checkIn, checkOut: sel.checkOut, quantity: sel.rooms, adults: sel.adults, children: sel.children }),
       });
       setQuote(nextQuote);
-      setStage('review');
-      requestAnimationFrame(() => {
-        topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        topRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
-      });
+      showReview();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Chưa lấy được báo giá. Vui lòng thử lại.');
     } finally {
@@ -277,17 +357,26 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
   };
 
   const backToEdit = (focus?: GuestField) => {
+    if (pendingHold.current) {
+      setSubmitError('Yêu cầu giữ phòng trước chưa rõ kết quả. Hãy thử lại để nhận mã trước khi chỉnh sửa thông tin.');
+      return;
+    }
     setStage('editing');
     setConfirmErr(false);
     requestAnimationFrame(() => (focus ? refs[focus].current?.focus() : topRef.current?.scrollIntoView({ block: 'start' })));
   };
 
   const editSelection = () => {
+    if (pendingHold.current) {
+      setSubmitError('Yêu cầu giữ phòng trước chưa rõ kết quả. Hãy thử lại để nhận mã trước khi đổi phòng hoặc ngày.');
+      return;
+    }
     const q = selectionQuery(sel);
     router.push(`/phong-nghi/${stay.slug}?${q}&room=${room.id}#cac-loai-phong`);
   };
 
   const submitBookingRequest = async () => {
+    if (busy) return;
     if (!confirmChecked) {
       setConfirmErr(true);
       return;
@@ -299,27 +388,46 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
       setSubmitError('Báo giá không còn trong phiên này. Vui lòng quay lại lấy báo giá mới.');
       return;
     }
-    const idempotencyKey = globalThis.crypto?.randomUUID?.();
-    if (!idempotencyKey) {
-      setBusy(false);
-      setSubmitError('Trình duyệt chưa hỗ trợ gửi yêu cầu an toàn. Hãy cập nhật trình duyệt rồi thử lại.');
-      return;
-    }
-    const note = [
-      `Quốc tịch: ${guest.nationality}`,
-      guest.special.trim() ? `Yêu cầu đặc biệt: ${guest.special.trim()}` : '',
-      guest.note.trim() ? `Ghi chú: ${guest.note.trim()}` : '',
-    ].filter(Boolean).join('\n');
+    const contact = bookingContact(guest);
+    const signature = holdSignature(quote.id, guest);
     try {
+      let pending = pendingHold.current;
+      if (pending && (pending.record.quoteId !== quote.id
+        || !(pending.signature === signature || await matchesPendingHold(pending.record, signature)))) {
+        setSubmitError('Thông tin đã thay đổi trong khi yêu cầu trước chưa rõ kết quả. Hãy liên hệ hỗ trợ để kiểm tra mã giữ phòng.');
+        return;
+      }
+      if (!pending) {
+        const key = globalThis.crypto?.randomUUID?.();
+        if (!key || !globalThis.crypto?.subtle) {
+          setSubmitError('Trình duyệt chưa hỗ trợ gửi yêu cầu an toàn. Hãy cập nhật trình duyệt rồi thử lại.');
+          return;
+        }
+        const record = await newPendingHold(routeKey, quote.id, key, signature);
+        if (!savePendingHold(record)) {
+          setSubmitError('Trình duyệt đang chặn lưu mã yêu cầu tạm trong phiên. Hãy cho phép lưu dữ liệu phiên rồi thử lại, hoặc liên hệ hỗ trợ.');
+          return;
+        }
+        pending = { record, signature };
+        pendingHold.current = pending;
+      }
       const receipt = await apiRequest<BookingReceipt>(`/quotes/${quote.id}/hold`, {
         method: 'POST',
-        headers: { 'idempotency-key': idempotencyKey },
-        body: JSON.stringify({ fullName: guest.name.trim(), phone: guest.phone.trim(), email: guest.email.trim(), note }),
+        headers: { 'idempotency-key': pending.record.key },
+        body: JSON.stringify(contact),
       });
+      pendingHold.current = null;
       setBookingReceipt(receipt);
+      setRecovery('none');
       setStage('submitted');
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Chưa giữ được phòng. Vui lòng thử lại.');
+      if (error instanceof ApiError && (error.status === 400 || error.status === 422)) {
+        if (pendingHold.current) clearPendingHold(pendingHold.current.record);
+        pendingHold.current = null;
+        setSubmitError(error.message);
+      } else {
+        setSubmitError('Chưa nhận được xác nhận từ máy chủ. Yêu cầu có thể đã được ghi nhận; hãy thử lại đúng thông tin để nhận mã, hoặc liên hệ hỗ trợ.');
+      }
     } finally {
       setBusy(false);
     }
@@ -410,7 +518,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
             </dd>
           </div>
         </dl>
-        <button type="button" className="co-summary__change" onClick={editSelection}>
+        <button type="button" className="co-summary__change" onClick={editSelection} disabled={busy || Boolean(pendingHold.current)}>
           <Pencil size={15} aria-hidden="true" /> Thay đổi lựa chọn phòng
         </button>
 
@@ -483,17 +591,37 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     </aside>
   );
 
+  if (recovery === 'checking') {
+    return <section className="co-empty" role="status"><LockKeyhole size={34} aria-hidden="true" /><h2>Đang kiểm tra yêu cầu trước</h2><p>Hệ thống đang tra lại kết quả giữ phòng trong phiên này để tránh gửi trùng.</p></section>;
+  }
+
+  if (recovery === 'unavailable') {
+    return <section className="co-empty" role="alert"><Info size={34} aria-hidden="true" /><h2>Chưa xác định được yêu cầu trước</h2><p>Đừng gửi yêu cầu mới cho cùng lựa chọn lúc này. Hãy kiểm tra lại hoặc liên hệ hỗ trợ để tránh giữ phòng hai lần.</p><div className="dialog__actions"><button type="button" className="btn btn--primary" onClick={() => { setRecovery('checking'); setRecoveryAttempt((value) => value + 1); }}>Kiểm tra lại</button><Link className="btn btn--light" href="/lien-he">Liên hệ hỗ trợ</Link></div></section>;
+  }
+
   if (stage === 'submitted') {
+    const status = bookingReceipt?.bookingStatus;
     return (
       <section className="co-empty" aria-labelledby={uid + '-submitted-t'}>
         <Check size={36} aria-hidden="true" />
-        <h2 id={uid + '-submitted-t'}>Đã giữ phòng chờ xác nhận</h2>
-        {bookingReceipt && <p>Mã yêu cầu <strong>{bookingReceipt.publicCode}</strong> · Trạng thái: chờ xác nhận.</p>}
-        {bookingReceipt && <p>Phòng được giữ tạm đến {new Date(bookingReceipt.expiresAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}. Tổng giá {formatServerVnd(bookingReceipt.totalVnd)}; khoản cần thanh toán khi xác nhận {formatServerVnd(bookingReceipt.dueNowVnd)}. Chưa có khoản tiền nào được thu.</p>}
+        <h2 id={uid + '-submitted-t'}>{status === 'pending_confirmation' ? 'Đã giữ phòng chờ xác nhận' : status === 'confirmed' ? 'Đơn đặt phòng đã được xác nhận' : 'Tình trạng yêu cầu đặt phòng'}</h2>
+        {bookingReceipt && <p>Mã yêu cầu <strong>{bookingReceipt.publicCode}</strong> · Trạng thái: {status === 'pending_confirmation' ? 'chờ xác nhận' : status === 'confirmed' ? 'đã xác nhận' : status === 'cancelled' ? 'đã hủy' : status === 'expired' ? 'đã hết hạn' : status}.</p>}
+        {bookingReceipt && <p>{status === 'pending_confirmation' && bookingReceipt.expiresAt && `Phòng được giữ tạm đến ${new Date(bookingReceipt.expiresAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}. `}{status === 'pending_confirmation' ? `Tổng giá ${formatServerVnd(bookingReceipt.totalVnd)}; khoản dự kiến khi xác nhận ${formatServerVnd(bookingReceipt.dueNowVnd)}.` : `Giá trị yêu cầu: ${formatServerVnd(bookingReceipt.totalVnd)}.`} Website chưa thu tiền trực tuyến.</p>}
         {richDocumentHasContent(confirmationNote) && <div className="co-confirmation-note"><RichContentRenderer document={confirmationNote as RichDocument} /></div>}
         <div className="dialog__actions">
           <Link className="btn btn--primary" href={'/phong-nghi/' + stay.slug}>Quay lại chỗ nghỉ</Link>
           <Link className="btn btn--light" href="/phong-nghi">Xem các chỗ nghỉ khác</Link>
+          <button type="button" className="btn btn--light" onClick={() => {
+            if (!window.confirm('Tạo một yêu cầu đặt phòng mới? Yêu cầu có mã ở trên sẽ vẫn được giữ trong hệ thống.')) return;
+            const record = readPendingHold(routeKey);
+            if (record) clearPendingHold(record);
+            pendingHold.current = null;
+            setBookingReceipt(null);
+            setQuote(null);
+            setGuest(EMPTY_GUEST);
+            setConfirmChecked(false);
+            setStage('editing');
+          }}>Tạo yêu cầu mới</button>
         </div>
       </section>
     );
@@ -518,7 +646,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
                   {stay.name} — {room.name}
                   {sel.rooms > 1 ? ` × ${sel.rooms} phòng` : ''}
                 </dd>
-                <button type="button" className="co-link" onClick={editSelection}>
+                <button type="button" className="co-link" onClick={editSelection} disabled={busy || Boolean(pendingHold.current)}>
                   Sửa
                 </button>
               </div>
@@ -534,14 +662,14 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
                   {guest.name.trim()} · {guest.phone.trim()} · {guest.email.trim()} · {guest.nationality}
                   {guest.special.trim() ? ` · Yêu cầu: ${guest.special.trim()}` : ''}
                 </dd>
-                <button type="button" className="co-link" onClick={() => backToEdit('name')}>
+                <button type="button" className="co-link" onClick={() => backToEdit('name')} disabled={busy || Boolean(pendingHold.current)}>
                   Sửa
                 </button>
               </div>
               <div>
                 <dt>Giá phòng</dt>
                 <dd>{quote ? `${formatServerVnd(quote.totalVnd)} · ${n} đêm · ${sel.rooms} phòng` : 'Chưa có báo giá'}</dd>
-                <button type="button" className="co-link" onClick={() => backToEdit()}>
+                <button type="button" className="co-link" onClick={() => backToEdit()} disabled={busy || Boolean(pendingHold.current)}>
                   Sửa
                 </button>
               </div>
@@ -577,12 +705,13 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
               </p>
             )}
             <div className="co-review__actions">
-              <button type="button" className="btn btn--light" onClick={() => backToEdit()}>
+              <button type="button" className="btn btn--light" onClick={() => backToEdit()} disabled={busy || Boolean(pendingHold.current)}>
                 Quay lại chỉnh sửa
               </button>
               <button
                 type="button"
                 className="btn btn--primary"
+                disabled={busy}
                 onClick={() => {
                   if (!confirmChecked) {
                     setConfirmErr(true);
@@ -606,6 +735,7 @@ function CheckoutForm({ stay, room: initialRoom, initial }: { stay: Stay; room: 
     <div className="co-grid" ref={topRef}>
       <div className="co-main">
         <Steps current={2} />
+        {recovery === 'needs-contact' && <p className="dialog__pending" role="status">Yêu cầu giữ phòng trước chưa có mã xác nhận. Vui lòng nhập lại <strong>đúng thông tin liên hệ, quốc tịch và ghi chú đã gửi</strong>; hệ thống sẽ dùng lại báo giá và mã yêu cầu cũ, không tạo yêu cầu mới.</p>}
 
         <Section n={1} title="Thông tin khách hàng" aside="Vui lòng điền đầy đủ thông tin để hoàn tất đặt phòng">
           <div className="co-form3">

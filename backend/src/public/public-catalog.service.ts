@@ -64,9 +64,13 @@ type PublicProperty = {
     id: string;
     name: string;
     description: string | null;
+    unitKind: string | null;
+    bedroomCount: number | null;
+    bathroomCount: number | null;
     maxAdults: number;
     maxChildren: number;
     maxOccupancy: number;
+    capacityVerified: boolean;
     bedSummary: string | null;
     areaSqm: number | null;
     status: string;
@@ -164,10 +168,10 @@ const NODE_INCLUDE = {
 } as const;
 
 export function hasSellableStayRoom(
-  roomTypes: readonly { units: readonly { active: boolean }[]; ratePlans: readonly { active: boolean; baseRateVnd: bigint }[] }[],
+  roomTypes: readonly { capacityVerified: boolean; units: readonly { active: boolean }[]; ratePlans: readonly { active: boolean; baseRateVnd: bigint }[] }[],
 ): boolean {
   return roomTypes.some(
-    (room) => room.units.some((unit) => unit.active)
+    (room) => room.capacityVerified && room.units.some((unit) => unit.active)
       && room.ratePlans.some((rate) => rate.active && rate.baseRateVnd >= 0n),
   );
 }
@@ -672,10 +676,14 @@ export class PublicCatalogService {
       return {
         id: room.id,
         name: room.name,
+        unitKind: room.unitKind,
+        bedroomCount: room.bedroomCount,
+        bathroomCount: room.bathroomCount,
         capacity: room.maxOccupancy,
         areaM2: room.areaSqm ?? 0,
         view: room.bedSummary ?? '',
         description: room.description ?? '',
+        amenities: room.amenities.map((item) => ({ code: item.amenity.code, label: item.amenity.label })),
         pricePerNight: Number(rate.baseRateVnd),
         image: roomGallery[0] ?? image,
         gallery: roomGallery,
@@ -763,6 +771,7 @@ export class PublicCatalogService {
       image,
       durationDays: combo.durationDays,
       durationNights: combo.durationNights,
+      audienceTags: list(combo.audienceTags).filter((item): item is string => typeof item === 'string'),
       fromPriceVnd: fromPrice,
       priceUnit: combo.pricingUnit,
       badge: { label: node.featured ? 'Nổi bật' : 'Đang mở', kind: node.featured ? 'featured' : 'standard' },

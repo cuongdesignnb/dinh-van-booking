@@ -14,6 +14,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { slugFromTitle, withTitle, type SlugMode } from '@/lib/slug';
+import { comboAudienceTag, normalizeComboAudienceTags } from '@/lib/catalog/combo-audience';
+import { COMBO_CATEGORIES } from '@/lib/catalog/constants';
+import type { ComboAudience, ComboCategory } from '@/data/combos';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '@/components/admin/shared/RichTextEditor';
 import { AdminSlugField } from '@/components/admin/shared/AdminSlugField';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
@@ -111,6 +114,8 @@ const EMPTY_COMBO: ComboDetails = {
   departures: [],
 };
 const EMPTY_ARTICLE: ArticleDetails = { authorName: '', readMinutes: null };
+const isAudienceCategory = (id: ComboCategory): id is ComboAudience => !['all', '2n1d', '3n2d'].includes(id);
+const COMBO_AUDIENCE_CHOICES = COMBO_CATEGORIES.filter((item): item is typeof item & { id: ComboAudience } => isAudienceCategory(item.id));
 
 function newForm(kind: ContentKind): ContentForm {
   return {
@@ -385,7 +390,12 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
             <label className="afield"><span>Số ngày *</span><input className="ainput" type="number" min="1" value={combo.durationDays} onChange={(event) => updateCombo({ durationDays: Number(event.target.value) || 1 })} required /></label>
             <label className="afield"><span>Số đêm *</span><input className="ainput" type="number" min="0" value={combo.durationNights} onChange={(event) => updateCombo({ durationNights: Number(event.target.value) || 0 })} required /></label>
             <label className="afield"><span>Đơn vị giá</span><select className="ainput" value={combo.pricingUnit} onChange={(event) => updateCombo({ pricingUnit: event.target.value })}><option value="person">/ người</option><option value="booking">/ booking</option><option value="room">/ phòng</option></select></label>
-            <div className="content-editor__wide"><StringListEditor label="Nhóm khách" items={combo.audienceTags} onChange={(audienceTags) => updateCombo({ audienceTags })} placeholder="Ví dụ: Gia đình" /></div>
+            <fieldset className="content-editor__wide content-editor__audience"><legend>Nhóm khách phù hợp</legend><p className="ahint">Chọn các nhóm đã xác minh cho combo này. Các nút lọc ngoài website sử dụng chính các lựa chọn này.</p><div className="content-editor__audience-options">{COMBO_AUDIENCE_CHOICES.map((choice) => <label key={choice.id}><input type="checkbox" checked={normalizeComboAudienceTags(combo.audienceTags).includes(choice.id)} onChange={(event) => {
+              const selected = normalizeComboAudienceTags(combo.audienceTags).filter((id) => id !== choice.id);
+              if (event.target.checked) selected.push(choice.id);
+              updateCombo({ audienceTags: [...combo.audienceTags.filter((tag) => !comboAudienceTag(tag)), ...selected] });
+            }} /><span>{choice.label}</span></label>)}</div></fieldset>
+            {combo.audienceTags.some((tag) => !comboAudienceTag(tag)) && <div className="content-editor__wide"><StringListEditor label="Nhãn khách bổ sung" items={combo.audienceTags.filter((tag) => !comboAudienceTag(tag))} onChange={(custom) => updateCombo({ audienceTags: [...normalizeComboAudienceTags(combo.audienceTags), ...custom] })} placeholder="Nhãn nội bộ không dùng để lọc" /><p className="ahint">Nhãn cũ được giữ nguyên để không mất dữ liệu; chỉ bốn nhóm ở trên tham gia bộ lọc public.</p></div>}
             <div className="content-editor__wide content-editor__days"><div className="content-editor__subhead"><div><strong>Lịch trình ({combo.days.length} ngày)</strong><p className="ahint">Mỗi ngày có tiêu đề, khung giờ và các hoạt động riêng.</p></div><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => updateCombo({ days: [...combo.days, { dayNo: combo.days.length + 1, title: '', timeRange: '', activities: [] }] })}><Plus size={14} aria-hidden="true" /> Thêm ngày</button></div>
               {combo.days.map((day, dayIndex) => <section className="content-editor__subsection" key={`day-${dayIndex}`}>
                 <div className="content-editor__subhead"><strong>Ngày {day.dayNo || dayIndex + 1}</strong><div className="content-editor__row-actions"><button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ngày ${dayIndex + 1} lên`} disabled={dayIndex === 0} onClick={() => updateCombo({ days: moveItem(combo.days, dayIndex, dayIndex - 1).map((item, index) => ({ ...item, dayNo: index + 1 })) })}>↑</button><button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ngày ${dayIndex + 1} xuống`} disabled={dayIndex === combo.days.length - 1} onClick={() => updateCombo({ days: moveItem(combo.days, dayIndex, dayIndex + 1).map((item, index) => ({ ...item, dayNo: index + 1 })) })}>↓</button><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => updateCombo({ days: combo.days.filter((_, index) => index !== dayIndex).map((item, index) => ({ ...item, dayNo: index + 1 })) })}><Trash2 size={14} aria-hidden="true" /> Xóa ngày</button></div></div>

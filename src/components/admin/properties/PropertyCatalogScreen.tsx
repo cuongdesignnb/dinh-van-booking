@@ -6,11 +6,13 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
+import { KIND_LABEL } from '@/lib/admin/formatters';
+import { roomUnitKindLabel } from '@/lib/room-unit-kind';
 import { withTitle, type SlugMode } from '@/lib/slug';
 import { MediaPicker } from '../media/MediaPicker';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { AlbumEditor, type AlbumItem } from '../media/AlbumEditor';
-import { RoomTypeEditor, type PropertyRoom } from './RoomTypeEditor';
+import type { PropertyRoom } from './RoomTypeEditor';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
 import { AdminSlugField } from '../shared/AdminSlugField';
 
@@ -51,17 +53,6 @@ type FormState = {
   address: string;
   description: string;
   descriptionDocument: RichDocument;
-  roomCode: string;
-  roomName: string;
-  maxAdults: string;
-  maxChildren: string;
-  bedSummary: string;
-  areaSqm: string;
-  unitCount: string;
-  rateName: string;
-  rateVnd: string;
-  weekendRateVnd: string;
-  breakfastIncluded: boolean;
 };
 
 type EditFormState = {
@@ -92,17 +83,6 @@ const EMPTY_FORM: FormState = {
   address: '',
   description: '',
   descriptionDocument: EMPTY_DOCUMENT,
-  roomCode: 'STANDARD',
-  roomName: 'Phòng tiêu chuẩn',
-  maxAdults: '2',
-  maxChildren: '0',
-  bedSummary: '1 giường đôi',
-  areaSqm: '24',
-  unitCount: '1',
-  rateName: 'Giá tiêu chuẩn',
-  rateVnd: '',
-  weekendRateVnd: '',
-  breakfastIncluded: false,
 };
 
 const EMPTY_EDIT_FORM: EditFormState = {
@@ -127,16 +107,6 @@ const STATUS_LABEL: Record<string, string> = {
   scheduled: 'Đã hẹn',
   published: 'Đã xuất bản',
   archived: 'Lưu trữ',
-};
-
-const KIND_LABEL: Record<string, string> = {
-  homestay: 'Homestay',
-  lodge: 'Eco Lodge',
-  bungalow: 'Bungalow',
-  stilt: 'Nhà sàn',
-  resort: 'Resort',
-  villa: 'Villa',
-  glamping: 'Glamping',
 };
 
 const OPERATING_STATUS_LABEL: Record<string, string> = {
@@ -177,7 +147,6 @@ export function PropertyCatalogScreen() {
   const [coverMedia, setCoverMedia] = useState<SelectedMedia | null>(null);
   const [editCover, setEditCover] = useState<SelectedMedia | null>(null);
   const [gallery, setGallery] = useState<AlbumItem[]>([]);
-  const [roomGallery, setRoomGallery] = useState<AlbumItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [editBusy, setEditBusy] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -206,6 +175,11 @@ export function PropertyCatalogScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Old property-editor room links still land in the property-scoped room workspace.
+  useEffect(() => {
+    if (editId && roomParam) router.replace(`/admin/hang-phong?property=${encodeURIComponent(editId)}&room=${encodeURIComponent(roomParam)}`);
+  }, [editId, roomParam, router]);
 
   const fillEditForm = useCallback((item: PropertyItem) => {
     setEditing(item);
@@ -246,7 +220,6 @@ export function PropertyCatalogScreen() {
     setForm(EMPTY_FORM);
     setCoverMedia(null);
     setGallery([]);
-    setRoomGallery([]);
     setEditing(null);
     setError(null);
     setNotice(null);
@@ -259,7 +232,6 @@ export function PropertyCatalogScreen() {
     setCoverMedia(null);
     setEditCover(null);
     setGallery([]);
-    setRoomGallery([]);
     setError(null);
     setNotice(null);
     goToList();
@@ -309,7 +281,7 @@ export function PropertyCatalogScreen() {
       return;
     }
     try {
-      await apiRequest<PropertyItem>('/properties', {
+      const created = await apiRequest<PropertyItem>('/properties', {
         method: 'POST',
         body: JSON.stringify({
           title: form.title,
@@ -320,29 +292,14 @@ export function PropertyCatalogScreen() {
           address: form.address,
           description: form.description,
           descriptionDocument: form.descriptionDocument,
-          roomCode: form.roomCode,
-          roomName: form.roomName,
-          maxAdults: Number(form.maxAdults),
-          maxChildren: Number(form.maxChildren),
-          bedSummary: form.bedSummary || undefined,
-          areaSqm: form.areaSqm ? Number(form.areaSqm) : undefined,
-          unitCount: Number(form.unitCount),
-          rateName: form.rateName || undefined,
-          rateVnd: Number(form.rateVnd),
-          weekendRateVnd: form.weekendRateVnd ? Number(form.weekendRateVnd) : undefined,
-          breakfastIncluded: form.breakfastIncluded,
           coverMediaId: coverMedia?.id ?? undefined,
           galleryMediaIds: gallery.map((item) => item.mediaId),
-          roomGalleryMediaIds: roomGallery.map((item) => item.mediaId),
         }),
       });
-      setNotice('Đã tạo nơi lưu trú và lưu vào PostgreSQL ở trạng thái bản nháp.');
       setForm(EMPTY_FORM);
       setCoverMedia(null);
       setGallery([]);
-      setRoomGallery([]);
-      goToList();
-      await load();
+      router.push(`/admin/hang-phong?property=${encodeURIComponent(created.id)}&room=create`);
     } catch (reason) {
       setError(errorMessage(reason));
     } finally {
@@ -454,22 +411,12 @@ export function PropertyCatalogScreen() {
     }
   };
 
-  const returnToProperty = () => editing && router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}#hang-phong`, { scroll: false });
-  const afterRoomSaved = async () => {
-    if (!editing) return;
-    const fresh = await apiRequest<PropertyItem>(`/properties/${encodeURIComponent(editing.id)}`);
-    setItems((current) => current.map((item) => item.id === fresh.id ? fresh : item));
-    fillEditForm(fresh);
-    setNotice('Đã lưu hạng phòng và album.');
-    router.replace(`${pathname}?edit=${encodeURIComponent(fresh.id)}#hang-phong`, { scroll: false });
-  };
-
   return (
     <section className="property-catalog">
       {!editorMode && <div className="settings-screen__head">
         <div>
-          <h2>Phòng nghỉ</h2>
-          <p className="ahint">Danh sách thật từ API catalog và PostgreSQL. Bản nháp chưa xuất hiện trên website công khai.</p>
+          <h2>Nơi lưu trú</h2>
+          <p className="ahint">Mỗi khu nghỉ, khách sạn hoặc homestay là một cơ sở riêng. Chọn “Hạng phòng” để quản lý từng loại phòng/căn của cơ sở đó; bản nháp chưa hiện trên website.</p>
         </div>
         <div className="property-catalog__head-actions">
           <Link className="abtn abtn--ghost" href="/admin/hang-phong"><BedDouble size={15} aria-hidden="true" /> Quản lý hạng phòng</Link>
@@ -477,7 +424,7 @@ export function PropertyCatalogScreen() {
             <RefreshCw size={15} aria-hidden="true" /> Tải lại
           </button>
           <button type="button" className="abtn abtn--primary" onClick={openCreate} disabled={busy}>
-            <Plus size={16} aria-hidden="true" /> Thêm phòng nghỉ
+            <Plus size={16} aria-hidden="true" /> Thêm nơi lưu trú
           </button>
         </div>
       </div>}
@@ -488,15 +435,13 @@ export function PropertyCatalogScreen() {
         </button>
         <div className="admin-form-page__title">
           <h2>{roomParam ? 'Quản lý hạng phòng' : createMode ? 'Thêm nơi lưu trú' : 'Chỉnh sửa nơi lưu trú'}</h2>
-          <p className="ahint">{createMode ? 'Tạo thông tin phòng nghỉ trên trang riêng; dữ liệu chỉ được lưu khi bấm nút lưu.' : 'Cập nhật thông tin nơi lưu trú trên trang riêng.'}</p>
+          <p className="ahint">{createMode ? 'Tạo hồ sơ cơ sở trước, sau đó thêm từng hạng phòng riêng; dữ liệu chỉ được lưu khi bấm nút lưu.' : 'Cập nhật hồ sơ nơi lưu trú; từng hạng phòng được sửa riêng bên dưới.'}</p>
         </div>
         {!createMode && editing && !roomParam && <a className="abtn abtn--primary admin-form-page__rooms-link" href="#hang-phong"><BedDouble size={15} aria-hidden="true" /> Đến hạng phòng ({editing.roomTypes.length})</a>}
       </div>}
 
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}
-
-      {roomParam && editing && (roomParam === 'create' || editing.roomTypes.some((room) => room.id === roomParam)) && <RoomTypeEditor key={`${editing.id}-${roomParam}`} propertyId={editing.id} propertyName={editing.title} room={editing.roomTypes.find((room) => room.id === roomParam)} onSaved={afterRoomSaved} onCancel={returnToProperty} />}
 
       {editorMode && !createMode && editing && !roomParam && (
         <form className="acard property-form" onSubmit={saveEdit}>
@@ -570,8 +515,11 @@ export function PropertyCatalogScreen() {
             </label>
           </div>
           <div className="property-form__section" id="hang-phong">
-            <div className="album-editor__head"><div><h4>Hạng phòng ({editing.roomTypes.length})</h4><p className="ahint">Mỗi hạng phòng có giá, sức chứa và album riêng. Quỹ phòng theo ngày quản lý ở mục “Quỹ phòng”.</p></div><div className="property-form__room-actions"><Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}`}>Xem danh sách hạng phòng</Link><button type="button" className="abtn abtn--primary abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=create`, { scroll: false })}><Plus size={15} /> Thêm hạng phòng</button></div></div>
-            {editing.roomTypes.length ? <div className="property-catalog__list">{editing.roomTypes.map((room) => <div className="property-card" key={room.id}><div className="property-card__body"><strong>{room.name}</strong><p className="ahint">{room.code} · {room.status === 'active' ? 'Đang hoạt động' : 'Tạm ẩn'} · {room.unitCount} phòng · {room.rate?.baseRateVnd === 0 ? 'Liên hệ để nhận giá' : money(room.rate?.baseRateVnd)} · {room.gallery?.length ?? 0} ảnh album</p><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => router.push(`${pathname}?edit=${encodeURIComponent(editing.id)}&room=${encodeURIComponent(room.id)}`, { scroll: false })}><Pencil size={14} /> Sửa hạng phòng</button></div></div>)}</div> : <p className="ahint">Chưa có hạng phòng; bấm “Thêm hạng phòng”.</p>}
+            <div className="album-editor__head"><div><h4>Hạng phòng ({editing.roomTypes.length})</h4><p className="ahint">Mỗi hạng phòng có giá, sức chứa và album riêng. Quỹ phòng theo ngày quản lý ở mục “Quỹ phòng”.</p></div><div className="property-form__room-actions"><Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}`}>Xem danh sách hạng phòng</Link><Link className="abtn abtn--primary abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}&room=create`}><Plus size={15} /> Thêm hạng phòng</Link></div></div>
+            {editing.roomTypes.length ? <div className="property-catalog__list">{editing.roomTypes.map((room) => <div className="property-card" key={room.id}><div className="property-card__body"><strong>{room.name}</strong><p className="ahint">{room.code} · {roomUnitKindLabel(room.unitKind) ?? 'Chưa phân loại'} · {room.status === 'active' ? 'Đang hoạt động' : 'Tạm ẩn'} · {room.unitCount ? `${room.unitCount} phòng/căn` : 'Chưa có số phòng/căn'} · {room.rate?.baseRateVnd === 0 ? 'Liên hệ để nhận giá' : money(room.rate?.baseRateVnd)} · {room.capacityVerified ? 'Đã xác minh sức chứa' : 'Sức chứa chờ xác minh'} · {room.gallery?.length ?? 0} ảnh album</p><Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}&room=${encodeURIComponent(room.id)}`}><Pencil size={14} /> Sửa hạng phòng</Link></div></div>)}</div> : <p className="ahint">Chưa có hạng phòng; bấm “Thêm hạng phòng”.</p>}
+          </div>
+          <div className="property-form__section">
+            <h4>Hiển thị nơi lưu trú</h4>
             <div className="property-form__toggles">
               <label className="atoggle">
                 <input type="checkbox" checked={editForm.noindex} onChange={(event) => updateEdit('noindex', event.target.checked)} />
@@ -612,7 +560,7 @@ export function PropertyCatalogScreen() {
           <div className="property-form__title">
             <div>
               <h3>Tạo nơi lưu trú mới</h3>
-              <p className="ahint">Lưu lần đầu sẽ tạo nội dung, nơi lưu trú, loại phòng, giá và đơn vị phòng trong cùng một giao dịch.</p>
+              <p className="ahint">Bước 1: lưu thông tin cơ sở ở dạng bản nháp. Bước tiếp theo sẽ tạo từng hạng phòng riêng cho cơ sở này; không tự sinh phòng, số lượng hay giá mẫu.</p>
             </div>
             <BedDouble size={22} aria-hidden="true" />
           </div>
@@ -661,63 +609,6 @@ export function PropertyCatalogScreen() {
           </div>
 
           <div className="property-form__section">
-            <h4>Loại phòng đầu tiên</h4>
-            <div className="property-form__grid">
-              <label className="afield">
-                <span>Mã loại phòng *</span>
-                <input className="ainput" value={form.roomCode} onChange={(event) => update('roomCode', event.target.value.toUpperCase())} required pattern="[A-Za-z0-9_-]+" />
-              </label>
-              <label className="afield">
-                <span>Tên loại phòng *</span>
-                <input className="ainput" value={form.roomName} onChange={(event) => update('roomName', event.target.value)} required maxLength={160} />
-              </label>
-              <label className="afield">
-                <span>Người lớn tối đa *</span>
-                <input className="ainput" type="number" min="1" max="30" value={form.maxAdults} onChange={(event) => update('maxAdults', event.target.value)} required />
-              </label>
-              <label className="afield">
-                <span>Trẻ em tối đa</span>
-                <input className="ainput" type="number" min="0" max="30" value={form.maxChildren} onChange={(event) => update('maxChildren', event.target.value)} />
-              </label>
-              <label className="afield">
-                <span>Diện tích (m²)</span>
-                <input className="ainput" type="number" min="1" value={form.areaSqm} onChange={(event) => update('areaSqm', event.target.value)} />
-              </label>
-              <label className="afield">
-                <span>Số đơn vị phòng *</span>
-                <input className="ainput" type="number" min="1" max="100" value={form.unitCount} onChange={(event) => update('unitCount', event.target.value)} required />
-              </label>
-              <label className="afield property-form__wide">
-                <span>Giường / view</span>
-                <input className="ainput" value={form.bedSummary} onChange={(event) => update('bedSummary', event.target.value)} maxLength={120} placeholder="1 giường đôi · View rừng" />
-              </label>
-            </div>
-          </div>
-
-          <div className="property-form__section">
-            <h4>Giá bán đầu tiên</h4>
-            <div className="property-form__grid">
-              <label className="afield">
-                <span>Tên bảng giá</span>
-                <input className="ainput" value={form.rateName} onChange={(event) => update('rateName', event.target.value)} maxLength={160} />
-              </label>
-              <label className="afield">
-                <span>Giá ngày thường (VND) *</span>
-                <input className="ainput" type="number" min="0" value={form.rateVnd} onChange={(event) => update('rateVnd', event.target.value)} required placeholder="0 = Liên hệ để nhận giá" />
-              </label>
-              <label className="afield">
-                <span>Giá cuối tuần (VND)</span>
-                <input className="ainput" type="number" min="1" value={form.weekendRateVnd} onChange={(event) => update('weekendRateVnd', event.target.value)} placeholder="Để trống nếu chưa cấu hình" />
-              </label>
-              <label className="atoggle property-form__toggle">
-                <input type="checkbox" checked={form.breakfastIncluded} onChange={(event) => update('breakfastIncluded', event.target.checked)} />
-                <span className="atoggle__track"><span className="atoggle__thumb" /></span>
-                <span className="atoggle__text"><strong>Bao gồm bữa sáng</strong><small>Đây là thuộc tính của bảng giá, không phải dữ liệu mẫu.</small></span>
-              </label>
-            </div>
-          </div>
-
-          <div className="property-form__section">
             <h4>Ảnh đại diện</h4>
             <div className="property-form__upload">
               <MediaPicker
@@ -734,11 +625,10 @@ export function PropertyCatalogScreen() {
             </div>
           </div>
           <div className="property-form__section"><AlbumEditor label="Album nơi lưu trú" items={gallery} onChange={setGallery} /></div>
-          <div className="property-form__section"><AlbumEditor label={`Album hạng phòng: ${form.roomName || 'Phòng đầu tiên'}`} items={roomGallery} onChange={setRoomGallery} /></div>
 
           <div className="property-form__actions">
             <button type="button" className="abtn abtn--ghost" onClick={closeEditor} disabled={busy}>Hủy</button>
-            <button type="submit" className="abtn abtn--primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu nơi lưu trú'}</button>
+            <button type="submit" className="abtn abtn--primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu cơ sở và thêm hạng phòng'}</button>
           </div>
         </form>
       )}
@@ -747,7 +637,7 @@ export function PropertyCatalogScreen() {
       {!editorMode && (loading ? <div className="acard apending">Đang tải danh sách thật…</div> : loadFailed ? <div className="acard apending property-catalog__error-state">Không tải được danh sách nơi lưu trú. Bấm “Tải lại” để thử lại.</div> : !items.length ? (
         <div className="acard apending">
           <BedDouble size={22} aria-hidden="true" />
-          <div><h3>Chưa có nơi lưu trú</h3><p>Bấm “Thêm phòng nghỉ” để tạo bản ghi đầu tiên trong PostgreSQL.</p></div>
+          <div><h3>Chưa có nơi lưu trú</h3><p>Bấm “Thêm nơi lưu trú” để tạo cơ sở đầu tiên, sau đó thêm từng hạng phòng riêng.</p></div>
         </div>
       ) : (
         <div className="property-catalog__list">
@@ -760,7 +650,7 @@ export function PropertyCatalogScreen() {
                   {item.cover ? <Image src={item.cover.url} alt={item.cover.alt} width={180} height={126} className="property-card__image" unoptimized /> : <div className="property-card__placeholder"><ImagePlus size={22} aria-hidden="true" /><span>Chưa có ảnh</span></div>}
                 </div>
                 <div className="property-card__body">
-                  <div className="property-card__head"><div><h3>{item.title}</h3><p className="ahint">{item.code} · {KIND_LABEL[item.kind] ?? item.kind}</p><p className="ahint">{item.featured ? 'Nổi bật trang chủ' : item.publicationStatus === 'published' ? 'Chưa chọn nổi bật' : null}</p></div><span className="abadge abadge--neutral">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · {OPERATING_STATUS_LABEL[item.operatingStatus] ?? item.operatingStatus}</span></div>
+                  <div className="property-card__head"><div><h3>{item.title}</h3><p className="ahint">{item.code} · {KIND_LABEL[item.kind as keyof typeof KIND_LABEL] ?? item.kind}</p><p className="ahint">{item.featured ? 'Nổi bật trang chủ' : item.publicationStatus === 'published' ? 'Chưa chọn nổi bật' : null}</p></div><span className="abadge abadge--neutral">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · {OPERATING_STATUS_LABEL[item.operatingStatus] ?? item.operatingStatus}</span></div>
                   <p>{item.area} · {item.address}</p>
                   <p className="property-card__rooms"><strong>Hạng phòng ({roomCount})</strong><span>{roomCount ? `${roomPreview}${roomCount > 3 ? ` · +${roomCount - 3} hạng phòng khác` : ''}` : 'Chưa có hạng phòng — cần bổ sung thông tin đã xác minh'}</span></p>
                   <div className="property-card__actions">

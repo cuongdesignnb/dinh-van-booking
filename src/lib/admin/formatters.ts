@@ -1,5 +1,10 @@
-import { fromKey } from '@/data/admin/fixture-clock';
 import type { BookingStatus, InquiryStage, PaymentStatus, PublishingStatus } from './types';
+
+/** Parse a calendar date without importing the legacy demo fixture clock. */
+const fromDateKey = (key: string) => {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
 
 /** VND is stored as an integer; never parse a formatted string back into maths. */
 export const vnd = (n: number) => `${new Intl.NumberFormat('vi-VN').format(Math.round(n))}đ`;
@@ -9,10 +14,10 @@ export const num = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
 
 const WEEKDAY_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 /** Fixed table: Intl weekday names differ between the server and the browser. */
-export const weekdayShort = (key: string) => WEEKDAY_SHORT[fromKey(key).getDay()];
+export const weekdayShort = (key: string) => WEEKDAY_SHORT[fromDateKey(key).getDay()];
 
 export const formatDate = (key: string) => {
-  const d = fromKey(key);
+  const d = fromDateKey(key);
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 };
 export const formatDayMonth = (key: string) => formatDate(key).slice(0, 5);
@@ -82,6 +87,8 @@ export const KIND_LABEL = {
   lodge: 'Eco Lodge',
   bungalow: 'Bungalow',
   stilt: 'Nhà sàn',
+  villa: 'Villa',
+  glamping: 'Glamping',
 } as const;
 
 export const DEST_CATEGORY_LABEL = {
@@ -109,10 +116,10 @@ export const searchKey = (s: string) =>
     .replace(/Đ/g, 'D')
     .toLowerCase();
 
-/** Timestamps inside the demo are compared to the frozen demo clock. */
+/** Relative calendar-day label for a supplied reference date. */
 export function relativeDay(key: string, today: string) {
   if (key === today) return 'Hôm nay';
-  const d = fromKey(key).getTime() - fromKey(today).getTime();
+  const d = fromDateKey(key).getTime() - fromDateKey(today).getTime();
   const days = Math.round(d / 86400000);
   if (days === -1) return 'Hôm qua';
   if (days === 1) return 'Ngày mai';

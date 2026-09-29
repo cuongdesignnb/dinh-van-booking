@@ -24,7 +24,14 @@ for (const [width, height] of viewports) {
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
-  page.on('requestfailed', (r) => errors.push(`FAILED ${r.url()}`));
+  page.on('requestfailed', (r) => {
+    // Next may cancel speculative RSC prefetches while a screenshot is taken;
+    // this is not a failed page dependency. Keep every other failure visible.
+    const canceledPrefetch = r.resourceType() === 'fetch'
+      && new URL(r.url()).searchParams.has('_rsc')
+      && r.failure()?.errorText === 'net::ERR_ABORTED';
+    if (!canceledPrefetch) errors.push(`FAILED ${r.url()} ${r.failure()?.errorText ?? ''}`);
+  });
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForTimeout(800);
   await page.evaluate(async () => {
@@ -38,12 +45,13 @@ for (const [width, height] of viewports) {
     await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
   });
   await page.waitForTimeout(3600);
-  // Freeze ambient loops so captures are deterministic.
-  await page.addStyleTag({ content: '*,*::before,*::after{animation-play-state:paused!important} .falling-leaves{display:none!important}' });
-  await page.screenshot({ path: `${out}/actual-${width}x${height}.png` });
+  // Playwright fast-forwards finite reveals to their final state. Pausing all
+  // animations instead can freeze a delayed in-viewport promo at opacity 0.
+  await page.addStyleTag({ content: '.falling-leaves{display:none!important}' });
+  await page.screenshot({ path: `${out}/actual-${width}x${height}.png`, animations: 'disabled' });
   const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]:not(.is-in)')].filter((el) => el.getClientRects().length).length);
   if (hidden) errors.push(`${hidden} reveal targets never entered the viewport`);
-  await page.screenshot({ path: `${out}/actual-${width}x${height}-full.png`, fullPage: true });
+  await page.screenshot({ path: `${out}/actual-${width}x${height}-full.png`, fullPage: true, animations: 'disabled' });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   console.log(`${width}x${height}`, 'hOverflow', overflow, 'errors', JSON.stringify(errors));
   await page.close();

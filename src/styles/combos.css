@@ -80,6 +80,17 @@
   padding: 7px 0 0 30px;
 }
 
+.combo-filters.combo-filters--empty {
+  height: auto;
+  min-height: 40px;
+  padding: 0;
+}
+
+.combo-filters--empty .combo-filters__inner {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
 .combo-crumbs {
   font-size: 11.5px;
   color: #4b554e;
@@ -110,6 +121,11 @@
 
 .combo-list {
   padding-top: 11px;
+}
+
+.combo-list--empty {
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
 
 .combo-list__head {

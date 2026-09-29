@@ -127,8 +127,9 @@ export function GalleryDialog({
         {img && (
           <figure className="gview__figure" key={img.src} data-dir={dir}>
             {failed[img.src] ? (
-              <div className="gview__fallback" role="img" aria-label={img.alt}>
-                Không tải được ảnh
+              <div className="gview__fallback" role="img" aria-label={`${img.alt}. Ảnh tạm thời không hiển thị`}>
+                <ImageOff size={32} aria-hidden="true" />
+                <span>Ảnh tạm thời không hiển thị</span>
               </div>
             ) : (
               <Image
@@ -168,8 +169,10 @@ export function GalleryDialog({
       <ul className="gview__thumbs">
         {images.map((t, n) => (
           <li key={t.src}>
-            <button type="button" aria-current={n === i || undefined} aria-label={`Ảnh ${n + 1}: ${t.alt}`} onClick={() => onIndex(n)}>
-              <Image src={t.src} alt="" fill sizes="80px" />
+            <button type="button" aria-current={n === i || undefined} aria-label={failed[t.src] ? `Ảnh ${n + 1} không tải được: ${t.alt}` : `Ảnh ${n + 1}: ${t.alt}`} onClick={() => onIndex(n)}>
+              {failed[t.src]
+                ? <span className="gview__thumb-fallback"><ImageOff size={16} aria-hidden="true" /></span>
+                : <Image src={t.src} alt="" fill sizes="80px" onError={() => setFailed((current) => ({ ...current, [t.src]: true }))} />}
             </button>
           </li>
         ))}

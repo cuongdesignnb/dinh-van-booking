@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-29T01:06:44.498Z",
-  "baseSha": "662f2c0df3ae53ef005586afd01452342b681191",
+  "generatedAt": "2026-09-29T09:46:28.765Z",
+  "baseSha": "a3711b16a494a19f4bee8dfea6670d98aaf184b5",
   "policy": "Runtime public/admin paths must not read commercial fixture records or browser-persisted business data.",
   "scannedRoots": [
     "src/app",
@@ -8,7 +8,7 @@
     "src/lib",
     "src/config"
   ],
-  "findingCount": 42,
+  "findingCount": 43,
   "findings": [
     {
       "file": "src/components/admin/bookings/BookingDetail.tsx",
@@ -49,6 +49,16 @@
       "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
       "evidence": "legacy admin module still imports fixture clock/data",
       "excerpt": "import { DEMO_TODAY } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/components/admin/content/AdminContentList.tsx",
+      "line": 19,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { ComboAudience, ComboCategory } from '@/data/combos';"
     },
     {
       "file": "src/components/admin/content/DestinationEditor.tsx",
@@ -261,16 +271,6 @@
       "excerpt": "export function buildAdminData(): AdminData {"
     },
     {
-      "file": "src/lib/admin/formatters.ts",
-      "line": 1,
-      "kind": "fixture-import",
-      "classification": "legacy-admin-review",
-      "scope": "legacy-admin-or-compatibility",
-      "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
-      "evidence": "legacy admin module still imports fixture clock/data",
-      "excerpt": "import { fromKey } from '@/data/admin/fixture-clock';"
-    },
-    {
       "file": "src/lib/admin/selectors.ts",
       "line": 5,
       "kind": "fixture-import",
@@ -309,6 +309,16 @@
       "disposition": "allowed: erased type import; no runtime fixture dependency",
       "evidence": "import type is erased by the TypeScript build",
       "excerpt": "import type { Stay } from '@/data/stays';"
+    },
+    {
+      "file": "src/lib/catalog/combo-audience.ts",
+      "line": 1,
+      "kind": "fixture-import",
+      "classification": "type-only-review",
+      "scope": "runtime-type-only",
+      "disposition": "allowed: erased type import; no runtime fixture dependency",
+      "evidence": "import type is erased by the TypeScript build",
+      "excerpt": "import type { ComboAudience } from '@/data/combos';"
     },
     {
       "file": "src/lib/catalog/constants.ts",

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateInquiryDto {
   @IsString()
@@ -36,6 +36,12 @@ export class CreateInquiryDto {
   children?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rooms?: number;
+
+  @IsOptional()
   @IsString()
   @MaxLength(2000)
   message?: string;
@@ -48,6 +54,10 @@ export class CreateInquiryDto {
   @IsString()
   @MaxLength(160)
   relatedSlug?: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  roomTypeId?: string;
 }
 
 export class ListInquiriesQuery {

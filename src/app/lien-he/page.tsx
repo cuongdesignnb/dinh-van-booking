@@ -5,7 +5,9 @@ import { PageShell } from '@/components/layout/PageShell';
 import { FaqList } from '@/components/shared/FaqList';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
-import { getPublicSeoUrls, getPublicSite } from '@/lib/api/public';
+import { getPublicCombo, getPublicDestination, getPublicSeoUrls, getPublicSite, getPublicStay } from '@/lib/api/public';
+import { readParam } from '@/lib/selection';
+import type { ConsultationContext } from '@/lib/services/consultation';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { publicAsset, publicRecord, publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
@@ -18,8 +20,42 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   return buildPageMetadata({ path: '/lien-he', eligible: contentExists && urls.some((entry) => entry.path === '/lien-he'), searchParams: query });
 }
 
-export default async function ContactPage() {
-  const site = await getPublicSite();
+type ContactQuery = Record<string, string | string[] | undefined>;
+
+async function resolveContactContext(query: ContactQuery): Promise<{ context: ConsultationContext | null; warning: string | null }> {
+  const intent = readParam(query, 'intent');
+  const item = readParam(query, 'item');
+  if (intent !== 'stay' && intent !== 'combo' && intent !== 'destination') return { context: null, warning: null };
+  if (!item) {
+    const label = intent === 'stay' ? 'Chọn phòng nghỉ phù hợp' : intent === 'combo' ? 'Combo du lịch' : 'Điểm đến';
+    return { context: { intent, id: '', label }, warning: null };
+  }
+  if (item.length > 160) return { context: null, warning: 'Mục quan tâm không còn khả dụng. Bạn vẫn có thể gửi yêu cầu tư vấn chung.' };
+  if (intent === 'stay') {
+    const stay = await getPublicStay(item);
+    if (!stay) return { context: null, warning: 'Nơi lưu trú không còn công khai. Bạn vẫn có thể gửi yêu cầu tư vấn chung.' };
+    const requestedRoom = readParam(query, 'room');
+    const room = stay.roomTypes.find((entry) => entry.id === requestedRoom);
+    return {
+      context: { intent, id: stay.slug, label: stay.name, roomTypeId: room?.id, roomLabel: room?.name },
+      warning: requestedRoom && !room ? 'Hạng phòng đã chọn không còn khả dụng. Yêu cầu này sẽ gửi cho nơi lưu trú, không gắn với hạng cũ.' : null,
+    };
+  }
+  if (intent === 'combo') {
+    const combo = await getPublicCombo(item);
+    return combo
+      ? { context: { intent, id: combo.slug, label: combo.title }, warning: null }
+      : { context: null, warning: 'Combo không còn công khai. Bạn vẫn có thể gửi yêu cầu tư vấn chung.' };
+  }
+  const destination = await getPublicDestination(item);
+  return destination
+    ? { context: { intent, id: destination.slug, label: destination.name }, warning: null }
+    : { context: null, warning: 'Điểm đến không còn công khai. Bạn vẫn có thể gửi yêu cầu tư vấn chung.' };
+}
+
+export default async function ContactPage({ searchParams }: { searchParams: Promise<ContactQuery> }) {
+  const query = await searchParams;
+  const [site, { context, warning }] = await Promise.all([getPublicSite(), resolveContactContext(query)]);
   const page = publicSetting(site, 'contact.page');
   const heroImage = publicAsset(site, page.heroImageMediaId);
   const advisorImage = publicAsset(site, page.advisorImageMediaId);
@@ -90,7 +126,7 @@ export default async function ContactPage() {
 
       <div className={`contact-layout content-shell${showAside ? '' : ' contact-layout--form-only'}`}>
         <div className="contact-layout__form">
-          <ConsultationForm />
+          <ConsultationForm key={JSON.stringify(query)} initialContext={context} contextWarning={warning} />
         </div>
         {showAside && <aside className="contact-layout__aside">
           {showQuick && <section className="contact-quick">

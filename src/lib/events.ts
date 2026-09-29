@@ -3,8 +3,12 @@
  * (global dialogs, focusing a page's search form) without becoming client
  * components themselves.
  */
+import type { Review } from '@/data/types';
+
+type PublishedReview = Pick<Review, 'id' | 'author' | 'quote' | 'context' | 'rating'>;
+
 export type DialogRequest =
-  | { type: 'reviews' }
+  | { type: 'reviews'; title: string; items: PublishedReview[] }
   | { type: 'search' }
   | { type: 'contact'; channel: 'zalo' | 'phone' | 'social' | 'email' | 'chat'; need?: string };
 

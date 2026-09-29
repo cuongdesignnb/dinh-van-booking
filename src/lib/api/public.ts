@@ -5,6 +5,8 @@ import type { ImageAsset, Review, RoomType } from '@/data/types';
 import type { Stay } from '@/data/stays';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { comboPriceUnitLabel } from '@/lib/catalog/combo-pricing';
+import { normalizeComboAudienceTags } from '@/lib/catalog/combo-audience';
+import { stayTypeFromPropertyKind } from '@/lib/catalog/stay-kind';
 import { ApiError, serverApiRequest } from './client';
 
 export interface PublicMediaAsset {
@@ -107,10 +109,14 @@ export const getPublicLegacyTarget = cache(loadPublicLegacyTarget);
 type ApiRoom = {
   id: string;
   name: string;
+  unitKind?: string | null;
+  bedroomCount?: number | null;
+  bathroomCount?: number | null;
   capacity: number;
   areaM2: number;
   view: string;
   description: string;
+  amenities?: Array<{ code: string; label: string }>;
   pricePerNight: number;
   image: ApiAsset;
   gallery?: ApiAsset[];
@@ -143,7 +149,7 @@ function normalizeStay(value: ApiStay): Stay | null {
   return {
     ...value,
     descriptionDocument: value.body ?? value.descriptionDocument,
-    type: value.type as Stay['type'],
+    type: stayTypeFromPropertyKind(value.type),
     area: value.area as Stay['area'],
     amenities: value.amenities as Stay['amenities'],
     cardFeatures: features as unknown as Stay['cardFeatures'],
@@ -190,6 +196,7 @@ type ApiCombo = {
   image: ApiAsset;
   durationDays: number;
   durationNights: number;
+  audienceTags?: string[];
   fromPriceVnd: number | null;
   priceUnit: string;
   badge: { label: string; kind: string };
@@ -278,7 +285,7 @@ const loadPublicCombos = cache(async (): Promise<Combo[]> => {
       durationDays: item.durationDays,
       durationNights: item.durationNights,
       badge: { label: item.badge.label, icon: 'calendar' as const },
-      audienceTags: [],
+      audienceTags: normalizeComboAudienceTags(item.audienceTags ?? []),
       includedHighlights: lines,
       fromPriceVnd: item.fromPriceVnd,
       priceUnit: comboPriceUnitLabel(item.priceUnit),

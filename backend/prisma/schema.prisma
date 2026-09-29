@@ -476,9 +476,13 @@ model RoomType {
   code         String
   name         String
   description  String?
+  unitKind     String?  @map("unit_kind")
+  bedroomCount Int?     @map("bedroom_count")
+  bathroomCount Int?    @map("bathroom_count")
   maxAdults    Int      @map("max_adults")
   maxChildren  Int      @default(0) @map("max_children")
   maxOccupancy Int      @map("max_occupancy")
+  capacityVerified Boolean @default(false) @map("capacity_verified")
   bedSummary   String?  @map("bed_summary")
   areaSqm      Int?     @map("area_sqm")
   status       String   @default("active")
@@ -493,6 +497,7 @@ model RoomType {
   amenities     RoomTypeAmenity[]
   inventoryDays InventoryDay[]
   bookingLines  BookingLine[]
+  inquiries     Inquiry[]
   comboNeeds    ComboRoomRequirement[]
   blockNights   InventoryBlockNight[]
   resNights     InventoryReservationNight[]
@@ -1117,10 +1122,12 @@ model Inquiry {
   source           String    @default("website")
   intent           String?
   relatedContentId String?   @map("related_content_id") @db.Uuid
+  relatedRoomTypeId String?   @map("related_room_type_id") @db.Uuid
   desiredCheckIn   DateTime? @map("desired_check_in") @db.Date
   desiredCheckOut  DateTime? @map("desired_check_out") @db.Date
   adults           Int       @default(2)
   children         Int       @default(0)
+  requestedRooms   Int?      @map("requested_rooms")
   message          String?
   priority         Boolean   @default(false)
   resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz(3)
@@ -1130,6 +1137,7 @@ model Inquiry {
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  roomType     RoomType?             @relation(fields: [relatedRoomTypeId], references: [id], onDelete: SetNull)
   owner        User?                @relation(fields: [ownerUserId], references: [id])
   interactions Interaction[]
   followUps    FollowUp[]
@@ -1138,6 +1146,7 @@ model Inquiry {
   reads        InquiryRead[]
 
   @@index([stage, createdAt])
+  @@index([relatedRoomTypeId])
   @@map("inquiries")
 }
 

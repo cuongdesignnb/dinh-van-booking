@@ -90,6 +90,7 @@ function CategoryIcon({ id }: { id: DestinationCategory | 'all' }) {
 export function DestinationExplorer({ destinations, config }: { destinations: Destination[]; config: PublicRecord }) {
   const listTitle = publicText(config.listTitle);
   const advisorCtaLabel = publicText(config.advisorCtaLabel);
+  const hasCatalog = destinations.length > 0;
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -131,15 +132,15 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
 
   let body;
   if (!list.length) {
-    const emptyTitle = publicText(config.emptyTitle);
-    const emptyDescription = config.emptyDescription;
-    body = emptyTitle || richDocumentHasContent(emptyDescription) ? (
-      <div className="state-box" role="status">
-        {emptyTitle && <strong>{emptyTitle}</strong>}
-        {richDocumentHasContent(emptyDescription) && <div><RichContentRenderer document={emptyDescription as RichDocument} /></div>}
+    const emptyTitle = hasCatalog ? 'Không có điểm đến phù hợp với bộ lọc' : publicText(config.emptyTitle) || 'Chưa có điểm đến được công bố';
+    body = (
+      <div className="state-box catalog-empty-state" role="status">
+        {!hasCatalog && <span className="catalog-empty-state__icon" aria-hidden="true"><MapPin size={27} strokeWidth={1.6} /></span>}
+        <h3>{emptyTitle}</h3>
+        {!hasCatalog && richDocumentHasContent(config.emptyDescription) && <div><RichContentRenderer document={config.emptyDescription as RichDocument} /></div>}
         {category !== 'all' && <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>Xem tất cả điểm đến</button>}
       </div>
-    ) : <p className="state-box" role="status">Không có kết quả.</p>;
+    );
   }
   else
     body = (
@@ -174,7 +175,7 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
 
   return (
     <>
-      <div className="dest-filters">
+      {hasCatalog && <div className="dest-filters">
         <div className="dest-filters__inner content-shell">
           <div className="dest-chips" role="group" aria-label="Lọc điểm đến theo nhóm">
             {DESTINATION_CATEGORIES.map((c) => (
@@ -191,17 +192,17 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
             ))}
           </div>
         </div>
-      </div>
+      </div>}
 
-      <section className="dest-list content-shell" aria-labelledby="dest-title">
+      <section className={`dest-list content-shell${hasCatalog ? '' : ' dest-list--empty'}`} aria-labelledby={listTitle ? 'dest-title' : undefined}>
         <div className="dest-list__head">
           <div>
             {listTitle && <h2 className="section-title" id="dest-title">{listTitle} <SmallLeaf className="section-title__leaf" /></h2>}
             {richDocumentHasContent(config.listSubtitle) && <div className="section-sub"><RichContentRenderer document={config.listSubtitle as RichDocument} /></div>}
           </div>
-          <button type="button" className="link-more dest-list__all" aria-haspopup="dialog" onClick={() => setAll(true)}>
+          {hasCatalog && <button type="button" className="link-more dest-list__all" aria-haspopup="dialog" onClick={() => setAll(true)}>
             Xem tất cả điểm đến <ArrowRight size={15} aria-hidden="true" />
-          </button>
+          </button>}
         </div>
         <p className="sr-only" aria-live="polite">
           {list.length} điểm đến
@@ -209,7 +210,7 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
         {body}
       </section>
 
-      <AllDestinations destinations={destinations} open={all} onClose={() => setAll(false)} onPick={openDest} />
+      {hasCatalog && <AllDestinations destinations={destinations} open={all} onClose={() => setAll(false)} onPick={openDest} />}
       <DestinationDialog destination={open} onClose={closeDest} advisorCtaLabel={advisorCtaLabel} />
     </>
   );
@@ -291,7 +292,7 @@ export function DestinationDialog({ destination, onClose, advisorCtaLabel }: { d
             {d.slug && <Link className="btn btn--light" href={d.publicPath ?? `/diem-den/${d.slug}`}>
               Xem trang điểm đến <ArrowRight size={16} aria-hidden="true" />
             </Link>}
-            {advisorCtaLabel && <Link className="btn btn--primary" href={`/lien-he?intent=destination&item=${d.id}`} data-autofocus>
+            {advisorCtaLabel && <Link className="btn btn--primary" href={d.slug ? `/lien-he?intent=destination&item=${encodeURIComponent(d.slug)}` : '/lien-he?intent=destination'} data-autofocus>
               {advisorCtaLabel} <ArrowRight size={16} aria-hidden="true" />
             </Link>}
             <Link className="btn btn--light" href="/phong-nghi">

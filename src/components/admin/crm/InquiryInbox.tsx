@@ -8,10 +8,15 @@ type Inquiry = {
   id: string;
   customer: { name: string; phone: string | null; email: string | null };
   intent: string | null;
+  relatedContentId: string | null;
+  relatedContentTitle: string | null;
+  relatedRoomTypeId: string | null;
+  relatedRoomName: string | null;
   desiredCheckIn: string | null;
   desiredCheckOut: string | null;
   adults: number;
   children: number;
+  requestedRooms: number | null;
   message: string | null;
   stage: Stage;
   priority: boolean;
@@ -26,6 +31,8 @@ const STAGES: Array<{ id: Stage; label: string }> = [
   { id: 'won', label: 'Chốt' },
   { id: 'lost', label: 'Không thành' },
 ];
+
+const INTENT_LABEL: Record<string, string> = { stay: 'Nơi lưu trú', combo: 'Combo du lịch', destination: 'Điểm đến' };
 
 export function InquiryInbox() {
   const [items, setItems] = useState<Inquiry[]>([]);
@@ -90,7 +97,8 @@ export function InquiryInbox() {
                 </div>
                 <time className="settings-item__meta" dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString('vi-VN')}</time>
               </div>
-              <p><strong>Nhu cầu:</strong> {item.intent ?? 'tư vấn chung'} · {item.desiredCheckIn ?? 'chưa chọn ngày'}{item.desiredCheckOut ? ' → ' + item.desiredCheckOut : ''} · {item.adults} người lớn, {item.children} trẻ em</p>
+              <p><strong>Nhu cầu:</strong> {item.intent ? INTENT_LABEL[item.intent] ?? 'Tư vấn khác' : 'Tư vấn chung'} · {item.desiredCheckIn ?? 'chưa chọn ngày'}{item.desiredCheckOut ? ' → ' + item.desiredCheckOut : ''} · {item.adults} người lớn, {item.children} trẻ em{item.requestedRooms ? ` · ${item.requestedRooms} phòng/căn` : ''}</p>
+              {(item.relatedContentId || item.relatedRoomTypeId) && <p><strong>Quan tâm:</strong> {item.relatedContentTitle ?? 'Nội dung không còn trong hệ thống'}{item.relatedRoomName ? ` · Hạng phòng ${item.relatedRoomName}` : ''}</p>}
               {item.message && <p className="inquiry-message">{item.message}</p>}
               <label className="field">
                 <span className="field__label">Trạng thái</span>

@@ -6,6 +6,7 @@ import { documentMediaIds, sanitizeDocument } from '../content/document';
 import { pathForContent, uniqueSlug } from '../content/slug';
 import { resolveUpdatedSlug, switchCurrentRoute } from '../content/slug-routes';
 import type { CreatePropertyDto, CreateRoomDto, DeletePropertyQuery, UpdatePropertyDto, UpdateRoomDto } from './dto/property.dto';
+import { ROOM_AMENITIES, ROOM_AMENITY_CODES } from './room-amenities';
 
 function documentToText(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -15,6 +16,11 @@ function documentToText(value: unknown): string {
   return [node.text, documentToText(node.content)]
     .filter((part): part is string => typeof part === 'string' && part.length > 0)
     .join(' ');
+}
+
+function roomNameKey(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 }
 
 function paragraphDocument(text: string): object {
@@ -38,6 +44,7 @@ const PROPERTY_INCLUDE = {
   roomTypes: {
     orderBy: { position: 'asc' as const },
     include: {
+      amenities: { include: { amenity: { select: { code: true, label: true } } } },
       units: { select: { id: true, code: true, label: true, active: true } },
       ratePlans: { where: { active: true }, orderBy: { createdAt: 'asc' as const } },
     },
@@ -76,13 +83,18 @@ type PropertyRow = {
     code: string;
     name: string;
     description: string | null;
+    unitKind: string | null;
+    bedroomCount: number | null;
+    bathroomCount: number | null;
     maxAdults: number;
     maxChildren: number;
     maxOccupancy: number;
+    capacityVerified: boolean;
     bedSummary: string | null;
     areaSqm: number | null;
     status: string;
     version: number;
+    amenities: Array<{ amenity: { code: string; label: string } }>;
     units: Array<{ id: string; code: string; label: string; active: boolean }>;
     ratePlans: Array<{
       id: string;
@@ -126,14 +138,19 @@ export interface PropertyView {
     code: string;
     name: string;
     description: string | null;
-    maxAdults: number;
-    maxChildren: number;
-    maxOccupancy: number;
+    unitKind: string | null;
+    bedroomCount: number | null;
+    bathroomCount: number | null;
+    maxAdults: number | null;
+    maxChildren: number | null;
+    maxOccupancy: number | null;
+    capacityVerified: boolean;
     bedSummary: string | null;
     areaSqm: number | null;
     unitCount: number;
     status: string;
     version: number;
+    amenities: Array<{ code: string; label: string }>;
     gallery: Array<{ mediaId: string; url: string; alt: string }>;
     rate: {
       id: string;
@@ -171,18 +188,32 @@ export class PropertiesService {
     const kind = input.kind.trim();
     const area = input.area.trim();
     const address = input.address.trim();
-    const roomCode = input.roomCode.trim().toUpperCase();
-    const roomName = input.roomName.trim();
     const description = input.description?.trim() || `Thông tin đang được cập nhật cho ${title}.`;
-    const maxChildren = input.maxChildren ?? 0;
-    const maxOccupancy = input.maxAdults + maxChildren;
-    const rateCode = input.rateCode?.trim().toUpperCase() || 'BAR';
-    const rateName = input.rateName?.trim() || 'Giá tiêu chuẩn';
-
-    if (!title || !code || !kind || !area || !address || !roomCode || !roomName) {
-      throw new BadRequestException('Vui lòng điền đủ thông tin nơi lưu trú và loại phòng');
+    if (!title || !code || !kind || !area || !address) {
+      throw new BadRequestException('Vui lòng điền đủ thông tin nơi lưu trú');
     }
-    if (maxOccupancy < 1) throw new BadRequestException('Sức chứa phải lớn hơn 0');
+    // Older API clients may still create a verified first room together with
+    // the property. A property-only draft must never invent a generic room.
+    const roomFieldsProvided = [input.roomCode, input.roomName, input.roomDescription, input.maxAdults,
+      input.maxChildren, input.bedSummary, input.areaSqm, input.unitCount, input.rateCode,
+      input.rateName, input.rateVnd, input.weekendRateVnd, input.breakfastIncluded,
+      input.roomGalleryMediaIds].some((value) => value !== undefined);
+    const roomCode = input.roomCode?.trim().toUpperCase() ?? '';
+    const roomName = input.roomName?.trim() ?? '';
+    if (roomFieldsProvided && (!roomCode || !roomName || input.maxAdults === undefined
+      || input.unitCount === undefined || input.rateVnd === undefined)) {
+      throw new BadRequestException('Hạng phòng đầu tiên cần đủ mã, tên, sức chứa, số phòng và giá; hoặc tạo nơi lưu trú trước rồi thêm từng hạng riêng');
+    }
+    const initialRoom = roomFieldsProvided ? {
+      code: roomCode,
+      name: roomName,
+      maxAdults: input.maxAdults!,
+      maxChildren: input.maxChildren ?? 0,
+      unitCount: input.unitCount!,
+      rateVnd: input.rateVnd!,
+      rateCode: input.rateCode?.trim().toUpperCase() || 'BAR',
+      rateName: input.rateName?.trim() || 'Giá tiêu chuẩn',
+    } : null;
 
     const slug = await this.reserveSlug(input.slug?.trim() || title);
     const body = input.descriptionDocument === undefined
@@ -233,46 +264,50 @@ export class PropertiesService {
             kind,
             area,
             address,
-            operatingStatus: 'active',
+            operatingStatus: initialRoom ? 'active' : 'pending_verification',
           },
         });
 
-        const roomType = await tx.roomType.create({
-          data: {
-            propertyId: property.id,
-            code: roomCode,
-            name: roomName,
-            description: input.roomDescription?.trim() || null,
-            maxAdults: input.maxAdults,
-            maxChildren,
-            maxOccupancy,
-            bedSummary: input.bedSummary?.trim() || null,
-            areaSqm: input.areaSqm ?? null,
-            status: 'active',
-            position: 0,
-          },
-        });
+        if (initialRoom) {
+          const roomType = await tx.roomType.create({
+            data: {
+              propertyId: property.id,
+              code: initialRoom.code,
+              name: initialRoom.name,
+              description: input.roomDescription?.trim() || null,
+              maxAdults: initialRoom.maxAdults,
+              maxChildren: initialRoom.maxChildren,
+              maxOccupancy: initialRoom.maxAdults + initialRoom.maxChildren,
+              capacityVerified: true,
+              bedSummary: input.bedSummary?.trim() || null,
+              areaSqm: input.areaSqm ?? null,
+              status: 'active',
+              position: 0,
+            },
+          });
 
-        await tx.ratePlan.create({
-          data: {
-            roomTypeId: roomType.id,
-            code: rateCode,
-            name: rateName,
-            baseRateVnd: BigInt(input.rateVnd),
-            weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd),
-            breakfastIncluded: input.breakfastIncluded ?? false,
-            // Payment/hold is not wired to the public checkout yet.
-            depositBps: 0,
-            active: true,
-          },
-        });
+          await tx.ratePlan.create({
+            data: {
+              roomTypeId: roomType.id,
+              code: initialRoom.rateCode,
+              name: initialRoom.rateName,
+              baseRateVnd: BigInt(initialRoom.rateVnd),
+              weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd),
+              breakfastIncluded: input.breakfastIncluded ?? false,
+              // Payment/hold is not wired to the public checkout yet.
+              depositBps: 0,
+              active: true,
+            },
+          });
 
-        await tx.roomUnit.createMany({
-          data: Array.from({ length: input.unitCount }, (_, index) => {
-            const suffix = String(index + 1).padStart(2, '0');
-            return { roomTypeId: roomType.id, code: `${roomCode}-${suffix}`, label: `${roomName} ${index + 1}`, active: true };
-          }),
-        });
+          await tx.roomUnit.createMany({
+            data: Array.from({ length: initialRoom.unitCount }, (_, index) => {
+              const suffix = String(index + 1).padStart(2, '0');
+              return { roomTypeId: roomType.id, code: `${initialRoom.code}-${suffix}`, label: `${initialRoom.name} ${index + 1}`, active: true };
+            }),
+          });
+          await this.replaceGallery(tx, node.id, `room:${roomType.id}`, input.roomGalleryMediaIds ?? []);
+        }
 
         if (input.coverMediaId) {
           await tx.contentMedia.create({
@@ -280,7 +315,6 @@ export class PropertiesService {
           });
         }
         await this.replaceGallery(tx, node.id, 'gallery', input.galleryMediaIds ?? []);
-        await this.replaceGallery(tx, node.id, `room:${roomType.id}`, input.roomGalleryMediaIds ?? []);
 
         await tx.auditLog.create({
           data: {
@@ -288,7 +322,7 @@ export class PropertiesService {
             action: 'property.create',
             entityType: 'property',
             entityId: property.id,
-            diff: { contentId: node.id, code, slug, roomCode, unitCount: input.unitCount } as object,
+            diff: { contentId: node.id, code, slug, roomCode: initialRoom?.code ?? null, unitCount: initialRoom?.unitCount ?? null } as object,
           },
         });
         return property.id;
@@ -473,15 +507,29 @@ export class PropertiesService {
       throw new BadRequestException('Cần giá ngày thường trước khi đặt giá cuối tuần');
     }
     const status = input.status ?? 'inactive';
+    const capacityVerified = input.capacityVerified === true;
+    if (capacityVerified && (input.maxAdults === undefined || input.maxChildren === undefined)) {
+      throw new BadRequestException('Cần nhập sức chứa người lớn và trẻ em trước khi xác minh hạng phòng');
+    }
+    if (status === 'active' && !capacityVerified) {
+      throw new BadRequestException('Hạng phòng đang hoạt động cần xác minh sức chứa');
+    }
     if (status === 'active' && (!input.unitCount || input.rateVnd === undefined)) {
       throw new BadRequestException('Hạng phòng đang hoạt động cần số phòng và giá đã xác minh');
     }
     try {
       await this.prisma.$transaction(async (tx) => {
+        const existingNames = await tx.roomType.findMany({ where: { propertyId }, select: { id: true, name: true } });
+        if (existingNames.some((room) => roomNameKey(room.name) === roomNameKey(name))) {
+          throw new ConflictException('Hạng phòng này đã có trong nơi lưu trú. Hãy mở hạng hiện có để chỉnh sửa.');
+        }
         await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
         const room = await tx.roomType.create({ data: {
           propertyId, code, name, description: input.description?.trim() || null,
-          maxAdults: input.maxAdults, maxChildren: input.maxChildren, maxOccupancy: input.maxAdults + input.maxChildren,
+          unitKind: input.unitKind ?? null, bedroomCount: input.bedroomCount ?? null,
+          bathroomCount: input.bathroomCount ?? null,
+          maxAdults: input.maxAdults ?? 1, maxChildren: input.maxChildren ?? 0,
+          maxOccupancy: (input.maxAdults ?? 1) + (input.maxChildren ?? 0), capacityVerified,
           bedSummary: input.bedSummary?.trim() || null, areaSqm: input.areaSqm ?? null,
           position: await tx.roomType.count({ where: { propertyId } }), status,
         } });
@@ -493,6 +541,7 @@ export class PropertiesService {
         if (input.rateVnd !== undefined) {
           await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
         }
+        if (input.amenityCodes?.length) await this.replaceRoomAmenities(tx, room.id, input.amenityCodes);
         await this.replaceGallery(tx, property.contentId, `room:${room.id}`, input.galleryMediaIds ?? []);
         await tx.contentNode.update({ where: { id: property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: property.content.publicationStatus === 'published' ? new Date() : undefined } });
         await tx.auditLog.create({ data: { actorId: userId, action: 'room.create', entityType: 'content_node', entityId: property.contentId, diff: { roomName: name, roomCode: code } as object } });
@@ -513,7 +562,21 @@ export class PropertiesService {
     if (input.rateVnd === undefined && input.weekendRateVnd !== undefined) {
       throw new BadRequestException('Cần giá ngày thường trước khi đặt giá cuối tuần');
     }
+    const capacityVerified = input.capacityVerified ?? room.capacityVerified;
+    if (input.capacityVerified === true && !room.capacityVerified
+      && (input.maxAdults === undefined || input.maxChildren === undefined)) {
+      throw new BadRequestException('Cần nhập sức chứa người lớn và trẻ em trước khi xác minh hạng phòng');
+    }
+    if (input.status === 'active' && !capacityVerified) {
+      throw new BadRequestException('Hạng phòng đang hoạt động cần xác minh sức chứa');
+    }
+    const maxAdults = input.maxAdults ?? room.maxAdults;
+    const maxChildren = input.maxChildren ?? room.maxChildren;
     await this.prisma.$transaction(async (tx) => {
+      const existingNames = await tx.roomType.findMany({ where: { propertyId }, select: { id: true, name: true } });
+      if (existingNames.some((candidate) => candidate.id !== roomId && roomNameKey(candidate.name) === roomNameKey(name))) {
+        throw new ConflictException('Tên hạng phòng đã có trong nơi lưu trú này. Hãy chọn tên khác hoặc sửa hạng hiện có.');
+      }
       await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
       const existingUnits = input.unitCount === undefined && input.status !== 'active' ? [] : await tx.roomUnit.findMany({
         where: { roomTypeId: roomId }, select: { code: true, active: true },
@@ -526,8 +589,11 @@ export class PropertiesService {
         throw new ConflictException('Không thể giảm số phòng tại đây vì có thể ảnh hưởng tồn và đơn đặt. Hãy kiểm tra Quỹ phòng.');
       }
       const changed = await tx.roomType.updateMany({ where: { id: roomId, version: input.expectedVersion }, data: {
-        name, description: input.description?.trim() || null, maxAdults: input.maxAdults, maxChildren: input.maxChildren,
-        maxOccupancy: input.maxAdults + input.maxChildren, bedSummary: input.bedSummary?.trim() || null,
+        name, description: input.description?.trim() || null, maxAdults, maxChildren,
+        unitKind: input.unitKind === undefined ? room.unitKind : input.unitKind,
+        bedroomCount: input.bedroomCount === undefined ? room.bedroomCount : input.bedroomCount,
+        bathroomCount: input.bathroomCount === undefined ? room.bathroomCount : input.bathroomCount,
+        maxOccupancy: maxAdults + maxChildren, capacityVerified, bedSummary: input.bedSummary?.trim() || null,
         areaSqm: input.areaSqm ?? null, status: input.status, version: { increment: 1 },
       } });
       if (changed.count !== 1) throw new ConflictException('Hạng phòng đã thay đổi. Vui lòng tải lại.');
@@ -552,8 +618,9 @@ export class PropertiesService {
         }
       }
       if (input.galleryMediaIds !== undefined) await this.replaceGallery(tx, room.property.contentId, `room:${roomId}`, input.galleryMediaIds);
+      if (input.amenityCodes !== undefined) await this.replaceRoomAmenities(tx, roomId, input.amenityCodes);
       await tx.contentNode.update({ where: { id: room.property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: room.property.content.publicationStatus === 'published' ? new Date() : undefined } });
-      await tx.auditLog.create({ data: { actorId: userId, action: 'room.update', entityType: 'content_node', entityId: room.property.contentId, diff: { roomName: name, roomCode: room.code, status: input.status } as object } });
+      await tx.auditLog.create({ data: { actorId: userId, action: 'room.update', entityType: 'content_node', entityId: room.property.contentId, diff: { roomName: name, roomCode: room.code, status: input.status, capacityVerified } as object } });
     });
     return this.getOne(propertyId);
   }
@@ -615,6 +682,22 @@ export class PropertiesService {
     if (new Set(ids).size !== ids.length) throw new BadRequestException('Một album không được chọn trùng ảnh');
     await tx.contentMedia.deleteMany({ where: { contentId, role } });
     if (ids.length) await tx.contentMedia.createMany({ data: ids.map((mediaId, position) => ({ contentId, mediaId, role, position })) });
+  }
+
+  private async replaceRoomAmenities(tx: Prisma.TransactionClient, roomTypeId: string, codes: string[]): Promise<void> {
+    // Only replace the checkbox-managed room facilities. Preserve legacy/custom relations.
+    await tx.roomTypeAmenity.deleteMany({ where: { roomTypeId, amenity: { code: { in: ROOM_AMENITY_CODES } } } });
+    for (const code of new Set(codes)) {
+      const index = ROOM_AMENITIES.findIndex((item) => item.code === code);
+      if (index < 0) throw new BadRequestException(`Tiện nghi hạng phòng không hợp lệ: ${code}`);
+      const selected = ROOM_AMENITIES[index];
+      const amenity = await tx.amenity.upsert({
+        where: { code },
+        create: { code, label: selected.label, iconKey: 'check', scope: 'room', position: index },
+        update: { label: selected.label, scope: 'room', position: index },
+      });
+      await tx.roomTypeAmenity.create({ data: { roomTypeId, amenityId: amenity.id } });
+    }
   }
 
   private async attachInlineMedia(
@@ -706,14 +789,19 @@ export class PropertiesService {
           code: room.code,
           name: room.name,
           description: room.description,
-          maxAdults: room.maxAdults,
-          maxChildren: room.maxChildren,
-          maxOccupancy: room.maxOccupancy,
+          unitKind: room.unitKind,
+          bedroomCount: room.bedroomCount,
+          bathroomCount: room.bathroomCount,
+          maxAdults: room.capacityVerified ? room.maxAdults : null,
+          maxChildren: room.capacityVerified ? room.maxChildren : null,
+          maxOccupancy: room.capacityVerified ? room.maxOccupancy : null,
+          capacityVerified: room.capacityVerified,
           bedSummary: room.bedSummary,
           areaSqm: room.areaSqm,
           unitCount: room.units.filter((unit) => unit.active).length,
           status: room.status,
           version: room.version,
+          amenities: room.amenities.map((item) => item.amenity),
           gallery: row.content.media.filter((item) => item.role === `room:${room.id}`).map(imageView),
           rate: rate
             ? {

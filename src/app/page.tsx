@@ -82,7 +82,6 @@ export default async function HomePage({ searchParams }: Props) {
   const selectedDestinations = configs.destinations.selectionMode === 'featured' ? destinations.filter((item) => item.featured) : destinations;
   const order = publicSectionOrder(site);
   const shown = (key: string) => order.includes(key) && !publicSectionHidden(site, key);
-  const rank = (...keys: string[]) => Math.min(...keys.map((key) => order.indexOf(key)).filter((index) => index >= 0));
   const heroVisible = shown('hero') && configs.hero.enabled === true && !!publicText(configs.hero.titleLine1);
   const searchVisible = shown('search');
   const trustVisible = shown('trust') && configs.trust.enabled === true && hasTrustItem(configs.trust.items);
@@ -95,28 +94,74 @@ export default async function HomePage({ searchParams }: Props) {
   const contactVisible = shown('contact') && configs.contact.enabled === true && !!publicText(configs.contact.title);
   const faqVisible = shown('faq') && configs.faq.enabled === true && !!publicText(configs.faq.title) && hasFaqItem(configs.faq.items);
 
-  // DB order ranks editorial groups. Members keep their visual slots: search in
-  // hero, promo beside stays, and the four lower modules in two columns.
-  const groups: Array<{ key: string; rank: number; node: ReactNode }> = [];
-  if (heroVisible || searchVisible) groups.push({ key: 'hero', rank: rank('hero', 'search'), node: heroVisible
-    ? <HeroSection config={configs.hero} image={publicAsset(site, configs.hero.imageMediaId)} mobileImage={publicAsset(site, configs.hero.mobileImageMediaId)} showSearch={searchVisible} />
-    : <section className="home-search content-shell"><BookingSearch /></section> });
-  if (trustVisible) groups.push({ key: 'trust', rank: rank('trust'), node: <TrustStrip config={configs.trust} /> });
-  if (featuredVisible || promoVisible) groups.push({ key: 'featured', rank: rank('featured', 'promo'), node: <FeaturedStays stays={featuredVisible ? selectedStays : []} config={configs.featured} promo={promoVisible ? <ExperiencePromo config={configs.promo} image={publicAsset(site, configs.promo.imageMediaId)} /> : null} /> });
-  if (combosVisible) groups.push({ key: 'combos', rank: rank('combos'), node: <HomeCombos combos={combos} config={configs.combos} /> });
-  if (whyVisible || destinationsVisible || reviewsVisible || contactVisible) groups.push({ key: 'lower', rank: rank('why', 'destinations', 'reviews', 'contact'), node:
-    <div className={`lower content-shell${(whyVisible || destinationsVisible) && (reviewsVisible || contactVisible) ? '' : ' lower--single'}`}>
-      {(whyVisible || destinationsVisible) && <div className="lower__left">
-        {whyVisible && <WhyChooseUs config={configs.why} />}
-        {destinationsVisible && <DestinationGrid destinations={selectedDestinations} config={configs.destinations} />}
-      </div>}
-      {(reviewsVisible || contactVisible) && <div className="lower__right">
-        {reviewsVisible && <Testimonials testimonials={reviews} config={configs.reviews} />}
-        {contactVisible && <PersonalContact config={configs.contact} image={publicAsset(site, configs.contact.imageMediaId)} />}
-      </div>}
-    </div> });
-  const homeSections = groups.sort((a, b) => a.rank - b.rank).map((group) => <div className="home-layout-group" data-home-group={group.key} key={group.key}>{group.node}</div>);
-  if (faqVisible) homeSections.push(<div className="home-layout-group" data-home-group="faq" key="faq"><HomeFaq config={configs.faq} /></div>);
+  const visibility = {
+    hero: heroVisible, search: searchVisible, trust: trustVisible, featured: featuredVisible,
+    combos: combosVisible, why: whyVisible, destinations: destinationsVisible,
+    reviews: reviewsVisible, promo: promoVisible, faq: faqVisible, contact: contactVisible,
+  };
+  type Section = keyof typeof visibility;
+  const seen = new Set<string>();
+  const visibleOrder = order.filter((key): key is Section => {
+    if (!Object.prototype.hasOwnProperty.call(visibility, key) || !visibility[key as Section] || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const lowerOrder: Section[] = ['why', 'destinations', 'reviews', 'contact'];
+  const isLower = (key: Section): boolean => lowerOrder.includes(key);
+  const groups: Array<{ key: string; sections: Section[]; node: ReactNode }> = [];
+
+  // Only adjacent sections share a visual slot. If Admin moves one elsewhere,
+  // render it independently at the exact saved position instead of moving it
+  // back to its former column (or silently ignoring the reorder).
+  for (let index = 0; index < visibleOrder.length;) {
+    const key = visibleOrder[index];
+    const next = visibleOrder[index + 1];
+    if (key === 'hero' && next === 'search') {
+      groups.push({ key: 'hero', sections: ['hero', 'search'], node: <HeroSection config={configs.hero} image={publicAsset(site, configs.hero.imageMediaId)} mobileImage={publicAsset(site, configs.hero.mobileImageMediaId)} showSearch /> });
+      index += 2;
+      continue;
+    }
+    if (key === 'featured' && next === 'promo') {
+      groups.push({ key: 'featured', sections: ['featured', 'promo'], node: <FeaturedStays stays={selectedStays} config={configs.featured} promo={<ExperiencePromo config={configs.promo} image={publicAsset(site, configs.promo.imageMediaId)} />} /> });
+      index += 2;
+      continue;
+    }
+    if (isLower(key)) {
+      const sections: Section[] = [key];
+      while (index + sections.length < visibleOrder.length) {
+        const following = visibleOrder[index + sections.length];
+        if (!isLower(following) || lowerOrder.indexOf(following) <= lowerOrder.indexOf(sections[sections.length - 1])) break;
+        sections.push(following);
+      }
+      const left = sections.includes('why') || sections.includes('destinations');
+      const right = sections.includes('reviews') || sections.includes('contact');
+      groups.push({ key: 'lower', sections, node:
+        <div className={`lower content-shell${left && right ? '' : ' lower--single'}`}>
+          {left && <div className="lower__left">
+            {sections.includes('why') && <WhyChooseUs config={configs.why} />}
+            {sections.includes('destinations') && <DestinationGrid destinations={selectedDestinations} config={configs.destinations} />}
+          </div>}
+          {right && <div className="lower__right">
+            {sections.includes('reviews') && <Testimonials testimonials={reviews} config={configs.reviews} />}
+            {sections.includes('contact') && <PersonalContact config={configs.contact} image={publicAsset(site, configs.contact.imageMediaId)} />}
+          </div>}
+        </div> });
+      index += sections.length;
+      continue;
+    }
+    const nodes: Partial<Record<Section, ReactNode>> = {
+      hero: <HeroSection config={configs.hero} image={publicAsset(site, configs.hero.imageMediaId)} mobileImage={publicAsset(site, configs.hero.mobileImageMediaId)} />,
+      search: <section className="home-search content-shell"><BookingSearch /></section>,
+      trust: <TrustStrip config={configs.trust} />,
+      featured: <FeaturedStays stays={selectedStays} config={configs.featured} />,
+      combos: <HomeCombos combos={combos} config={configs.combos} />,
+      promo: <section className="home-promo content-shell"><ExperiencePromo config={configs.promo} image={publicAsset(site, configs.promo.imageMediaId)} standalone /></section>,
+      faq: <HomeFaq config={configs.faq} />,
+    };
+    groups.push({ key, sections: [key], node: nodes[key] });
+    index += 1;
+  }
+  const homeSections = groups.map((group, index) => <div className="home-layout-group" data-home-group={group.key} data-home-sections={group.sections.join(',')} key={`${group.key}-${index}`}>{group.node}</div>);
   return (
     <PageShell className="page-home">
       <JsonLd data={structuredData} />

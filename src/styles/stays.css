@@ -290,6 +290,61 @@
   min-width: 0;
 }
 
+.stays-layout.stays-layout--empty {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.stays-layout.stays-layout--empty-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stays-layout--empty .stays-main {
+  margin: 0;
+}
+
+.stays-layout--empty .stays-side--right {
+  display: block;
+  grid-column: auto;
+  margin-top: 0;
+}
+
+.stays-layout--empty .advisor-card {
+  margin-top: 0;
+}
+
+.stays-empty-state--catalog {
+  min-height: 260px;
+  justify-content: center;
+  gap: 16px;
+  padding: clamp(24px, 4vw, 46px);
+  border-color: #d9e5d1;
+  background: linear-gradient(135deg, #f3f8ef 0%, #fffdf8 100%);
+}
+
+.stays-empty-state__icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 16px;
+  background: #dfeede;
+  color: #1d5933;
+}
+
+.stays-empty-state h2 {
+  margin: 0;
+  color: #183a27;
+  font-family: var(--font-dvb-display), Georgia, serif;
+  font-size: clamp(19px, 2vw, 27px);
+  line-height: 1.25;
+}
+
+.stays-empty-state .rich-content {
+  max-width: 58ch;
+}
+
 /* ---------- Filters ---------- */
 
 .filters-card {
@@ -679,7 +734,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 256px;
+  min-height: 256px;
+  height: auto;
   background: #fff;
   border: 1px solid #eceee8;
   border-radius: 9px;
@@ -871,6 +927,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -889,6 +946,16 @@
 .lcard__price span {
   font-size: 10.5px;
   color: #6b716c;
+}
+
+.lcard__price-note {
+  display: block;
+  max-width: 100%;
+  margin-top: 3px;
+  color: #526356;
+  font-size: 10.5px;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .lcard .btn--sm {
@@ -1160,6 +1227,40 @@
   margin-top: -8px;
 }
 
+.advisor-card--no-image .advisor-card__top {
+  display: grid;
+  height: auto;
+  gap: 12px;
+  padding: 18px;
+}
+
+.advisor-card--no-image .advisor-card__title,
+.advisor-card--no-image .advisor-card__text,
+.advisor-card--no-image .advisor-card__cta {
+  position: static;
+  width: auto;
+  margin: 0;
+  transform: none;
+}
+
+.advisor-card--no-image .advisor-card__title {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.advisor-card--no-image .advisor-card__text {
+  padding: 0;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.advisor-card--no-image .advisor-card__cta {
+  width: fit-content;
+  min-height: 40px;
+  padding: 0 16px;
+}
+
 /* ---------- Bottom row ---------- */
 
 .stays-bottom {
@@ -1182,6 +1283,18 @@
   height: 32px;
   display: flex;
   align-items: center;
+}
+
+@media (max-width: 1023px) {
+  .stays-layout.stays-layout--empty {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    margin-top: 24px;
+  }
+
+  .stays-empty-state--catalog {
+    min-height: 0;
+  }
 }
 
 .stays-reviews {

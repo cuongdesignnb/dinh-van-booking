@@ -4,7 +4,7 @@ import { browserApi, signInAsOwner } from './helpers';
 const ROUTES = [
   ['/admin', 'Tổng quan', 'Tổng quan'],
   ['/admin/dat-phong', 'Quản lý đặt phòng', 'Đặt phòng'],
-  ['/admin/phong-nghi', 'Quản lý phòng nghỉ', 'Phòng nghỉ'],
+  ['/admin/phong-nghi', 'Quản lý nơi lưu trú', 'Nơi lưu trú'],
   ['/admin/hang-phong', 'Quản lý hạng phòng', 'Hạng phòng'],
   ['/admin/ton-phong', 'Quỹ phòng', 'Quỹ phòng'],
   ['/admin/combo-du-lich', 'Quản lý combo du lịch', 'Combo du lịch'],
@@ -56,6 +56,28 @@ test('mật khẩu sai không tạo phiên đăng nhập', async ({ page }) => {
   await expect(page.locator('.atop__user')).toHaveCount(0);
 });
 
+test('kiểm tra phiên quản trị bị treo có trạng thái lỗi và thử lại, không giả thành hết phiên', async ({ page }) => {
+  const pendingRequest: { release?: () => void } = {};
+  const authRoute = /\/api\/v1\/auth\/me(?:\?|$)/;
+  await page.route(authRoute, async (route) => {
+    await new Promise<void>((resolve) => { pendingRequest.release = resolve; });
+    await route.abort().catch(() => undefined);
+  });
+  try {
+    await page.goto('/admin');
+    await expect(page.getByText('Đang kiểm tra phiên quản trị…')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Không kết nối được quản trị' })).toBeVisible({ timeout: 13_000 });
+    await expect(page.locator('.admin-login .field__error[role="alert"]')).toContainText('phản hồi quá lâu');
+    await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toHaveCount(0);
+  } finally {
+    pendingRequest.release?.();
+    await page.unroute(authRoute);
+  }
+  await page.getByRole('button', { name: 'Thử kiểm tra lại' }).click();
+  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible();
+  await expect(page.locator('.admin-login .field__error[role="alert"]')).toHaveCount(0);
+});
+
 test('mọi route admin có tiêu đề, menu hiện hành và module vận hành thật', async ({ page }) => {
   await signInAsOwner(page);
   const errors: string[] = [];
@@ -91,8 +113,10 @@ test('route API-backed hiển thị bản ghi PostgreSQL và các empty state th
   await signInAsOwner(page);
 
   await page.goto('/admin/phong-nghi');
-  await expect(page.locator('.property-card')).toHaveCount(11);
-  await expect(page.locator('.property-card').filter({ hasText: 'CP-AN-GARDEN' })).toContainText('Bản nháp');
+  await expect(page.locator('.atop__user')).toBeVisible({ timeout: 12_000 });
+  const gardenCard = page.locator('.property-card').filter({ hasText: 'CP-AN-GARDEN' });
+  await expect(gardenCard).toHaveCount(1, { timeout: 12_000 });
+  await expect(gardenCard).toContainText('Bản nháp');
 
   await page.goto('/admin/combo-du-lich');
   await expect(page.getByRole('heading', { name: 'Chưa có combo du lịch' })).toBeVisible();
@@ -159,7 +183,7 @@ test('từ quỹ phòng mở được hạng phòng, xem danh sách thật và s
 
   const response = await browserApi(page, '/properties');
   expect(response.status).toBe(200);
-  const properties = (response.body as { items: Array<{ roomTypes: Array<{ name: string }> }> }).items;
+  const properties = (response.body as { items: Array<{ id: string; roomTypes: Array<{ name: string }> }> }).items;
   const roomCount = properties.reduce((total, property) => total + property.roomTypes.length, 0);
   expect(roomCount).toBeGreaterThan(0);
   await expect(page.locator('.room-catalog__card')).toHaveCount(roomCount);
@@ -168,17 +192,20 @@ test('từ quỹ phòng mở được hạng phòng, xem danh sách thật và s
   const firstRoom = page.locator('.room-catalog__card').first();
   const name = await firstRoom.locator('h3').textContent();
   await firstRoom.getByRole('button', { name: 'Sửa hạng phòng' }).click();
+  await expect(page).toHaveURL(/\/admin\/hang-phong\?property=[^&]+&room=/);
+  const selectedPropertyId = new URL(page.url()).searchParams.get('property');
+  expect(selectedPropertyId).toBeTruthy();
   await expect(page.getByRole('heading', { name: `Sửa hạng phòng: ${name?.trim()}` })).toBeVisible();
   await expect(page.getByText('Album hạng phòng:', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Quay lại danh sách hạng phòng' }).first().click();
-  await expect(page.locator('.room-catalog__card')).toHaveCount(roomCount);
+  await expect(page.locator('.room-catalog__card')).toHaveCount(properties.find((property) => property.id === selectedPropertyId)!.roomTypes.length);
 });
 
 test('form hạng phòng gắn rõ từng nơi lưu trú và không lẫn danh sách hạng của cơ sở khác', async ({ page }) => {
   await signInAsOwner(page);
   const response = await browserApi(page, '/properties');
   expect(response.status).toBe(200);
-  const properties = (response.body as { items: Array<{ id: string; code: string; title: string; roomTypes: Array<{ name: string }> }> }).items;
+  const properties = (response.body as { items: Array<{ id: string; code: string; title: string; roomTypes: Array<{ code: string; name: string }> }> }).items;
   const mineral = properties.find((property) => property.code === 'CP-MINERAL-RETREAT');
   const garden = properties.find((property) => property.code === 'CP-AN-GARDEN');
   expect(mineral).toBeTruthy();
@@ -189,7 +216,53 @@ test('form hạng phòng gắn rõ từng nơi lưu trú và không lẫn danh s
   await expect(context).toContainText(mineral!.title);
   await expect(context).toContainText(mineral!.code);
   await expect(context.locator('li')).toHaveCount(mineral!.roomTypes.length);
-  await expect(page.getByRole('heading', { name: `Thêm hạng phòng cho ${mineral!.title}` })).toBeVisible();
+  await expect(context).toContainText(`Hạng phòng hiện có (${mineral!.roomTypes.length})`);
+  await expect(page.locator('.room-catalog__create-choice')).toContainText('Chưa thấy đúng hạng cần quản lý?');
+  await expect(page.locator('.property-form')).toHaveCount(0);
+  if (process.env.DVB_ROOM_VISUAL_ARTIFACTS === '1') {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1441);
+    await page.screenshot({ path: 'artifacts/admin-room-choice-1440.png', fullPage: true });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.locator('.room-catalog__create-choice')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+  if (process.env.DVB_ROOM_VISUAL_ARTIFACTS === '1') await page.screenshot({ path: 'artifacts/admin-room-choice-390.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const existingRoom = mineral!.roomTypes[0];
+  const duplicateFromApi = await browserApi(page, `/properties/${mineral!.id}/rooms`, 'POST', { code: existingRoom.code, name: `  ${existingRoom.name.toLowerCase()}  `, status: 'inactive' });
+  expect(duplicateFromApi.status).toBe(409);
+  expect(JSON.stringify(duplicateFromApi.body)).toContain('Hạng phòng này đã có');
+  const afterDuplicate = await browserApi(page, `/properties/${mineral!.id}`);
+  expect((afterDuplicate.body as { roomTypes: unknown[] }).roomTypes).toHaveLength(mineral!.roomTypes.length);
+  await expect(context.getByRole('button', { name: `Sửa hạng ${existingRoom.name}` })).toContainText('Sửa hạng này');
+  await context.getByRole('button', { name: `Sửa hạng ${existingRoom.name}` }).click();
+  await expect(page.getByRole('heading', { name: `Sửa hạng phòng: ${existingRoom.name}` })).toBeVisible();
+  await expect(page.getByLabel('Mã hạng phòng *')).toHaveValue(existingRoom.code);
+  await expect(page.getByLabel('Số đơn vị lưu trú của hạng này')).toHaveValue('');
+  await expect(page.locator('.property-form')).toContainText('Kiểu chỗ ở của hạng này chưa được xác minh');
+  await page.goto(`/admin/hang-phong?property=${mineral!.id}&room=create`);
+  await page.getByRole('button', { name: `Tạo hạng khác cho ${mineral!.title}` }).click();
+  await expect(page.getByRole('heading', { name: `Thêm hạng phòng cho ${mineral!.title}`, level: 3 })).toBeVisible();
+  await expect(page.getByRole('note')).toContainText(`hạng phòng thứ ${mineral!.roomTypes.length + 1}`);
+  await page.getByLabel('Tên hạng phòng *').fill(existingRoom.name);
+  await expect(page.getByLabel('Mã hạng phòng *')).toHaveValue(existingRoom.code);
+  await expect(page.locator('.room-editor__duplicate')).toContainText('đã có');
+  await expect(page.getByRole('button', { name: 'Lưu hạng phòng' })).toBeDisabled();
+  await page.locator('.room-editor__duplicate').getByRole('button', { name: `Sửa hạng ${existingRoom.name}` }).click();
+  await expect(page.getByRole('heading', { name: `Sửa hạng phòng: ${existingRoom.name}` })).toBeVisible();
+  await page.goto(`/admin/hang-phong?property=${mineral!.id}&room=create`);
+  await page.getByRole('button', { name: `Tạo hạng khác cho ${mineral!.title}` }).click();
+  await page.getByLabel('Mã hạng phòng *').fill('MINERAL-CUSTOM');
+  await page.getByLabel('Tên hạng phòng *').fill('Suite ven hồ');
+  await expect(page.getByLabel('Mã hạng phòng *')).toHaveValue('MINERAL-CUSTOM');
+  await page.getByLabel('Kiểu chỗ ở của hạng *').selectOption('villa');
+  await expect(page.getByLabel('Số căn thuộc hạng này')).toBeVisible();
+  await expect(page.getByLabel('Số phòng ngủ của mỗi căn')).toBeVisible();
+  await page.getByLabel('Kiểu chỗ ở của hạng *').selectOption('dorm_bed');
+  await expect(page.getByLabel('Số giường bán riêng')).toBeVisible();
+  await expect(page.getByLabel('Số phòng ngủ của mỗi căn')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
   await page.getByRole('link', { name: 'Chọn nơi lưu trú khác' }).click();
@@ -200,13 +273,19 @@ test('form hạng phòng gắn rõ từng nơi lưu trú và không lẫn danh s
   await expect(context).toContainText('Chưa có hạng phòng');
   await expect(context.locator('li')).toHaveCount(garden!.roomTypes.length);
   await expect(context).not.toContainText(mineral!.title);
+
+  await page.goto(`/admin/phong-nghi?edit=${mineral!.id}`);
+  await page.getByRole('link', { name: 'Thêm hạng phòng' }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/hang-phong\\?property=${mineral!.id}&room=create`));
+  await expect(page.locator('.room-catalog__property-context')).toContainText(mineral!.title);
+  await expect(page.locator('.room-catalog__create-choice')).toBeVisible();
 });
 
 test('phòng nghỉ và nội dung mở form ở route riêng, có nút quay lại danh sách', async ({ page }) => {
   await signInAsOwner(page);
 
   await page.goto('/admin/phong-nghi');
-  await page.getByRole('button', { name: 'Thêm phòng nghỉ' }).click();
+  await page.getByRole('button', { name: 'Thêm nơi lưu trú' }).click();
   await expect(page).toHaveURL(/\/admin\/phong-nghi\?action=create/);
   await expect(page.getByRole('heading', { name: 'Thêm nơi lưu trú' })).toBeVisible();
   await page.getByRole('button', { name: 'Quay lại danh sách' }).click();
@@ -246,7 +325,7 @@ test('mobile sidebar mở như drawer và logout kết thúc phiên qua API', as
   await expect(page.locator('.asidebar')).not.toBeInViewport();
   await page.getByRole('button', { name: 'Mở menu quản trị' }).click();
   await expect(page.locator('.asidebar')).toBeInViewport();
-  await page.locator('.asidebar').getByRole('link', { name: 'Phòng nghỉ', exact: true }).click();
+  await page.locator('.asidebar').getByRole('link', { name: 'Nơi lưu trú', exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/phong-nghi/);
 
   await page.locator('.atop__user').click();

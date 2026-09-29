@@ -17,6 +17,7 @@ interface AdminSession {
 }
 
 const AdminSessionContext = createContext<AdminSession | null>(null);
+const SESSION_CHECK_TIMEOUT_MS = 10_000;
 
 export function useAdminSession() {
   const session = useContext(AdminSessionContext);
@@ -31,6 +32,8 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [sessionAttempt, setSessionAttempt] = useState(0);
 
   const logout = useCallback(async () => {
     await apiRequest('/auth/logout', { method: 'POST' });
@@ -41,6 +44,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     const onExpired = () => {
       setUser(null);
       setChecking(false);
+      setSessionError(null);
       setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
     };
     window.addEventListener('dvb:auth-expired', onExpired);
@@ -49,19 +53,33 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    apiRequest<AdminUser>('/auth/me')
-      .then((current) => active && setUser(current))
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), SESSION_CHECK_TIMEOUT_MS);
+    setChecking(true);
+    setSessionError(null);
+    void apiRequest<AdminUser>('/auth/me', { cache: 'no-store', signal: controller.signal })
+      .then((current) => {
+        if (!active) return;
+        setUser(current);
+        setError(null);
+      })
       .catch((reason: unknown) => {
         if (!active) return;
-        if (!(reason instanceof ApiError && reason.status === 401)) {
-          setError(reason instanceof Error ? reason.message : 'Không thể kiểm tra phiên quản trị.');
-        }
+        if (reason instanceof ApiError && reason.status === 401) return;
+        setSessionError(reason instanceof Error && reason.name === 'AbortError'
+          ? 'Máy chủ phản hồi quá lâu khi kiểm tra phiên quản trị.'
+          : 'Không kiểm tra được phiên quản trị. Vui lòng kiểm tra kết nối rồi thử lại.');
       })
-      .finally(() => active && setChecking(false));
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (active) setChecking(false);
+      });
     return () => {
       active = false;
+      controller.abort();
+      window.clearTimeout(timeout);
     };
-  }, []);
+  }, [sessionAttempt]);
 
   const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,6 +103,16 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     return (
       <section className="acard apending" aria-live="polite">
         Đang kiểm tra phiên quản trị…
+      </section>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <section className="acard admin-login" aria-labelledby="admin-session-error-title">
+        <h1 id="admin-session-error-title">Không kết nối được quản trị</h1>
+        <p className="field__error" role="alert">{sessionError}</p>
+        <button className="abtn abtn--primary" type="button" onClick={() => setSessionAttempt((attempt) => attempt + 1)}>Thử kiểm tra lại</button>
       </section>
     );
   }

@@ -16,6 +16,37 @@ type ContentRecord = {
   };
 };
 
+type HomeSetting = { key: string; value: Record<string, unknown>; version: number; isDefault: boolean };
+
+async function homeSettings(page: Parameters<typeof browserApi>[0]): Promise<HomeSetting[]> {
+  const response = await browserApi(page, '/settings');
+  expect(response.status).toBe(200);
+  return (response.body as { items: HomeSetting[] }).items;
+}
+
+async function saveHomeSetting(page: Parameters<typeof browserApi>[0], key: string, value: Record<string, unknown>) {
+  const current = (await homeSettings(page)).find((item) => item.key === key);
+  if (!current) throw new Error(`Thiếu setting ${key}`);
+  const response = await browserApi(page, `/settings/${encodeURIComponent(key)}`, 'PUT', { value, expectedVersion: current.version });
+  expect(response.status).toBe(200);
+}
+
+async function restoreHomeSettings(page: Parameters<typeof browserApi>[0], baseline: HomeSetting[]) {
+  for (const saved of baseline) {
+    const current = (await homeSettings(page)).find((item) => item.key === saved.key);
+    if (!current) throw new Error(`Thiếu setting ${saved.key} khi khôi phục`);
+    if (saved.isDefault) {
+      if (!current.isDefault) {
+        const response = await browserApi(page, `/settings/${encodeURIComponent(saved.key)}?expectedVersion=${current.version}`, 'DELETE');
+        expect(response.status).toBe(200);
+      }
+    } else if (JSON.stringify(current.value) !== JSON.stringify(saved.value)) {
+      const response = await browserApi(page, `/settings/${encodeURIComponent(saved.key)}`, 'PUT', { value: saved.value, expectedVersion: current.version });
+      expect(response.status).toBe(200);
+    }
+  }
+}
+
 type PropertyRecord = {
   id: string;
   contentId: string;
@@ -24,9 +55,10 @@ type PropertyRecord = {
   slug: string;
   path: string;
   publicationStatus: string;
+  operatingStatus: string;
   version: number;
   contentVersion: number;
-  roomTypes: Array<{ unitCount: number; rate: { baseRateVnd: number } | null }>;
+  roomTypes: Array<{ name: string; maxAdults: number; maxChildren: number; unitCount: number; rate: { baseRateVnd: number } | null }>;
 };
 
 async function findContent(page: Parameters<typeof browserApi>[0], kind: string, title: string) {
@@ -58,13 +90,20 @@ async function setStringList(page: Parameters<typeof browserApi>[0], label: stri
 }
 
 test('destination và combo CRUD, publish, public propagation, redirect slug cũ, archive/unpublish', async ({ page, browser }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   await signInAsOwner(page);
   page.on('dialog', (dialog) => dialog.accept());
+
+  const homeKeys = ['home.destinations', 'home.sections'];
+  const homeBaseline = (await homeSettings(page)).filter((item) => homeKeys.includes(item.key)).map((item) => structuredClone(item));
+  expect(homeBaseline).toHaveLength(homeKeys.length);
+  expect(homeBaseline.find((item) => item.key === 'home.destinations')?.value.title, 'Refusing to preserve a leaked QA destination setting').not.toBe('Điểm đến kiểm thử');
 
   const stamp = Date.now();
   const coverAlt = `ATG ảnh danh mục ${stamp}`;
   const coverFilename = `atg-catalog-${stamp}.png`;
+  const galleryAlt = `ATG ảnh album điểm đến ${stamp}`;
+  const galleryFilename = `atg-destination-gallery-${stamp}.png`;
   const baseURL = String(test.info().project.use.baseURL ?? process.env.BASE_URL ?? '');
   const publicContext = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
   const publicPage = await publicContext.newPage();
@@ -73,6 +112,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
   publicPage.on('pageerror', (error) => pageErrors.push(error.message));
   publicPage.on('response', (response) => { if (response.status() >= 500) serverErrors.push(`${response.status()} ${response.url()}`); });
   let mediaId: string | null = null;
+  let galleryMediaId: string | null = null;
   const records: Array<{ route: string; kind: string; publicRoute: string; title: string; slug: string; renamedSlug: string; id?: string }> = [
     {
       route: '/admin/diem-den', kind: 'destination', publicRoute: 'destinations',
@@ -85,6 +125,13 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
   ];
 
   try {
+    const destinationSetting = homeBaseline.find((item) => item.key === 'home.destinations')!;
+    await saveHomeSetting(page, 'home.destinations', { ...destinationSetting.value, enabled: true, title: 'Điểm đến kiểm thử', selectionMode: 'featured', limit: 12 });
+    const sectionsSetting = homeBaseline.find((item) => item.key === 'home.sections')!;
+    const savedOrder = Array.isArray(sectionsSetting.value.order) ? sectionsSetting.value.order.filter((item): item is string => typeof item === 'string') : [];
+    const savedHidden = Array.isArray(sectionsSetting.value.hidden) ? sectionsSetting.value.hidden.filter((item): item is string => typeof item === 'string') : [];
+    await saveHomeSetting(page, 'home.sections', { ...sectionsSetting.value, order: ['destinations', ...savedOrder.filter((item) => item !== 'destinations')], hidden: savedHidden.filter((item) => item !== 'destinations') });
+
     await page.goto('/admin/thu-vien-anh');
     await page.getByLabel('Alt mặc định cho ảnh tải lên').fill(coverAlt);
     const uploadResponse = page.waitForResponse((response) =>
@@ -103,6 +150,24 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
     expect(cover.mimeType).toBe('image/webp');
     mediaId = cover.id;
 
+    await page.getByLabel('Alt mặc định cho ảnh tải lên').fill(galleryAlt);
+    const galleryUploadResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/api/v1/media/upload') && response.request().method() === 'POST',
+    );
+    await page.locator('.media-library__upload input[type="file"]').setInputFiles({
+      name: galleryFilename,
+      mimeType: 'image/png',
+      // A one-step colour change can encode to identical lossy WebP bytes and
+      // legitimately dedupe to the cover; use a clearly different pixel.
+      buffer: createUniqueTestPng(stamp ^ 0xffffff),
+    });
+    expect([200, 201]).toContain((await galleryUploadResponse).status());
+    const gallerySearch = await browserApi(page, `/media?search=${encodeURIComponent(galleryAlt)}`);
+    expect(gallerySearch.status).toBe(200);
+    const galleryAsset = (gallerySearch.body as { items: Array<{ id: string; mimeType: string }> }).items[0];
+    expect(galleryAsset?.mimeType).toBe('image/webp');
+    galleryMediaId = galleryAsset.id;
+
     for (const record of records) {
       await page.goto(record.route);
       await page.getByRole('button', { name: 'Tạo mới' }).click();
@@ -116,7 +181,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       } else {
         await page.getByLabel('Mã combo *').fill(`ATG-COMBO-${stamp}`);
         await page.getByLabel('Khu vực').fill('Cúc Phương');
-        await setStringList(page, 'Nhóm khách', ['Gia đình']);
+        await page.getByRole('checkbox', { name: 'Gia đình' }).check();
         const day = page.locator('.content-editor__days .content-editor__subsection').first();
         await day.getByLabel('Tiêu đề ngày').fill('Ngày kiểm thử');
         await setStringList(page, 'Hoạt động trong ngày', ['Tham quan rừng', 'Nghỉ ngơi']);
@@ -131,6 +196,14 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       await page.getByLabel('Tiêu đề SEO *').fill(record.title);
       await page.getByLabel('Mô tả SEO *').fill(`Mô tả SEO kiểm thử cho ${record.kind}, không dùng dữ liệu khách hàng.`);
       await chooseCover(page, coverAlt, coverFilename);
+      if (record.kind === 'destination') {
+        const album = page.getByRole('region', { name: 'Album điểm đến' });
+        await album.getByRole('button', { name: 'Thêm ảnh' }).click();
+        const picker = page.locator('dialog[open]');
+        await picker.getByLabel('Tìm trong thư viện ảnh').fill(galleryAlt);
+        await picker.locator('.media-library__card').filter({ hasText: galleryFilename }).click();
+        await expect(album.locator('.album-editor__list li')).toHaveCount(1);
+      }
       await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
       await expect(page.locator('.settings-screen__message--success')).toContainText('Đã tạo bản nháp thật');
 
@@ -147,6 +220,9 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       await page.getByLabel('Tiêu đề *').fill(editedTitle);
       if (record.kind === 'destination') {
         await page.getByLabel('Nhóm điểm đến *').fill('Thiên nhiên đã xác minh');
+        const featuredToggle = page.getByRole('checkbox', { name: /Hiển thị nổi bật/ });
+        await featuredToggle.locator('xpath=..').click();
+        await expect(featuredToggle).toBeChecked();
       }
       const updateResponsePromise = page.waitForResponse((response) =>
         response.url().includes(`/api/v1/content/${record.id}`) && response.request().method() === 'PUT',
@@ -164,7 +240,10 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       expect(edited.title).toBe(editedTitle);
       expect(edited.version).toBeGreaterThan(originalVersion);
       expect(edited.media.some((item) => item.mediaId === mediaId && item.role === 'cover')).toBeTruthy();
-      if (record.kind === 'destination') expect(edited.details?.destination?.category).toBe('Thiên nhiên đã xác minh');
+      if (record.kind === 'destination') {
+        expect(edited.details?.destination?.category).toBe('Thiên nhiên đã xác minh');
+        expect(edited.media.some((item) => item.mediaId === galleryMediaId && item.role === 'gallery')).toBeTruthy();
+      }
       if (record.kind === 'combo') expect(edited.details?.combo?.inclusions).toContain('Hướng dẫn viên địa phương');
 
       const editedCard = page.locator('.content-manager__item', { hasText: editedTitle });
@@ -175,12 +254,42 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       expect(published.status).toBe(200);
       const publishedContent = published.body as { title?: string; name?: string };
       expect(publishedContent.title ?? publishedContent.name).toBe(editedTitle);
+      if (record.kind === 'destination') {
+        expect((published.body as { featured?: boolean }).featured).toBe(true);
+        const gallery = (published.body as { gallery: Array<{ src: string; alt: string }> }).gallery;
+        expect(gallery).toHaveLength(2);
+        expect(new Set(gallery.map((image) => image.src)).size).toBe(2);
+        expect(gallery.map((image) => image.alt)).toContain(galleryAlt);
+        const galleryImage = gallery.find((image) => image.alt === galleryAlt)!;
+        const failingGalleryPath = new URL(galleryImage.src, baseURL).pathname;
+        await publicPage.route((url) => url.pathname === failingGalleryPath, (route) => route.abort());
+        await publicPage.goto('/diem-den');
+        await expect(publicPage.locator('.dest-filters')).toBeVisible();
+        await expect(publicPage.locator('.dest-list__all')).toBeVisible();
+        await publicPage.getByRole('button', { name: 'Ẩm thực' }).click();
+        await expect(publicPage.locator('.catalog-empty-state h3')).toHaveText('Không có điểm đến phù hợp với bộ lọc');
+        await publicPage.locator('.catalog-empty-state').getByRole('button', { name: 'Xem tất cả điểm đến' }).click();
+        await expect(publicPage.locator('.dcard', { hasText: editedTitle })).toBeVisible();
+        await publicPage.goto('/');
+        const homeCard = publicPage.locator('.explore .dest', { hasText: editedTitle });
+        await expect(homeCard).toBeVisible();
+        await expect(homeCard).toHaveAttribute('href', `/diem-den/${record.slug}`);
+        await homeCard.click();
+        await expect(publicPage).toHaveURL(new RegExp(`/diem-den/${record.slug}$`));
+        await expect(publicPage.locator('main h1')).toHaveText(editedTitle);
+      }
       if (record.kind === 'combo') {
         const publicCombo = published.body as { fromPriceVnd: number | null; departures: unknown[] };
         expect(publicCombo.fromPriceVnd).toBeNull();
         expect(publicCombo.departures).toEqual([]);
         await publicPage.goto('/combo-du-lich');
         const card = publicPage.locator('.ccard', { hasText: editedTitle });
+        await expect(card).toBeVisible();
+        await expect(publicPage.locator('.combo-chips')).toBeVisible();
+        await expect(publicPage.locator('.combo-sort')).toHaveCount(0);
+        await publicPage.getByRole('button', { name: '3N2D' }).click();
+        await expect(publicPage.locator('.catalog-empty-state h3')).toHaveText('Không có combo phù hợp với bộ lọc');
+        await publicPage.locator('.catalog-empty-state').getByRole('button', { name: 'Xem tất cả combo' }).click();
         await expect(card).toBeVisible();
         await expect(card.locator('.ccard__price')).toContainText('Liên hệ để nhận giá');
         const cardGeometry = await card.evaluate((element) => ({
@@ -230,7 +339,28 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
           expect(offerGeometry.ctaHeight).toBeGreaterThanOrEqual(44);
           await expect(publicPage.locator('.static-page__section').first()).toContainText('Ngày kiểm thử');
         } else {
-          await expect(publicPage.locator('.static-page__gallery .gallery__all')).toContainText('1 ảnh');
+          await expect(publicPage.locator('.static-page__gallery .gallery__all')).toContainText('2 ảnh');
+          await expect(publicPage.locator('.static-page__gallery .gallery__thumb .gallery__image-fallback')).toBeVisible();
+          if (width === 390 || width === 1440) {
+            const opener = publicPage.locator('.static-page__gallery .gallery__main');
+            await opener.focus();
+            await publicPage.keyboard.press('Enter');
+            const dialog = publicPage.getByRole('dialog', { name: `Ảnh ${editedTitle}` });
+            await expect(dialog).toBeVisible();
+            await expect(dialog.locator('.gview__cap [aria-live="polite"]')).toHaveText('1 / 2');
+            await publicPage.keyboard.press('ArrowRight');
+            await expect(dialog.locator('.gview__cap [aria-live="polite"]')).toHaveText('2 / 2');
+            await expect(dialog.locator('.gview__fallback')).toBeVisible();
+            await expect(dialog.getByRole('button', { name: `Ảnh 2 không tải được: ${galleryAlt}` }).locator('.gview__thumb-fallback')).toBeVisible();
+            const dialogGeometry = await dialog.evaluate((element) => ({ width: element.scrollWidth, client: element.clientWidth }));
+            expect(dialogGeometry.width, JSON.stringify(dialogGeometry)).toBeLessThanOrEqual(dialogGeometry.client + 1);
+            if (process.env.DVB_GALLERY_VISUAL_ARTIFACTS === '1') {
+              await publicPage.screenshot({ path: `artifacts/public-destination-gallery-broken-${width}.png` });
+            }
+            await publicPage.keyboard.press('Escape');
+            await expect(dialog).toHaveCount(0);
+            await expect(opener).toBeFocused();
+          }
         }
         await publicPage.locator('footer').scrollIntoViewIfNeeded();
         const geometry = await publicPage.evaluate(() => ({
@@ -267,6 +397,10 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       expect(resolution.status).toBe(200);
       expect(resolution.body).toMatchObject({ kind: 'redirect', path: `/${record.kind === 'destination' ? 'diem-den' : 'combo-du-lich'}/${record.renamedSlug}`, status: 308 });
       expect((await browserApi(page, `/public/${record.publicRoute}/${record.renamedSlug}`)).status).toBe(200);
+      if (record.kind === 'destination') {
+        await publicPage.goto('/');
+        await expect(publicPage.locator('.explore .dest', { hasText: editedTitle })).toHaveAttribute('href', `/diem-den/${record.renamedSlug}`);
+      }
 
       const renamedCard = page.locator('.content-manager__item').filter({ hasText: editedTitle });
       await renamedCard.getByRole('button', { name: 'Lưu trữ' }).click();
@@ -282,29 +416,37 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
       record.id = undefined;
     }
   } finally {
-    await publicContext.close();
-    for (const record of records) {
-      if (!record.id) continue;
-      const current = await browserApi(page, `/content/${record.id}`);
-      if (current.status !== 200) continue;
-      const node = current.body as ContentRecord;
-      if (node.publicationStatus === 'published') {
-        const draft = await browserApi(page, `/content/${node.id}/status`, 'PATCH', {
-          status: 'draft', expectedVersion: node.version,
-        });
-        if (draft.status === 200) node.version = (draft.body as ContentRecord).version;
+    try {
+      await publicContext.close();
+      for (const record of records) {
+        if (!record.id) continue;
+        const current = await browserApi(page, `/content/${record.id}`);
+        if (current.status !== 200) continue;
+        const node = current.body as ContentRecord;
+        if (node.publicationStatus === 'published') {
+          const draft = await browserApi(page, `/content/${node.id}/status`, 'PATCH', {
+            status: 'draft', expectedVersion: node.version,
+          });
+          if (draft.status === 200) node.version = (draft.body as ContentRecord).version;
+        }
+        const removed = await browserApi(page, `/content/${node.id}?expectedVersion=${node.version}`, 'DELETE');
+        expect([204, 404]).toContain(removed.status);
       }
-      const removed = await browserApi(page, `/content/${node.id}?expectedVersion=${node.version}`, 'DELETE');
-      expect([204, 404]).toContain(removed.status);
-    }
-    if (mediaId) {
-      const removed = await browserApi(page, `/media/${mediaId}`, 'DELETE');
-      expect([204, 404]).toContain(removed.status);
+      if (mediaId) {
+        const removed = await browserApi(page, `/media/${mediaId}`, 'DELETE');
+        expect([204, 404]).toContain(removed.status);
+      }
+      if (galleryMediaId) {
+        const removed = await browserApi(page, `/media/${galleryMediaId}`, 'DELETE');
+        expect([204, 404]).toContain(removed.status);
+      }
+    } finally {
+      await restoreHomeSettings(page, homeBaseline);
     }
   }
 });
 
-test('nơi lưu trú tạo room/unit/rate thật, xuất bản ra public rồi gỡ xuất bản và dọn bản ghi kiểm thử', async ({ page }) => {
+test('tạo nơi lưu trú không sinh phòng mẫu; thêm hạng riêng rồi xuất bản và dọn bản ghi kiểm thử', async ({ page }) => {
   test.setTimeout(120_000);
   await signInAsOwner(page);
   page.on('dialog', (dialog) => dialog.accept());
@@ -318,7 +460,7 @@ test('nơi lưu trú tạo room/unit/rate thật, xuất bản ra public rồi g
 
   try {
     await page.goto('/admin/phong-nghi');
-    await page.getByRole('button', { name: 'Thêm phòng nghỉ' }).click();
+    await page.getByRole('button', { name: 'Thêm nơi lưu trú' }).click();
     await expect(page).toHaveURL(/\/admin\/phong-nghi\?action=create/);
     await page.getByLabel('Tên nơi lưu trú *').fill(title);
     await page.getByLabel('Mã nơi lưu trú *').fill(code);
@@ -327,10 +469,6 @@ test('nơi lưu trú tạo room/unit/rate thật, xuất bản ra public rồi g
     await page.locator('.rte [contenteditable="true"]').fill(
       'Nội dung kiểm thử riêng trong database local, tạo room, đơn vị và rate để xác nhận form lưu cùng một giao dịch.',
     );
-    await page.getByLabel('Mã loại phòng *').fill(`ATG-ROOM-${stamp}`);
-    await page.getByLabel('Tên loại phòng *').fill('Phòng kiểm thử local');
-    await page.getByLabel('Số đơn vị phòng *').fill('1');
-    await page.getByLabel('Giá ngày thường (VND) *').fill('1000');
     await page.getByRole('button', { name: 'Chọn ảnh đại diện' }).click();
     const picker = page.locator('dialog[open]');
     await expect(picker).toBeVisible();
@@ -352,8 +490,8 @@ test('nơi lưu trú tạo room/unit/rate thật, xuất bản ra public rồi g
     expect(cover.mimeType).toBe('image/webp');
     mediaId = cover.id;
 
-    await page.getByRole('button', { name: 'Lưu nơi lưu trú' }).click();
-    await expect(page.locator('.settings-screen__message--success')).toContainText('Đã tạo nơi lưu trú');
+    await page.getByRole('button', { name: 'Lưu cơ sở và thêm hạng phòng' }).click();
+    await expect(page).toHaveURL(/\/admin\/hang-phong\?property=[^&]+&room=create/);
 
     const list = await browserApi(page, '/properties');
     expect(list.status).toBe(200);
@@ -361,8 +499,45 @@ test('nơi lưu trú tạo room/unit/rate thật, xuất bản ra public rồi g
     expect(property).toBeTruthy();
     propertyId = property!.id;
     expect(property!.publicationStatus).toBe('draft');
-    expect(property!.roomTypes[0]?.unitCount).toBe(1);
-    expect(property!.roomTypes[0]?.rate?.baseRateVnd).toBe(1000);
+    expect(property!.operatingStatus).toBe('pending_verification');
+    expect(property!.roomTypes).toHaveLength(0);
+    await expect(page.locator('.room-catalog__property-context')).toContainText(title);
+    await page.getByLabel('Mã hạng phòng *').fill(`ATG-ROOM-${stamp}`);
+    await page.getByLabel('Tên hạng phòng *').fill('Phòng kiểm thử local');
+    await page.getByLabel('Kiểu chỗ ở của hạng *').selectOption('room');
+    await page.getByLabel('Người lớn tối đa').fill('2');
+    await page.getByLabel('Trẻ em tối đa').fill('0');
+    await page.locator('label.atoggle', { hasText: 'Đã xác minh sức chứa' }).click();
+    await expect(page.getByRole('checkbox', { name: /Đã xác minh sức chứa/ })).toBeChecked();
+    await page.getByLabel('Số phòng thuộc hạng này').fill('1');
+    await page.getByLabel('Giá ngày thường (VND)').fill('1000');
+    await page.getByLabel('Trạng thái hạng phòng').selectOption('active');
+    await page.getByRole('button', { name: 'Lưu và thêm hạng khác' }).click();
+    await expect(page).toHaveURL(/room=create&new=1/);
+    await expect(page.locator('.room-catalog__existing li')).toHaveCount(1);
+    await expect(page.getByLabel('Tên hạng phòng *')).toHaveValue('');
+    await page.getByLabel('Mã hạng phòng *').fill(`ATG-FAMILY-${stamp}`);
+    await page.getByLabel('Tên hạng phòng *').fill('Bungalow gia đình kiểm thử');
+    await page.getByLabel('Kiểu chỗ ở của hạng *').selectOption('bungalow');
+    await page.getByLabel('Số phòng ngủ của mỗi căn').fill('2');
+    await page.getByLabel('Số phòng tắm riêng của mỗi căn').fill('1');
+    await page.getByLabel('Người lớn tối đa').fill('4');
+    await page.getByLabel('Trẻ em tối đa').fill('2');
+    await page.locator('label.atoggle', { hasText: 'Đã xác minh sức chứa' }).click();
+    await expect(page.getByRole('checkbox', { name: /Đã xác minh sức chứa/ })).toBeChecked();
+    await page.getByLabel('Số căn thuộc hạng này').fill('1');
+    await page.getByLabel('Giá ngày thường (VND)').fill('0');
+    await page.getByLabel('Trạng thái hạng phòng').selectOption('active');
+    await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
+    await expect(page.locator('.room-catalog__card')).toHaveCount(2);
+    const withRoom = await browserApi(page, `/properties/${propertyId}`);
+    expect(withRoom.status).toBe(200);
+    property = withRoom.body as PropertyRecord;
+    expect(property.roomTypes).toHaveLength(2);
+    expect(property.roomTypes[0]?.unitCount).toBe(1);
+    expect(property.roomTypes[0]?.rate?.baseRateVnd).toBe(1000);
+    expect(property.roomTypes[1]).toMatchObject({ name: 'Bungalow gia đình kiểm thử', unitKind: 'bungalow', bedroomCount: 2, bathroomCount: 1, maxAdults: 4, maxChildren: 2, unitCount: 1, rate: { baseRateVnd: 0 } });
+    await page.goto('/admin/phong-nghi');
     const publicResponse = await page.request.get(property!.path);
     expect(publicResponse.status()).toBe(404);
 
@@ -410,6 +585,10 @@ test('nơi lưu trú tạo room/unit/rate thật, xuất bản ra public rồi g
     const publicStay = await browserApi(page, `/public/stays/${property.slug}`);
     expect(publicStay.status).toBe(200);
     expect((publicStay.body as { name: string }).name).toBe(latestEdit);
+    expect((publicStay.body as { roomTypes: Array<{ name: string; pricePerNight: number }> }).roomTypes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Phòng kiểm thử local', pricePerNight: 1000 }),
+      expect.objectContaining({ name: 'Bungalow gia đình kiểm thử', pricePerNight: 0 }),
+    ]));
     expect((await page.request.get(property.path)).status()).toBe(200);
 
     await editedCard.getByRole('button', { name: 'Gỡ xuất bản' }).click();

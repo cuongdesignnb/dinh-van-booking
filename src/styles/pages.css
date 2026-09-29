@@ -582,6 +582,45 @@
   padding: 0 16px;
 }
 
+.catalog-empty-state {
+  width: min(100%, 820px);
+  margin-inline: auto;
+  min-height: 220px;
+  justify-content: center;
+  gap: 15px;
+  padding: clamp(24px, 4vw, 42px);
+  border-color: #d9e5d1;
+  background: linear-gradient(135deg, #f3f8ef 0%, #fffdf8 100%);
+}
+
+.combo-list--empty .combo-list__head,
+.dest-list--empty .dest-list__head {
+  width: min(100%, 820px);
+  margin-inline: auto;
+}
+
+.catalog-empty-state__icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 16px;
+  background: #dfeede;
+  color: #1d5933;
+}
+
+.catalog-empty-state h3 {
+  margin: 0;
+  color: #183a27;
+  font-family: var(--font-dvb-display), Georgia, serif;
+  font-size: clamp(19px, 2vw, 27px);
+  line-height: 1.25;
+}
+
+.catalog-empty-state .rich-content {
+  max-width: 58ch;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #eef0ea 0%, #f7f8f4 50%, #eef0ea 100%);
   background-size: 200% 100%;

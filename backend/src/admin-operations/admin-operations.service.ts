@@ -202,7 +202,7 @@ export class AdminOperationsService {
       where: { id: input.roomTypeId },
       include: { property: { include: { content: { select: { title: true, publicationStatus: true, isDemo: true } } } }, ratePlans: { where: { active: true }, include: { rules: { where: { active: true }, orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }] } }, orderBy: { createdAt: 'asc' } } },
     });
-    if (!room || room.status !== 'active' || room.property.operatingStatus !== 'active' || room.property.content.publicationStatus !== 'published' || room.property.content.isDemo) {
+    if (!room || room.status !== 'active' || !room.capacityVerified || room.property.operatingStatus !== 'active' || room.property.content.publicationStatus !== 'published' || room.property.content.isDemo) {
       throw new NotFoundException('Hạng phòng đang không được bán công khai');
     }
     const rate = input.ratePlanId ? room.ratePlans.find((candidate) => candidate.id === input.ratePlanId) : room.ratePlans[0];
@@ -259,12 +259,17 @@ export class AdminOperationsService {
   }
 
   async getQuote(id: string, owner: QuoteOwner) {
-    const quote = await this.prisma.bookingQuote.findUnique({ where: { id }, include: { booking: { select: { id: true, publicCode: true, bookingStatus: true } } } });
+    const quote = await this.prisma.bookingQuote.findUnique({ where: { id }, include: { booking: { select: {
+      id: true, publicCode: true, bookingStatus: true, expiresAt: true, totalVnd: true, dueNowVnd: true,
+    } } } });
     if (!quote || (owner.userId ? quote.ownerUserId !== owner.userId : quote.ownerGuestSessionId !== owner.guestSessionId)) {
       throw new NotFoundException('Không tìm thấy báo giá');
     }
     if (quote.expiresAt <= new Date() && !quote.booking) throw new ConflictException('Báo giá đã hết hạn');
-    return { id: quote.id, request: quote.requestSnapshot, pricing: quote.pricedSnapshot, subtotalVnd: quote.subtotalVnd.toString(), discountVnd: quote.discountVnd.toString(), totalVnd: quote.totalVnd.toString(), dueNowVnd: quote.dueNowVnd.toString(), expiresAt: quote.expiresAt.toISOString(), booking: quote.booking };
+    return { id: quote.id, request: quote.requestSnapshot, pricing: quote.pricedSnapshot, subtotalVnd: quote.subtotalVnd.toString(), discountVnd: quote.discountVnd.toString(), totalVnd: quote.totalVnd.toString(), dueNowVnd: quote.dueNowVnd.toString(), expiresAt: quote.expiresAt.toISOString(), booking: quote.booking ? {
+      id: quote.booking.id, publicCode: quote.booking.publicCode, bookingStatus: quote.booking.bookingStatus,
+      expiresAt: quote.booking.expiresAt?.toISOString() ?? null, totalVnd: quote.booking.totalVnd.toString(), dueNowVnd: quote.booking.dueNowVnd.toString(),
+    } : null };
   }
 
   async createBookingFromQuote(quoteId: string, contact: { fullName: string; phone: string; email?: string; city?: string; note?: string }, key: string, owner: QuoteOwner, actorId: string | null, channel: string) {
@@ -289,7 +294,7 @@ export class AdminOperationsService {
       const children = Number(snapshot.children);
       const dates = nightsInput.map((night) => dateOnly(night.stayDate)).sort((a, b) => a.getTime() - b.getTime());
       const room = await tx.roomType.findUnique({ where: { id: roomTypeId }, include: { property: { include: { content: true } }, ratePlans: { where: { id: String(snapshot.ratePlanId) }, select: { version: true } } } });
-      if (!room || room.property.operatingStatus !== 'active' || room.property.content.publicationStatus !== 'published' || room.property.content.isDemo) throw new ConflictException('Nơi lưu trú không còn bán công khai');
+      if (!room || room.status !== 'active' || !room.capacityVerified || room.property.operatingStatus !== 'active' || room.property.content.publicationStatus !== 'published' || room.property.content.isDemo) throw new ConflictException('Nơi lưu trú không còn bán công khai');
       if (adults > room.maxAdults * quantity || children > room.maxChildren * quantity || adults + children > room.maxOccupancy * quantity) throw new ConflictException('Sức chứa hạng phòng đã thay đổi; hãy tạo báo giá mới.');
       if (room.ratePlans[0]?.version !== Number(snapshot.ratePlanVersion)) throw new ConflictException('Bảng giá đã thay đổi. Hãy tạo báo giá mới.');
       await this.lockInventory(tx, roomTypeId, dates);
@@ -442,7 +447,7 @@ export class AdminOperationsService {
 
   async listInventoryRoomTypes() {
     const items = await this.prisma.roomType.findMany({
-      where: { status: 'active', property: { operatingStatus: 'active', content: { isDemo: false } } },
+      where: { status: 'active', capacityVerified: true, property: { operatingStatus: 'active', content: { isDemo: false } } },
       include: { property: { include: { content: { select: { title: true, isDemo: true } } } } },
       orderBy: [{ property: { code: 'asc' } }, { position: 'asc' }, { name: 'asc' }],
     });

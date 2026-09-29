@@ -243,7 +243,7 @@ test.describe('public content final acceptance', () => {
       await expect(publicPage.locator('.footer__quote')).toContainText(marker + ' FOOTER QUOTE');
       await expect(publicPage.locator('.footer__motto')).toContainText(marker + ' FOOTER MOTTO');
       const orderedGroups = await publicPage.locator('.home-content-order > *').evaluateAll((items) => items.map((item) => item.getAttribute('data-home-group')));
-      expect(orderedGroups).toEqual(['hero', 'featured', 'lower', 'faq']);
+      expect(orderedGroups).toEqual(['hero', 'promo', 'faq', 'lower']);
       for (const selector of ['.hero__img', '.promo__img', '.contact__img']) {
         await expect(publicPage.locator(selector)).toBeVisible();
         await expect(publicPage.locator(selector)).toHaveAttribute('src', uploadedMediaUrl!);

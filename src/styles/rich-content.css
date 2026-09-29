@@ -99,7 +99,6 @@
   max-height: 620px;
   max-width: 100%;
   object-fit: cover;
-  width: auto;
 }
 
 .rich-content__table-wrap {
@@ -109,12 +108,14 @@
 .rich-content table {
   border-collapse: collapse;
   min-width: 560px;
+  table-layout: fixed;
   width: 100%;
 }
 
 .rich-content th,
 .rich-content td {
   border: 1px solid rgba(25, 69, 38, 0.18);
+  overflow-wrap: anywhere;
   padding: 0.65rem 0.8rem;
   text-align: left;
   vertical-align: top;

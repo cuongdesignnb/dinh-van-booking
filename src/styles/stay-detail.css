@@ -257,8 +257,14 @@
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
-  color: #b9c0b6;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px 62px;
+  color: #d7e5d4;
+  background: radial-gradient(circle at center, #203126 0, #0d120e 65%);
+  text-align: center;
+  line-height: 1.5;
 }
 
 .gview__cap {
@@ -326,6 +332,15 @@
 
 .gview__thumbs button img {
   object-fit: cover;
+}
+
+.gview__thumb-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #d5e1d2;
+  background: #29392d;
 }
 
 .gview__thumbs button[aria-current],
@@ -677,6 +692,13 @@
 .bcard__badge svg {
   color: #2f7a3b;
   fill: #cfe3c2;
+}
+
+.bcard__contact-note {
+  margin-top: 6px;
+  color: #526356;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .bcard__dates {
@@ -1064,6 +1086,27 @@
 
 .rtype__meta svg {
   color: #1f4d2a;
+}
+
+.rtype__amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 3px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rtype__amenities li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #edf5e9;
+  color: #245139;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .rtype__desc {
@@ -1821,13 +1864,13 @@
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: calc(var(--dvb-mobilebar-h) + env(safe-area-inset-bottom));
     z-index: 30;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    padding: 10px 16px;
     background: rgb(255 254 250 / 96%);
     border-top: 1px solid var(--dvb-border);
     box-shadow: 0 -8px 20px rgb(0 0 0 / 8%);
@@ -1835,7 +1878,7 @@
   }
   @keyframes mbar-in {
     from {
-      translate: 0 100%;
+      opacity: 0;
     }
   }
   .mbar__price {

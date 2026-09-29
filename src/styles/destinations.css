@@ -152,6 +152,11 @@
   padding-top: 8px;
 }
 
+.dest-list--empty {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
 .dest-list__head {
   display: flex;
   align-items: flex-end;

@@ -22,7 +22,7 @@ export function AdvisorCard({ config, image }: { config: PublicRecord; image: Pu
   });
   if (!title) return null;
   return (
-    <section className="side-card advisor-card" aria-labelledby="advisor-title" data-reveal="fade-up">
+    <section className={`side-card advisor-card${image?.src ? '' : ' advisor-card--no-image'}`} aria-labelledby="advisor-title" data-reveal="fade-up">
       <div className="advisor-card__top">
         {image?.src && <Image src={image.src} alt={image.alt ?? ''} fill sizes="278px" className="advisor-card__img" unoptimized />}
         <h2 className="advisor-card__title handwritten" id="advisor-title">

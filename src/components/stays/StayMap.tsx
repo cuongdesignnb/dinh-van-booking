@@ -7,9 +7,8 @@ import { useId, useState } from 'react';
 import { DemoNote, Modal } from '@/components/ui/Modal';
 import type { Stay } from '@/data/stays';
 import type { PublicMediaAsset } from '@/lib/api/public';
+import { fromPrice } from '@/lib/catalog/pricing';
 import { formatVnd } from '@/lib/format';
-
-const fromPrice = (stay: Stay) => Math.min(...stay.roomTypes.map((room) => room.pricePerNight));
 
 function Pin() {
   return (

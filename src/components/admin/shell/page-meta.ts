@@ -17,8 +17,8 @@ const META: Record<string, AdminPageMeta> = {
     script: 'Làm du lịch\nbằng cả trái tim ♡',
   },
   '/admin/phong-nghi': {
-    title: 'Quản lý phòng nghỉ',
-    subtitle: 'Quản lý hồ sơ nơi lưu trú, nội dung, ảnh và trạng thái xác minh.',
+    title: 'Quản lý nơi lưu trú',
+    subtitle: 'Mỗi khu nghỉ, khách sạn hay homestay có hồ sơ riêng; các hạng phòng được quản lý bên trong từng cơ sở.',
     script: 'Làm du lịch\nbằng cả trái tim ♡',
   },
   '/admin/hang-phong': {

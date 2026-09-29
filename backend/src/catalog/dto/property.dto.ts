@@ -15,6 +15,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { ROOM_AMENITY_CODES } from '../room-amenities';
 
 export class RoomGalleryDto {
   @IsUUID()
@@ -98,14 +99,16 @@ export class CreatePropertyDto {
   @IsUUID('4', { each: true })
   roomGalleryMediaIds?: string[];
 
+  @IsOptional()
   @IsString()
   @MaxLength(40)
   @Matches(/^[A-Za-z0-9_-]+$/, { message: 'Mã loại phòng chỉ gồm chữ, số, gạch ngang hoặc gạch dưới' })
-  roomCode!: string;
+  roomCode?: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(160)
-  roomName!: string;
+  roomName?: string;
 
   @IsOptional()
   @IsString()
@@ -113,10 +116,11 @@ export class CreatePropertyDto {
   roomDescription?: string;
 
   @Type(() => Number)
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(30)
-  maxAdults!: number;
+  maxAdults?: number;
 
   @Type(() => Number)
   @IsOptional()
@@ -138,10 +142,11 @@ export class CreatePropertyDto {
   areaSqm?: number;
 
   @Type(() => Number)
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)
-  unitCount!: number;
+  unitCount?: number;
 
   @IsOptional()
   @IsString()
@@ -154,9 +159,10 @@ export class CreatePropertyDto {
   rateName?: string;
 
   @Type(() => Number)
+  @IsOptional()
   @IsInt()
   @Min(0)
-  rateVnd!: number;
+  rateVnd?: number;
 
   @Type(() => Number)
   @IsOptional()
@@ -277,11 +283,23 @@ export class CreateRoomDto {
   @IsOptional() @IsString() @MaxLength(500)
   description?: string;
 
-  @Type(() => Number) @IsInt() @Min(1) @Max(30)
-  maxAdults!: number;
+  @IsOptional() @IsIn(['room', 'suite', 'villa', 'bungalow', 'whole_house', 'stilt_house', 'dorm_bed', 'tent', 'other'])
+  unitKind?: string | null;
 
-  @Type(() => Number) @IsInt() @Min(0) @Max(30)
-  maxChildren!: number;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(30)
+  bedroomCount?: number | null;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(30)
+  bathroomCount?: number | null;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(30)
+  maxAdults?: number;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(30)
+  maxChildren?: number;
+
+  @IsOptional() @IsBoolean()
+  capacityVerified?: boolean;
 
   @IsOptional() @IsString() @MaxLength(120)
   bedSummary?: string;
@@ -306,6 +324,9 @@ export class CreateRoomDto {
 
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsUUID('4', { each: true })
   galleryMediaIds?: string[];
+
+  @IsOptional() @IsArray() @ArrayMaxSize(ROOM_AMENITY_CODES.length) @IsIn(ROOM_AMENITY_CODES, { each: true })
+  amenityCodes?: string[];
 }
 
 export class UpdateRoomDto {
@@ -315,11 +336,23 @@ export class UpdateRoomDto {
   @IsOptional() @IsString() @MaxLength(500)
   description?: string;
 
-  @Type(() => Number) @IsInt() @Min(1) @Max(30)
-  maxAdults!: number;
+  @IsOptional() @IsIn(['room', 'suite', 'villa', 'bungalow', 'whole_house', 'stilt_house', 'dorm_bed', 'tent', 'other'])
+  unitKind?: string | null;
 
-  @Type(() => Number) @IsInt() @Min(0) @Max(30)
-  maxChildren!: number;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(30)
+  bedroomCount?: number | null;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(30)
+  bathroomCount?: number | null;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(30)
+  maxAdults?: number;
+
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(30)
+  maxChildren?: number;
+
+  @IsOptional() @IsBoolean()
+  capacityVerified?: boolean;
 
   @IsOptional() @IsString() @MaxLength(120)
   bedSummary?: string;
@@ -345,6 +378,9 @@ export class UpdateRoomDto {
 
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsUUID('4', { each: true })
   galleryMediaIds?: string[];
+
+  @IsOptional() @IsArray() @ArrayMaxSize(ROOM_AMENITY_CODES.length) @IsIn(ROOM_AMENITY_CODES, { each: true })
+  amenityCodes?: string[];
 
   @Type(() => Number) @IsInt() @Min(1)
   expectedVersion!: number;

@@ -6,7 +6,7 @@ import { browserApi, signInAsOwner } from './helpers';
 const ADMIN_ROUTES = [
   ['/admin', 'Tổng quan', 'dashboard'],
   ['/admin/dat-phong', 'Quản lý đặt phòng', 'bookings'],
-  ['/admin/phong-nghi', 'Quản lý phòng nghỉ', 'properties'],
+  ['/admin/phong-nghi', 'Quản lý nơi lưu trú', 'properties'],
   ['/admin/hang-phong', 'Quản lý hạng phòng', 'room catalog'],
   ['/admin/ton-phong', 'Quỹ phòng', 'inventory'],
   ['/admin/combo-du-lich', 'Quản lý combo du lịch', 'combos'],

@@ -57,7 +57,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     payload = text;
   }
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/login')) {
+    if (response.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/login') && path !== '/auth/me') {
       window.dispatchEvent(new Event('dvb:auth-expired'));
     }
     throw new ApiError(response.status, payload);

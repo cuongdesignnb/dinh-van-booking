@@ -9,6 +9,9 @@ export const STAY_TYPES: { id: StayType; label: string }[] = [
   { id: 'resort', label: 'Resort' },
   { id: 'bungalow', label: 'Bungalow' },
   { id: 'nha-san', label: 'Nhà sàn' },
+  { id: 'villa', label: 'Villa' },
+  { id: 'glamping', label: 'Glamping' },
+  { id: 'other', label: 'Loại khác' },
 ];
 
 export const AMENITIES: { id: AmenityId; label: string; short: string }[] = [

@@ -27,6 +27,8 @@ for (const width of [390, 768, 1024, 1440, 1920]) {
       await page.waitForLoadState('load');
       await expect(page.locator('main')).toBeVisible();
       await expect(page.locator('footer')).toBeVisible();
+      expect(await page.locator('main h1').count(), `${route} must have exactly one main heading`).toBe(1);
+      expect(await page.locator('img:not([alt])').count(), `${route} has an image without an alt attribute`).toBe(0);
       await page.locator('footer').scrollIntoViewIfNeeded();
       const geometry = await page.evaluate(() => ({
         viewport: window.innerWidth,

@@ -83,7 +83,7 @@ const sortCombos = (list: Combo[], sort: ComboSort) => [...list].sort((a, b) => 
 
 export function ComboExplorer({ combos, config }: { combos: Combo[]; config: PublicRecord }) {
   const listTitle = publicText(config.listTitle);
-  const emptyTitle = publicText(config.emptyTitle);
+  const hasCatalog = combos.length > 0;
   const emptyCtaLabel = publicText(config.emptyCtaLabel);
   const advisorCtaLabel = publicText(config.advisorCtaLabel);
   const params = useSearchParams();
@@ -124,17 +124,20 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
   };
 
   let body;
-  if (!list.length)
-    body = emptyTitle || emptyCtaLabel || richDocumentHasContent(config.emptyDescription) ? (
-      <div className="state-box" role="status">
-        {emptyTitle && <strong>{emptyTitle}</strong>}
-        {richDocumentHasContent(config.emptyDescription) && <div><RichContentRenderer document={config.emptyDescription as RichDocument} /></div>}
+  if (!list.length) {
+    const emptyTitle = hasCatalog ? 'Không có combo phù hợp với bộ lọc' : publicText(config.emptyTitle) || 'Chưa có combo được công bố';
+    body = (
+      <div className="state-box catalog-empty-state" role="status">
+        {!hasCatalog && <span className="catalog-empty-state__icon" aria-hidden="true"><CalendarDays size={27} strokeWidth={1.6} /></span>}
+        <h3>{emptyTitle}</h3>
+        {!hasCatalog && richDocumentHasContent(config.emptyDescription) && <div><RichContentRenderer document={config.emptyDescription as RichDocument} /></div>}
         <div className="state-box__actions">
           {category !== 'all' && <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>Xem tất cả combo</button>}
           {emptyCtaLabel && <Link className="btn btn--primary" href="/lien-he?intent=combo">{emptyCtaLabel}</Link>}
         </div>
       </div>
-    ) : <p className="state-box" role="status">Không có kết quả.</p>;
+    );
+  }
   else
     body = (
       <ul className="combo-grid">
@@ -177,7 +180,7 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
 
   return (
     <>
-      <div className="combo-filters">
+      <div className={`combo-filters${hasCatalog ? '' : ' combo-filters--empty'}`}>
         <div className="combo-filters__inner content-shell">
           <nav className="crumbs crumbs--plain combo-crumbs" aria-label="Đường dẫn">
             <ol>
@@ -190,7 +193,7 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
               </li>
             </ol>
           </nav>
-          <div className="combo-chips" role="group" aria-label="Lọc combo theo loại">
+          {hasCatalog && <div className="combo-chips" role="group" aria-label="Lọc combo theo loại">
             {COMBO_CATEGORIES.map((c) => (
               <button
                 key={c.id}
@@ -203,15 +206,15 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
                 {c.label}
               </button>
             ))}
-          </div>
+          </div>}
         </div>
       </div>
 
-      <section className="combo-list content-shell" aria-labelledby={listTitle ? 'combo-title' : undefined}>
+      <section className={`combo-list content-shell${hasCatalog ? '' : ' combo-list--empty'}`} aria-labelledby={listTitle ? 'combo-title' : undefined}>
         <div className="combo-list__head">
           {listTitle && <h2 className="section-title" id="combo-title">{listTitle} <Leaf className="section-title__leaf" fill="currentColor" strokeWidth={1} aria-hidden="true" /></h2>}
           {richDocumentHasContent(config.listSubtitle) && <div className="combo-list__sub"><RichContentRenderer document={config.listSubtitle as RichDocument} /></div>}
-          <label className="combo-sort">
+          {list.length > 1 && <label className="combo-sort">
             <span>Sắp xếp theo</span>
             <span className="combo-sort__select">
               <select value={sort} onChange={(e) => setQuery({ sort: e.target.value === 'popular' ? null : e.target.value })}>
@@ -223,7 +226,7 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
               </select>
               <ChevronDown size={16} aria-hidden="true" />
             </span>
-          </label>
+          </label>}
         </div>
         <p className="sr-only" aria-live="polite">
           {list.length} combo phù hợp

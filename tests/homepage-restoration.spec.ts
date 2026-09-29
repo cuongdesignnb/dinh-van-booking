@@ -185,6 +185,10 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
   await signInAsOwner(page);
   const baseline = (await settings(page)).filter((item) => SETTINGS.includes(item.key)).map((item) => structuredClone(item));
   expect(baseline).toHaveLength(SETTINGS.length);
+  const baselineHero = baseline.find((item) => item.key === 'home.hero')?.value;
+  const baselineFaq = baseline.find((item) => item.key === 'home.faq')?.value;
+  expect(baselineHero?.titleLine1, 'Refusing to preserve a leaked homepage QA hero').not.toBe('Kiểm thử bố cục trang chủ');
+  expect((baselineFaq?.items as Array<{ id?: string }> | undefined)?.some((item) => item.id === 'home-qa'), 'Refusing to preserve a leaked homepage QA FAQ').not.toBe(true);
   const publicContext = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
   const publicPage = await publicContext.newPage();
   const createdIds: string[] = [];
@@ -390,9 +394,11 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
     for (const id of createdIds) await status(page, id, 'draft');
     await publicPage.reload();
     await expect(publicPage.locator('.featured__main')).toHaveCount(0);
-    await expect(publicPage.locator('.featured .promo')).toBeVisible();
-    const promoOnly = await publicPage.locator('.featured .promo').boundingBox();
-    expect(promoOnly?.width).toBeLessThanOrEqual(360);
+    await expect(publicPage.locator('.home-promo .promo')).toBeVisible();
+    expect(await publicPage.locator('.home-promo .promo').evaluate((element) => element.style.getPropertyValue('--d'))).toBe('120ms');
+    const promoOnly = await publicPage.locator('.home-promo .promo').boundingBox();
+    expect(promoOnly?.width).toBeGreaterThanOrEqual(600);
+    expect(promoOnly?.width).toBeLessThanOrEqual(780);
     await assertNoHorizontalOverflow(publicPage);
 
     await putSetting(page, 'home.why', { reasons: [{ id: 'empty', icon: 'user', title: '', description: '' }] });
@@ -419,6 +425,10 @@ test('classic homepage slots, direct public media, featured modes and safe uploa
       expect([204, 404]).toContain(removed.status);
     }
     await restoreSettings(page, baseline);
+    const restored = (await settings(page)).filter((item) => SETTINGS.includes(item.key));
+    for (const snapshot of baseline) {
+      expect(restored.find((item) => item.key === snapshot.key)?.value, `Setting ${snapshot.key} was not restored`).toEqual(snapshot.value);
+    }
     for (const id of ownMediaIds) {
       const removed = await browserApi(page, '/media/' + id, 'DELETE');
       expect([204, 404]).toContain(removed.status);
