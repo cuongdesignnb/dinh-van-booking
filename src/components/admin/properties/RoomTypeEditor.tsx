@@ -26,49 +26,54 @@ function initial(room?: PropertyRoom): RoomForm {
     bedSummary: room?.bedSummary ?? '', areaSqm: room?.areaSqm ? String(room.areaSqm) : '',
     unitCount: room ? String(room.unitCount) : '', rateVnd: room?.rate ? String(room.rate.baseRateVnd) : '',
     weekendRateVnd: room?.rate?.weekendRateVnd == null ? '' : String(room.rate.weekendRateVnd),
-    breakfastIncluded: room?.rate?.breakfastIncluded ?? false, status: room?.status ?? 'active', gallery: room?.gallery ?? [],
+    breakfastIncluded: room?.rate?.breakfastIncluded ?? false, status: room?.status ?? 'inactive', gallery: room?.gallery ?? [],
   };
 }
 
-export function RoomTypeEditor({ propertyId, room, onSaved, onCancel }: {
-  propertyId: string; room?: PropertyRoom; onSaved: () => Promise<void>; onCancel: () => void;
+export function RoomTypeEditor({ propertyId, propertyName, room, onSaved, onCancel }: {
+  propertyId: string; propertyName: string; room?: PropertyRoom; onSaved: () => Promise<void>; onCancel: () => void;
 }) {
   const [form, setForm] = useState<RoomForm>(() => initial(room));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const patch = <K extends keyof RoomForm>(key: K, value: RoomForm[K]) => setForm((current) => ({ ...current, [key]: value }));
   const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setSaving(true); setError(null);
+    event.preventDefault();
+    if (form.status === 'active' && (!Number(form.unitCount) || form.rateVnd.trim() === '')) {
+      setError('Muốn mở hạng phòng, hãy nhập số phòng thực tế và giá ngày thường đã xác minh. Có thể lưu tạm ẩn trước.');
+      return;
+    }
+    setSaving(true); setError(null);
     try {
       const common = {
         name: form.name.trim(), description: form.description.trim(), maxAdults: Number(form.maxAdults),
         maxChildren: Number(form.maxChildren), bedSummary: form.bedSummary.trim(),
         areaSqm: form.areaSqm ? Number(form.areaSqm) : undefined,
         rateVnd: form.rateVnd.trim() === '' ? undefined : Number(form.rateVnd),
-        unitCount: Number(form.unitCount),
+        unitCount: form.unitCount.trim() === '' ? undefined : Number(form.unitCount),
         weekendRateVnd: form.weekendRateVnd ? Number(form.weekendRateVnd) : undefined,
         breakfastIncluded: form.breakfastIncluded, galleryMediaIds: form.gallery.map((item) => item.mediaId),
       };
       if (room) await apiRequest(`/properties/${propertyId}/rooms/${room.id}`, { method: 'PATCH', body: JSON.stringify({ ...common, status: form.status, expectedVersion: room.version }) });
-      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, code: form.code.trim().toUpperCase() }) });
+      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, code: form.code.trim().toUpperCase(), status: form.status }) });
       await onSaved();
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Không thể lưu hạng phòng.'); }
     finally { setSaving(false); }
   };
   return <form className="acard property-form" onSubmit={save}>
-    <div className="property-form__title"><div><h3>{room ? `Sửa hạng phòng: ${room.name}` : 'Thêm hạng phòng'}</h3><p className="ahint">Ảnh album riêng sẽ xuất hiện trong trang chi tiết. Giá 0đ hiển thị “Liên hệ” và không đặt trực tuyến.</p></div><BedDouble size={22} aria-hidden="true" /></div>
+    <div className="property-form__title"><div><h3>{room ? `Sửa hạng phòng: ${room.name}` : `Thêm hạng phòng cho ${propertyName}`}</h3><p className="ahint">Hạng phòng này chỉ thuộc {propertyName}; mỗi hạng có mã, sức chứa, giá, số phòng và album riêng. Chưa có giá hoặc số phòng thì lưu tạm ẩn, không cần điền số giả. Giá 0đ hiển thị “Liên hệ”.</p></div><BedDouble size={22} aria-hidden="true" /></div>
     {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
     <div className="property-form__grid">
-      <label className="afield"><span>Mã hạng phòng *</span><input className="ainput" value={form.code} onChange={(event) => patch('code', event.target.value.toUpperCase())} disabled={!!room} required maxLength={40} pattern="[A-Za-z0-9_-]+" /></label>
+      <label className="afield"><span>Mã hạng phòng *</span><input className="ainput" value={form.code} onChange={(event) => patch('code', event.target.value.toUpperCase())} disabled={!!room} required maxLength={40} pattern="[A-Za-z0-9_-]+" /><small className="ahint">Mã không được trùng với hạng khác trong cùng nơi lưu trú.</small></label>
       <label className="afield"><span>Tên hạng phòng *</span><input className="ainput" value={form.name} onChange={(event) => patch('name', event.target.value)} required maxLength={160} /></label>
       <label className="afield property-form__wide"><span>Mô tả ngắn</span><input className="ainput" value={form.description} onChange={(event) => patch('description', event.target.value)} maxLength={500} /></label>
       <label className="afield"><span>Người lớn tối đa *</span><input className="ainput" type="number" min="1" max="30" value={form.maxAdults} onChange={(event) => patch('maxAdults', event.target.value)} required /></label>
       <label className="afield"><span>Trẻ em tối đa *</span><input className="ainput" type="number" min="0" max="30" value={form.maxChildren} onChange={(event) => patch('maxChildren', event.target.value)} required /></label>
       <label className="afield"><span>Giường / view</span><input className="ainput" value={form.bedSummary} onChange={(event) => patch('bedSummary', event.target.value)} maxLength={120} /></label>
       <label className="afield"><span>Diện tích (m²)</span><input className="ainput" type="number" min="1" value={form.areaSqm} onChange={(event) => patch('areaSqm', event.target.value)} /></label>
-      <label className="afield"><span>Số phòng bán được *</span><input className="ainput" type="number" min={room ? '0' : '1'} max="100" value={form.unitCount} onChange={(event) => patch('unitCount', event.target.value)} required /><small className="ahint">{room ? 'Có thể bổ sung phòng. Không giảm tại đây để tránh ảnh hưởng đơn đặt và quỹ phòng.' : 'Nhập số phòng thực tế đã xác minh; quỹ phòng theo ngày được quản lý riêng.'}</small></label>
-      {room && <label className="afield"><span>Hiển thị hạng phòng</span><select className="ainput" value={form.status} onChange={(event) => patch('status', event.target.value)}><option value="active">Đang hoạt động</option><option value="inactive">Tạm ẩn</option></select></label>}
-      <label className="afield"><span>Giá ngày thường (VND){!room || room.rate ? ' *' : ''}</span><input className="ainput" type="number" min="0" value={form.rateVnd} onChange={(event) => patch('rateVnd', event.target.value)} required={!room || !!room.rate} />{room && !room.rate && <small className="ahint">Để trống nếu chưa xác minh giá. Chỉ nhập 0 khi muốn hiển thị “Liên hệ”.</small>}</label>
+      <label className="afield"><span>Số phòng thực tế</span><input className="ainput" type="number" min="0" max="100" value={form.unitCount} onChange={(event) => patch('unitCount', event.target.value)} /><small className="ahint">{room ? 'Để trống nếu chưa xác minh. Không giảm số phòng tại đây để tránh ảnh hưởng đơn đặt và quỹ phòng.' : 'Để trống nếu chưa xác minh; quỹ phòng theo ngày được quản lý riêng.'}</small></label>
+      <label className="afield"><span>Trạng thái hạng phòng</span><select className="ainput" value={form.status} onChange={(event) => patch('status', event.target.value)}><option value="inactive">Tạm ẩn · chưa mở bán</option><option value="active">Đang hoạt động</option></select></label>
+      <label className="afield"><span>Giá ngày thường (VND){room?.rate ? ' *' : ''}</span><input className="ainput" type="number" min="0" value={form.rateVnd} onChange={(event) => patch('rateVnd', event.target.value)} required={!!room?.rate} /><small className="ahint">{room?.rate ? 'Giá đã được tạo; nếu cần thay đổi, nhập giá mới đã xác minh.' : 'Để trống nếu chưa xác minh giá. Chỉ nhập 0 khi muốn hiển thị “Liên hệ”.'}</small></label>
       <label className="afield"><span>Giá cuối tuần (VND)</span><input className="ainput" type="number" min="0" value={form.weekendRateVnd} onChange={(event) => patch('weekendRateVnd', event.target.value)} /></label>
       <label className="atoggle property-form__toggle"><input type="checkbox" checked={form.breakfastIncluded} onChange={(event) => patch('breakfastIncluded', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Bao gồm bữa sáng</strong></span></label>
     </div>

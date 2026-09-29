@@ -174,6 +174,34 @@ test('từ quỹ phòng mở được hạng phòng, xem danh sách thật và s
   await expect(page.locator('.room-catalog__card')).toHaveCount(roomCount);
 });
 
+test('form hạng phòng gắn rõ từng nơi lưu trú và không lẫn danh sách hạng của cơ sở khác', async ({ page }) => {
+  await signInAsOwner(page);
+  const response = await browserApi(page, '/properties');
+  expect(response.status).toBe(200);
+  const properties = (response.body as { items: Array<{ id: string; code: string; title: string; roomTypes: Array<{ name: string }> }> }).items;
+  const mineral = properties.find((property) => property.code === 'CP-MINERAL-RETREAT');
+  const garden = properties.find((property) => property.code === 'CP-AN-GARDEN');
+  expect(mineral).toBeTruthy();
+  expect(garden).toBeTruthy();
+
+  await page.goto(`/admin/hang-phong?property=${mineral!.id}&room=create`);
+  const context = page.locator('.room-catalog__property-context');
+  await expect(context).toContainText(mineral!.title);
+  await expect(context).toContainText(mineral!.code);
+  await expect(context.locator('li')).toHaveCount(mineral!.roomTypes.length);
+  await expect(page.getByRole('heading', { name: `Thêm hạng phòng cho ${mineral!.title}` })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+  await page.getByRole('link', { name: 'Chọn nơi lưu trú khác' }).click();
+  await expect(page).toHaveURL(/\/admin\/hang-phong$/);
+
+  await page.goto(`/admin/hang-phong?property=${garden!.id}&room=create`);
+  await expect(context).toContainText(garden!.title);
+  await expect(context).toContainText('Chưa có hạng phòng');
+  await expect(context.locator('li')).toHaveCount(garden!.roomTypes.length);
+  await expect(context).not.toContainText(mineral!.title);
+});
+
 test('phòng nghỉ và nội dung mở form ở route riêng, có nút quay lại danh sách', async ({ page }) => {
   await signInAsOwner(page);
 

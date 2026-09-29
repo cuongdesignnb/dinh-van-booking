@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Images } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageOff, Images } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
@@ -12,6 +12,7 @@ import type { ImageAsset } from '@/data/types';
  */
 export function PropertyGallery({ images, note, name }: { images: ImageAsset[]; note?: string; name: string }) {
   const [index, setIndex] = useState<number | null>(null);
+  const [failed, setFailed] = useState<Record<string, boolean>>({});
   const [main, ...rest] = images;
   const thumbs = rest.slice(0, 3);
   const hidden = images.length - 1 - thumbs.length;
@@ -24,9 +25,10 @@ export function PropertyGallery({ images, note, name }: { images: ImageAsset[]; 
   }
   return (
     <div className={`gallery gallery--${Math.min(images.length, 4)}`}>
-      <button type="button" className="gallery__main" onClick={() => setIndex(0)} aria-label={`Xem ảnh lớn: ${main.alt}`}>
-        <Image src={main.src} alt={main.alt} fill priority sizes="(max-width: 767px) 100vw, 530px" className="gallery__img" />
-        {note && (
+      <button type="button" className="gallery__main" onClick={() => setIndex(0)} aria-label={failed[main.src] ? `Ảnh chưa tải được: ${main.alt}. Xem album` : `Xem ảnh lớn: ${main.alt}`}>
+        {failed[main.src] ? <span className="gallery__image-fallback"><ImageOff size={30} aria-hidden="true" /> Ảnh tạm thời không hiển thị</span>
+          : <Image src={main.src} alt={main.alt} fill priority sizes="(max-width: 767px) 100vw, 530px" className="gallery__img" onError={() => setFailed((current) => ({ ...current, [main.src]: true }))} />}
+        {note && !failed[main.src] && (
           <span className="gallery__note handwritten" aria-hidden="true">
             {note.split('\n').map((line, i, all) => (
               <span key={line}>
@@ -56,7 +58,8 @@ export function PropertyGallery({ images, note, name }: { images: ImageAsset[]; 
             onClick={() => setIndex(i + 1)}
             aria-label={last ? `Xem thêm ${hidden} ảnh` : `Xem ảnh: ${t.alt}`}
           >
-            <Image src={t.src} alt="" fill sizes="(max-width: 767px) 33vw, 192px" className="gallery__img" />
+            {failed[t.src] ? <span className="gallery__image-fallback"><ImageOff size={20} aria-hidden="true" /> Ảnh chưa tải được</span>
+              : <Image src={t.src} alt="" fill sizes="(max-width: 767px) 33vw, 192px" className="gallery__img" onError={() => setFailed((current) => ({ ...current, [t.src]: true }))} />}
             {last && <span className="gallery__more">+{hidden}</span>}
           </button>
         );
@@ -101,7 +104,11 @@ export function GalleryDialog({
   });
 
   const img = images[i];
-  const neighbours = [images[(i + 1) % images.length], images[(i - 1 + images.length) % images.length]];
+  const neighbours = images.length > 1
+    ? Array.from(new Map([images[(i + 1) % images.length], images[(i - 1 + images.length) % images.length]]
+      .filter((candidate) => candidate && candidate.src !== img?.src)
+      .map((candidate) => [candidate.src, candidate])).values())
+    : [];
   return (
     <Modal open={index !== null} onClose={() => onIndex(null)} labelledBy={titleId} size="xl" className="dialog--gallery">
       <h2 id={titleId} className="dialog__title">

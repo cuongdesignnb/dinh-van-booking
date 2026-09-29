@@ -103,8 +103,12 @@ async function assertDirectMedia(page: Page, selector: string): Promise<void> {
   const image = page.locator(selector).first();
   await expect(image).toBeVisible();
   const src = await image.getAttribute('src');
-  expect(src).toMatch(/^\/media\/[^?]+\.webp$/);
-  const response = await page.request.get(src!);
+  expect(src).toBeTruthy();
+  const mediaUrl = new URL(src!, page.url());
+  expect(mediaUrl.origin).toBe(new URL(page.url()).origin);
+  expect(mediaUrl.pathname).toMatch(/^\/media\/[^?]+\.webp$/);
+  expect(mediaUrl.search).toBe('');
+  const response = await page.request.get(mediaUrl.toString());
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('image/webp');
 }

@@ -93,7 +93,14 @@ export function RoomCatalogScreen() {
 
     {error ? null : roomId ? (loading ? <div className="acard apending">Đang tải hạng phòng…</div>
       : !selected || (roomId !== 'create' && !editing) ? <div className="acard apending">Không tìm thấy hạng phòng hoặc nơi lưu trú. <button type="button" className="abtn abtn--ghost" onClick={() => router.push(pathname)}>Về danh sách</button></div>
-        : <RoomTypeEditor key={`${selected.id}-${roomId}`} propertyId={selected.id} room={editing} onSaved={afterSaved} onCancel={goToList} />)
+        : <>
+          <div className="acard room-catalog__property-context" aria-label="Nơi lưu trú của hạng phòng">
+            <div><span className="room-catalog__eyebrow">Hạng phòng thuộc nơi lưu trú</span><h3>{selected.title}</h3><p className="ahint">Mã cơ sở {selected.code} · {selected.publicationStatus === 'published' ? 'Đã xuất bản' : 'Bản nháp'} · {selected.operatingStatus === 'active' ? 'Đang vận hành' : 'Chưa mở bán'}</p></div>
+            <div className="room-catalog__context-actions"><Link className="abtn abtn--ghost abtn--sm" href={`/admin/phong-nghi?edit=${encodeURIComponent(selected.id)}`}>Xem nơi lưu trú</Link>{roomId === 'create' && <Link className="abtn abtn--ghost abtn--sm" href={pathname}>Chọn nơi lưu trú khác</Link>}</div>
+            <div className="room-catalog__existing"><strong>{selected.roomTypes.length} hạng phòng đã có tại nơi này</strong>{selected.roomTypes.length ? <ul>{selected.roomTypes.map((item) => <li key={item.id}>{item.name} <span>({item.code} · {item.status === 'active' ? 'Đang hoạt động' : 'Tạm ẩn'})</span></li>)}</ul> : <p className="ahint">Chưa có hạng phòng. Hãy tạo hạng đầu tiên sau khi đã xác minh thông tin.</p>}</div>
+          </div>
+          <RoomTypeEditor key={`${selected.id}-${roomId}`} propertyId={selected.id} propertyName={selected.title} room={editing} onSaved={afterSaved} onCancel={goToList} />
+        </>)
       : <>
         {!loading && <div className="room-catalog__summary" role="group" aria-label="Tổng quan hạng phòng">
           <div><strong>{properties.length}</strong><span>Nơi lưu trú</span></div>

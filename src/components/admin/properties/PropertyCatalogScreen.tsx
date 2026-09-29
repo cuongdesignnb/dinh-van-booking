@@ -496,7 +496,7 @@ export function PropertyCatalogScreen() {
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}
 
-      {roomParam && editing && (roomParam === 'create' || editing.roomTypes.some((room) => room.id === roomParam)) && <RoomTypeEditor key={`${editing.id}-${roomParam}`} propertyId={editing.id} room={editing.roomTypes.find((room) => room.id === roomParam)} onSaved={afterRoomSaved} onCancel={returnToProperty} />}
+      {roomParam && editing && (roomParam === 'create' || editing.roomTypes.some((room) => room.id === roomParam)) && <RoomTypeEditor key={`${editing.id}-${roomParam}`} propertyId={editing.id} propertyName={editing.title} room={editing.roomTypes.find((room) => room.id === roomParam)} onSaved={afterRoomSaved} onCancel={returnToProperty} />}
 
       {editorMode && !createMode && editing && !roomParam && (
         <form className="acard property-form" onSubmit={saveEdit}>

@@ -289,17 +289,20 @@ export class CreateRoomDto {
   @Type(() => Number) @IsOptional() @IsInt() @Min(1) @Max(1000)
   areaSqm?: number;
 
-  @Type(() => Number) @IsInt() @Min(1) @Max(100)
-  unitCount!: number;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0) @Max(100)
+  unitCount?: number;
 
-  @Type(() => Number) @IsInt() @Min(0)
-  rateVnd!: number;
+  @Type(() => Number) @IsOptional() @IsInt() @Min(0)
+  rateVnd?: number;
 
   @Type(() => Number) @IsOptional() @IsInt() @Min(0)
   weekendRateVnd?: number;
 
   @IsOptional() @IsBoolean()
   breakfastIncluded?: boolean;
+
+  @IsOptional() @IsIn(['active', 'inactive'])
+  status?: string;
 
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsUUID('4', { each: true })
   galleryMediaIds?: string[];

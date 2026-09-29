@@ -469,6 +469,13 @@ export class PropertiesService {
     const code = input.code.trim().toUpperCase();
     const name = input.name.trim();
     if (!code || !name) throw new BadRequestException('Cần mã và tên hạng phòng');
+    if (input.weekendRateVnd !== undefined && input.rateVnd === undefined) {
+      throw new BadRequestException('Cần giá ngày thường trước khi đặt giá cuối tuần');
+    }
+    const status = input.status ?? 'inactive';
+    if (status === 'active' && (!input.unitCount || input.rateVnd === undefined)) {
+      throw new BadRequestException('Hạng phòng đang hoạt động cần số phòng và giá đã xác minh');
+    }
     try {
       await this.prisma.$transaction(async (tx) => {
         await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
@@ -476,12 +483,16 @@ export class PropertiesService {
           propertyId, code, name, description: input.description?.trim() || null,
           maxAdults: input.maxAdults, maxChildren: input.maxChildren, maxOccupancy: input.maxAdults + input.maxChildren,
           bedSummary: input.bedSummary?.trim() || null, areaSqm: input.areaSqm ?? null,
-          position: await tx.roomType.count({ where: { propertyId } }), status: 'active',
+          position: await tx.roomType.count({ where: { propertyId } }), status,
         } });
-        await tx.roomUnit.createMany({ data: Array.from({ length: input.unitCount }, (_, index) => ({
-          roomTypeId: room.id, code: `${code}-${String(index + 1).padStart(2, '0')}`, label: `${name} ${index + 1}`, active: true,
-        })) });
-        await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
+        if (input.unitCount) {
+          await tx.roomUnit.createMany({ data: Array.from({ length: input.unitCount }, (_, index) => ({
+            roomTypeId: room.id, code: `${code}-${String(index + 1).padStart(2, '0')}`, label: `${name} ${index + 1}`, active: true,
+          })) });
+        }
+        if (input.rateVnd !== undefined) {
+          await tx.ratePlan.create({ data: { roomTypeId: room.id, code: 'BAR', name: 'Giá tiêu chuẩn', baseRateVnd: BigInt(input.rateVnd), weekendRateVnd: input.weekendRateVnd === undefined ? null : BigInt(input.weekendRateVnd), breakfastIncluded: input.breakfastIncluded ?? false, depositBps: 0, active: true } });
+        }
         await this.replaceGallery(tx, property.contentId, `room:${room.id}`, input.galleryMediaIds ?? []);
         await tx.contentNode.update({ where: { id: property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: property.content.publicationStatus === 'published' ? new Date() : undefined } });
         await tx.auditLog.create({ data: { actorId: userId, action: 'room.create', entityType: 'content_node', entityId: property.contentId, diff: { roomName: name, roomCode: code } as object } });
@@ -504,10 +515,13 @@ export class PropertiesService {
     }
     await this.prisma.$transaction(async (tx) => {
       await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
-      const existingUnits = input.unitCount === undefined ? [] : await tx.roomUnit.findMany({
+      const existingUnits = input.unitCount === undefined && input.status !== 'active' ? [] : await tx.roomUnit.findMany({
         where: { roomTypeId: roomId }, select: { code: true, active: true },
       });
       const activeUnitCount = existingUnits.filter((unit) => unit.active).length;
+      if (input.status === 'active' && (!(input.unitCount ?? activeUnitCount) || (input.rateVnd === undefined && !room.ratePlans[0]))) {
+        throw new BadRequestException('Hạng phòng đang hoạt động cần số phòng và giá đã xác minh');
+      }
       if (input.unitCount !== undefined && input.unitCount < activeUnitCount) {
         throw new ConflictException('Không thể giảm số phòng tại đây vì có thể ảnh hưởng tồn và đơn đặt. Hãy kiểm tra Quỹ phòng.');
       }

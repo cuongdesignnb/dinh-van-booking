@@ -68,9 +68,10 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
   try {
     for (let index = 1; index <= 4; index++) assets.push(await upload(page, stamp, index));
     expect(new Set(assets.map((asset) => asset.id)).size).toBe(assets.length);
-    const description = 'Nơi lưu trú chỉ dùng trong bài kiểm thử local. Ảnh và thông tin này không mô tả cơ sở kinh doanh thực tế; toàn bộ bản ghi sẽ được xoá sau kiểm thử.';
+    const description = 'Nơi lưu trú chỉ dùng trong bài kiểm thử local. Ảnh và thông tin này không mô tả cơ sở kinh doanh thực tế; toàn bộ bản ghi sẽ được xoá sau kiểm thử. '.repeat(8).trim();
+    const title = `ALBUM-QA ${stamp} — Tên nơi lưu trú dài để kiểm tra trang chi tiết trên điện thoại và màn hình lớn`;
     const created = await browserApi(page, '/properties', 'POST', {
-      title: `ALBUM-QA ${stamp}`, code: `ALBUM-QA-${stamp}`, kind: 'homestay', area: 'Cúc Phương, Ninh Bình', address: 'Địa chỉ kiểm thử local',
+      title, code: `ALBUM-QA-${stamp}`, kind: 'homestay', area: 'Cúc Phương, Ninh Bình', address: 'Địa chỉ kiểm thử local tại khu vực Cúc Phương, huyện Nho Quan, tỉnh Ninh Bình; dòng địa chỉ cố ý dài để xác nhận nội dung xuống dòng an toàn trên mọi cỡ màn hình',
       description, roomCode: 'ROOM-A', roomName: 'Hạng phòng liên hệ A', maxAdults: 2, maxChildren: 0, unitCount: 1, rateVnd: 0,
       coverMediaId: assets[0].id, galleryMediaIds: [assets[1].id], roomGalleryMediaIds: [assets[2].id],
     });
@@ -103,8 +104,9 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     await page.getByLabel('Tên hạng phòng *').fill('Hạng phòng liên hệ B');
     await page.getByLabel('Người lớn tối đa *').fill('2');
     await page.getByLabel('Trẻ em tối đa *').fill('0');
-    await page.getByLabel('Số phòng bán được *').fill('1');
-    await page.getByLabel('Giá ngày thường (VND) *').fill('250000');
+    await page.getByLabel('Số phòng thực tế').fill('1');
+    await page.getByLabel('Giá ngày thường (VND)').fill('250000');
+    await page.getByLabel('Trạng thái hạng phòng').selectOption('active');
     const album = page.locator('.album-editor');
     await album.getByRole('button', { name: 'Thêm ảnh' }).click();
     const dialog = page.locator('dialog[open]');
@@ -118,9 +120,15 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     const current = updated.body as Property;
     expect(current.roomTypes.find((room) => room.name === 'Hạng phòng liên hệ B')?.gallery.map((item) => item.mediaId)).toEqual([assets[3].id]);
 
+    await page.goto(`/admin/hang-phong?property=${mineral!.id}`);
+    await expect(page.locator('.room-catalog__card')).toHaveCount(5);
+    await expect(page.locator('.room-catalog__card', { hasText: 'Hạng phòng liên hệ B' })).toHaveCount(0);
+    await page.goto(`/admin/hang-phong?property=${property.id}`);
+    await expect(page.locator('.room-catalog__card')).toHaveCount(2);
+
     const roomCard = page.locator('.room-catalog__card', { hasText: 'Hạng phòng liên hệ B' });
     await roomCard.getByRole('button', { name: 'Sửa hạng phòng' }).click();
-    await page.getByLabel('Số phòng bán được').fill('2');
+    await page.getByLabel('Số phòng thực tế').fill('2');
     await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
     await expect(page.locator('.room-catalog__card', { hasText: 'Hạng phòng liên hệ B' })).toContainText('2 phòng');
     const afterUnits = await browserApi(page, `/properties/${property.id}`);
@@ -146,14 +154,86 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     await expect(card).toContainText('Liên hệ để nhận giá');
     await expect(card.getByRole('link', { name: /Liên hệ/ })).toHaveAttribute('href', '/lien-he');
     await publicPage.goto(`/phong-nghi/${property.slug}`);
+    await expect(publicPage.locator('.detail-head__title')).toHaveText(title);
+    await expect(publicPage.locator('.rtype')).toHaveCount(2);
+    expect(await publicPage.locator('.rtype').first().evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+    for (const width of [390, 768, 1024, 1440, 1920]) {
+      await publicPage.setViewportSize({ width, height: 900 });
+      await publicPage.evaluate(() => document.fonts.ready);
+      const layout = await publicPage.evaluate(() => {
+        const rect = (selector: string) => {
+          const element = document.querySelector(selector);
+          if (!element) throw new Error(`Missing detail region: ${selector}`);
+          const { left, right, top, bottom } = element.getBoundingClientRect();
+          return { left, right, top, bottom };
+        };
+        const regions = ['.detail-head', '.detail-top__gallery', '.detail-top__book', '.detail-top__info'].map(rect);
+        const overlap = (a: typeof regions[number], b: typeof regions[number]) =>
+          Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+          * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+        return {
+          scrollWidth: document.documentElement.scrollWidth,
+          overlaps: [overlap(regions[0], regions[1]), overlap(regions[0], regions[2]), overlap(regions[1], regions[2]), overlap(regions[2], regions[3])],
+        };
+      });
+      expect(layout.scrollWidth, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(width + 1);
+      expect(layout.overlaps, `detail sections overlap at ${width}px`).toEqual([0, 0, 0, 0]);
+      if (process.env.DVB_STAY_DETAIL_VISUAL_ARTIFACTS === '1' && [390, 1440].includes(width)) {
+        await publicPage.screenshot({ path: `artifacts/public-stay-detail-${width}.png`, fullPage: true });
+      }
+    }
     await expect(publicPage.locator('.gallery__thumb')).toHaveCount(1);
     await expect(publicPage.locator('.bcard--contact')).toContainText('Liên hệ để nhận giá');
     await expect(publicPage.locator('.rtype__gallery')).toHaveCount(2);
+    await publicPage.setViewportSize({ width: 390, height: 844 });
+    const galleryOpener = publicPage.getByRole('button', { name: 'Xem tất cả 2 ảnh' });
+    await galleryOpener.focus();
+    await publicPage.keyboard.press('Enter');
+    const propertyDialog = publicPage.locator('dialog[open]');
+    await expect(propertyDialog.locator('.gview__cap [aria-live="polite"]')).toHaveText('1 / 2');
+    await publicPage.keyboard.press('ArrowRight');
+    await expect(propertyDialog.locator('.gview__cap [aria-live="polite"]')).toHaveText('2 / 2');
+    await publicPage.keyboard.press('ArrowRight');
+    await expect(propertyDialog.locator('.gview__cap [aria-live="polite"]')).toHaveText('1 / 2');
+    const dialogWidth = await propertyDialog.evaluate((element) => element.getBoundingClientRect().width);
+    expect(dialogWidth).toBeLessThanOrEqual(390);
+    await publicPage.keyboard.press('Escape');
+    await expect(propertyDialog).toHaveCount(0);
+    await expect(galleryOpener).toBeFocused();
     await publicPage.locator('.rtype__gallery').first().click();
     await expect(publicPage.locator('dialog[open] .gview__figure')).toBeVisible();
     await publicPage.locator('dialog[open]').getByRole('button', { name: 'Đóng hộp thoại' }).click();
     await publicPage.getByRole('button', { name: 'Chọn Hạng phòng liên hệ B' }).click();
     await expect(publicPage.locator('.bcard:not(.bcard--contact)')).toContainText('250.000đ');
+
+    const mediaRoute = '**/media/**';
+    await publicPage.route(mediaRoute, (route) => route.abort());
+    await publicPage.reload();
+    await expect(publicPage.locator('.gallery__main .gallery__image-fallback')).toBeVisible();
+    await expect(publicPage.locator('.rtype__image-fallback').first()).toBeVisible();
+    await publicPage.locator('.gallery__main').click();
+    await expect(publicPage.locator('dialog[open] .gview__fallback')).toContainText('Không tải được ảnh');
+    await publicPage.locator('dialog[open]').getByRole('button', { name: 'Đóng hộp thoại' }).click();
+    await publicPage.unroute(mediaRoute);
+
+    await page.goto(`/admin/hang-phong?property=${property.id}&room=create`);
+    await page.getByLabel('Mã hạng phòng *').fill('ROOM-DRAFT');
+    await page.getByLabel('Tên hạng phòng *').fill('Hạng phòng chờ xác minh');
+    await page.getByLabel('Người lớn tối đa *').fill('2');
+    await page.getByLabel('Trẻ em tối đa *').fill('0');
+    await expect(page.getByLabel('Trạng thái hạng phòng')).toHaveValue('inactive');
+    await page.getByLabel('Trạng thái hạng phòng').selectOption('active');
+    await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
+    await expect(page.locator('.property-form .settings-screen__message--error')).toContainText('số phòng thực tế và giá ngày thường');
+    await page.getByLabel('Trạng thái hạng phòng').selectOption('inactive');
+    await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
+    await expect(page.locator('.room-catalog__card')).toHaveCount(3);
+    const withDraft = await browserApi(page, `/properties/${property.id}`);
+    expect(withDraft.status).toBe(200);
+    const draftRoom = (withDraft.body as Property).roomTypes.find((room) => room.name === 'Hạng phòng chờ xác minh');
+    expect(draftRoom).toMatchObject({ status: 'inactive', unitCount: 0, rate: null });
+    await publicPage.reload();
+    await expect(publicPage.locator('.rtype')).toHaveCount(2);
 
     const body = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Điểm đến kiểm thử album ảnh của hệ thống. Nội dung chỉ phục vụ xác nhận ảnh bìa và ảnh album hiển thị đúng trên giao diện công khai rồi được xoá sau khi chạy xong.' }] }] };
     const destination = await browserApi(page, '/content', 'POST', {

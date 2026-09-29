@@ -118,6 +118,27 @@
     filter 0.4s;
 }
 
+.gallery__image-fallback,
+.rtype__image-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #edf1e9;
+  color: #47614f;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.gallery__image-fallback svg,
+.rtype__image-fallback svg {
+  color: #688770;
+}
+
 .gallery__main:hover .gallery__img,
 .gallery__thumb:hover .gallery__img {
   transform: scale(1.04);

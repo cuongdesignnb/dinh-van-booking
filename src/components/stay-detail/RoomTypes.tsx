@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Images, Mountain, Scaling, UserRound, Users } from 'lucide-react';
+import { Check, ImageOff, Images, Mountain, Scaling, UserRound, Users } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -17,6 +17,13 @@ function RoomAlbum({ images, name }: { images: ImageAsset[]; name: string }) {
   return <><button type="button" className="rtype__gallery" onClick={() => setIndex(0)}><Images size={15} aria-hidden="true" /> Xem {images.length} ảnh</button><GalleryDialog images={images} index={index} onIndex={setIndex} name={name} /></>;
 }
 
+function RoomCover({ image }: { image: ImageAsset }) {
+  const [failed, setFailed] = useState(false);
+  return failed
+    ? <span className="rtype__image-fallback" role="img" aria-label={`Ảnh phòng chưa tải được: ${image.alt}`}><ImageOff size={25} aria-hidden="true" /> Ảnh phòng chưa tải được</span>
+    : <Image src={image.src} alt={image.alt} fill sizes="(max-width: 767px) 92vw, 236px" className="rtype__img" onError={() => setFailed(true)} />;
+}
+
 export function RoomTypes({ title }: { title?: string }) {
   const { stay, room, selection, chooseRoom, issue } = useBooking();
   return (
@@ -30,13 +37,13 @@ export function RoomTypes({ title }: { title?: string }) {
         </p>
       )}
       <ul className="rooms__list">
-        {stay.roomTypes.map((r, i) => {
+        {stay.roomTypes.map((r) => {
           const selected = room?.id === r.id;
           const tooSmall = capacityIssue(r, selection);
           return (
-            <li key={r.id} className="rtype" data-selected={selected || undefined} data-reveal="card" style={{ '--d': `${i * 80}ms` } as React.CSSProperties}>
+            <li key={r.id} className="rtype" data-selected={selected || undefined}>
               <div className="rtype__media">
-                <Image src={r.image.src} alt={r.image.alt} fill sizes="(max-width: 767px) 92vw, 236px" className="rtype__img" />
+                <RoomCover image={r.image} />
                 <RoomAlbum images={r.gallery ?? []} name={r.name} />
                 {r.badge && <span className="rtype__badge">{r.badge}</span>}
                 {selected && (

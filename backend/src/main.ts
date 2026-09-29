@@ -24,7 +24,9 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ trustProxy: true, bodyLimit: config.mediaMaxBytes + 1024 * 1024 }),
+    // Slugs may be 120 characters plus a uniqueness suffix; Fastify's default
+    // 100-character param limit otherwise turns valid published URLs into 414.
+    new FastifyAdapter({ trustProxy: true, bodyLimit: config.mediaMaxBytes + 1024 * 1024, maxParamLength: 200 }),
   );
 
   await app.register(fastifyCookie, { secret: config.sessionSecret });
