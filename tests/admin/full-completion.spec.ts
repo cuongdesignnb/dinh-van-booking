@@ -1,3 +1,5 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { browserApi, signInAsOwner } from './helpers';
 
@@ -5,6 +7,7 @@ const ADMIN_ROUTES = [
   ['/admin', 'Tổng quan', 'dashboard'],
   ['/admin/dat-phong', 'Quản lý đặt phòng', 'bookings'],
   ['/admin/phong-nghi', 'Quản lý phòng nghỉ', 'properties'],
+  ['/admin/hang-phong', 'Quản lý hạng phòng', 'room catalog'],
   ['/admin/ton-phong', 'Quỹ phòng', 'inventory'],
   ['/admin/combo-du-lich', 'Quản lý combo du lịch', 'combos'],
   ['/admin/diem-den', 'Quản lý điểm đến', 'destinations'],
@@ -21,6 +24,14 @@ const ADMIN_ROUTES = [
 ] as const;
 
 const misleadingCopy = /chưa nằm trong phạm vi|màn demo|số liệu mẫu|dữ liệu mẫu|bản demo|coming soon|chưa có api/i;
+
+test('Admin crawler bao phủ mọi route page.tsx hiện hành', () => {
+  const adminRoot = join(process.cwd(), 'src', 'app', 'admin');
+  const routes = ['/admin', ...readdirSync(adminRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(adminRoot, entry.name, 'page.tsx')))
+    .map((entry) => `/admin/${entry.name}`)];
+  expect(ADMIN_ROUTES.map(([route]) => route).sort()).toEqual(routes.sort());
+});
 
 test('full Admin route crawler: mọi màn có dữ liệu/API thật và thao tác chính khả dụng', async ({ page }) => {
   await signInAsOwner(page);

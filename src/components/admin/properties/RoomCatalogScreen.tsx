@@ -35,14 +35,18 @@ export function RoomCatalogScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<boolean> => {
     setLoading(true);
     setError(null);
+    setNotice(null);
     try {
       const response = await apiRequest<{ items: Property[] }>('/properties');
       setProperties(response.items);
+      return true;
     } catch (reason) {
+      setProperties([]);
       setError(reason instanceof Error ? reason.message : 'Không tải được hạng phòng.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -66,9 +70,10 @@ export function RoomCatalogScreen() {
     router.push(`${pathname}?property=${encodeURIComponent(targetPropertyId)}&room=${encodeURIComponent(targetRoomId)}`);
   };
   const afterSaved = async () => {
-    await load();
-    setNotice('Đã lưu hạng phòng vào hệ thống.');
-    goToList();
+    if (await load()) {
+      setNotice('Đã lưu hạng phòng vào hệ thống.');
+      goToList();
+    }
   };
 
   return <section className="property-catalog room-catalog">
@@ -80,10 +85,13 @@ export function RoomCatalogScreen() {
       <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
     </div>}
 
-    {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
+    {error && <div className="acard room-catalog__error-state" role="alert">
+      <p className="settings-screen__message settings-screen__message--error">Không tải được danh sách hạng phòng từ API. {error}</p>
+      <button type="button" className="abtn abtn--primary" onClick={() => void load()}><RefreshCw size={15} aria-hidden="true" /> Tải lại danh sách</button>
+    </div>}
     {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}
 
-    {roomId ? (loading ? <div className="acard apending">Đang tải hạng phòng…</div>
+    {error ? null : roomId ? (loading ? <div className="acard apending">Đang tải hạng phòng…</div>
       : !selected || (roomId !== 'create' && !editing) ? <div className="acard apending">Không tìm thấy hạng phòng hoặc nơi lưu trú. <button type="button" className="abtn abtn--ghost" onClick={() => router.push(pathname)}>Về danh sách</button></div>
         : <RoomTypeEditor key={`${selected.id}-${roomId}`} propertyId={selected.id} room={editing} onSaved={afterSaved} onCancel={goToList} />)
       : <>

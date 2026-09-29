@@ -1,0 +1,68 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 6vw, 72px);
+  background: radial-gradient(circle at 20% 10%, #edf4e9, transparent 42%), #fafaf6;
+  color: #193724;
+}
+
+.card {
+  width: min(100%, 560px);
+  padding: clamp(28px, 5vw, 50px);
+  border: 1px solid #dae5d8;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgb(31 65 40 / 9%);
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #eaf3e8;
+  color: #245c36;
+}
+
+.eyebrow {
+  margin: 24px 0 8px;
+  color: #3d7350;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  margin: 0;
+  font-family: var(--font-dvb-display, Georgia, serif);
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  line-height: 1.16;
+}
+
+.description {
+  margin: 18px 0 26px;
+  color: #53645a;
+  line-height: 1.65;
+}
+
+.retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 10px 22px;
+  border: 0;
+  border-radius: 10px;
+  background: #205934;
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.retry:hover { background: #164728; }
+.retry:focus-visible { outline: 3px solid #b5d779; outline-offset: 3px; }

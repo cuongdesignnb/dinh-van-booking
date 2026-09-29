@@ -5,6 +5,7 @@ const ROUTES = [
   ['/admin', 'Tổng quan', 'Tổng quan'],
   ['/admin/dat-phong', 'Quản lý đặt phòng', 'Đặt phòng'],
   ['/admin/phong-nghi', 'Quản lý phòng nghỉ', 'Phòng nghỉ'],
+  ['/admin/hang-phong', 'Quản lý hạng phòng', 'Hạng phòng'],
   ['/admin/ton-phong', 'Quỹ phòng', 'Quỹ phòng'],
   ['/admin/combo-du-lich', 'Quản lý combo du lịch', 'Combo du lịch'],
   ['/admin/diem-den', 'Quản lý điểm đến', 'Điểm đến'],
@@ -128,6 +129,49 @@ test('API lỗi hiển thị retry state thay vì giả rằng danh sách rỗng
   await page.unroute(contentRequest);
   await page.getByRole('button', { name: 'Tải lại' }).click();
   await expect(page.locator('.content-manager__empty')).toContainText('Chưa có bài viết');
+});
+
+test('hạng phòng không hiện số 0 giả khi API lỗi và hồi phục sau Tải lại', async ({ page }) => {
+  await signInAsOwner(page);
+  const propertyRequest = /\/api\/v1\/properties(?:\?|$)/;
+  await page.route(propertyRequest, (route) => route.abort());
+  await page.goto('/admin/hang-phong');
+  await expect(page.locator('.room-catalog__error-state')).toContainText('Không tải được danh sách hạng phòng từ API');
+  await expect(page.locator('.room-catalog__summary')).toHaveCount(0);
+  await expect(page.locator('.room-catalog__card')).toHaveCount(0);
+  await expect(page.getByText('Chưa có hạng phòng cho nơi lưu trú này.')).toHaveCount(0);
+
+  await page.unroute(propertyRequest);
+  await page.getByRole('button', { name: 'Tải lại danh sách' }).click();
+  const properties = await browserApi(page, '/properties');
+  expect(properties.status).toBe(200);
+  const items = (properties.body as { items: Array<{ roomTypes: unknown[] }> }).items;
+  await expect(page.locator('.room-catalog__error-state')).toHaveCount(0);
+  await expect(page.locator('.room-catalog__summary')).toBeVisible();
+  await expect(page.locator('.room-catalog__card')).toHaveCount(items.reduce((sum, item) => sum + item.roomTypes.length, 0));
+});
+
+test('từ quỹ phòng mở được hạng phòng, xem danh sách thật và sửa album riêng', async ({ page }) => {
+  await signInAsOwner(page);
+  await page.goto('/admin/ton-phong');
+  await page.getByRole('link', { name: 'Quản lý hạng phòng' }).click();
+  await expect(page).toHaveURL(/\/admin\/hang-phong$/);
+
+  const response = await browserApi(page, '/properties');
+  expect(response.status).toBe(200);
+  const properties = (response.body as { items: Array<{ roomTypes: Array<{ name: string }> }> }).items;
+  const roomCount = properties.reduce((total, property) => total + property.roomTypes.length, 0);
+  expect(roomCount).toBeGreaterThan(0);
+  await expect(page.locator('.room-catalog__card')).toHaveCount(roomCount);
+  await expect(page.locator('.room-catalog__missing li')).toHaveCount(properties.filter((property) => property.roomTypes.length === 0).length);
+
+  const firstRoom = page.locator('.room-catalog__card').first();
+  const name = await firstRoom.locator('h3').textContent();
+  await firstRoom.getByRole('button', { name: 'Sửa hạng phòng' }).click();
+  await expect(page.getByRole('heading', { name: `Sửa hạng phòng: ${name?.trim()}` })).toBeVisible();
+  await expect(page.getByText('Album hạng phòng:', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Quay lại danh sách hạng phòng' }).first().click();
+  await expect(page.locator('.room-catalog__card')).toHaveCount(roomCount);
 });
 
 test('phòng nghỉ và nội dung mở form ở route riêng, có nút quay lại danh sách', async ({ page }) => {

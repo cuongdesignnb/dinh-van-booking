@@ -1,6 +1,6 @@
 # Đinh Vân Booking — ma trận hoàn tất admin
 
-Trạng thái xác minh local ngày 27/09/2026. Đây là nguồn hiện hành thay cho các snapshot audit cũ trong thư mục này. Phạm vi là toàn bộ đường admin đang được route thật; module chưa có dịch vụ ngoài (ví dụ cổng thanh toán) được ghi rõ, không giả lập là đã tích hợp.
+Snapshot xác minh local ngày 27/09/2026; **không còn là ma trận hiện hành** vì route `/admin/hang-phong` và các kiểm thử sau đó đã được bổ sung. Dùng [ma trận route/API/bằng chứng 29/09](../END_TO_END_ROUTE_API_EVIDENCE_MATRIX_2026-09-29.md) cho trạng thái hiện nay. Module chưa có dịch vụ ngoài (ví dụ cổng thanh toán) vẫn không được coi là đã tích hợp.
 
 Ma trận chi tiết bắt buộc theo screen → action → API → service → Prisma → permission → browser test ở [full-completion-matrix.md](./full-completion-matrix.md).
 

@@ -1,6 +1,6 @@
 # Admin full-completion matrix — 27/09/2026
 
-Canonical matrix required by the run-to-goal task. “API” lists the primary real operations (all prefixed by `/api/v1`); “Prisma data” names the persisted models, not fixtures. Browser evidence points to real local-gateway tests unless it explicitly says unit/API smoke.
+Historical Admin matrix for the 27/09 run-to-goal task, not a live completion claim. The [current route/API/evidence matrix](../END_TO_END_ROUTE_API_EVIDENCE_MATRIX_2026-09-29.md) includes `/admin/hang-phong` and marks unverified states explicitly. “API” below lists the primary real operations (all prefixed by `/api/v1`); “Prisma data” names the persisted models, not fixtures.
 
 | Admin screen / route | Primary action | API | Service | Prisma data | Server permission | Browser evidence |
 |---|---|---|---|---|---|---|
