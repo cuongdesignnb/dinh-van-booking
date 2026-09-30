@@ -127,6 +127,13 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
   const publicContext = await browser.newContext({ baseURL });
   const publicPage = await publicContext.newPage();
   publicPage.setDefaultTimeout(10_000);
+  const publicHydrationErrors: string[] = [];
+  publicPage.on('pageerror', (error) => publicHydrationErrors.push(error.message));
+  publicPage.on('console', (message) => {
+    if (message.type() === 'error' && /hydration failed|hydration mismatch|server rendered html|#418|text content does not match/i.test(message.text())) {
+      publicHydrationErrors.push(message.text());
+    }
+  });
   try {
     for (let index = 1; index <= 4; index++) assets.push(await upload(page, stamp, index));
     expect(new Set(assets.map((asset) => asset.id)).size).toBe(assets.length);
@@ -230,6 +237,10 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
 
     const published = await browserApi(page, `/content/${property.contentId}/status`, 'PATCH', { status: 'published', expectedVersion: withUnits.contentVersion });
     expect(published.status).toBe(200);
+    const lodgingPage = await publicPage.goto('/phong-nghi');
+    expect(lodgingPage?.status()).toBe(200);
+    await expect(publicPage.getByRole('heading', { name: title, level: 3 })).toBeVisible();
+    expect(publicHydrationErrors).toEqual([]);
     localReviewFixture(property.contentId, stamp, reviewIds, 'create');
     reviewsCreated = true;
     const reviewsApi = await browserApi(page, '/public/reviews');

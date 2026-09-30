@@ -56,7 +56,7 @@ test('bootstrapped local public site has presentation without fake catalog or ma
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Đặt phòng Cúc Phương');
   await expect(page.locator('.trust__item')).toHaveCount(4);
   await expect(page.locator('.why__item')).toHaveCount(4);
-  await expect(page.locator('.featured .promo')).toContainText('Không chỉ là');
+  await expect(page.locator('.home-promo .promo')).toContainText('Không chỉ là');
   await expect(page.locator('.home-faq')).toContainText('Câu hỏi thường gặp');
   await expect(page.locator('.contact')).toContainText('Bạn cần tư vấn riêng?');
   await expect(page.locator('.contact a[href="tel:0974045828"]')).toHaveCount(1);

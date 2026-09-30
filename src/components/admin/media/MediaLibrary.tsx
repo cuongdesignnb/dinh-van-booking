@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { Modal } from '@/components/ui/Modal';
+import { mediaAlt } from '@/lib/media-alt';
 
 export type MediaAsset = {
   id: string;
@@ -19,6 +20,7 @@ export type MediaAsset = {
   caption: string | null;
   renditions: Record<string, { url: string; width: number }>;
   createdAt: string;
+  usage?: { count: number; inUse: boolean };
 };
 
 type MediaListResponse = {
@@ -103,6 +105,7 @@ export function MediaLibrary({
   }, [initialAltText, isModal, open]);
 
   const detail = items.find((item) => item.id === detailId) ?? null;
+  const detailInUse = detail?.usage?.inUse === true || (detail?.usage?.count ?? 0) > 0;
 
   const load = useCallback(async () => {
     if (!active) return;
@@ -194,7 +197,7 @@ export function MediaLibrary({
   };
 
   const remove = async () => {
-    if (!detail) return;
+    if (!detail || detailInUse) return;
     if (!window.confirm(`Xoá “${displayName(detail)}” khỏi thư viện?`)) return;
     setDeleting(true);
     setError('');
@@ -276,11 +279,12 @@ export function MediaLibrary({
                     onClick={() => select(asset)}
                     aria-pressed={selectedId === asset.id || detailId === asset.id}
                   >
-                    <Image src={asset.url} alt={asset.altText ?? displayName(asset)} width={220} height={140} unoptimized />
+                    <Image src={asset.url} alt={mediaAlt(asset.altText, displayName(asset))} width={220} height={140} unoptimized />
                     <span className="media-library__card-name">{displayName(asset)}</span>
                     <span className="media-library__card-meta">
                       {asset.width && asset.height ? `${asset.width}×${asset.height}` : '—'} · {formatBytes(asset.byteSize)}
                     </span>
+                    {asset.usage?.inUse && <span className="media-library__card-usage">Đang dùng · {asset.usage.count} nơi</span>}
                     {onSelect && <span className="media-library__card-action">Chọn ảnh</span>}
                   </button>
                 </li>
@@ -310,7 +314,7 @@ export function MediaLibrary({
           <aside className="media-library__detail">
             {detail ? (
               <>
-                <Image src={detail.url} alt={detail.altText ?? displayName(detail)} width={420} height={260} unoptimized />
+                <Image src={detail.url} alt={mediaAlt(detail.altText, displayName(detail))} width={420} height={260} unoptimized />
                 <dl>
                   <dt>Tệp lưu trữ</dt>
                   <dd>{detail.storageKey}</dd>
@@ -327,11 +331,14 @@ export function MediaLibrary({
                   <span>Chú thích</span>
                   <textarea className="ainput" rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} maxLength={1000} />
                 </label>
+                {detailInUse && <p className="media-library__usage-note" role="status">
+                  Ảnh đang được sử dụng ở {detail?.usage?.count ?? 1} nơi. Gỡ ảnh khỏi nội dung hoặc cài đặt trước khi xoá.
+                </p>}
                 <div className="media-library__detail-actions">
                   <button type="button" className="abtn abtn--primary abtn--sm" onClick={() => void saveMetadata()} disabled={savingMeta || deleting}>
                     <Pencil size={13} aria-hidden="true" /> {savingMeta ? 'Đang lưu…' : 'Lưu mô tả'}
                   </button>
-                  <button type="button" className="abtn abtn--danger abtn--sm" onClick={() => void remove()} disabled={savingMeta || deleting}>
+                  <button type="button" className="abtn abtn--danger abtn--sm" onClick={() => void remove()} disabled={savingMeta || deleting || detailInUse} title={detailInUse ? 'Ảnh đang được sử dụng; gỡ khỏi nội dung hoặc cài đặt trước khi xoá.' : undefined}>
                     <Trash2 size={13} aria-hidden="true" /> {deleting ? 'Đang xoá…' : 'Xoá ảnh'}
                   </button>
                 </div>

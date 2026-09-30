@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-const PLACEHOLDER = /^(?:undefined|null)(?:\.[a-z0-9]+)?$/i;
+const PLACEHOLDER = /^(?:(?:undefined|null)(?:\.(?:jpe?g|png|webp|avif|gif))?|\.(?:jpe?g|png|webp|avif|gif))$/i;
 
 function usable(value: unknown): string | null {
   if (typeof value !== 'string') return null;

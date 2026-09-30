@@ -158,6 +158,17 @@
   font-size: 10.4px;
 }
 
+.media-library__card-usage {
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #edf5eb;
+  color: #245b34;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .media-library__card-action {
   color: var(--dvb-admin-green-800);
   font-size: 10.7px;
@@ -231,6 +242,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+.media-library__usage-note {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #e4d7b7;
+  border-radius: 8px;
+  background: #fbf7ed;
+  color: #6c5322;
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 
 .media-library__detail-empty {

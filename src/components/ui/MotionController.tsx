@@ -7,8 +7,8 @@ import { useEffect } from 'react';
  * Progressive-enhancement motion layer.
  *
  * - `[data-reveal]` elements animate in once when they enter the viewport. The
- *   hidden start state only applies under `html.motion-ready`, which the inline
- *   head script sets; if this component never mounts, a failsafe reveals all.
+ *   hidden start state only applies under `html.motion-ready`, which is enabled
+ *   after hydration so the server and browser begin with identical markup.
  * - `[data-parallax]` layers follow scroll via the `--scroll` custom property.
  * - `[data-tilt]` cards get a pointer-driven 3D tilt + glare.
  * - `[data-magnetic]` buttons lean toward the pointer.
@@ -24,6 +24,7 @@ export function MotionController() {
       root.classList.remove('motion-ready');
       return;
     }
+    root.classList.add('motion-ready');
 
     // Reveal on enter. The long authored delays choreograph the first screen;
     // anything revealed later by scrolling gets a short local stagger instead.
@@ -133,6 +134,3 @@ export function MotionController() {
 
   return null;
 }
-
-/** Runs before first paint: opt into reveal start states, with a failsafe. */
-export const motionBootScript = `(function(){try{var d=document.documentElement;if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('motion-ready');setTimeout(function(){if(!window.__dvbMotion){d.classList.remove('motion-ready');}},4000);}catch(e){}})();`;

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { getPublicSite } from '@/lib/api/public';
-import { motionBootScript } from '@/components/ui/MotionController';
 import { metadataForSite } from '@/lib/seo/metadata';
 import { richDocumentToText } from '@/lib/content/rich-document';
 import './globals.css';
@@ -34,10 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="vi" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: motionBootScript }} />
-      </head>
+    <html lang="vi">
       <body>{children}</body>
     </html>
   );

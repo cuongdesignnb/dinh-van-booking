@@ -1,9 +1,10 @@
 'use client';
 
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useEffect, useState } from 'react';
 import { apiRequest } from '@/lib/api/client';
 import { MediaLibrary, type MediaAsset } from './MediaLibrary';
+import { mediaAlt } from '@/lib/media-alt';
 
 export type MediaGuidance = {
   width: number;
@@ -75,11 +76,11 @@ export function AdminMediaField({
       <p className="ahint">Khuyến nghị: {guidance.width} × {guidance.height} px · tỷ lệ {expectedRatio.toFixed(2)}:1 · {orientationLabel}.{guidance.note ? ` ${guidance.note}` : ''}</p>
       {previewUrl ? (
         <div className="settings-media-field__selected">
-          <Image src={previewUrl} alt={asset?.altText ?? label} width={120} height={76} unoptimized />
+          <Image src={previewUrl} alt={mediaAlt(asset?.altText, label)} width={120} height={76} unoptimized />
           <span>
             <strong>{asset?.originalFilename ?? (mediaId ? 'Ảnh đã chọn trong thư viện' : 'Ảnh đã chọn')}</strong>
             <small>{asset?.width && asset.height ? `${asset.width} × ${asset.height} px` : loading ? 'Đang tải thông tin ảnh…' : 'Chưa tải được metadata kích thước'} · {asset ? formatBytes(asset.byteSize) : '—'}</small>
-            <small>ALT: {asset?.altText || 'Chưa có ALT'}{asset?.caption ? ` · ${asset.caption}` : ''}</small>
+            <small>ALT: {asset ? mediaAlt(asset.altText, asset.originalFilename || label) : 'Chưa có ALT'}{asset?.caption ? ` · ${asset.caption}` : ''}</small>
           </span>
         </div>
       ) : <p className="ahint">Chưa chọn ảnh.</p>}

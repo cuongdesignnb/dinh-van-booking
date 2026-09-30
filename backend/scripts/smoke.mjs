@@ -247,6 +247,7 @@ async function main() {
   check('storage key ends in .webp', upload.body?.storageKey?.endsWith('.webp'), upload.body?.storageKey);
   check('renditions were generated', Object.keys(upload.body?.renditions ?? {}).length >= 2, JSON.stringify(upload.body?.renditions));
   check('alt text kept', upload.body?.altText === 'Ảnh kiểm thử');
+  check('new upload starts unused', upload.body?.usage?.count === 0 && upload.body?.usage?.inUse === false, JSON.stringify(upload.body?.usage));
 
   const served = await fetch(`${MEDIA_BASE}${upload.body.url}`);
   const servedBytes = Buffer.from(await served.arrayBuffer());
@@ -276,6 +277,7 @@ async function main() {
 
   const library = await call('/media');
   check('library lists the upload', library.body?.total >= 1, JSON.stringify(library.body?.total));
+  check('library list includes use status', library.body?.items?.some((item) => item.id === upload.body.id && item.usage?.inUse === false), JSON.stringify(library.body?.items?.find((item) => item.id === upload.body.id)?.usage));
 
   const removed = await call(`/media/${upload.body.id}`, { method: 'DELETE' });
   check('unused asset can be deleted', removed.status === 204, `got ${removed.status}`);
@@ -434,6 +436,8 @@ async function main() {
     }),
   });
   check('cover image attached', withCover.body?.media?.length === 1, JSON.stringify(withCover.body?.media));
+  const coverUsage = await call(`/media/${coverAsset.body.id}`);
+  check('attached image reports active usage', coverUsage.body?.usage?.inUse === true && coverUsage.body?.usage?.count >= 1, JSON.stringify(coverUsage.body?.usage));
 
   const published = await call(`/content/${created.body.id}/status`, {
     method: 'PATCH',

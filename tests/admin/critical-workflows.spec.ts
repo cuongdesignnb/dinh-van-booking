@@ -10,6 +10,8 @@ type MediaAsset = {
   height: number | null;
   altText: string | null;
   caption: string | null;
+  originalFilename?: string;
+  usage?: { count: number; inUse: boolean };
 };
 
 type ContentRecord = {
@@ -219,11 +221,15 @@ test('bài viết TipTap lưu rich body/media, giữ phiên bản, xuất bản 
     expect(publicArticle.status).toBe(200);
     const publicRecord = publicArticle.body as { title: string; cover: { src: string; alt: string } | null };
     expect(publicRecord.title).toBe(currentTitle);
+    const legacyAltSaved = await browserApi(page, `/media/${mediaId}`, 'PATCH', { altText: 'undefined.jpg' });
+    expect(legacyAltSaved.status).toBe(200);
     const uploadedAsset = await browserApi(page, `/media/${mediaId}`);
     expect(uploadedAsset.status).toBe(200);
     const asset = uploadedAsset.body as MediaAsset;
+    expect(asset.altText).toBe('undefined.jpg');
+    expect(asset.usage?.inUse).toBe(true);
+    expect(asset.usage?.count).toBeGreaterThanOrEqual(1);
     expect(publicRecord.cover?.src).toBe(`/media/${asset.storageKey}`);
-    expect(publicRecord.cover?.alt).toBe(coverAlt);
 
     const browser = page.context().browser();
     expect(browser).toBeTruthy();
@@ -233,13 +239,26 @@ test('bài viết TipTap lưu rich body/media, giữ phiên bản, xuất bản 
     expect(guestResponse?.status()).toBe(200);
     await expect(guest.locator('h1')).toContainText(currentTitle);
     await expect(guest.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
-    await expect(guest.locator(`img[alt="${coverAlt}"]`).first()).toBeVisible();
+    await expect(guest.locator('article img').first()).toHaveAttribute('alt', 'Ảnh minh họa');
+    await expect(guest.locator('img[alt="undefined.jpg"]')).toHaveCount(0);
     await guestContext.close();
     guestContext = null;
+
+    await page.goto('/admin/thu-vien-anh');
+    await page.getByLabel('Tìm trong thư viện ảnh').fill(asset.originalFilename ?? filename);
+    const usedMediaCard = page.locator('.media-library__card').filter({ hasText: asset.originalFilename ?? filename });
+    await expect(usedMediaCard).toHaveCount(1);
+    await usedMediaCard.click();
+    const deleteMediaButton = page.getByRole('button', { name: 'Xoá ảnh' });
+    await expect(page.getByRole('status').filter({ hasText: 'Ảnh đang được sử dụng' })).toBeVisible();
+    await expect(deleteMediaButton).toBeDisabled();
+    await expect(usedMediaCard.locator('img')).not.toHaveAttribute('alt', 'undefined.jpg');
 
     const blockedDelete = await browserApi(page, `/media/${mediaId}`, 'DELETE');
     expect(blockedDelete.status).toBe(409);
 
+    await page.goto('/admin/noi-dung');
+    await expect(currentCard).toBeVisible();
     await currentCard.getByRole('button', { name: 'Lưu trữ' }).click();
     await expect(currentCard.locator('.settings-item__meta')).toContainText('Lưu trữ');
     const archivedArticle = await browserApi(page, `/content/${contentId}`);
@@ -252,8 +271,21 @@ test('bài viết TipTap lưu rich body/media, giữ phiên bản, xuất bản 
     expect((await browserApi(page, `/content/${contentId}`)).status).toBe(404);
     contentId = null;
 
-    const removedMedia = await browserApi(page, `/media/${mediaId}`, 'DELETE');
-    expect(removedMedia.status).toBe(204);
+    const nowUnused = await browserApi(page, `/media/${mediaId}`);
+    expect(nowUnused.status).toBe(200);
+    expect((nowUnused.body as MediaAsset).usage).toEqual({ count: 0, inUse: false });
+    await page.goto('/admin/thu-vien-anh');
+    await page.getByLabel('Tìm trong thư viện ảnh').fill(asset.originalFilename ?? filename);
+    const unusedMediaCard = page.locator('.media-library__card').filter({ hasText: asset.originalFilename ?? filename });
+    await expect(unusedMediaCard).toHaveCount(1);
+    await unusedMediaCard.click();
+    await expect(page.getByRole('button', { name: 'Xoá ảnh' })).toBeEnabled();
+    await expect(page.getByText(/Ảnh đang được sử dụng/)).toHaveCount(0);
+    const removeResponse = page.waitForResponse((response) =>
+      response.url().endsWith(`/api/v1/media/${mediaId}`) && response.request().method() === 'DELETE',
+    );
+    await page.getByRole('button', { name: 'Xoá ảnh' }).click();
+    expect((await removeResponse).status()).toBe(204);
     mediaId = null;
   } finally {
     await guestContext?.close();

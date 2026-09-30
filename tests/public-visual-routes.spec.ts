@@ -16,8 +16,14 @@ for (const width of [390, 768, 1024, 1440, 1920]) {
     test(`public ${name} renders without overflow or client errors at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       const pageErrors: string[] = [];
+      const hydrationErrors: string[] = [];
       const serverErrors: string[] = [];
       page.on('pageerror', (error) => pageErrors.push(error.message));
+      page.on('console', (message) => {
+        if (message.type() === 'error' && /hydration failed|hydration mismatch|server rendered html|#418|text content does not match/i.test(message.text())) {
+          hydrationErrors.push(message.text());
+        }
+      });
       page.on('response', (response) => {
         if (response.status() >= 500) serverErrors.push(`${response.status()} ${response.url()}`);
       });
@@ -46,6 +52,7 @@ for (const width of [390, 768, 1024, 1440, 1920]) {
       expect(geometry.document, JSON.stringify({ geometry, protruding })).toBeLessThanOrEqual(width + 1);
       expect(geometry.body, JSON.stringify({ geometry, protruding })).toBeLessThanOrEqual(width + 1);
       expect(pageErrors).toEqual([]);
+      expect(hydrationErrors).toEqual([]);
       expect(serverErrors).toEqual([]);
       if (name === 'stays' || name === 'contact') {
         const heroText = page.locator('.phero__text .rich-content');

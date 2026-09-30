@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-29T09:46:29.704Z",
+  "generatedAt": "2026-09-30T10:31:43.047Z",
   "routeCount": 18,
-  "reachableSourceCount": 78,
+  "reachableSourceCount": 79,
   "pendingAdminRouteCount": 0,
   "reachablePendingModuleCount": 0,
   "reachableDemoComponentCount": 0,
@@ -105,6 +105,7 @@
     "src/lib/catalog/constants.ts",
     "src/lib/catalog/stay-kind.ts",
     "src/lib/content/rich-document.ts",
+    "src/lib/media-alt.ts",
     "src/lib/room-amenities.ts",
     "src/lib/room-unit-kind.ts",
     "src/lib/slug.ts",

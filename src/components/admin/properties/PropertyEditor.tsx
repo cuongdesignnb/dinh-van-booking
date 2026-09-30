@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useEffect, useState } from 'react';
 import { KIND_LABEL } from '@/lib/admin/formatters';
 import type { Property } from '@/lib/admin/types';

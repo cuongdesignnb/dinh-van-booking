@@ -13,7 +13,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';

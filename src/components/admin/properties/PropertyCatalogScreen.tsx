@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, BedDouble, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';

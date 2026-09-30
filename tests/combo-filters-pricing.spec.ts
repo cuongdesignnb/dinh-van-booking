@@ -19,7 +19,13 @@ test('public combo audience filters and price sorting reflect persisted CMS data
   const publicContext = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
   const publicPage = await publicContext.newPage();
   const errors: string[] = [];
+  const hydrationErrors: string[] = [];
   publicPage.on('pageerror', (error) => errors.push(error.message));
+  publicPage.on('console', (message) => {
+    if (message.type() === 'error' && /hydration failed|hydration mismatch|server rendered html|#418|text content does not match/i.test(message.text())) {
+      hydrationErrors.push(message.text());
+    }
+  });
   publicPage.on('response', (response) => { if (response.status() >= 500) errors.push(`${response.status()} ${response.url()}`); });
 
   const plans = [
@@ -90,6 +96,7 @@ test('public combo audience filters and price sorting reflect persisted CMS data
       const scrollWidth = await publicPage.evaluate(() => document.documentElement.scrollWidth);
       expect(scrollWidth, `combo page overflows at ${width}px`).toBeLessThanOrEqual(width + 1);
     }
+    expect(hydrationErrors).toEqual([]);
 
     await publicPage.getByRole('button', { name: 'Gia đình' }).click();
     await expect(qaCards).toHaveCount(2);

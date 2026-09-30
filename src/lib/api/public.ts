@@ -4,6 +4,7 @@ import type { Destination } from '@/data/destinations';
 import type { ImageAsset, Review, RoomType } from '@/data/types';
 import type { Stay } from '@/data/stays';
 import type { RichDocument } from '@/lib/content/rich-document';
+import { mediaAlt } from '@/lib/media-alt';
 import { comboPriceUnitLabel } from '@/lib/catalog/combo-pricing';
 import { normalizeComboAudienceTags } from '@/lib/catalog/combo-audience';
 import { stayTypeFromPropertyKind } from '@/lib/catalog/stay-kind';
@@ -56,11 +57,11 @@ type PublicSiteResponse = {
 
 type ApiAsset = { src?: string; alt?: string; width?: number; height?: number; caption?: string } | null;
 
-function asset(value: ApiAsset): ImageAsset | null {
+function asset(value: ApiAsset, fallbackAlt = 'Ảnh minh họa'): ImageAsset | null {
   if (!value?.src) return null;
   return {
     src: value.src,
-    alt: value.alt ?? '',
+    alt: mediaAlt(value.alt, fallbackAlt),
     width: value.width ?? 1200,
     height: value.height ?? 800,
     caption: value.caption,
@@ -135,17 +136,21 @@ type ApiStay = Omit<Stay, 'image' | 'gallery' | 'roomTypes' | 'home' | 'host' | 
 };
 
 function normalizeStay(value: ApiStay): Stay | null {
-  const image = asset(value.image);
+  const image = asset(value.image, `Ảnh nơi lưu trú ${value.name}`);
   if (!image) return null;
   const rooms: RoomType[] = (value.roomTypes ?? [])
     .map((room) => {
-      const roomImage = asset(room.image) ?? image;
-      return { ...room, image: roomImage, gallery: (room.gallery ?? []).map(asset).filter((item): item is ImageAsset => !!item) };
+      const roomImage = asset(room.image, `Ảnh ${room.name} — ${value.name}`) ?? image;
+      return {
+        ...room,
+        image: roomImage,
+        gallery: (room.gallery ?? []).map((entry, index) => asset(entry, `Ảnh ${room.name} ${index + 1}`)).filter((item): item is ImageAsset => !!item),
+      };
     })
     .filter((room) => Number.isFinite(room.pricePerNight) && room.pricePerNight >= 0);
   if (!rooms.length) return null;
   const features = (value.cardFeatures ?? []).filter((feature) => !!feature.label?.trim()).slice(0, 3).map((feature) => ({ icon: feature.icon as never, label: feature.label }));
-  const gallery = (value.gallery ?? []).map(asset).filter((item): item is ImageAsset => !!item);
+  const gallery = (value.gallery ?? []).map((entry, index) => asset(entry, `Ảnh album ${value.name} ${index + 1}`)).filter((item): item is ImageAsset => !!item);
   return {
     ...value,
     descriptionDocument: value.body ?? value.descriptionDocument,
@@ -156,7 +161,7 @@ function normalizeStay(value: ApiStay): Stay | null {
     image,
     gallery,
     home: value.home?.image
-      ? { image: asset(value.home.image) ?? image, location: value.home.location, tags: [value.home.tags[0] ?? '', value.home.tags[1] ?? ''] }
+      ? { image: asset(value.home.image, `Ảnh ${value.name}`) ?? image, location: value.home.location, tags: [value.home.tags[0] ?? '', value.home.tags[1] ?? ''] }
       : undefined,
     host: null,
     roomTypes: rooms,
@@ -353,7 +358,7 @@ const loadPublicDestinations = cache(async (): Promise<Destination[]> => {
       activities: item.activities,
       notes: item.notes,
       image,
-      gallery: (item.gallery ?? []).map(asset).filter((entry): entry is ImageAsset => !!entry),
+      gallery: (item.gallery ?? []).map((entry, index) => asset(entry, `Ảnh album ${item.name} ${index + 1}`)).filter((entry): entry is ImageAsset => !!entry),
       featured: item.featured === true,
       isDemo: false,
     } as Destination;
@@ -399,7 +404,7 @@ async function loadPublicDestination(slug: string): Promise<PublicDestinationRec
       activities: item.activities,
       notes: item.notes,
       image,
-      gallery: (item.gallery ?? []).map(asset).filter((entry): entry is ImageAsset => !!entry),
+      gallery: (item.gallery ?? []).map((entry, index) => asset(entry, `Ảnh album ${item.name} ${index + 1}`)).filter((entry): entry is ImageAsset => !!entry),
       featured: item.featured === true,
       isDemo: false,
       metaTitle: item.metaTitle ?? null,

@@ -18,7 +18,7 @@ import {
   Star,
   Wrench,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { DEMO_TODAY } from '@/data/admin/fixture-clock';

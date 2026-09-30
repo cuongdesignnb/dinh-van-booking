@@ -1,7 +1,7 @@
 'use client';
 
 import { Bold, Eye, Italic, Link2, List, Trash2, X } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useEffect, useRef, useState } from 'react';
 import { DEMO_TODAY } from '@/data/admin/fixture-clock';
 import { DEST_CATEGORY_LABEL } from '@/lib/admin/formatters';

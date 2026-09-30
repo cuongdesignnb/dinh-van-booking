@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowDown, ArrowUp, Images, Plus, Trash2 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/components/ui/ManagedImage';
 import { useState } from 'react';
 import { MediaLibrary, type MediaAsset } from './MediaLibrary';
 

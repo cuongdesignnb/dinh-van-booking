@@ -11,6 +11,9 @@ test('public API outage shows an honest retry state and recovers after API resta
   const docker = (...args: string[]) => execFileSync('docker', [...compose, ...args], {
     cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000,
   });
+  const dockerContainer = (...args: string[]) => execFileSync('docker', args, {
+    cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000,
+  });
   const healthy = async () => {
     try { return (await fetch(`${baseURL}/api/v1/health`, { cache: 'no-store' })).status === 200; }
     catch { return false; }
@@ -20,9 +23,15 @@ test('public API outage shows an honest retry state and recovers after API resta
   if (!apiContainer) throw new Error('Local API container is not running.');
   let stopped = false;
   try {
-    docker('stop', 'api');
+    // Target the exact local container captured above; service-name resolution can
+    // be stale after the restart-persistence test recreates the Compose service.
+    dockerContainer('stop', apiContainer);
     stopped = true;
-    await expect.poll(healthy, { timeout: 20_000 }).toBe(false);
+    // Confirm the exact container is stopped before asserting the public retry UI,
+    // independently of transient gateway/upstream response timing.
+    const containerRunning = async () =>
+      dockerContainer('inspect', '--format', '{{.State.Running}}', apiContainer).trim() === 'true';
+    await expect.poll(containerRunning, { timeout: 20_000 }).toBe(false);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/phong-nghi', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Chưa thể tải trang này' })).toBeVisible();
@@ -31,14 +40,14 @@ test('public API outage shows an honest retry state and recovers after API resta
     const width = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(width).toBeLessThanOrEqual(391);
 
-    docker('start', 'api');
+    dockerContainer('start', apiContainer);
     stopped = false;
     await expect.poll(healthy, { timeout: 50_000 }).toBe(true);
     await page.getByRole('button', { name: 'Tải lại trang' }).click();
     await expect(page.locator('main.page-stays')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('heading', { name: 'Chưa thể tải trang này' })).toHaveCount(0);
   } finally {
-    if (stopped) docker('start', 'api');
+    if (stopped) dockerContainer('start', apiContainer);
     await expect.poll(healthy, { timeout: 50_000 }).toBe(true);
   }
 });

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { RichDocument, RichMark, RichNode } from '@/lib/content/rich-document';
+import { mediaAlt } from '@/lib/media-alt';
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -115,7 +116,7 @@ function renderNode(node: RichNode, key: string): ReactNode {
         <figure key={key}>
           {/* Media URLs are whitelisted by the API; the renderer also refuses data/javascript URLs. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={text(attrs.alt)} title={text(attrs.title) || undefined} width={width} loading="lazy" />
+          <img src={src} alt={mediaAlt(attrs.alt, text(attrs.title) || 'Ảnh trong nội dung')} title={text(attrs.title) || undefined} width={width} loading="lazy" />
         </figure>
       );
     }

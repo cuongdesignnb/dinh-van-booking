@@ -1,4 +1,5 @@
 import type { PublicMediaAsset, PublicSiteData } from '@/lib/api/public';
+import { mediaAlt } from '@/lib/media-alt';
 
 export type PublicRecord = Record<string, unknown>;
 
@@ -17,7 +18,7 @@ export function publicSetting(site: PublicSiteData, key: string): PublicRecord {
 export function publicAsset(site: PublicSiteData, mediaId: unknown): PublicMediaAsset | null {
   if (typeof mediaId !== 'string' || !mediaId) return null;
   const asset = site.assets?.[mediaId];
-  return asset?.src ? asset : null;
+  return asset?.src ? { ...asset, alt: mediaAlt(asset.alt) } : null;
 }
 
 export function richDocumentHasContent(value: unknown): boolean {

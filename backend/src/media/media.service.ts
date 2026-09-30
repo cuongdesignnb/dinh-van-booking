@@ -44,6 +44,7 @@ export interface MediaView {
   caption: string | null;
   renditions: Record<string, { url: string; width: number }>;
   createdAt: string;
+  usage: { count: number; inUse: boolean };
 }
 
 /** Shared by uploads and the read-only bootstrap preview for identical SHA dedupe. */
@@ -104,7 +105,7 @@ export class MediaService {
 
     // The same picture uploaded twice reuses one file instead of filling the volume.
     const existing = await this.prisma.mediaAsset.findFirst({ where: { sha256: sha } });
-    if (existing) return this.toView(existing);
+    if (existing) return this.getOne(existing.id);
 
     const now = new Date();
     const folder = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -191,13 +192,20 @@ export class MediaService {
       }),
       this.prisma.mediaAsset.count({ where }),
     ]);
-    return { items: rows.map((row) => this.toView(row)), page, pageSize, total };
+    const usage = await this.usageCounts(rows.map((row) => row.id));
+    return {
+      items: rows.map((row) => this.toView(row, usage.get(row.id) ?? 0)),
+      page,
+      pageSize,
+      total,
+    };
   }
 
   async getOne(id: string): Promise<MediaView> {
     const asset = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!asset) throw new NotFoundException('Không tìm thấy ảnh');
-    return this.toView(asset);
+    const usage = await this.usageCounts([asset.id]);
+    return this.toView(asset, usage.get(asset.id) ?? 0);
   }
 
   async updateMeta(
@@ -212,25 +220,19 @@ export class MediaService {
     await this.prisma.auditLog.create({
       data: { actorId: userId, action: 'media.update', entityType: 'media_asset', entityId: id },
     });
-    return this.toView(asset);
+    const usage = await this.usageCounts([asset.id]);
+    return this.toView(asset, usage.get(asset.id) ?? 0);
   }
 
   /** Refuses to delete an asset still referenced by content or public settings. */
   async remove(id: string, userId: string): Promise<void> {
-    const asset = await this.prisma.mediaAsset.findUnique({
-      where: { id },
-      include: { contentMedia: true, ogForContent: { select: { id: true } } },
-    });
+    const asset = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!asset) throw new NotFoundException('Không tìm thấy ảnh');
-    const settings = await this.prisma.setting.findMany({ select: { key: true, value: true } });
-    const settingUses = settings.filter((setting) => SETTINGS_BY_KEY.has(setting.key))
-      .flatMap((setting) => settingMediaReferences(setting.value, id).map((path) => `${setting.key}.${path}`));
-    const contentUses = asset.contentMedia.length + asset.ogForContent.length;
-    if (contentUses > 0 || settingUses.length > 0) {
-      const useCount = contentUses + settingUses.length;
+    const useCount = (await this.usageCounts([id])).get(id) ?? 0;
+    if (useCount > 0) {
       throw new ConflictException({
         code: 'media_in_use',
-        message: `Ảnh đang được dùng ở ${useCount} nơi${settingUses.length ? ` (${settingUses.join(', ')})` : ''}. Gỡ khỏi nội dung hoặc cài đặt trước khi xoá.`,
+        message: `Ảnh đang được dùng ở ${useCount} nơi. Gỡ khỏi nội dung hoặc cài đặt trước khi xoá.`,
       });
     }
 
@@ -259,6 +261,42 @@ export class MediaService {
     return `${this.config.mediaPublicBase}/${storageKey}`;
   }
 
+  /** Counts content, Open Graph, and registered-setting references for list/get/delete. */
+  private async usageCounts(ids: string[]): Promise<Map<string, number>> {
+    const uniqueIds = [...new Set(ids)];
+    const counts = new Map(uniqueIds.map((id) => [id, 0]));
+    if (!uniqueIds.length) return counts;
+
+    const [contentMedia, openGraphContent, settings] = await Promise.all([
+      this.prisma.contentMedia.findMany({
+        where: { mediaId: { in: uniqueIds } },
+        select: { mediaId: true },
+      }),
+      this.prisma.contentNode.findMany({
+        where: { ogMediaId: { in: uniqueIds } },
+        select: { ogMediaId: true },
+      }),
+      this.prisma.setting.findMany({
+        where: { key: { in: [...SETTINGS_BY_KEY.keys()] } },
+        select: { key: true, value: true },
+      }),
+    ]);
+
+    for (const reference of contentMedia) {
+      counts.set(reference.mediaId, (counts.get(reference.mediaId) ?? 0) + 1);
+    }
+    for (const reference of openGraphContent) {
+      if (reference.ogMediaId) counts.set(reference.ogMediaId, (counts.get(reference.ogMediaId) ?? 0) + 1);
+    }
+    for (const setting of settings) {
+      for (const id of uniqueIds) {
+        const references = settingMediaReferences(setting.value, id);
+        if (references.length) counts.set(id, (counts.get(id) ?? 0) + references.length);
+      }
+    }
+    return counts;
+  }
+
   private toView(asset: {
     id: string;
     storageKey: string;
@@ -271,7 +309,7 @@ export class MediaService {
     caption: string | null;
     renditions: unknown;
     createdAt: Date;
-  }): MediaView {
+  }, usageCount = 0): MediaView {
     return {
       id: asset.id,
       url: this.publicUrl(asset.storageKey),
@@ -285,6 +323,7 @@ export class MediaService {
       caption: asset.caption,
       renditions: (asset.renditions ?? {}) as Record<string, { url: string; width: number }>,
       createdAt: asset.createdAt.toISOString(),
+      usage: { count: usageCount, inUse: usageCount > 0 },
     };
   }
 }

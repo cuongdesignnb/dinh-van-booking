@@ -259,14 +259,11 @@ test.describe('public content final acceptance', () => {
       await expect(libraryCard).toHaveCount(1);
       await libraryCard.click();
       await expect(page.getByRole('button', { name: 'Xoá ảnh' })).toBeVisible();
-      const deleteResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/v1/media/' + uploadedMediaId) && response.request().method() === 'DELETE',
-      );
-      page.once('dialog', (dialog) => dialog.accept());
-      await page.getByRole('button', { name: 'Xoá ảnh' }).click();
-      const deleteResponse = await deleteResponsePromise;
-      expect(deleteResponse.status()).toBe(409);
-      await expect(page.locator('.settings-screen__message[role="alert"]')).toContainText('Ảnh đang được dùng');
+      const deleteButton = page.getByRole('button', { name: 'Xoá ảnh' });
+      await expect(deleteButton).toBeDisabled();
+      await expect(page.getByRole('status')).toContainText('Ảnh đang được sử dụng ở 4 nơi');
+      const deleteResult = await browserApi(page, '/media/' + uploadedMediaId, 'DELETE');
+      expect(deleteResult.status).toBe(409);
       await expect(libraryCard).toHaveCount(1);
     } finally {
       try {
