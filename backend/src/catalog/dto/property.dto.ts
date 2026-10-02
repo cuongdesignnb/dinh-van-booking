@@ -330,6 +330,9 @@ export class CreateRoomDto {
 }
 
 export class UpdateRoomDto {
+  @IsOptional() @IsString() @MaxLength(40) @Matches(/^\s*[A-Za-z0-9_-]+\s*$/)
+  code?: string;
+
   @IsString() @MaxLength(160)
   name!: string;
 

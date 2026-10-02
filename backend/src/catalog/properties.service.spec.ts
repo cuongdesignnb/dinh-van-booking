@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { ConflictException } from '@nestjs/common';
 import { PropertiesService } from './properties.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { SettingsService } from '../settings/settings.service';
@@ -98,8 +99,12 @@ test('an unverified room cannot be active even with units and a rate', async () 
   assert.equal(created.length, 0);
 });
 
-function roomService(existingRooms: Array<{ id: string; name: string }> = []) {
-  const rateCreates: Array<{ baseRateVnd: bigint }> = [];
+function roomService(
+  existingRooms: Array<{ id: string; name: string; code?: string }> = [],
+  existingRate: { id: string; baseRateVnd: bigint; weekendRateVnd: bigint | null } | null = null,
+) {
+  const rateCreates: Array<{ code: string; baseRateVnd: bigint; weekendRateVnd: bigint | null }> = [];
+  const rateUpdates: Array<{ where: { id: string }; data: Record<string, unknown> }> = [];
   const updates: Array<Record<string, unknown>> = [];
   const roomAmenityReplacements: unknown[] = [];
   const tx = {
@@ -109,8 +114,8 @@ function roomService(existingRooms: Array<{ id: string; name: string }> = []) {
     },
     roomUnit: { findMany: async () => [] },
     ratePlan: {
-      create: async ({ data }: { data: { baseRateVnd: bigint } }) => { rateCreates.push(data); },
-      update: async () => undefined,
+      create: async ({ data }: { data: { code: string; baseRateVnd: bigint; weekendRateVnd: bigint | null } }) => { rateCreates.push(data); },
+      update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => { rateUpdates.push({ where, data }); },
     },
     amenity: { upsert: async ({ where }: { where: { code: string } }) => ({ id: where.code }) },
     roomTypeAmenity: {
@@ -126,13 +131,13 @@ function roomService(existingRooms: Array<{ id: string; name: string }> = []) {
       maxAdults: 1, maxChildren: 0, capacityVerified: false,
       unitKind: 'villa', bedroomCount: 2, bathroomCount: 2,
       property: { contentId: 'content-id', content: { publicationStatus: 'draft' } },
-      ratePlans: [],
+      ratePlans: existingRate ? [{ ...existingRate, active: true }] : [],
     }) },
     $transaction: async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx),
   } as unknown as PrismaService;
   const service = new PropertiesService(prisma, undefined as unknown as SettingsService);
   Object.defineProperty(service, 'getOne', { value: async () => ({}) });
-  return { service, rateCreates, updates, roomAmenityReplacements };
+  return { service, rateCreates, rateUpdates, updates, roomAmenityReplacements };
 }
 
 const draftUpdate = {
@@ -153,6 +158,30 @@ test('editing one room can explicitly replace its own layout without touching an
   assert.deepEqual([updates[0].unitKind, updates[0].bedroomCount, updates[0].bathroomCount], ['suite', 1, null]);
 });
 
+test('editing a room code normalizes it and persists it on the existing room', async () => {
+  const { service, updates, rateCreates } = roomService();
+  await service.updateRoom('property-id', 'room-id', { ...draftUpdate, code: ' premium-villa-plus ' }, 'user-id');
+  assert.equal(updates.length, 1);
+  assert.equal(updates[0].code, 'PREMIUM-VILLA-PLUS');
+  assert.equal(rateCreates.length, 0);
+});
+
+test('keeping the current room code does not conflict with itself', async () => {
+  const { service, updates } = roomService([{ id: 'room-id', name: 'Premium Villa', code: 'PREMIUM-VILLA' }]);
+  await service.updateRoom('property-id', 'room-id', { ...draftUpdate, code: 'premium-villa' }, 'user-id');
+  assert.equal(updates.length, 1);
+  assert.equal(updates[0].code, 'PREMIUM-VILLA');
+});
+
+test('duplicate room code in the same property returns HTTP 409 Conflict', async () => {
+  const { service, updates } = roomService([{ id: 'other-room-id', name: 'Suite hướng hồ', code: 'PREMIUM-VILLA' }]);
+  await assert.rejects(
+    service.updateRoom('property-id', 'room-id', { ...draftUpdate, code: ' premium-villa ' }, 'user-id'),
+    (error: unknown) => error instanceof ConflictException && error.getStatus() === 409,
+  );
+  assert.equal(updates.length, 0);
+});
+
 test('renaming a category to another category at the same property is rejected', async () => {
   const { service, updates } = roomService([{ id: 'room-id', name: 'Villa vườn' }, { id: 'other-room-id', name: 'Suite hướng hồ' }]);
   await assert.rejects(service.updateRoom('property-id', 'room-id', { ...draftUpdate, name: 'suite  huong ho' }, 'user-id'), /Tên hạng phòng đã có/);
@@ -171,6 +200,32 @@ test('explicit 0đ on an unpriced room creates a contact-only rate', async () =>
   await service.updateRoom('property-id', 'room-id', { ...draftUpdate, rateVnd: 0 }, 'user-id');
   assert.equal(rateCreates.length, 1);
   assert.equal(rateCreates[0].baseRateVnd, 0n);
+});
+
+test('an inactive unverified room can create a weekday and weekend rate without units', async () => {
+  const { service, rateCreates, updates } = roomService();
+  await service.updateRoom('property-id', 'room-id', {
+    ...draftUpdate, code: 'PREMIUM-VILLA', rateVnd: 650000, weekendRateVnd: 750000,
+  }, 'user-id');
+  assert.equal(updates[0].status, 'inactive');
+  assert.equal(rateCreates.length, 1);
+  assert.equal(rateCreates[0].code, 'BAR');
+  assert.equal(rateCreates[0].baseRateVnd, 650000n);
+  assert.equal(rateCreates[0].weekendRateVnd, 750000n);
+});
+
+test('changing an existing room rate updates its rate plan instead of creating a duplicate', async () => {
+  const { service, rateCreates, rateUpdates } = roomService([], {
+    id: 'existing-rate-id', baseRateVnd: 650000n, weekendRateVnd: 750000n,
+  });
+  await service.updateRoom('property-id', 'room-id', {
+    ...draftUpdate, rateVnd: 700000, weekendRateVnd: 820000,
+  }, 'user-id');
+  assert.equal(rateCreates.length, 0);
+  assert.equal(rateUpdates.length, 1);
+  assert.equal(rateUpdates[0].where.id, 'existing-rate-id');
+  assert.equal(rateUpdates[0].data.baseRateVnd, 700000n);
+  assert.equal(rateUpdates[0].data.weekendRateVnd, 820000n);
 });
 
 test('an unpriced draft room cannot be activated without verified units and rate', async () => {

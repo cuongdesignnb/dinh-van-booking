@@ -557,7 +557,9 @@ export class PropertiesService {
     const room = await this.prisma.roomType.findUnique({ where: { id: roomId }, include: { property: { select: { contentId: true, content: { select: { publicationStatus: true } } } }, ratePlans: { where: { active: true }, orderBy: { createdAt: 'asc' }, take: 1 } } });
     if (!room || room.propertyId !== propertyId) throw new NotFoundException('Không tìm thấy hạng phòng');
     if (room.version !== input.expectedVersion) throw new ConflictException('Hạng phòng đã được người khác sửa. Tải lại rồi lưu lại.');
+    const code = typeof input.code === 'string' ? input.code.trim().toUpperCase() : room.code;
     const name = input.name.trim();
+    if (!code) throw new BadRequestException('Mã hạng phòng không được để trống');
     if (!name) throw new BadRequestException('Tên hạng phòng không được để trống');
     if (input.rateVnd === undefined && input.weekendRateVnd !== undefined) {
       throw new BadRequestException('Cần giá ngày thường trước khi đặt giá cuối tuần');
@@ -572,10 +574,13 @@ export class PropertiesService {
     }
     const maxAdults = input.maxAdults ?? room.maxAdults;
     const maxChildren = input.maxChildren ?? room.maxChildren;
-    await this.prisma.$transaction(async (tx) => {
-      const existingNames = await tx.roomType.findMany({ where: { propertyId }, select: { id: true, name: true } });
+    const transaction = this.prisma.$transaction(async (tx) => {
+      const existingNames = await tx.roomType.findMany({ where: { propertyId }, select: { id: true, name: true, code: true } });
       if (existingNames.some((candidate) => candidate.id !== roomId && roomNameKey(candidate.name) === roomNameKey(name))) {
         throw new ConflictException('Tên hạng phòng đã có trong nơi lưu trú này. Hãy chọn tên khác hoặc sửa hạng hiện có.');
+      }
+      if (existingNames.some((candidate) => candidate.id !== roomId && (candidate.code ?? '').trim().toUpperCase() === code)) {
+        throw new ConflictException('Mã hạng phòng đã tồn tại trong nơi lưu trú này');
       }
       await this.assertGalleryMedia(tx, input.galleryMediaIds ?? []);
       const existingUnits = input.unitCount === undefined && input.status !== 'active' ? [] : await tx.roomUnit.findMany({
@@ -589,7 +594,7 @@ export class PropertiesService {
         throw new ConflictException('Không thể giảm số phòng tại đây vì có thể ảnh hưởng tồn và đơn đặt. Hãy kiểm tra Quỹ phòng.');
       }
       const changed = await tx.roomType.updateMany({ where: { id: roomId, version: input.expectedVersion }, data: {
-        name, description: input.description?.trim() || null, maxAdults, maxChildren,
+        code, name, description: input.description?.trim() || null, maxAdults, maxChildren,
         unitKind: input.unitKind === undefined ? room.unitKind : input.unitKind,
         bedroomCount: input.bedroomCount === undefined ? room.bedroomCount : input.bedroomCount,
         bathroomCount: input.bathroomCount === undefined ? room.bathroomCount : input.bathroomCount,
@@ -602,11 +607,11 @@ export class PropertiesService {
         const newUnits: Array<{ roomTypeId: string; code: string; label: string; active: boolean }> = [];
         let suffix = 1;
         while (newUnits.length < input.unitCount - activeUnitCount) {
-          const code = `${room.code}-${String(suffix).padStart(2, '0')}`;
+          const unitCode = `${code}-${String(suffix).padStart(2, '0')}`;
           suffix += 1;
-          if (usedCodes.has(code)) continue;
-          usedCodes.add(code);
-          newUnits.push({ roomTypeId: room.id, code, label: `${name} ${activeUnitCount + newUnits.length + 1}`, active: true });
+          if (usedCodes.has(unitCode)) continue;
+          usedCodes.add(unitCode);
+          newUnits.push({ roomTypeId: room.id, code: unitCode, label: `${name} ${activeUnitCount + newUnits.length + 1}`, active: true });
         }
         await tx.roomUnit.createMany({ data: newUnits });
       }
@@ -620,8 +625,14 @@ export class PropertiesService {
       if (input.galleryMediaIds !== undefined) await this.replaceGallery(tx, room.property.contentId, `room:${roomId}`, input.galleryMediaIds);
       if (input.amenityCodes !== undefined) await this.replaceRoomAmenities(tx, roomId, input.amenityCodes);
       await tx.contentNode.update({ where: { id: room.property.contentId }, data: { version: { increment: 1 }, lastPublicChangedAt: room.property.content.publicationStatus === 'published' ? new Date() : undefined } });
-      await tx.auditLog.create({ data: { actorId: userId, action: 'room.update', entityType: 'content_node', entityId: room.property.contentId, diff: { roomName: name, roomCode: room.code, status: input.status, capacityVerified } as object } });
+      await tx.auditLog.create({ data: { actorId: userId, action: 'room.update', entityType: 'content_node', entityId: room.property.contentId, diff: { roomName: name, roomCode: code, status: input.status, capacityVerified } as object } });
     });
+    try {
+      await transaction;
+    } catch (error) {
+      if (this.isUniqueViolation(error)) throw new ConflictException('Mã hạng phòng đã tồn tại trong nơi lưu trú này');
+      throw error;
+    }
     return this.getOne(propertyId);
   }
 

@@ -7,6 +7,7 @@ import { searchKey } from '@/lib/admin/formatters';
 import { slugFromTitle } from '@/lib/slug';
 import { ROOM_UNIT_KINDS } from '@/lib/room-unit-kind';
 import { ROOM_AMENITIES } from '@/lib/room-amenities';
+import { formatVndInput, normalizeVndInput, parseVndInput } from '@/lib/vnd-input';
 import { AlbumEditor, type AlbumItem } from '../media/AlbumEditor';
 
 export type PropertyRoom = {
@@ -37,8 +38,8 @@ function initial(room?: PropertyRoom): RoomForm {
     maxChildren: room?.capacityVerified && room.maxChildren !== null ? String(room.maxChildren) : '',
     capacityVerified: room?.capacityVerified ?? false,
     bedSummary: room?.bedSummary ?? '', areaSqm: room?.areaSqm ? String(room.areaSqm) : '',
-    unitCount: room?.unitCount ? String(room.unitCount) : '', rateVnd: room?.rate ? String(room.rate.baseRateVnd) : '',
-    weekendRateVnd: room?.rate?.weekendRateVnd == null ? '' : String(room.rate.weekendRateVnd),
+    unitCount: room?.unitCount ? String(room.unitCount) : '', rateVnd: room?.rate ? formatVndInput(room.rate.baseRateVnd) : '',
+    weekendRateVnd: room?.rate?.weekendRateVnd == null ? '' : formatVndInput(room.rate.weekendRateVnd),
     breakfastIncluded: room?.rate?.breakfastIncluded ?? false, status: room?.status ?? 'inactive', gallery: room?.gallery ?? [],
     amenityCodes: (room?.amenities ?? []).map((item) => item.code).filter((code) => ROOM_AMENITIES.some((item) => item.code === code)),
   };
@@ -100,17 +101,28 @@ export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existin
       setError('Hãy nhập cả số người lớn và trẻ em tối đa trước khi xác nhận sức chứa.');
       return;
     }
+    const rateVnd = parseVndInput(form.rateVnd);
+    const weekendRateVnd = parseVndInput(form.weekendRateVnd);
+    if (form.rateVnd.trim() && rateVnd === undefined) {
+      setError('Giá ngày thường phải là số VND nguyên không âm, ví dụ 650.000.');
+      return;
+    }
+    if (form.weekendRateVnd.trim() && weekendRateVnd === undefined) {
+      setError('Giá cuối tuần phải là số VND nguyên không âm, ví dụ 750.000.');
+      return;
+    }
     if (form.status === 'active' && !form.capacityVerified) {
       setError('Cần xác minh sức chứa riêng cho hạng phòng này trước khi mở bán.');
       return;
     }
-    if (form.status === 'active' && (!Number(form.unitCount) || form.rateVnd.trim() === '')) {
+    if (form.status === 'active' && (!Number(form.unitCount) || rateVnd === undefined)) {
       setError('Muốn mở hạng phòng, hãy nhập số phòng thực tế và giá ngày thường đã xác minh. Có thể lưu tạm ẩn trước.');
       return;
     }
     setSaving(true); setError(null);
     try {
       const common = {
+        code: form.code.trim().toUpperCase(),
         name: form.name.trim(), description: form.description.trim(),
         unitKind: form.unitKind || null,
         bedroomCount: form.bedroomCount.trim() === '' ? null : Number(form.bedroomCount),
@@ -119,14 +131,14 @@ export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existin
         maxChildren: form.maxChildren.trim() ? Number(form.maxChildren) : undefined,
         capacityVerified: form.capacityVerified, bedSummary: form.bedSummary.trim(),
         areaSqm: form.areaSqm ? Number(form.areaSqm) : undefined,
-        rateVnd: form.rateVnd.trim() === '' ? undefined : Number(form.rateVnd),
+        rateVnd,
         unitCount: form.unitCount.trim() === '' ? undefined : Number(form.unitCount),
-        weekendRateVnd: form.weekendRateVnd ? Number(form.weekendRateVnd) : undefined,
+        weekendRateVnd,
         breakfastIncluded: form.breakfastIncluded, galleryMediaIds: form.gallery.map((item) => item.mediaId),
         amenityCodes: form.amenityCodes,
       };
       if (room) await apiRequest(`/properties/${propertyId}/rooms/${room.id}`, { method: 'PATCH', body: JSON.stringify({ ...common, status: form.status, expectedVersion: room.version }) });
-      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, code: form.code.trim().toUpperCase(), status: form.status }) });
+      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, status: form.status }) });
       await onSaved(addAnother);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Không thể lưu hạng phòng.'); }
     finally { setSaving(false); }
@@ -142,7 +154,7 @@ export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existin
       <div className="room-editor__section-heading"><span>01</span><div><h4>Thông tin riêng của hạng</h4><p>Tên và mã chỉ áp dụng trong nơi lưu trú này; có thể tạo thêm nhiều hạng khác sau khi lưu.</p></div></div>
       <label className="afield property-form__wide"><span>Kiểu chỗ ở của hạng{room ? '' : ' *'}</span><select className="ainput" value={form.unitKind} onChange={(event) => setForm((current) => ({ ...current, unitKind: event.target.value, bedroomCount: ['room', 'dorm_bed', 'tent'].includes(event.target.value) ? '' : current.bedroomCount, bathroomCount: ['dorm_bed', 'tent'].includes(event.target.value) ? '' : current.bathroomCount }))} required={!room}><option value="">Chọn theo thực tế của cơ sở</option>{ROOM_UNIT_KINDS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select><small className="ahint">Chọn đúng kiểu trước khi nhập số lượng. Các ô phòng/căn, phòng ngủ và phòng tắm sẽ thay đổi phù hợp.</small></label>
       <label className="afield"><span>Tên hạng phòng *</span><input className="ainput" value={form.name} onChange={(event) => { const name = event.target.value; setError(null); setForm((current) => ({ ...current, name, code: codeTouched ? current.code : suggestedRoomCode(name, existingRooms) })); }} required maxLength={160} placeholder={ROOM_EXAMPLES[propertyKind ?? '']?.split(',')[0] ?? 'Ví dụ: Deluxe Garden'} /></label>
-      <label className="afield"><span>Mã hạng phòng *</span><input className="ainput" value={form.code} onChange={(event) => { setCodeTouched(true); patch('code', event.target.value.toUpperCase()); }} disabled={!!room} required maxLength={40} pattern="[A-Za-z0-9_-]+" /><small className="ahint">Tự gợi ý theo tên, có thể sửa. Mã chỉ cần khác các hạng của {propertyName}.</small></label>
+      <label className="afield"><span>Mã hạng phòng *</span><input className="ainput" value={form.code} onChange={(event) => { setCodeTouched(true); patch('code', event.target.value.toUpperCase()); }} required maxLength={40} pattern="\s*[A-Za-z0-9_-]+\s*" /><small className="ahint">Tự gợi ý khi tạo mới; đổi tên không tự đổi mã. Có thể sửa mã trực tiếp; mã chỉ cần khác các hạng của {propertyName}.</small></label>
       <label className="afield property-form__wide"><span>Mô tả ngắn</span><input className="ainput" value={form.description} onChange={(event) => patch('description', event.target.value)} maxLength={500} placeholder="Điểm khác biệt thực tế của hạng phòng này" /></label>
       <fieldset className="room-editor__amenities property-form__wide"><legend>Tiện nghi riêng của hạng</legend><p>Chỉ chọn những tiện nghi đã xác minh cho hạng này; không tự áp dụng cho các hạng khác hoặc toàn khu nghỉ.</p><div className="room-editor__amenity-grid">{ROOM_AMENITIES.map((item) => <label key={item.code}><input type="checkbox" checked={form.amenityCodes.includes(item.code)} onChange={(event) => patch('amenityCodes', event.target.checked ? [...form.amenityCodes, item.code] : form.amenityCodes.filter((code) => code !== item.code))} /><span>{item.label}</span></label>)}</div></fieldset>
       <div className="room-editor__section-heading"><span>02</span><div><h4>Sức chứa và số phòng/căn</h4><p>Mỗi hạng có sức chứa và quỹ phòng riêng. Chỉ xác nhận sau khi đã đối chiếu thông tin của cơ sở.</p></div></div>
@@ -155,9 +167,9 @@ export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existin
       <label className="afield"><span>Diện tích (m²)</span><input className="ainput" type="number" min="1" value={form.areaSqm} onChange={(event) => patch('areaSqm', event.target.value)} /></label>
       <label className="afield"><span>{unitCountLabel}</span><input className="ainput" type="number" min="0" max="100" value={form.unitCount} onChange={(event) => patch('unitCount', event.target.value)} /><small className="ahint">{room ? 'Để trống nếu chưa xác minh. Không giảm số lượng tại đây để tránh ảnh hưởng đơn đặt và quỹ phòng.' : 'Để trống nếu chưa xác minh; quỹ phòng theo ngày được quản lý riêng.'}</small></label>
       <div className="room-editor__section-heading"><span>03</span><div><h4>Giá và trạng thái bán</h4><p>Chưa xác minh giá hoặc số phòng thì lưu tạm ẩn. Chỉ nhập 0đ khi muốn khách liên hệ thay vì đặt trực tuyến.</p></div></div>
-      <label className="afield"><span>Trạng thái hạng phòng</span><select className="ainput" value={form.status} onChange={(event) => patch('status', event.target.value)}><option value="inactive">Tạm ẩn · chưa mở bán</option><option value="active">Đang hoạt động</option></select></label>
-      <label className="afield"><span>Giá ngày thường (VND){room?.rate ? ' *' : ''}</span><input className="ainput" type="number" min="0" value={form.rateVnd} onChange={(event) => patch('rateVnd', event.target.value)} required={!!room?.rate} /><small className="ahint">{room?.rate ? 'Giá đã được tạo; nếu cần thay đổi, nhập giá mới đã xác minh.' : 'Để trống nếu chưa xác minh giá. Chỉ nhập 0 khi muốn hiển thị “Liên hệ”.'}</small></label>
-      <label className="afield"><span>Giá cuối tuần (VND)</span><input className="ainput" type="number" min="0" value={form.weekendRateVnd} onChange={(event) => patch('weekendRateVnd', event.target.value)} /></label>
+      <label className="afield"><span>Trạng thái hạng phòng</span><select className="ainput" value={form.status} onChange={(event) => patch('status', event.target.value)}><option value="inactive">Tạm ẩn · chưa mở bán</option><option value="active">Đang hoạt động</option></select><small className="ahint">Muốn bật “Đang hoạt động”, cần xác minh sức chứa, số phòng/căn và giá. Có thể lưu giá trước khi mở bán bằng trạng thái “Tạm ẩn”.</small></label>
+      <label className="afield"><span>Giá ngày thường (VND){room?.rate ? ' *' : ''}</span><input className="ainput" type="text" inputMode="numeric" pattern="[0-9., ]*" value={form.rateVnd} onChange={(event) => patch('rateVnd', normalizeVndInput(event.target.value))} onBlur={() => patch('rateVnd', formatVndInput(form.rateVnd))} required={!!room?.rate} /><small className="ahint">{room?.rate ? 'Giá đã được tạo; nhập giá mới để cập nhật. Có thể nhập 650000, 650.000 hoặc 650,000.' : 'Có thể nhập 650000, 650.000 hoặc 650,000. Để trống nếu chưa xác minh; nhập 0 nếu muốn hiển thị “Liên hệ”.'}</small></label>
+      <label className="afield"><span>Giá cuối tuần (VND)</span><input className="ainput" type="text" inputMode="numeric" pattern="[0-9., ]*" value={form.weekendRateVnd} onChange={(event) => patch('weekendRateVnd', normalizeVndInput(event.target.value))} onBlur={() => patch('weekendRateVnd', formatVndInput(form.weekendRateVnd))} /><small className="ahint">Có thể nhập 750000, 750.000 hoặc 750,000.</small></label>
       <label className="atoggle property-form__toggle"><input type="checkbox" checked={form.breakfastIncluded} onChange={(event) => patch('breakfastIncluded', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Bao gồm bữa sáng</strong></span></label>
     </div>
     <div className="property-form__section"><div className="room-editor__section-heading"><span>04</span><div><h4>Album ảnh của hạng</h4><p>Ảnh trong album này chỉ thuộc hạng phòng đang chỉnh sửa và có thể tái sử dụng từ Media Library.</p></div></div><AlbumEditor label={`Album hạng phòng: ${form.name || 'Chưa đặt tên'}`} items={form.gallery} onChange={(items) => patch('gallery', items)} /></div>
