@@ -3,7 +3,7 @@
 import { ArrowLeft, BedDouble, ImagePlus, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { KIND_LABEL } from '@/lib/admin/formatters';
@@ -15,6 +15,7 @@ import { AlbumEditor, type AlbumItem } from '../media/AlbumEditor';
 import type { PropertyRoom } from './RoomTypeEditor';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
 import { AdminSlugField } from '../shared/AdminSlugField';
+import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 
 type PropertyItem = {
   id: string;
@@ -131,12 +132,14 @@ function errorMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : 'Không thể hoàn tất thao tác.';
 }
 
-export function PropertyCatalogScreen() {
-  const pathname = usePathname();
+export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'create' | 'edit'; routeId?: string } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const createMode = searchParams.get('action') === 'create';
-  const editId = searchParams.get('edit');
+  const toast = useAdminToast();
+  const legacyCreate = searchParams.get('action') === 'create';
+  const legacyEditId = searchParams.get('edit');
+  const createMode = routeMode === 'create' || legacyCreate;
+  const editId = routeMode === 'edit' ? routeId ?? null : legacyEditId;
   const roomParam = searchParams.get('room');
   const editorMode = createMode || Boolean(editId);
   const [items, setItems] = useState<PropertyItem[]>([]);
@@ -178,8 +181,11 @@ export function PropertyCatalogScreen() {
 
   // Old property-editor room links still land in the property-scoped room workspace.
   useEffect(() => {
+    if (routeMode) return;
     if (editId && roomParam) router.replace(`/admin/hang-phong?property=${encodeURIComponent(editId)}&room=${encodeURIComponent(roomParam)}`);
-  }, [editId, roomParam, router]);
+    else if (legacyCreate) router.replace('/admin/phong-nghi/them');
+    else if (legacyEditId) router.replace(`/admin/phong-nghi/${encodeURIComponent(legacyEditId)}`);
+  }, [editId, legacyCreate, legacyEditId, roomParam, routeMode, router]);
 
   const fillEditForm = useCallback((item: PropertyItem) => {
     setEditing(item);
@@ -214,7 +220,7 @@ export function PropertyCatalogScreen() {
     return () => cancelAnimationFrame(frame);
   }, [editing, roomParam]);
 
-  const goToList = () => router.replace(pathname, { scroll: false });
+  const goToList = () => router.replace('/admin/phong-nghi', { scroll: false });
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
@@ -223,7 +229,7 @@ export function PropertyCatalogScreen() {
     setEditing(null);
     setError(null);
     setNotice(null);
-    router.push(`${pathname}?action=create`, { scroll: false });
+    router.push('/admin/phong-nghi/them', { scroll: false });
   };
 
   const closeEditor = () => {
@@ -251,7 +257,7 @@ export function PropertyCatalogScreen() {
     fillEditForm(item);
     setError(null);
     setNotice(null);
-    router.push(`${pathname}?edit=${encodeURIComponent(item.id)}`, { scroll: false });
+    router.push(`/admin/phong-nghi/${encodeURIComponent(item.id)}`, { scroll: false });
   };
 
   const pickInlineImage = useCallback((insert: (attrs: { src: string; alt?: string; mediaId?: string }) => void) => {
@@ -276,7 +282,8 @@ export function PropertyCatalogScreen() {
     setError(null);
     setNotice(null);
     if (form.description.trim().length < 40) {
-      setError('Mô tả nơi lưu trú cần ít nhất 40 ký tự.');
+      const message = 'Mô tả nơi lưu trú cần ít nhất 40 ký tự.';
+      setError(message); toast.error(message);
       setBusy(false);
       return;
     }
@@ -299,7 +306,9 @@ export function PropertyCatalogScreen() {
       setForm(EMPTY_FORM);
       setCoverMedia(null);
       setGallery([]);
-      router.push(`/admin/hang-phong?property=${encodeURIComponent(created.id)}&room=create`);
+      setItems((current) => [created, ...current.filter((item) => item.id !== created.id)]);
+      fillEditForm(created);
+      router.replace(`/admin/phong-nghi/${encodeURIComponent(created.id)}`);
     } catch (reason) {
       setError(errorMessage(reason));
     } finally {
@@ -351,12 +360,13 @@ export function PropertyCatalogScreen() {
     setError(null);
     setNotice(null);
     if (!editForm.description.trim()) {
-      setError('Mô tả nơi lưu trú không được để trống.');
+      const message = 'Mô tả nơi lưu trú không được để trống.';
+      setError(message); toast.error(message);
       setEditBusy(false);
       return;
     }
     try {
-      await apiRequest<PropertyItem>(`/properties/${encodeURIComponent(editing.id)}`, {
+      const updated = await apiRequest<PropertyItem>(`/properties/${encodeURIComponent(editing.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({
           title: editForm.title,
@@ -378,10 +388,7 @@ export function PropertyCatalogScreen() {
           expectedContentVersion: editing.contentVersion,
         }),
       });
-      setNotice(`Đã cập nhật “${editForm.title}”.`);
-      setEditing(null);
-      setEditCover(null);
-      goToList();
+      fillEditForm(updated);
       await load();
     } catch (reason) {
       setError(errorMessage(reason));
@@ -392,7 +399,8 @@ export function PropertyCatalogScreen() {
 
   const remove = async (item: PropertyItem) => {
     if (item.publicationStatus === 'published') {
-      setError('Không thể xoá nơi lưu trú đã xuất bản. Gỡ xuất bản trước.');
+      const message = 'Không thể xoá nơi lưu trú đã xuất bản. Gỡ xuất bản trước.';
+      setError(message); toast.error(message);
       return;
     }
     if (!window.confirm(`Xoá bản nháp “${item.title}”? Hành động này xoá cả route, revision và thông tin phòng liên quan.`)) return;

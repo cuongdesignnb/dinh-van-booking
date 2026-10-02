@@ -6,6 +6,7 @@ import { DinhVanMark } from '@/components/ui/BrandLogo';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminTopbar } from './AdminTopbar';
 import { pageMeta } from './page-meta';
+import { AdminToastProvider } from '@/components/admin/toast/AdminToastProvider';
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -13,15 +14,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="ashell">
-      <AdminSidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-      {menuOpen && <button type="button" className="ashell__scrim" aria-label="Đóng menu" onClick={() => setMenuOpen(false)} />}
-      <div className="ashell__main">
-        <AdminTopbar meta={meta} onMenu={() => setMenuOpen(true)} />
-        <main className="ashell__content">{children}</main>
-        <AdminFooter />
+    <AdminToastProvider>
+      <div className="ashell">
+        <AdminSidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+        {menuOpen && <button type="button" className="ashell__scrim" aria-label="Đóng menu" onClick={() => setMenuOpen(false)} />}
+        <div className="ashell__main">
+          <AdminTopbar meta={meta} onMenu={() => setMenuOpen(true)} />
+          <main className="ashell__content">{children}</main>
+          <AdminFooter />
+        </div>
       </div>
-    </div>
+    </AdminToastProvider>
   );
 }
 

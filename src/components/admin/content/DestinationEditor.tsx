@@ -8,6 +8,7 @@ import { DEST_CATEGORY_LABEL } from '@/lib/admin/formatters';
 import { seoChecklist } from '@/lib/admin/selectors';
 import type { AdminDestination } from '@/lib/admin/types';
 import { useAdmin } from '../AdminStore';
+import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 import { ConfirmDialog, Panel } from '../shared/ui';
 import { MediaPicker } from './MediaPicker';
 
@@ -73,6 +74,7 @@ export function DestinationEditor({
   asDrawer?: boolean;
 }) {
   const { data, commit, busy } = useAdmin();
+  const toast = useAdminToast();
   const [tab, setTab] = useState<(typeof TABS)[number]['id']>('general');
   const [form, setForm] = useState<Form>(EMPTY);
   const [dirty, setDirty] = useState(false);
@@ -330,7 +332,7 @@ export function DestinationEditor({
                 const url = window.prompt('Nhập đường dẫn (https://…)');
                 if (!url) return;
                 if (!/^https?:\/\//i.test(url)) {
-                  window.alert('Chỉ chấp nhận đường dẫn http(s).');
+                  toast.error('Chỉ chấp nhận đường dẫn http(s).');
                   return;
                 }
                 wrap('[', `](${url})`);

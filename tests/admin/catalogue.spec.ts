@@ -1,12 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { browserApi, signInAsOwner } from './helpers';
+import { browserApi, createUniqueTestPng, signInAsOwner } from './helpers';
 
-const TEST_WEBP = readFileSync(join(process.cwd(), 'public/images/dinh-van-booking/stays/cuc-phuong-bungalow.webp'));
+type MenuItem = { id: string; label: string; contentId: string | null; externalUrl: string | null; enabled: boolean };
 
-test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu và public route', async ({ page }) => {
-  test.setTimeout(120_000);
+test('chuyên trang dùng editor riêng, Media Library và toast; draft được dọn sau smoke', async ({ page }) => {
+  test.setTimeout(60_000);
   await signInAsOwner(page);
   page.on('dialog', (dialog) => dialog.accept());
 
@@ -15,7 +13,6 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
   const title = `ATG Chính sách kiểm thử ${stamp}`;
   const coverAlt = `ATG cover ${stamp}`;
   let contentId: string | null = null;
-  type MenuItem = { id: string; label: string; contentId: string | null; externalUrl: string | null; enabled: boolean };
   let originalMenu = { isDefault: true, items: [] as MenuItem[] };
   let menuLoaded = false;
   const mediaIds = new Set<string>();
@@ -28,7 +25,7 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
 
     await page.goto('/admin/chuyen-trang');
     await page.getByRole('button', { name: 'Tạo mới' }).click();
-    await expect(page).toHaveURL(/\/admin\/chuyen-trang\?action=create/);
+    await expect(page).toHaveURL('/admin/chuyen-trang/them');
     await page.getByLabel('Tiêu đề *').fill(title);
     await page.getByLabel('Slug đường dẫn').fill(slug);
     await page.getByLabel('Tóm tắt').fill('Hướng dẫn kiểm thử các chính sách được quản lý trong CMS.');
@@ -44,10 +41,11 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
     await dialog.getByLabel('Alt mặc định cho ảnh tải lên').fill(coverAlt);
     await dialog.locator('.media-library__upload input[type="file"]').setInputFiles({
       name: 'atg-cover.webp',
-      mimeType: 'image/webp',
-      buffer: TEST_WEBP,
+      mimeType: 'image/png',
+      buffer: createUniqueTestPng(stamp),
     });
     await expect(page.locator('dialog[open]')).toHaveCount(0);
+    await expect(page.locator('.admin-toast--success')).toContainText('Đã tải ảnh lên thư viện.');
 
     const mediaList = await browserApi(page, `/media?search=${encodeURIComponent(coverAlt)}`);
     expect(mediaList.status).toBe(200);
@@ -64,13 +62,15 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
     expect((await storedImage.body()).subarray(8, 12).toString('ascii')).toBe('WEBP');
 
     await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
-    await expect(page.locator('.settings-screen__message--success')).toContainText('Đã tạo bản nháp thật');
-
-    const drafts = await browserApi(page, '/content?kind=page&page=1&pageSize=100');
-    const draft = (drafts.body as { items: Array<{ id: string; title: string; path: string; publicationStatus: string; version: number; media: Array<{ mediaId: string }> }> }).items
-      .find((item) => item.title === title);
-    expect(draft).toBeTruthy();
-    contentId = draft!.id;
+    await expect(page).toHaveURL(/\/admin\/chuyen-trang\/[0-9a-f-]{36}$/i);
+    contentId = page.url().match(/\/admin\/chuyen-trang\/([0-9a-f-]{36})$/i)?.[1] ?? null;
+    expect(contentId).toBeTruthy();
+    await expect(page).toHaveURL(`/admin/chuyen-trang/${contentId}`);
+    await expect(page.locator('.admin-toast--success').filter({ hasText: 'Đã tạo nội dung.' })).toBeVisible();
+    const draftResponse = await browserApi(page, `/content/${contentId}`);
+    expect(draftResponse.status).toBe(200);
+    const draft = draftResponse.body as { id: string; title: string; path: string; publicationStatus: string; version: number; media: Array<{ mediaId: string }> };
+    expect(draft.title).toBe(title);
     expect(draft!.publicationStatus).toBe('draft');
     expect(draft!.media.some((item) => item.mediaId === media!.id)).toBeTruthy();
     expect((await browserApi(page, `/public/pages/${slug}`)).status).toBe(404);
@@ -78,22 +78,21 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
     const draftRoute = await page.request.get(draft!.path);
     expect(draftRoute.status()).toBe(404);
 
-    const card = page.locator('.content-manager__item', { hasText: title });
-    await card.getByRole('button', { name: 'Sửa' }).click();
     const editedTitle = `${title} — đã sửa`;
     await page.getByLabel('Tiêu đề *').fill(editedTitle);
     await page.locator('.rte [contenteditable="true"]').fill(
       'Bản nội dung đã sửa qua giao diện TipTap; API lưu revision mới và giữ nguyên ảnh từ Media Library.',
     );
     await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
-    await expect(page).toHaveURL('/admin/chuyen-trang');
-    await expect(page.locator('.content-manager__item', { hasText: editedTitle })).toBeVisible();
+    await expect(page).toHaveURL(`/admin/chuyen-trang/${contentId}`);
+    await expect(page.locator('.admin-toast--success').filter({ hasText: 'Đã lưu nội dung.' })).toBeVisible();
 
     const edited = await browserApi(page, `/content/${contentId}`);
     expect(edited.status).toBe(200);
     expect((edited.body as { title: string; version: number }).title).toBe(editedTitle);
     expect((edited.body as { version: number }).version).toBeGreaterThan(draft!.version);
 
+    await page.goto('/admin/chuyen-trang');
     const editedCard = page.locator('.content-manager__item', { hasText: editedTitle });
     await editedCard.getByRole('button', { name: 'Xuất bản' }).click();
     await expect(editedCard).toContainText('Đã xuất bản');
@@ -101,7 +100,7 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
     const publicPage = await browserApi(page, `/public/pages/${slug}`);
     expect(publicPage.status).toBe(200);
     expect((publicPage.body as { title: string }).title).toBe(editedTitle);
-    const rendered = await page.goto(draft!.path);
+    const rendered = await page.goto(draft.path);
     expect(rendered?.status()).toBe(200);
     await expect(page.locator('h1')).toContainText(editedTitle);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
@@ -112,14 +111,25 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
     await page.getByRole('button', { name: 'Thêm vào menu' }).click();
     await expect(page.locator('.menu-manager__item').last().getByLabel('Tên hiển thị')).toHaveValue(editedTitle);
     await page.getByRole('button', { name: 'Lưu Menu' }).click();
-    await expect(page.locator('.settings-screen__message--success')).toContainText('Đã lưu Menu chính');
+    await expect(page.locator('.admin-toast--success')).toContainText('Đã lưu Menu.');
     const publicMenu = await browserApi(page, '/public/navigation/primary');
-    expect((publicMenu.body as Array<{ label: string; href: string }>).some((item) => item.label === editedTitle && item.href === draft!.path)).toBeTruthy();
+    expect((publicMenu.body as Array<{ label: string; href: string }>).some((item) => item.label === editedTitle && item.href === draft.path)).toBeTruthy();
 
     await page.getByRole('button', { name: 'Khôi phục mặc định' }).click();
-    await expect(page.locator('.settings-screen__message--success')).toContainText('Đã khôi phục các liên kết mặc định');
+    await expect(page.locator('.admin-toast--success').filter({ hasText: 'Đã khôi phục Menu mặc định.' })).toBeVisible();
     const defaultMenu = await browserApi(page, '/navigation/primary');
     expect((defaultMenu.body as { isDefault: boolean }).isDefault).toBe(true);
+
+    await page.goto('/admin/chuyen-trang');
+    const inUseMediaResponse = await browserApi(page, `/media?search=${encodeURIComponent(coverAlt)}`);
+    const inUseAsset = (inUseMediaResponse.body as { items: Array<{ id: string; usage?: { inUse: boolean; count: number } }> }).items[0];
+    expect(inUseAsset?.usage).toMatchObject({ inUse: true, count: expect.any(Number) });
+    await page.goto('/admin/thu-vien-anh');
+    await page.locator('.media-library__card').filter({ hasText: 'atg-cover.webp' }).click();
+    await expect(page.getByRole('button', { name: 'Xoá ảnh' })).toBeDisabled();
+    await expect(page.getByText(/Ảnh đang được sử dụng/)).toBeVisible();
+    expect((await browserApi(page, `/media/${inUseAsset.id}`, 'DELETE')).status).toBe(409);
+
   } finally {
     if (menuLoaded) {
       const restoredMenu = originalMenu.isDefault
@@ -136,11 +146,18 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
       expect(restoredMenu.status).toBe(200);
       if (originalMenu.isDefault) expect((restoredMenu.body as { isDefault: boolean }).isDefault).toBe(true);
     }
-
+    if (!contentId) {
+      const drafts = await browserApi(page, '/content?kind=page&page=1&pageSize=100');
+      contentId = (drafts.body as { items: Array<{ id: string; title: string }> }).items.find((item) => item.title === title)?.id ?? null;
+    }
     if (contentId) {
       const current = await browserApi(page, `/content/${contentId}`);
       if (current.status === 200) {
-        const node = current.body as { publicationStatus: string; version: number; media: Array<{ mediaId: string }> };
+        const node = current.body as {
+          publicationStatus: string; version: number; title: string; slug: string; excerpt: string | null;
+          body: unknown; metaTitle: string | null; metaDescription: string | null; featured: boolean;
+          noindex: boolean; details: unknown; media: Array<{ mediaId: string }>;
+        };
         for (const item of node.media ?? []) mediaIds.add(item.mediaId);
         let version = node.version;
         if (node.publicationStatus === 'published') {
@@ -148,6 +165,13 @@ test('chuyên trang đi từ editor thật qua Media Library, xuất bản, menu
           expect(draftStatus.status).toBe(200);
           version = (draftStatus.body as { version: number }).version;
         }
+        const detached = await browserApi(page, `/content/${contentId}`, 'PUT', {
+          title: node.title, slug: node.slug, excerpt: node.excerpt, body: node.body,
+          metaTitle: node.metaTitle, metaDescription: node.metaDescription,
+          featured: node.featured, noindex: node.noindex, details: node.details, media: [], expectedVersion: version,
+        });
+        expect(detached.status).toBe(200);
+        version = (detached.body as { version: number }).version;
         const removed = await browserApi(page, `/content/${contentId}?expectedVersion=${version}`, 'DELETE');
         expect(removed.status).toBe(204);
       }

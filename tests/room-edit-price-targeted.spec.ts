@@ -85,7 +85,7 @@ test('targeted room code and formatted weekday/weekend price editing persists sa
     expect(createdRoomRecord).toBeTruthy();
     expect(createdRoomRecord).toMatchObject({ status: 'inactive', capacityVerified: false, unitCount: 0, rate: null });
 
-    const editorUrl = `/admin/hang-phong?property=${qaProperty.id}&room=${createdRoomRecord!.id}`;
+    const editorUrl = `/admin/hang-phong/${createdRoomRecord!.id}?property=${qaProperty.id}`;
     await page.goto(editorUrl);
     await expect(page.getByLabel('Mã hạng phòng *')).toBeEnabled();
     await page.getByLabel('Mã hạng phòng *').fill(' PREMIUM-VILLA-RENAMED ');
@@ -101,6 +101,7 @@ test('targeted room code and formatted weekday/weekend price editing persists sa
     );
     await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
     expect((await firstSave).status()).toBe(200);
+    await expect(page.locator('.admin-toast--success')).toContainText('Đã cập nhật hạng phòng.');
 
     let savedProperty = await browserApi(page, `/properties/${qaProperty.id}`);
     let savedRoom = (savedProperty.body as Property).roomTypes.find((room) => room.id === createdRoomRecord!.id);
@@ -126,6 +127,7 @@ test('targeted room code and formatted weekday/weekend price editing persists sa
     );
     await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
     expect((await secondSave).status()).toBe(200);
+    await expect(page.locator('.admin-toast--success')).toContainText('Đã cập nhật hạng phòng.');
     savedProperty = await browserApi(page, `/properties/${qaProperty.id}`);
     savedRoom = (savedProperty.body as Property).roomTypes.find((room) => room.id === createdRoomRecord!.id);
     expect(savedRoom?.rate).toMatchObject({ baseRateVnd: 700000, weekendRateVnd: 820000 });
@@ -143,17 +145,22 @@ test('targeted room code and formatted weekday/weekend price editing persists sa
     expect((stillInactive.body as Property).roomTypes.find((room) => room.id === createdRoomRecord!.id))
       .toMatchObject({ status: 'inactive', capacityVerified: false, unitCount: 0 });
 
-    // A duplicate code is rejected by the API as HTTP 409, without changing the original.
-    const duplicateRoom = await browserApi(page, `/properties/${qaProperty.id}/rooms`, 'POST', {
-      code: 'ROOM-CODE-TAKEN', name: 'Hạng mã đã dùng', status: 'inactive',
-    });
-    expect([200, 201]).toContain(duplicateRoom.status);
+    // A concurrent server-side update makes the already-open edit form stale.
+    // The subsequent real UI mutation must show a useful global 409 toast.
+    await page.goto(editorUrl);
+    await expect(page.getByLabel('Mã hạng phòng *')).toHaveValue('PREMIUM-VILLA-RENAMED');
     const current = (await browserApi(page, `/properties/${qaProperty.id}`)).body as Property;
     const currentRoom = current.roomTypes.find((room) => room.id === createdRoomRecord!.id)!;
-    const duplicateUpdate = await browserApi(page, `/properties/${qaProperty.id}/rooms/${currentRoom.id}`, 'PATCH', {
-      code: 'ROOM-CODE-TAKEN', name: currentRoom.name, status: 'inactive', expectedVersion: currentRoom.version,
+    const concurrentUpdate = await browserApi(page, `/properties/${qaProperty.id}/rooms/${currentRoom.id}`, 'PATCH', {
+      code: currentRoom.code, name: `${currentRoom.name} external`, status: currentRoom.status,
+      expectedVersion: currentRoom.version,
     });
-    expect(duplicateUpdate.status).toBe(409);
+    expect(concurrentUpdate.status).toBe(200);
+    await page.getByLabel('Tên hạng phòng *').fill('Premium Villa stale QA');
+    await page.getByRole('button', { name: 'Lưu hạng phòng' }).click();
+    await expect(page.locator('.admin-toast--warning')).toBeVisible();
+    await expect(page.locator('.admin-toast--warning')).not.toContainText(/API request failed|Conflict/i);
+    await expect(page.locator('.property-form .settings-screen__message--error')).toBeVisible();
   } finally {
     if (qaPropertyId) {
       const current = await browserApi(page, `/properties/${qaPropertyId}`);

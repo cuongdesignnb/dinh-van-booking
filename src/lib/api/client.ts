@@ -1,3 +1,5 @@
+import { adminMutationSuccess, adminErrorToast, emitAdminToast } from '@/lib/admin-toast-events';
+
 export class ApiError extends Error {
   readonly status: number;
   readonly payload: unknown;
@@ -44,11 +46,19 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   if (init.body && !isFormData && !headers.has('content-type')) headers.set('content-type', 'application/json');
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const isPublicMutation = path === '/auth/login' || path === '/inquiries' || path === '/quotes' || path.startsWith('/quotes/');
-    if (!csrfCookie() || isPublicMutation) await bootstrapCsrf();
+    if (!csrfCookie() || isPublicMutation) {
+      try { await bootstrapCsrf(); } catch (error) { emitAdminToast(adminErrorToast(error)); throw error; }
+    }
     const csrf = csrfCookie();
     if (csrf) headers.set('x-csrf-token', csrf);
   }
-  const response = await fetch(`${browserBase()}${path}`, { ...init, headers, credentials: 'include' });
+  let response: Response;
+  try {
+    response = await fetch(`${browserBase()}${path}`, { ...init, headers, credentials: 'include' });
+  } catch (error) {
+    emitAdminToast(adminErrorToast(error));
+    throw error;
+  }
   const text = await response.text();
   let payload: unknown = null;
   try {
@@ -60,7 +70,12 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     if (response.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/login') && path !== '/auth/me') {
       window.dispatchEvent(new Event('dvb:auth-expired'));
     }
-    throw new ApiError(response.status, payload);
+    const error = new ApiError(response.status, payload);
+    emitAdminToast(adminErrorToast(error));
+    throw error;
+  }
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !path.startsWith('/auth/')) {
+    emitAdminToast({ tone: path.startsWith('/quotes') ? 'info' : 'success', message: adminMutationSuccess(path, method) });
   }
   return payload as T;
 }

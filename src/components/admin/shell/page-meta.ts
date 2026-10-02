@@ -97,5 +97,7 @@ META['/admin/cai-dat'] = {
 
 export function pageMeta(pathname: string): AdminPageMeta {
   if (META[pathname]) return META[pathname];
+  const sectionPath = pathname.split('/').slice(0, 3).join('/');
+  if (META[sectionPath]) return META[sectionPath];
   return META['/admin'];
 }

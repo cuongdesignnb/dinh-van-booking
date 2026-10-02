@@ -1,13 +1,15 @@
 'use client';
 
 import {
-  Activity, AlertTriangle, ArrowDownToLine, BedDouble, CalendarClock, Check, CircleDollarSign,
-  ClipboardList, CreditCard, FileBarChart2, Plus, RefreshCw, Search, Tag, Users, X,
+  Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, BedDouble, CalendarClock, Check, CircleDollarSign,
+  ClipboardList, CreditCard, FileBarChart2, Plus, RefreshCw, Search, Tag, Users,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api/client';
 import { useAdminSession } from '@/components/admin/AdminAuthGate';
+import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 import { AdminPagination, EmptyState, ErrorState, Panel, StatCard, StatusBadge } from '../shared/ui';
 
 type Section = 'dashboard' | 'bookings' | 'inventory' | 'customers' | 'coupons' | 'payments' | 'reports';
@@ -51,8 +53,14 @@ const shiftDay = (value: string, delta: number) => { const date = new Date(`${va
 const statusLabel = (value: string) => STATUS_LABEL[value] ?? value;
 const idempotencyKey = () => crypto.randomUUID();
 
-export function AdminOperationsScreen({ section }: { section: Section }) {
+export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: { section: Section; bookingRouteMode?: 'create' | 'edit'; bookingId?: string }) {
   const { user } = useAdminSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const toast = useAdminToast();
+  const legacyBookingCreate = section === 'bookings' && searchParams.get('action') === 'create';
+  const legacyBookingId = section === 'bookings' ? searchParams.get('selected') : null;
+  const bookingCreateMode = bookingRouteMode === 'create' || (legacyBookingCreate && !bookingRouteMode);
   const can = (permission: string) => user.permissions.includes(permission);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -68,6 +76,7 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
   const [activity, setActivity] = useState<Array<{ id: string; at: string; kind: string; title: string; detail: string | null }>>([]);
   const [bookings, setBookings] = useState<Page<Booking> | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [bookingDetailLoading, setBookingDetailLoading] = useState(false);
   const [bookingQuote, setBookingQuote] = useState<AdminQuote | null>(null);
   const [customers, setCustomers] = useState<Page<Customer> | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -178,6 +187,24 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
 
   useEffect(() => { void load(); }, [load]);
 
+  useEffect(() => {
+    if (section !== 'bookings' || bookingRouteMode) return;
+    if (legacyBookingCreate) router.replace('/admin/dat-phong/them');
+    else if (legacyBookingId) router.replace(`/admin/dat-phong/${encodeURIComponent(legacyBookingId)}`);
+  }, [bookingRouteMode, legacyBookingCreate, legacyBookingId, router, section]);
+
+  useEffect(() => {
+    if (section !== 'bookings' || bookingRouteMode !== 'edit' || !bookingId) return;
+    let current = true;
+    setBookingDetailLoading(true);
+    setBooking(null);
+    apiRequest<Booking>(`/admin/bookings/${encodeURIComponent(bookingId)}`)
+      .then((result) => { if (current) setBooking(result); })
+      .catch((reason) => { if (current) setError(errorMessage(reason)); })
+      .finally(() => { if (current) setBookingDetailLoading(false); });
+    return () => { current = false; };
+  }, [bookingId, bookingRouteMode, section]);
+
   const run = async (action: () => Promise<unknown>, success: string) => {
     setBusy(true); setError(''); setNotice('');
     try { await action(); setNotice(success); await load(); }
@@ -185,11 +212,7 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
     finally { setBusy(false); }
   };
 
-  const openBooking = async (id: string) => {
-    setError(''); setBooking(null);
-    try { setBooking(await apiRequest<Booking>(`/admin/bookings/${id}`)); }
-    catch (reason) { setError(errorMessage(reason)); }
-  };
+  const openBooking = (id: string) => router.push(`/admin/dat-phong/${encodeURIComponent(id)}`);
 
   const updateBookingForm = (changes: Partial<typeof bookingForm>) => {
     setBookingForm((old) => ({ ...old, ...changes }));
@@ -198,7 +221,7 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
 
   const createBookingQuote = async (event: FormEvent) => {
     event.preventDefault();
-    if (!bookingForm.roomTypeId) { setError('Chọn hạng phòng trước.'); return; }
+    if (!bookingForm.roomTypeId) { setError('Chọn hạng phòng trước.'); toast.error('Chọn hạng phòng trước khi kiểm tra giá và tồn.'); return; }
     await run(async () => {
       const quote = await apiRequest<AdminQuote>('/quotes', { method: 'POST', body: JSON.stringify({
         roomTypeId: bookingForm.roomTypeId, checkIn: bookingForm.checkIn, checkOut: bookingForm.checkOut,
@@ -217,6 +240,7 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
         ...(bookingForm.email ? { email: bookingForm.email } : {}), ...(bookingForm.note ? { note: bookingForm.note } : {}),
       }) });
       setBooking(created); setBookingQuote(null); setShowCreate(false);
+      router.replace(`/admin/dat-phong/${encodeURIComponent(created.id)}`);
     }, 'Đã tạo yêu cầu và giữ chỗ tạm thời. Đơn chưa được xác nhận hay thanh toán.');
   };
 
@@ -362,7 +386,8 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
   return (
     <section className="admin-operations" data-admin-section={section}>
       <header className="admin-operations__head">
-        <div><h1>{SECTION_TITLE[section]}</h1><p>Dữ liệu nghiệp vụ lấy trực tiếp từ API và PostgreSQL; không dùng số liệu demo.</p></div>
+        <div><h1>{section === 'bookings' && bookingCreateMode ? 'Tạo yêu cầu đặt phòng' : section === 'bookings' && bookingId ? 'Chi tiết đặt phòng' : SECTION_TITLE[section]}</h1><p>Dữ liệu nghiệp vụ lấy trực tiếp từ API và PostgreSQL; không dùng số liệu demo.</p></div>
+        {(bookingCreateMode || bookingId) && <button type="button" className="abtn abtn--ghost" onClick={() => router.push('/admin/dat-phong')}><ArrowLeft size={15} aria-hidden="true" /> Quay lại danh sách</button>}
         <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
       </header>
       {error && <ErrorState title="Không thực hiện được" text={error} onRetry={() => void load()} />}
@@ -394,8 +419,8 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
       </>}
 
       {!loading && section === 'bookings' && <>
-        <Panel icon={<ClipboardList size={18} />} title="Danh sách yêu cầu đặt phòng" action={can('booking.write') ? <button type="button" className="abtn abtn--primary abtn--sm" onClick={() => setShowCreate((value) => !value)}><Plus size={15} /> Tạo yêu cầu</button> : undefined}>
-          {showCreate && can('booking.write') && <form className="admin-operations__form" onSubmit={createBookingQuote}>
+        {!bookingId && <Panel icon={<ClipboardList size={18} />} title={bookingCreateMode || showCreate ? 'Tạo yêu cầu đặt phòng' : 'Danh sách yêu cầu đặt phòng'} action={can('booking.write') && !bookingCreateMode ? <Link href="/admin/dat-phong/them" className="abtn abtn--primary abtn--sm"><Plus size={15} /> Tạo yêu cầu</Link> : undefined}>
+          {(bookingCreateMode || showCreate) && can('booking.write') && <form className="admin-operations__form" onSubmit={createBookingQuote}>
             <label className="afield"><span>Hạng phòng</span><select className="ainput" required value={bookingForm.roomTypeId} onChange={(e) => updateBookingForm({ roomTypeId: e.target.value })}><option value="">Chọn hạng phòng…</option>{roomTypes.map((room) => <option key={room.id} value={room.id}>{room.propertyName} · {room.name}</option>)}</select></label>
             <label className="afield"><span>Nhận phòng</span><input className="ainput" required type="date" value={bookingForm.checkIn} onChange={(e) => updateBookingForm({ checkIn: e.target.value })} /></label>
             <label className="afield"><span>Trả phòng</span><input className="ainput" required type="date" min={shiftDay(bookingForm.checkIn, 1)} value={bookingForm.checkOut} onChange={(e) => updateBookingForm({ checkOut: e.target.value })} /></label>
@@ -408,13 +433,16 @@ export function AdminOperationsScreen({ section }: { section: Section }) {
             <label className="afield"><span>Mã giảm giá</span><input className="ainput" value={bookingForm.couponCode} onChange={(e) => updateBookingForm({ couponCode: e.target.value })} /></label>
             <label className="afield admin-operations__span"><span>Ghi chú</span><input className="ainput" value={bookingForm.note} onChange={(e) => updateBookingForm({ note: e.target.value })} /></label>
             {bookingQuote && <div className="admin-operations__span admin-operations__quote"><div><span>Báo giá máy chủ</span><strong>{bookingQuote.snapshot.propertyName} · {bookingQuote.snapshot.roomName}</strong></div><div><span>Tạm tính</span><strong>{money(bookingQuote.subtotalVnd)}</strong></div><div><span>Giảm giá</span><strong>−{money(bookingQuote.discountVnd)}</strong></div><div><span>Tổng tiền</span><strong>{money(bookingQuote.totalVnd)}</strong></div><div><span>Cần thanh toán ban đầu</span><strong>{money(bookingQuote.dueNowVnd)}</strong></div><small>Báo giá giữ trong thời gian ngắn đến {dateTimeLabel(bookingQuote.expiresAt)}. Chỉ giữ chỗ sau khi bạn bấm xác nhận.</small></div>}
-            <div className="admin-operations__span admin-operations__form-actions"><button type="button" className="abtn abtn--ghost" onClick={() => { setShowCreate(false); setBookingQuote(null); }}>Đóng</button><button type="submit" className="abtn abtn--ghost" disabled={busy || !roomTypes.length}>Kiểm tra giá & tồn</button>{bookingQuote && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void createBooking()}>Xác nhận tạo yêu cầu & giữ chỗ</button>}<small>Đơn tạo ra ở trạng thái chờ xác nhận; chưa phải thanh toán.</small></div>
+            <div className="admin-operations__span admin-operations__form-actions"><button type="button" className="abtn abtn--ghost" onClick={() => { setShowCreate(false); setBookingQuote(null); router.push('/admin/dat-phong'); }}>Quay lại danh sách</button><button type="submit" className="abtn abtn--ghost" disabled={busy || !roomTypes.length}>Kiểm tra giá & tồn</button>{bookingQuote && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void createBooking()}>Xác nhận tạo yêu cầu & giữ chỗ</button>}<small>Đơn tạo ra ở trạng thái chờ xác nhận; chưa phải thanh toán.</small></div>
           </form>}
+          {!bookingCreateMode && !showCreate && <>
           <div className="admin-operations__filters"><label className="admin-operations__search"><Search size={16} /><input aria-label="Tìm booking" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder="Mã đơn, tên khách, số điện thoại" /></label><select className="ainput" aria-label="Lọc trạng thái" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}><option value="">Tất cả trạng thái</option>{['pending_confirmation', 'confirmed', 'checked_in', 'completed', 'cancelled', 'expired', 'no_show'].map((item) => <option key={item} value={item}>{statusLabel(item)}</option>)}</select><select className="ainput" aria-label="Lọc cơ sở lưu trú" value={bookingPropertyId} onChange={(e) => { setPage(1); setBookingPropertyId(e.target.value); }}><option value="">Tất cả nơi lưu trú</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select><label className="afield"><span>Nhận phòng từ</span><input className="ainput" type="date" value={bookingFrom} onChange={(e) => { setPage(1); setBookingFrom(e.target.value); }} /></label><label className="afield"><span>đến</span><input className="ainput" type="date" min={bookingFrom || undefined} value={bookingTo} onChange={(e) => { setPage(1); setBookingTo(e.target.value); }} /></label></div>
           {bookings?.items.length ? <div className="admin-operations__table-wrap"><table className="atable"><thead><tr><th>Mã đơn / khách</th><th>Ngày nghỉ</th><th>Trạng thái</th><th>Tổng tiền</th><th>Ngày tạo</th><th></th></tr></thead><tbody>{bookings.items.map((item) => <tr key={item.id}><td><button type="button" className="admin-operations__row-link" onClick={() => void openBooking(item.id)}>{item.publicCode}</button><small>{item.customer?.fullName} · {item.customer?.phone ?? 'Chưa có SĐT'}</small></td><td>{dateLabel(item.checkIn)} – {dateLabel(item.checkOut)}</td><td><StatusBadge label={statusLabel(item.bookingStatus)} tone={STATUS_TONE[item.bookingStatus] ?? 'gray'} /></td><td>{money(item.totalVnd)}</td><td>{dateLabel(item.createdAt)}</td><td><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openBooking(item.id)}>Chi tiết</button></td></tr>)}</tbody></table></div> : <EmptyState title="Chưa có yêu cầu đặt phòng." text="Các yêu cầu thật từ website hoặc quản trị sẽ hiển thị tại đây." />}
           {bookings && <AdminPagination page={bookings.page} pages={pages(bookings)} onChange={setPage} />}
-        </Panel>
-        {booking && <Panel icon={<ClipboardList size={18} />} title={`Chi tiết ${booking.publicCode}`} action={<button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => setBooking(null)}><X size={14} /> Đóng</button>}>
+          </>}
+        </Panel>}
+        {bookingId && !booking && <div className="acard apending">{bookingDetailLoading ? 'Đang tải đặt phòng…' : 'Không tìm thấy đặt phòng.'}</div>}
+        {booking && (bookingId || !bookingCreateMode) && <Panel icon={<ClipboardList size={18} />} title={`Chi tiết ${booking.publicCode}`} action={<button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => router.push('/admin/dat-phong')}><ArrowLeft size={14} /> Danh sách</button>}>
           <div className="admin-operations__detail-grid"><div><span>Khách</span><strong>{booking.customer?.fullName} · {booking.customer?.phone}</strong></div><div><span>Thời gian</span><strong>{dateLabel(booking.checkIn)} – {dateLabel(booking.checkOut)} · {booking.adults} người lớn / {booking.children} trẻ em</strong></div><div><span>Trạng thái</span><strong>{statusLabel(booking.bookingStatus)}</strong></div><div><span>Tổng / cần cọc</span><strong>{money(booking.totalVnd)} / {money(booking.dueNowVnd)}</strong></div><div><span>Giữ chỗ đến</span><strong>{dateLabel(booking.expiresAt)}</strong></div></div>
           <h3>Dòng dịch vụ</h3><ul className="admin-operations__plain-list">{booking.lines?.map((line) => <li key={line.id}>{line.label} · {line.quantity} · {money(line.netVnd)}</li>)}</ul>
           <h3>Thanh toán</h3><ul className="admin-operations__plain-list">{booking.payments?.length ? booking.payments.map((item) => <li key={item.id}>{money(item.amountVnd)} · {item.method} · {statusLabel(item.status)}</li>) : <li>Chưa có thanh toán được ghi nhận.</li>}</ul>

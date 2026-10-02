@@ -8,6 +8,7 @@ import { slugFromTitle } from '@/lib/slug';
 import { ROOM_UNIT_KINDS } from '@/lib/room-unit-kind';
 import { ROOM_AMENITIES } from '@/lib/room-amenities';
 import { formatVndInput, normalizeVndInput, parseVndInput } from '@/lib/vnd-input';
+import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 import { AlbumEditor, type AlbumItem } from '../media/AlbumEditor';
 
 export type PropertyRoom = {
@@ -76,9 +77,10 @@ function suggestedRoomCode(name: string, existingRooms: Pick<PropertyRoom, 'name
 export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existingRooms = [], room, onEditExisting, onSaved, onCancel }: {
   propertyId: string; propertyName: string; propertyKind?: string; existingRooms?: PropertyRoom[];
   room?: PropertyRoom; onEditExisting: (roomId: string) => void;
-  onSaved: (addAnother?: boolean) => Promise<void>; onCancel: () => void;
+  onSaved: (savedRoomId: string, addAnother?: boolean) => Promise<void>; onCancel: () => void;
 }) {
   const [form, setForm] = useState<RoomForm>(() => initial(room));
+  const toast = useAdminToast();
   const [codeTouched, setCodeTouched] = useState(Boolean(room));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,29 +96,35 @@ export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existin
     event.preventDefault();
     const addAnother = !room && ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null)?.value === 'add-another';
     if (duplicateRoom) {
-      setError(`Hạng “${duplicateRoom.name}” đã có tại ${propertyName}. Hãy sửa hạng đó thay vì tạo thêm bản trùng.`);
+      const message = `Hạng “${duplicateRoom.name}” đã có tại ${propertyName}. Hãy sửa hạng đó thay vì tạo thêm bản trùng.`;
+      setError(message); toast.error(message);
       return;
     }
     if (form.capacityVerified && (!form.maxAdults.trim() || !form.maxChildren.trim())) {
-      setError('Hãy nhập cả số người lớn và trẻ em tối đa trước khi xác nhận sức chứa.');
+      const message = 'Hãy nhập cả số người lớn và trẻ em tối đa trước khi xác nhận sức chứa.';
+      setError(message); toast.error(message);
       return;
     }
     const rateVnd = parseVndInput(form.rateVnd);
     const weekendRateVnd = parseVndInput(form.weekendRateVnd);
     if (form.rateVnd.trim() && rateVnd === undefined) {
-      setError('Giá ngày thường phải là số VND nguyên không âm, ví dụ 650.000.');
+      const message = 'Giá ngày thường phải là số VND nguyên không âm, ví dụ 650.000.';
+      setError(message); toast.error(message);
       return;
     }
     if (form.weekendRateVnd.trim() && weekendRateVnd === undefined) {
-      setError('Giá cuối tuần phải là số VND nguyên không âm, ví dụ 750.000.');
+      const message = 'Giá cuối tuần phải là số VND nguyên không âm, ví dụ 750.000.';
+      setError(message); toast.error(message);
       return;
     }
     if (form.status === 'active' && !form.capacityVerified) {
-      setError('Cần xác minh sức chứa riêng cho hạng phòng này trước khi mở bán.');
+      const message = 'Cần xác minh sức chứa riêng cho hạng phòng này trước khi mở bán.';
+      setError(message); toast.error(message);
       return;
     }
     if (form.status === 'active' && (!Number(form.unitCount) || rateVnd === undefined)) {
-      setError('Muốn mở hạng phòng, hãy nhập số phòng thực tế và giá ngày thường đã xác minh. Có thể lưu tạm ẩn trước.');
+      const message = 'Muốn mở hạng phòng, hãy nhập số phòng thực tế và giá ngày thường đã xác minh. Có thể lưu tạm ẩn trước.';
+      setError(message); toast.error(message);
       return;
     }
     setSaving(true); setError(null);
@@ -137,9 +145,12 @@ export function RoomTypeEditor({ propertyId, propertyName, propertyKind, existin
         breakfastIncluded: form.breakfastIncluded, galleryMediaIds: form.gallery.map((item) => item.mediaId),
         amenityCodes: form.amenityCodes,
       };
-      if (room) await apiRequest(`/properties/${propertyId}/rooms/${room.id}`, { method: 'PATCH', body: JSON.stringify({ ...common, status: form.status, expectedVersion: room.version }) });
-      else await apiRequest(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, status: form.status }) });
-      await onSaved(addAnother);
+      const saved = room
+        ? await apiRequest<{ roomTypes: PropertyRoom[] }>(`/properties/${propertyId}/rooms/${room.id}`, { method: 'PATCH', body: JSON.stringify({ ...common, status: form.status, expectedVersion: room.version }) })
+        : await apiRequest<{ roomTypes: PropertyRoom[] }>(`/properties/${propertyId}/rooms`, { method: 'POST', body: JSON.stringify({ ...common, status: form.status }) });
+      const savedRoom = saved.roomTypes.find((item) => room ? item.id === room.id : item.code === common.code);
+      if (!savedRoom) throw new Error('Không xác định được hạng phòng vừa lưu.');
+      await onSaved(savedRoom.id, addAnother);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Không thể lưu hạng phòng.'); }
     finally { setSaving(false); }
   };

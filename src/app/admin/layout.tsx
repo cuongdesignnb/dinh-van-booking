@@ -14,6 +14,7 @@ import '@/styles/admin-ai.css';
 import '@/styles/admin-media.css';
 import '@/styles/admin-operations.css';
 import '@/styles/admin-responsive.css';
+import '@/styles/admin-toast.css';
 
 export const metadata: Metadata = {
   title: 'Quản trị — Đinh Vân Booking',

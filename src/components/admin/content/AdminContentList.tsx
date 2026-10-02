@@ -22,6 +22,7 @@ import { AdminSlugField } from '@/components/admin/shared/AdminSlugField';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { MediaPicker } from '../media/MediaPicker';
 import { AlbumEditor } from '../media/AlbumEditor';
+import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 
 type ContentKind = 'stay' | 'combo' | 'destination' | 'article' | 'page';
 type MediaRef = { mediaId: string; role: string; position: number; url: string };
@@ -179,12 +180,18 @@ function formFromItem(item: ContentItem, kind: ContentKind): ContentForm {
   };
 }
 
-export function AdminContentList({ kind, title }: { kind: ContentKind; title: string }) {
+export function AdminContentList({ kind, title, routeMode, routeId, basePath: requestedBasePath }: {
+  kind: ContentKind; title: string; routeMode?: 'create' | 'edit'; routeId?: string; basePath?: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const createMode = searchParams.get('action') === 'create';
-  const editId = searchParams.get('edit');
+  const toast = useAdminToast();
+  const legacyCreate = searchParams.get('action') === 'create';
+  const legacyEditId = searchParams.get('edit');
+  const basePath = requestedBasePath ?? pathname;
+  const createMode = routeMode === 'create' || legacyCreate;
+  const editId = routeMode === 'edit' ? routeId ?? null : legacyEditId;
   const editorMode = createMode || Boolean(editId);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,6 +217,12 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
+    if (routeMode) return;
+    if (legacyCreate) router.replace(`${basePath}/them`);
+    else if (legacyEditId) router.replace(`${basePath}/${encodeURIComponent(legacyEditId)}`);
+  }, [basePath, legacyCreate, legacyEditId, routeMode, router]);
+
+  useEffect(() => {
     if (!createMode) {
       initializedCreateFor.current = null;
       return;
@@ -220,7 +233,7 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
     setEditorKey((current) => current + 1);
   }, [createMode, kind, pathname]);
 
-  const goToList = () => router.replace(pathname, { scroll: false });
+  const goToList = () => router.replace(basePath, { scroll: false });
 
   const closeEditor = () => {
     setForm(null);
@@ -234,7 +247,7 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
   const openCreate = () => {
     initializedCreateFor.current = pathname;
     setForm(newForm(kind)); setEditorKey((current) => current + 1); setError(null); setNotice(null);
-    router.push(`${pathname}?action=create`, { scroll: false });
+    router.push(`${basePath}/them`, { scroll: false });
   };
 
   const openEdit = useCallback(async (item: ContentItem, duplicate = false, navigate = true) => {
@@ -246,10 +259,10 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
       setForm(next); setEditorKey((current) => current + 1);
       setNotice(duplicate ? 'Đã nạp bản sao. Bấm “Lưu bản nháp” để tạo bản ghi mới.' : null);
       if (navigate) {
-        router.push(duplicate ? `${pathname}?action=create` : `${pathname}?edit=${encodeURIComponent(item.id)}`, { scroll: false });
+        router.push(duplicate ? `${basePath}/them` : `${basePath}/${encodeURIComponent(item.id)}`, { scroll: false });
       }
     } catch (reason) { setError(errorMessage(reason)); } finally { setBusy(null); }
-  }, [kind, pathname, router]);
+  }, [basePath, kind, router]);
 
   useEffect(() => {
     if (!editId || loading || form?.id === editId || busy === editId) return;
@@ -268,6 +281,10 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); if (!form) return;
+    if (!form.title.trim()) {
+      const message = 'Nhập tiêu đề trước khi lưu.';
+      setError(message); toast.error(message); return;
+    }
     setSaving(true); setError(null); setNotice(null);
     try {
       let media = form.media;
@@ -293,8 +310,9 @@ export function AdminContentList({ kind, title }: { kind: ContentKind; title: st
         ? await apiRequest<ContentItem>(`/content/${encodeURIComponent(form.id)}`, { method: 'PUT', body: JSON.stringify({ ...common, expectedVersion: form.version }) })
         : await apiRequest<ContentItem>('/content', { method: 'POST', body: JSON.stringify({ kind, ...common }) });
       setItems((current) => form.id ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]);
-      setForm(null); setNotice(form.id ? 'Đã lưu thay đổi và tạo revision mới.' : 'Đã tạo bản nháp thật trong PostgreSQL.');
-      goToList();
+      setForm(formFromItem(saved, kind));
+      setNotice(form.id ? 'Đã lưu thay đổi và tạo revision mới.' : 'Đã tạo bản nháp.');
+      if (!form.id) router.replace(`${basePath}/${encodeURIComponent(saved.id)}`);
     } catch (reason) {
       setError(errorMessage(reason));
     } finally { setSaving(false); }

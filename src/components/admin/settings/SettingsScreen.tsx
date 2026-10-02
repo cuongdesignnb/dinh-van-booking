@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
+import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 import { settingGroupLabel, SettingsFormEditor, validateSetting } from './SettingsFormEditor';
 import { AiSettingsPanel } from './AiSettingsPanel';
 
@@ -52,6 +53,7 @@ function sameValue(left: unknown, right: unknown): boolean {
 }
 
 export function SettingsScreen() {
+  const toast = useAdminToast();
   const [payload, setPayload] = useState<SettingsPayload | null>(null);
   const [seoPolicy, setSeoPolicy] = useState<SeoPolicyPayload | null>(null);
   const [group, setGroup] = useState('all');
@@ -89,6 +91,7 @@ export function SettingsScreen() {
     const issue = validateSetting(item.key, value);
     if (issue) {
       setMessage({ tone: 'error', text: issue });
+      toast.error(issue);
       return;
     }
     setBusyKey(item.key);
