@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { CalendarDays } from 'lucide-react';
 import { FaqList } from '@/components/shared/FaqList';
 import { ReviewsStrip } from '@/components/shared/ReviewsStrip';
 import { PageShell } from '@/components/layout/PageShell';
@@ -75,6 +77,7 @@ export default async function StaysPage({
   return (
     <PageShell className="page-stays">
       <StaysHero config={pageContent} image={publicAsset(site, pageContent.heroImageMediaId)} />
+        <div className="stays-availability-cta content-shell"><Link href="/lich-phong"><CalendarDays size={16} aria-hidden="true" /> Tra cứu tồn phòng theo từng đêm</Link></div>
         <StaysExplorer
           stays={stays}
           mapImage={mapImage}

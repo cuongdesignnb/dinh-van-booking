@@ -295,6 +295,13 @@ export const SETTING_DEFINITIONS: SettingDefinition[] = [
     schemaVersion: 1,
     defaultValue: { usesDemoData: false, demoBanner: null },
   }),
+  def({ key: 'partnerPortal.enabled', group: 'ops', label: 'Cổng đối tác', description: 'Cho phép đối tác đăng ký và sử dụng các chức năng đã được duyệt. Mặc định tắt.', isPublic: false, schemaVersion: 1, defaultValue: false }),
+  def({ key: 'inventoryCalendar.enabled', group: 'ops', label: 'Lịch quỹ phòng', description: 'Bật lịch tồn theo hạng phòng; không bật lịch gán phòng vật lý.', isPublic: false, schemaVersion: 1, defaultValue: false }),
+  def({ key: 'sheetsSync.enabled', group: 'ops', label: 'Đồng bộ Google Sheets', description: 'Chỉ chạy khi đã cấp đúng workbook sandbox và xác nhận quyền.', isPublic: false, schemaVersion: 1, defaultValue: false }),
+  def({ key: 'sheetsSync.importEnabled', group: 'ops', label: 'Nhận lệnh từ Sheets', description: 'Cho phép nhập lệnh tồn từ vùng input đã được liên kết.', isPublic: false, schemaVersion: 1, defaultValue: false }),
+  def({ key: 'publicAvailability.enabled', group: 'ops', label: 'Tra cứu tồn công khai', description: 'Chỉ hiển thị tồn khi từng đêm đủ điều kiện công khai và còn mới.', isPublic: false, schemaVersion: 1, defaultValue: false }),
+  def({ key: 'unitCalendar.enabled', group: 'ops', label: 'Lịch gán phòng vật lý', description: 'Chưa triển khai; để tắt cho tới khi có nghiệp vụ gán RoomUnit đầy đủ.', isPublic: false, schemaVersion: 1, defaultValue: false }),
+  def({ key: 'inventory.freshness', group: 'ops', label: 'Ngưỡng xác nhận tồn', description: 'Dữ liệu quá ngưỡng được đánh dấu cũ và không được chào bán như tồn chắc chắn.', isPublic: false, schemaVersion: 1, defaultValue: { nearTermDays: 7, nearTermFreshHours: 24, fartherFreshDays: 7 } }),
 ];
 
 export const SETTINGS_BY_KEY = new Map(SETTING_DEFINITIONS.map((d) => [d.key, d]));

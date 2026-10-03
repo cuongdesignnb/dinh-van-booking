@@ -13,6 +13,8 @@ import { NavigationModule } from './navigation/navigation.module';
 import { AiModule } from './ai/ai.module';
 import { AdminOperationsModule } from './admin-operations/admin-operations.module';
 import { loadConfig } from './common/config/env';
+import { PartnerModule } from './partners/partner.module';
+import { SheetsModule } from './sheets/sheets.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { loadConfig } from './common/config/env';
     NavigationModule,
     AiModule,
     AdminOperationsModule,
+    PartnerModule,
+    SheetsModule,
     HealthModule,
   ],
 })

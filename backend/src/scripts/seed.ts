@@ -46,6 +46,11 @@ async function main(): Promise<void> {
     'user.read': 'Xem tài khoản nhân sự',
     'user.write': 'Tạo, sửa, khoá tài khoản nhân sự',
     'audit.read': 'Xem nhật ký thao tác',
+    'partner.read': 'Xem hồ sơ đối tác và yêu cầu xác minh',
+    'partner.review': 'Duyệt, yêu cầu bổ sung hoặc từ chối hồ sơ đối tác',
+    'partner.grant': 'Cấp và thu hồi quyền đối tác theo cơ sở',
+    'sheets.read': 'Xem trạng thái và kết quả đồng bộ Sheets',
+    'sheets.manage': 'Quản lý workbook, binding và luồng đồng bộ Sheets',
   };
 
   for (const code of Object.values(PERMISSIONS)) {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AdminOperationsController, PublicQuotesController } from './admin-operations.controller';
 import { AdminOperationsService } from './admin-operations.service';
+import { InventoryModule } from '../inventory/inventory.module';
 
-@Module({ controllers: [AdminOperationsController, PublicQuotesController], providers: [AdminOperationsService], exports: [AdminOperationsService] })
+@Module({ imports: [InventoryModule], controllers: [AdminOperationsController, PublicQuotesController], providers: [AdminOperationsService], exports: [AdminOperationsService] })
 export class AdminOperationsModule {}

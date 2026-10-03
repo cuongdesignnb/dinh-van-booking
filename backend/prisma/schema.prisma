@@ -38,6 +38,12 @@ model User {
   bookingEvents BookingEvent[]
   payments      Payment[]     @relation("PaymentVerifier")
   refunds       Refund[]      @relation("RefundApprover")
+  partnerApplications         PartnerApplication[]     @relation("PartnerApplicant")
+  partnerMemberships          PartnerMembership[]
+  partnerOrganizationsCreated PartnerOrganization[]    @relation("PartnerOrganizationCreator")
+  partnerRevisionsAuthored    PartnerProfileRevision[] @relation("PartnerRevisionAuthor")
+  partnerRevisionsReviewed    PartnerProfileRevision[] @relation("PartnerRevisionReviewer")
+  partnerNotifications        PartnerNotification[]
 
   @@map("users")
 }
@@ -156,11 +162,14 @@ model MediaAsset {
   /// Derived renditions (thumbnails) keyed by name.
   renditions       Json     @default("{}")
   isDemo           Boolean  @default(false) @map("is_demo")
+  ownerOrganizationId String?  @map("owner_organization_id") @db.Uuid
+  uploadedById        String?  @map("uploaded_by_id") @db.Uuid
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   contentMedia ContentMedia[]
   ogForContent ContentNode[]  @relation("ContentOgMedia")
+  ownerOrganization PartnerOrganization? @relation(fields: [ownerOrganizationId], references: [id], onDelete: SetNull)
 
   @@index([sha256])
   @@map("media_assets")
@@ -411,6 +420,7 @@ model Supplier {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   properties Property[]
+  partnerOrganization PartnerOrganization?
 
   @@map("suppliers")
 }
@@ -441,6 +451,10 @@ model Property {
   roomTypes RoomType[]
   amenities PropertyAmenity[]
   addons    AddonPropertyScope[]
+  partnerClaims    PropertyAccessClaim[]
+  partnerGrants    PartnerPropertyGrant[]
+  partnerRevisions PartnerProfileRevision[]
+  sheetBindings    SheetPropertyBinding[]
 
   @@map("properties")
 }
@@ -483,6 +497,8 @@ model RoomType {
   maxChildren  Int      @default(0) @map("max_children")
   maxOccupancy Int      @map("max_occupancy")
   capacityVerified Boolean @default(false) @map("capacity_verified")
+  inventoryScope    String   @default("ALLOTMENT") @map("inventory_scope")
+  approvedPoolLimit Int?     @map("approved_pool_limit")
   bedSummary   String?  @map("bed_summary")
   areaSqm      Int?     @map("area_sqm")
   status       String   @default("active")
@@ -592,6 +608,9 @@ model InventoryDay {
   stopSell      Boolean  @default(false) @map("stop_sell")
   version       Int      @default(1)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  lastConfirmedAt     DateTime? @map("last_confirmed_at") @db.Timestamptz(3)
+  lastConfirmedById   String?   @map("last_confirmed_by_id") @db.Uuid
+  lastConfirmedSource String?   @map("last_confirmed_source")
 
   roomType    RoomType                    @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   blockNights InventoryBlockNight[]
@@ -609,6 +628,9 @@ model InventoryBlock {
   createdBy String?   @map("created_by") @db.Uuid
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   releasedAt DateTime? @map("released_at") @db.Timestamptz(3)
+  ownerOrganizationId String?   @map("owner_organization_id") @db.Uuid
+  sourceKey           String?   @unique @map("source_key")
+  version             Int       @default(1)
 
   nights InventoryBlockNight[]
 
@@ -1240,6 +1262,365 @@ model OutboxEvent {
 
   @@index([processedAt, availableAt])
   @@map("outbox_events")
+}
+
+/// Partner identities deliberately use membership rows rather than staff roles.
+model PartnerOrganization {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String
+  legalName          String?  @map("legal_name")
+  contactName        String   @map("contact_name")
+  email              String
+  phone              String
+  address            String?
+  organizationType   String   @default("property_owner") @map("organization_type")
+  status             String   @default("pending_review")
+  verificationStatus String   @default("manual_review") @map("verification_status")
+  supplierId         String?  @unique @map("supplier_id") @db.Uuid
+  createdById        String   @map("created_by_id") @db.Uuid
+  version            Int      @default(1)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  supplier      Supplier?                @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  createdBy     User                     @relation("PartnerOrganizationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  memberships   PartnerMembership[]
+  applications  PartnerApplication[]
+  claims        PropertyAccessClaim[]
+  grants        PartnerPropertyGrant[]
+  revisions     PartnerProfileRevision[]
+  notifications PartnerNotification[]
+  mediaAssets   MediaAsset[]
+  rateLimits    PartnerRateLimit[]
+  sheetBindings SheetPropertyBinding[]
+
+  @@index([status, createdAt])
+  @@map("partner_organizations")
+}
+
+model PartnerApplication {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  submittedName  String    @map("submitted_name")
+  submittedEmail String    @map("submitted_email")
+  submittedPhone String    @map("submitted_phone")
+  submittedAt    DateTime  @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  status         String    @default("pending")
+  reviewerId     String?   @map("reviewer_id") @db.Uuid
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(3)
+  reviewNote     String?   @map("review_note")
+  version        Int       @default(1)
+
+  user         User                @relation("PartnerApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([status, submittedAt])
+  @@map("partner_applications")
+}
+
+model PartnerMembership {
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  role           String    @default("owner")
+  status         String    @default("active")
+  grantedById    String?   @map("granted_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(3)
+  version        Int       @default(1)
+
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@index([userId, status])
+  @@map("partner_memberships")
+}
+
+model PropertyAccessClaim {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  propertyId     String    @map("property_id") @db.Uuid
+  requestedById  String    @map("requested_by_id") @db.Uuid
+  status         String    @default("pending")
+  reason         String?
+  reviewerId     String?   @map("reviewer_id") @db.Uuid
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(3)
+  reviewNote     String?   @map("review_note")
+  version        Int       @default(1)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("property_access_claims")
+}
+
+model PartnerPropertyGrant {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  propertyId        String    @map("property_id") @db.Uuid
+  claimId           String?   @unique @map("claim_id") @db.Uuid
+  status            String    @default("active")
+  canReadInventory  Boolean   @default(true) @map("can_read_inventory")
+  canWriteInventory Boolean   @default(false) @map("can_write_inventory")
+  canEditRates      Boolean   @default(false) @map("can_edit_rates")
+  canEditProfile    Boolean   @default(false) @map("can_edit_profile")
+  canUploadMedia    Boolean   @default(false) @map("can_upload_media")
+  roomTypeScope     Json      @default("[]") @map("room_type_scope")
+  approvedById      String?   @map("approved_by_id") @db.Uuid
+  approvedAt        DateTime? @map("approved_at") @db.Timestamptz(3)
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz(3)
+  version           Int       @default(1)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, propertyId])
+  @@index([propertyId, status])
+  @@index([organizationId, status])
+  @@map("partner_property_grants")
+}
+
+model PartnerProfileRevision {
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  propertyId         String    @map("property_id") @db.Uuid
+  roomTypeId         String?   @map("room_type_id") @db.Uuid
+  targetRatePlanId   String?   @map("target_rate_plan_id") @db.Uuid
+  revision           Int
+  baseVersion        Int       @map("base_version")
+  contentBaseVersion Int?      @map("content_base_version")
+  proposed           Json
+  status             String    @default("pending")
+  submittedById      String    @map("submitted_by_id") @db.Uuid
+  reviewedById       String?   @map("reviewed_by_id") @db.Uuid
+  submittedAt        DateTime  @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  reviewedAt         DateTime? @map("reviewed_at") @db.Timestamptz(3)
+  reviewNote         String?   @map("review_note")
+  idempotencyKey     String?   @map("idempotency_key")
+  requestHash        String?   @map("request_hash")
+  version            Int       @default(1)
+
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  author       User                @relation("PartnerRevisionAuthor", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewer     User?               @relation("PartnerRevisionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, propertyId, revision])
+  @@unique([organizationId, submittedById, idempotencyKey], map: "partner_profile_revisions_idempotency_scope_key")
+  @@index([status, submittedAt])
+  @@map("partner_profile_revisions")
+}
+
+model PartnerNotification {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  kind           String
+  title          String
+  body           String
+  readAt         DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  dedupeKey      String?   @unique @map("dedupe_key")
+
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("partner_notifications")
+}
+
+model InventoryIntegrityIncident {
+  id                   String    @id @default(uuid()) @db.Uuid
+  roomTypeId           String    @map("room_type_id") @db.Uuid
+  stayDate             DateTime  @map("stay_date") @db.Date
+  kind                 String
+  recordedBlockedCount Int       @map("recorded_blocked_count")
+  ledgerBlockedCount   Int       @map("ledger_blocked_count")
+  detectedAt           DateTime  @default(now()) @map("detected_at") @db.Timestamptz(3)
+  resolvedAt           DateTime? @map("resolved_at") @db.Timestamptz(3)
+  detail               String?
+
+  @@index([resolvedAt, detectedAt])
+  @@map("inventory_integrity_incidents")
+}
+
+model InventoryChange {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  roomTypeId     String   @map("room_type_id") @db.Uuid
+  stayDate       DateTime @map("stay_date") @db.Date
+  source         String
+  command        String
+  idempotencyKey String   @map("idempotency_key")
+  fromSnapshot   Json     @map("from_snapshot")
+  toSnapshot     Json     @map("to_snapshot")
+  actorId        String?  @map("actor_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([source, idempotencyKey, roomTypeId, stayDate])
+  @@index([roomTypeId, stayDate, createdAt])
+  @@map("inventory_changes")
+}
+
+model PartnerRateLimit {
+  organizationId  String    @map("organization_id") @db.Uuid
+  scope           String
+  subjectHash     String    @map("subject_hash")
+  windowStartedAt DateTime  @map("window_started_at") @db.Timestamptz(3)
+  requestCount    Int       @default(0) @map("request_count")
+  blockedUntil    DateTime? @map("blocked_until") @db.Timestamptz(3)
+
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, scope, subjectHash])
+  @@map("partner_rate_limits")
+}
+
+model AuthRateLimit {
+  scope           String
+  subjectHash     String    @map("subject_hash")
+  windowStartedAt DateTime  @map("window_started_at") @db.Timestamptz(3)
+  requestCount    Int       @default(0) @map("request_count")
+  blockedUntil    DateTime? @map("blocked_until") @db.Timestamptz(3)
+
+  @@id([scope, subjectHash])
+  @@map("auth_rate_limits")
+}
+
+model SheetWorkbook {
+  id                 String   @id @default(uuid()) @db.Uuid
+  spreadsheetId      String   @unique @map("spreadsheet_id")
+  title              String
+  periodStart        DateTime @map("period_start") @db.Date
+  periodEndExclusive DateTime @map("period_end_exclusive") @db.Date
+  timezone           String   @default("Asia/Ho_Chi_Minh")
+  schemaVersion      Int      @default(1) @map("schema_version")
+  status             String   @default("active")
+  importPaused       Boolean  @default(true) @map("import_paused")
+  exportPaused       Boolean  @default(true) @map("export_paused")
+  createdById        String   @map("created_by_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  bindings SheetPropertyBinding[]
+  runs     SheetSyncRun[]
+
+  @@index([periodStart, periodEndExclusive, status])
+  @@map("sheet_workbooks")
+}
+
+model SheetPropertyBinding {
+  id             String   @id @default(uuid()) @db.Uuid
+  workbookId     String   @map("workbook_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  propertyId     String   @map("property_id") @db.Uuid
+  sheetId        String   @map("sheet_id")
+  sheetTitle     String   @map("sheet_title")
+  outputRange    String   @map("output_range")
+  inputRange     String   @map("input_range")
+  resultRange    String   @map("result_range")
+  nextInputRow   Int      @default(1) @map("next_input_row")
+  nextResultRow  Int      @default(1) @map("next_result_row")
+  status         String   @default("active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  workbook     SheetWorkbook       @relation(fields: [workbookId], references: [id], onDelete: Cascade)
+  organization PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  batches      SheetDraftBatch[]
+
+  @@unique([workbookId, propertyId])
+  @@unique([workbookId, sheetId])
+  @@index([organizationId, status])
+  @@map("sheet_property_bindings")
+}
+
+model SheetDraftBatch {
+  id          String    @id @default(uuid()) @db.Uuid
+  bindingId   String    @map("binding_id") @db.Uuid
+  createdById String    @map("created_by_id") @db.Uuid
+  status      String    @default("draft")
+  baseline    Json
+  payloadHash String?   @map("payload_hash")
+  projectionStatus String @default("pending") @map("projection_status")
+  projectionError  String? @map("projection_error")
+  projectedAt DateTime? @map("projected_at") @db.Timestamptz(3)
+  inputStartRow Int     @map("input_start_row")
+  resultStartRow Int    @map("result_start_row")
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz(3)
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz(3)
+  appliedAt   DateTime? @map("applied_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  binding SheetPropertyBinding @relation(fields: [bindingId], references: [id], onDelete: Cascade)
+  items   SheetDraftItem[]
+
+  @@index([status, expiresAt])
+  @@map("sheet_draft_batches")
+}
+
+model SheetDraftItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  batchId     String   @map("batch_id") @db.Uuid
+  roomTypeId  String   @map("room_type_id") @db.Uuid
+  stayDate    DateTime @map("stay_date") @db.Date
+  command     String
+  baseVersion Int      @map("base_version")
+  baseline    Json
+  proposed    Json?
+  result      Json?
+  rowPosition Int      @map("row_position")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  batch SheetDraftBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, roomTypeId, stayDate])
+  @@index([roomTypeId, stayDate])
+  @@map("sheet_draft_items")
+}
+
+model SheetSyncRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  workbookId String?   @map("workbook_id") @db.Uuid
+  direction  String
+  status     String    @default("queued")
+  attempt    Int       @default(0)
+  startedAt  DateTime? @map("started_at") @db.Timestamptz(3)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(3)
+  detail     Json?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  workbook SheetWorkbook? @relation(fields: [workbookId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("sheet_sync_runs")
+}
+
+model InventoryConflict {
+  id               String    @id @default(uuid()) @db.Uuid
+  source           String
+  sourceId         String    @map("source_id") @db.Uuid
+  roomTypeId       String    @map("room_type_id") @db.Uuid
+  stayDate         DateTime  @map("stay_date") @db.Date
+  baseSnapshot     Json
+  currentSnapshot  Json
+  proposedSnapshot Json
+  currentVersion   Int       @map("current_version")
+  status           String    @default("open")
+  resolvedById     String?   @map("resolved_by_id") @db.Uuid
+  resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz(3)
+  resolution       String?
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+  @@unique([source, sourceId, roomTypeId, stayDate], map: "inventory_conflicts_source_batch_room_date_key")
+  @@map("inventory_conflicts")
 }
 
 model IdempotencyKey {

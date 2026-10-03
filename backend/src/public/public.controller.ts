@@ -50,6 +50,12 @@ export class PublicController {
     return this.catalog.stay(slug);
   }
 
+  @Get('availability')
+  @Header('Cache-Control', 'private, no-store')
+  availability(@Query() query: Record<string, string>) {
+    return this.catalog.availability(query);
+  }
+
   @Get('combos')
   combos() {
     return this.catalog.combos();

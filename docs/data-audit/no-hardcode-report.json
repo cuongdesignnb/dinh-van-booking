@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-30T10:31:42.666Z",
-  "baseSha": "4e49bb14af148714ca00f45db3cd3e35bfaafd68",
+  "generatedAt": "2026-10-02T19:31:06.854Z",
+  "baseSha": "989d6f57bc2d510351037ea6b50836bdad5beda9",
   "policy": "Runtime public/admin paths must not read commercial fixture records or browser-persisted business data.",
   "scannedRoots": [
     "src/app",
@@ -8,7 +8,7 @@
     "src/lib",
     "src/config"
   ],
-  "findingCount": 43,
+  "findingCount": 44,
   "findings": [
     {
       "file": "src/components/admin/bookings/BookingDetail.tsx",
@@ -279,6 +279,16 @@
       "disposition": "blocker: replace legacy fixture screen with authenticated API/DB flow before production",
       "evidence": "legacy admin module still imports fixture clock/data",
       "excerpt": "import { addDays, coversNight, DEMO_TODAY, diffDays, eachDay, fromKey } from '@/data/admin/fixture-clock';"
+    },
+    {
+      "file": "src/lib/admin-toast-events.ts",
+      "line": 3,
+      "kind": "browser-admin-store",
+      "classification": "legacy-or-allowed-review",
+      "scope": "runtime",
+      "disposition": "blocker: review and remove from production runtime",
+      "evidence": "pattern hit in a scanned runtime root",
+      "excerpt": "export const ADMIN_TOAST_EVENT = 'dvb:admin-toast';"
     },
     {
       "file": "src/lib/api/public.ts",

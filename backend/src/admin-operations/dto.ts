@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import {
-  IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID,
+  IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID,
   Matches, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
 
@@ -66,6 +66,7 @@ export class UpdateInventoryDto {
   @IsOptional() @IsInt() @Min(0) @Max(5000) blockedCount?: number;
   @IsOptional() @IsBoolean() stopSell?: boolean;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
+  @IsObject() expectedVersions!: Record<string, number>;
 }
 
 export class UpdateCustomerDto {

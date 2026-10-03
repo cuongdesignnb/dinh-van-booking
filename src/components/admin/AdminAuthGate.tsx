@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, FormEvent, useCallback, useContext, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { ApiError, apiRequest } from '@/lib/api/client';
 
 export interface AdminUser {
@@ -60,6 +61,11 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     void apiRequest<AdminUser>('/auth/me', { cache: 'no-store', signal: controller.signal })
       .then((current) => {
         if (!active) return;
+        if (!current.roles.length || !current.permissions.length) {
+          setUser(null);
+          setError('Tài khoản này chưa được cấp quyền nhân sự quản trị. Đối tác vui lòng dùng Cổng đối tác.');
+          return;
+        }
         setUser(current);
         setError(null);
       })
@@ -90,6 +96,11 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+      if (!result.user.roles.length || !result.user.permissions.length) {
+        setUser(null);
+        setError('Tài khoản này chưa được cấp quyền nhân sự quản trị. Đối tác vui lòng dùng Cổng đối tác.');
+        return;
+      }
       setUser(result.user);
       setPassword('');
     } catch (reason) {
@@ -132,6 +143,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
             <input className="field__input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" />
           </label>
           {error && <p className="field__error" role="alert">{error}</p>}
+          {error?.includes('Cổng đối tác') && <p><Link href="/doi-tac">Mở Cổng đối tác</Link></p>}
           <button className="abtn abtn--primary" type="submit" disabled={busy}>
             {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
           </button>

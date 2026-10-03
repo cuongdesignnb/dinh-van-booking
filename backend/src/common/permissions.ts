@@ -27,6 +27,11 @@ export const PERMISSIONS = {
   userRead: 'user.read',
   userWrite: 'user.write',
   auditRead: 'audit.read',
+  partnerRead: 'partner.read',
+  partnerReview: 'partner.review',
+  partnerGrant: 'partner.grant',
+  sheetsRead: 'sheets.read',
+  sheetsManage: 'sheets.manage',
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -45,6 +50,8 @@ export const PERMISSION_MODULES: Record<PermissionCode, string> = {
   'settings.read': 'settings', 'settings.write': 'settings',
   'user.read': 'user', 'user.write': 'user',
   'audit.read': 'audit',
+  'partner.read': 'partners', 'partner.review': 'partners', 'partner.grant': 'partners',
+  'sheets.read': 'sheets', 'sheets.manage': 'sheets',
 };
 
 export const ROLES = {

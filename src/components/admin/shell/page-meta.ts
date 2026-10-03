@@ -89,6 +89,11 @@ META['/admin/thu-vien-anh'] = {
   subtitle: 'Tải lên một lần, tái sử dụng ảnh ở mọi nội dung và nơi lưu trú trong hệ thống.',
   script: 'Một hình ảnh đẹp\nđi cùng nhiều hành trình ♡',
 };
+META['/admin/doi-tac'] = {
+  title: 'Đối tác & đồng bộ',
+  subtitle: 'Duyệt hồ sơ, quản lý quyền theo cơ sở và theo dõi kết nối Google Sheets.',
+  script: 'Phối hợp minh bạch\nvận hành an tâm ♡',
+};
 META['/admin/cai-dat'] = {
   title: 'Cài đặt hệ thống',
   subtitle: 'Cấu hình bằng biểu mẫu trực quan; thay đổi được lưu qua API vào PostgreSQL.',

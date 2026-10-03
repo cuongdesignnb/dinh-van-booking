@@ -5,7 +5,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SETTINGS_BY_KEY } from '../settings/settings.registry';
+import { SettingsService } from '../settings/settings.service';
 import type { AuthenticatedUser } from '../common/types';
+import { InventoryMutationService, availableRaw, validateInventoryInvariant } from '../inventory/inventory-mutation.service';
 import type {
   CreateCouponDto, CreateFollowUpDto, CreateInteractionDto, CreateManualPaymentDto,
   CreateRefundDto, CreateQuoteDto, ListAdminQuery, ListInventoryQuery, ReportQuery,
@@ -85,7 +87,7 @@ function activeDate(value: Date | null, now: Date): boolean { return !value || v
 @Injectable()
 export class AdminOperationsService {
   private readonly logger = new Logger(AdminOperationsService.name);
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly inventoryMutations: InventoryMutationService, private readonly settings: SettingsService) {}
 
   async dashboardSummary() {
     const now = new Date();
@@ -304,7 +306,9 @@ export class AdminOperationsService {
       const emailNormalized = normalizedEmail(contact.email);
       // Anonymous submissions are untrusted claims: never merge them into or overwrite an
       // existing CRM profile just because the submitted email/phone happens to match.
-      let customer = owner.userId
+      // A logged-in partner/customer is not an internal CRM operator. Only
+      // staff booking flows may match and update a pre-existing CRM record.
+      let customer = channel === 'admin' && owner.userId
         ? await tx.customer.findFirst({ where: { OR: [{ phoneNormalized: phone }, ...(emailNormalized ? [{ emailNormalized }] : [])] } })
         : null;
       if (customer) {
@@ -333,7 +337,7 @@ export class AdminOperationsService {
       } });
       const line = await tx.bookingLine.findFirstOrThrow({ where: { bookingId: booking.id } });
       const reservation = await tx.inventoryReservation.create({ data: { bookingLineId: line.id, status: 'held', expiresAt, nights: { create: dates.map((stayDate) => ({ roomTypeId, stayDate, quantity })) } } });
-      for (const stayDate of dates) await tx.inventoryDay.update({ where: { roomTypeId_stayDate: { roomTypeId, stayDate } }, data: { heldCount: { increment: quantity }, version: { increment: 1 } } });
+      await this.inventoryMutations.hold(tx, booking.id, dates.map((stayDate) => ({ roomTypeId, stayDate, quantity })));
 
       const couponSnapshot = snapshot.coupon as { id?: string; code?: string } | null;
       if (couponSnapshot?.id) {
@@ -394,7 +398,7 @@ export class AdminOperationsService {
         for (const reservation of reservations) {
           const moved = await tx.inventoryReservation.updateMany({ where: { id: reservation.id, status: 'held', expiresAt: { gt: new Date() } }, data: { status: 'confirmed', expiresAt: null } });
           if (moved.count !== 1) throw new ConflictException('Một phần giữ chỗ đã hết hạn hoặc không còn hiệu lực');
-          for (const night of reservation.nights) await tx.inventoryDay.update({ where: { roomTypeId_stayDate: { roomTypeId: night.roomTypeId, stayDate: night.stayDate } }, data: { heldCount: { decrement: night.quantity }, reservedCount: { increment: night.quantity }, version: { increment: 1 } } });
+          await this.inventoryMutations.confirmHold(tx, id, reservation.nights);
           confirmed++;
         }
         for (const redemption of booking.redemptions) {
@@ -460,42 +464,8 @@ export class AdminOperationsService {
     return { available: true, roomTypeId: input.roomTypeId, quantity: input.quantity, checkIn: dateKey(stay.from), checkOut: dateKey(stay.to), nights: stay.dates.map(dateKey) };
   }
 
-  async updateInventory(roomTypeId: string, input: UpdateInventoryDto, actorId: string) {
-    const stay = range(input.from, input.to);
-    const room = await this.prisma.roomType.findUnique({ where: { id: roomTypeId }, select: { id: true } });
-    if (!room) throw new NotFoundException('Không tìm thấy hạng phòng');
-    return this.prisma.$transaction(async (tx) => {
-      await this.lockInventory(tx, roomTypeId, stay.dates);
-      const output = [];
-      let blocksCreated = 0;
-      for (const stayDate of stay.dates) {
-        const current = await tx.inventoryDay.findUnique({ where: { roomTypeId_stayDate: { roomTypeId, stayDate } } });
-        const requestedBlocked = input.blockedCount ?? current?.blockedCount ?? 0;
-        const activeBlocks = await tx.inventoryBlock.findMany({
-          where: { status: 'active', nights: { some: { roomTypeId, stayDate } } },
-          include: { nights: { where: { roomTypeId, stayDate }, select: { quantity: true } } },
-        });
-        const managedBlocks = activeBlocks.filter((item) => item.kind === 'admin_calendar');
-        const otherLedgerBlocked = activeBlocks.filter((item) => item.kind !== 'admin_calendar').reduce((sum, item) => sum + item.nights.reduce((nightSum, night) => nightSum + night.quantity, 0), 0);
-        const managedBlocked = requestedBlocked - otherLedgerBlocked;
-        if (managedBlocked < 0) throw new ConflictException(`Số phòng khoá ngày ${dateKey(stayDate)} không thể thấp hơn các khoá tồn tại khác (${otherLedgerBlocked})`);
-        if (requestedBlocked > input.capacity) throw new BadRequestException(`Số phòng khoá ngày ${dateKey(stayDate)} không thể lớn hơn sức chứa`);
-        const occupied = (current?.heldCount ?? 0) + (current?.reservedCount ?? 0);
-        if (input.capacity < requestedBlocked + occupied) throw new ConflictException(`Sức chứa ngày ${dateKey(stayDate)} nhỏ hơn số phòng đã khoá/giữ/đặt`);
-        if (managedBlocks.length) await tx.inventoryBlock.updateMany({ where: { id: { in: managedBlocks.map((item) => item.id) }, status: 'active' }, data: { status: 'released', releasedAt: new Date() } });
-        if (managedBlocked > 0) {
-          await tx.inventoryBlock.create({ data: {
-            kind: 'admin_calendar', reason: input.note?.trim() || 'Khoá phòng từ lịch quản trị', createdBy: actorId,
-            nights: { create: { roomTypeId, stayDate, quantity: managedBlocked } },
-          } });
-          blocksCreated++;
-        }
-        const data = { capacity: input.capacity, blockedCount: requestedBlocked, stopSell: input.stopSell ?? false, version: { increment: 1 } };
-        output.push(await tx.inventoryDay.upsert({ where: { roomTypeId_stayDate: { roomTypeId, stayDate } }, create: { roomTypeId, stayDate, capacity: input.capacity, blockedCount: requestedBlocked, stopSell: input.stopSell ?? false }, update: data }));
-      }
-      await this.audit(tx, actorId, 'inventory.bulk_updated', 'room_type', roomTypeId, { from: dateKey(stay.from), to: dateKey(stay.to), capacity: input.capacity, blockedCount: input.blockedCount ?? null, stopSell: input.stopSell ?? false, note: input.note?.trim().slice(0, 200) ?? null, blocksCreated });
-      return { items: output.map((row) => ({ ...this.serialize(row), stayDate: dateKey(row.stayDate), available: row.stopSell ? 0 : row.capacity - row.blockedCount - row.heldCount - row.reservedCount })), blocksCreated };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  async updateInventory(roomTypeId: string, input: UpdateInventoryDto, actorId: string, idempotencyKey: string) {
+    return this.inventoryMutations.updateAdminRange(roomTypeId, input, actorId, idempotencyKey);
   }
 
   async listCustomers(query: ListAdminQuery) {
@@ -823,19 +793,11 @@ export class AdminOperationsService {
       await tx.bookingEvent.create({ data: { bookingId: id, fromStatus: booking.bookingStatus, toStatus: 'expired', eventType: 'hold_expired', actorLabel: 'Tác vụ nền', detail: 'Giữ chỗ hết hạn; quỹ phòng được giải phóng một lần.' } });
       await this.audit(tx, null, 'booking.hold_expired', 'booking', id, { reservationCount: reservations.length });
       return true;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }
 
   private async releaseReservations(tx: Tx, reservations: Array<{ id: string; status: string; nights: Array<{ roomTypeId: string; stayDate: Date; quantity: number }> }>, nights: Array<{ roomTypeId: string; stayDate: Date }>) {
-    for (const reservation of reservations) {
-      if (reservation.status !== 'held' && reservation.status !== 'confirmed') continue;
-      const moved = await tx.inventoryReservation.updateMany({ where: { id: reservation.id, status: reservation.status }, data: { status: 'released', releasedAt: new Date(), expiresAt: null } });
-      if (moved.count !== 1) continue;
-      for (const night of reservation.nights) {
-        const field = reservation.status === 'held' ? 'heldCount' : 'reservedCount';
-        await tx.inventoryDay.update({ where: { roomTypeId_stayDate: { roomTypeId: night.roomTypeId, stayDate: night.stayDate } }, data: { [field]: { decrement: night.quantity }, version: { increment: 1 } } });
-      }
-    }
+    await this.inventoryMutations.releaseReservationRows(tx, reservations);
     void nights;
   }
 
@@ -866,11 +828,21 @@ export class AdminOperationsService {
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) throw new BadRequestException('Số phòng phải từ 1 đến 20');
     const rows = await db.inventoryDay.findMany({ where: { roomTypeId, stayDate: { in: dates } } });
     const byDay = new Map(rows.map((row) => [dateKey(row.stayDate), row]));
+    const incidents = await db.inventoryIntegrityIncident.findMany({ where: { roomTypeId, stayDate: { in: dates }, resolvedAt: null }, select: { stayDate: true } });
+    const incidentDays = new Set(incidents.map((row) => dateKey(row.stayDate)));
+    const freshness = await this.settings.get<{ nearTermDays?: number; nearTermFreshHours?: number; fartherFreshDays?: number }>('inventory.freshness');
+    const now = Date.now();
     for (const stayDate of dates) {
-      const row = byDay.get(dateKey(stayDate));
+      const day = dateKey(stayDate);
+      const row = byDay.get(day);
       if (!row) throw new ConflictException(`Chưa mở bán tồn phòng ngày ${dateKey(stayDate)}`);
-      const available = row.capacity - row.blockedCount - row.heldCount - row.reservedCount;
-      if (row.stopSell || available < quantity) throw new ConflictException(`Không đủ phòng ngày ${dateKey(stayDate)}; còn ${row.stopSell ? 0 : Math.max(0, available)}`);
+      validateInventoryInvariant(row);
+      if (incidentDays.has(day)) throw new ConflictException(`Tồn phòng ngày ${day} đang cần quản trị viên xác minh.`);
+      const nearTerm = (stayDate.getTime() - now) / 86_400_000 <= (freshness.nearTermDays ?? 7);
+      const maxAgeMs = (nearTerm ? freshness.nearTermFreshHours ?? 24 : (freshness.fartherFreshDays ?? 7) * 24) * 3_600_000;
+      if (!row.lastConfirmedAt || now - row.lastConfirmedAt.getTime() > maxAgeMs) throw new ConflictException(`Tồn phòng ngày ${day} đã cũ hoặc chưa được cơ sở xác nhận; cần kiểm tra lại trước khi tiếp tục.`);
+      const available = availableRaw(row);
+      if (row.stopSell || available < quantity) throw new ConflictException(`Không đủ phòng ngày ${day}; còn ${row.stopSell ? 0 : available}`);
     }
   }
 
@@ -880,9 +852,7 @@ export class AdminOperationsService {
   }
 
   private async lockInventoryRows(tx: Tx, rows: Array<{ roomTypeId: string; stayDate: Date }>) {
-    const unique = [...new Map(rows.map((row) => [`${row.roomTypeId}:${dateKey(row.stayDate)}`, row])).values()]
-      .sort((a, b) => a.roomTypeId.localeCompare(b.roomTypeId) || a.stayDate.getTime() - b.stayDate.getTime());
-    for (const row of unique) await tx.$queryRaw(Prisma.sql`SELECT room_type_id FROM inventory_days WHERE room_type_id = ${row.roomTypeId}::uuid AND stay_date = ${row.stayDate}::date FOR UPDATE`);
+    await this.inventoryMutations.lockRows(tx, rows);
   }
 
   private async idempotent<T>(principal: string, operation: string, key: string, input: unknown, work: (tx: Tx) => Promise<T>, isolationLevel: Prisma.TransactionIsolationLevel = Prisma.TransactionIsolationLevel.Serializable): Promise<T> {

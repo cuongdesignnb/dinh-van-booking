@@ -32,6 +32,18 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       ? (exception.meta.target as string[]).join(', ')
       : (exception.meta?.target as string | undefined);
 
+    // Prisma's PostgreSQL driver adapter may wrap SQLSTATE 40001 as P2010
+    // instead of P2034. Both mean the transaction lost an optimistic race.
+    const adapterError = exception.meta?.driverAdapterError as { cause?: { originalCode?: string } } | undefined;
+    if (exception.code === 'P2010' && adapterError?.cause?.originalCode === '40001') {
+      void reply.status(HttpStatus.CONFLICT).send({
+        statusCode: HttpStatus.CONFLICT,
+        code: 'transaction_conflict',
+        message: 'Dữ liệu vừa được cập nhật đồng thời. Hãy tải lại và thử lại.',
+      });
+      return;
+    }
+
     switch (exception.code) {
       case 'P2034':
         void reply.status(HttpStatus.CONFLICT).send({

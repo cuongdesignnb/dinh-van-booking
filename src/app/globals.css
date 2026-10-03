@@ -1499,6 +1499,27 @@ svg {
   margin-top: 16px;
 }
 
+.search__availability-link {
+  display: flex;
+  justify-content: flex-end;
+  margin: 11px 6px 0;
+  color: #f8f7ef;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgb(248 247 239 / 55%);
+  text-underline-offset: 3px;
+}
+
+.home-search .search__availability-link {
+  color: #315d3b;
+  text-decoration-color: rgb(49 93 59 / 35%);
+}
+
+.search__availability-link:hover {
+  text-decoration-color: currentColor;
+}
+
 .featured--main-only {
   grid-template-columns: minmax(0, 1fr);
 }

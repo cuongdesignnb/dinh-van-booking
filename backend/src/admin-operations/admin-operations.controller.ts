@@ -60,8 +60,8 @@ export class AdminOperationsController {
   inventoryAvailability(@Body() dto: CreateQuoteDto) { return this.operations.checkAvailability(dto); }
 
   @Put('inventory/:roomTypeId') @RequirePermissions(PERMISSIONS.inventoryWrite)
-  updateInventory(@Param('roomTypeId') id: string, @Body() dto: UpdateInventoryDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.operations.updateInventory(id, dto, user.id);
+  updateInventory(@Param('roomTypeId') id: string, @Body() dto: UpdateInventoryDto, @Headers('idempotency-key') key: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.operations.updateInventory(id, dto, user.id, key);
   }
 
   @Get('customers') @RequirePermissions(PERMISSIONS.crmRead)

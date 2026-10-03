@@ -62,7 +62,7 @@ async function bootstrap(): Promise<void> {
 
     const asset = await prisma.mediaAsset.findUnique({
       where: { storageKey },
-      select: { visibility: true, isDemo: true, processingStatus: true },
+      select: { visibility: true, isDemo: true, processingStatus: true, ownerOrganizationId: true },
     });
     const isPublicReady = asset?.visibility === 'public' && asset.isDemo === false && asset.processingStatus === 'ready';
     if (isPublicReady) return;
@@ -70,7 +70,12 @@ async function bootstrap(): Promise<void> {
     const cookies = (request as typeof request & { cookies?: Record<string, string> }).cookies;
     const token = cookies?.[SESSION_COOKIE];
     const user = token ? await auth.resolveSession(token) : null;
-    if (!user?.permissions.includes(PERMISSIONS.mediaRead)) {
+    const partnerOwnsAsset = user && asset?.ownerOrganizationId
+      ? !!(await prisma.partnerMembership.findFirst({ where: {
+        userId: user.id, organizationId: asset.ownerOrganizationId, status: 'active', organization: { status: 'active' },
+      }, select: { organizationId: true } }))
+      : false;
+    if (!user?.permissions.includes(PERMISSIONS.mediaRead) && !partnerOwnsAsset) {
       reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex').code(404).send();
       return;
     }

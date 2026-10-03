@@ -16,6 +16,7 @@ import {
   Tag,
   Users,
   CalendarDays,
+  Handshake,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -41,6 +42,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/phong-nghi', label: 'Nơi lưu trú', icon: BedDouble, permission: 'catalog.read' },
   { href: '/admin/hang-phong', label: 'Hạng phòng', icon: BedDouble, permission: 'catalog.read' },
   { href: '/admin/ton-phong', label: 'Quỹ phòng', icon: CalendarDays, permission: 'inventory.read' },
+  { href: '/admin/doi-tac', label: 'Đối tác & đồng bộ', icon: Handshake, permission: 'partner.read' },
   { href: '/admin/combo-du-lich', label: 'Combo du lịch', icon: MapIcon, permission: 'catalog.read' },
   { href: '/admin/diem-den', label: 'Điểm đến', icon: MapPin, permission: 'catalog.read' },
   { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users, permission: 'crm.read' },

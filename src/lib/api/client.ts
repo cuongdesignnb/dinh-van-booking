@@ -14,6 +14,8 @@ export class ApiError extends Error {
 
 const browserBase = () => process.env.NEXT_PUBLIC_API_BASE_PATH || '/api/v1';
 
+export const apiPath = (path: string) => `${browserBase()}${path}`;
+
 function csrfCookie(): string | null {
   if (typeof document === 'undefined') return null;
   const part = document.cookie.split('; ').find((value) => value.startsWith('dvb_csrf='));

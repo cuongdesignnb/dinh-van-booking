@@ -4,7 +4,7 @@ import {
   Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, BedDouble, CalendarClock, Check, CircleDollarSign,
   ClipboardList, CreditCard, FileBarChart2, Plus, RefreshCw, Search, Tag, Users,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api/client';
@@ -98,6 +98,7 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
   const [capacity, setCapacity] = useState('');
   const [blocked, setBlocked] = useState('0');
   const [inventoryNote, setInventoryNote] = useState('');
+  const inventoryIdempotency = useRef<{ fingerprint: string; key: string } | null>(null);
   const [stopSell, setStopSell] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [bookingForm, setBookingForm] = useState({ roomTypeId: '', checkIn: todayInVietnam(), checkOut: shiftDay(todayInVietnam(), 1), quantity: '1', adults: '2', children: '0', fullName: '', phone: '', email: '', couponCode: '', note: '' });
@@ -247,8 +248,20 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
   const saveInventory = async (event: FormEvent) => {
     event.preventDefault();
     if (!roomTypeId) return;
+    const to = shiftDay(inventoryFrom, 14);
+    const expectedVersions: Record<string, number> = {};
+    for (let offset = 0; offset < 14; offset++) {
+      const day = shiftDay(inventoryFrom, offset);
+      const row = inventory.find((candidate) => candidate.stayDate === day);
+      if (!row) { setError(`Chưa tải phiên bản tồn ngày ${day}; tải lại lịch trước khi lưu.`); return; }
+      expectedVersions[day] = row.version ?? 0;
+    }
+    const payload = { from: inventoryFrom, to, capacity: Number(capacity), blockedCount: Number(blocked), stopSell, expectedVersions, ...(inventoryNote.trim() ? { note: inventoryNote.trim() } : {}) };
+    const fingerprint = JSON.stringify(payload);
+    if (!inventoryIdempotency.current || inventoryIdempotency.current.fingerprint !== fingerprint) inventoryIdempotency.current = { fingerprint, key: crypto.randomUUID() };
     await run(async () => {
-      await apiRequest(`/admin/inventory/${roomTypeId}`, { method: 'PUT', body: JSON.stringify({ from: inventoryFrom, to: shiftDay(inventoryFrom, 14), capacity: Number(capacity), blockedCount: Number(blocked), stopSell, ...(inventoryNote.trim() ? { note: inventoryNote.trim() } : {}) }) });
+      await apiRequest(`/admin/inventory/${roomTypeId}`, { method: 'PUT', headers: { 'Idempotency-Key': inventoryIdempotency.current!.key }, body: JSON.stringify(payload) });
+      inventoryIdempotency.current = null;
       setInventoryNote('');
     }, 'Đã cập nhật quỹ phòng trong PostgreSQL.');
   };

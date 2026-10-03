@@ -79,6 +79,7 @@ export class MediaService {
     file: { buffer: Buffer; filename: string; mimetype: string },
     meta: { altText?: string; caption?: string },
     userId: string,
+    ownership: { organizationId?: string; visibility?: 'public' | 'private' } = {},
   ): Promise<MediaView> {
     const rules = await this.settings.get<MediaProcessingSettings>('media.processing');
 
@@ -104,7 +105,12 @@ export class MediaService {
     const uploadMetadata = normalizeUploadMetadata(file.filename, meta.altText, meta.caption);
 
     // The same picture uploaded twice reuses one file instead of filling the volume.
-    const existing = await this.prisma.mediaAsset.findFirst({ where: { sha256: sha } });
+    const existing = await this.prisma.mediaAsset.findFirst({ where: {
+      sha256: sha,
+      ...(ownership.visibility === 'private' && ownership.organizationId ? {
+        OR: [{ visibility: 'public' }, { visibility: 'private', ownerOrganizationId: ownership.organizationId }],
+      } : {}),
+    } });
     if (existing) return this.getOne(existing.id);
 
     const now = new Date();
@@ -136,6 +142,9 @@ export class MediaService {
         sha256: sha,
         renditions: renditions as object,
         processingStatus: 'ready',
+        visibility: ownership.visibility ?? 'public',
+        ownerOrganizationId: ownership.organizationId ?? null,
+        uploadedById: userId,
       },
     });
 

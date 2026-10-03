@@ -1873,3 +1873,28 @@
     display: none;
   }
 }
+.stays-availability-cta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.stays-availability-cta a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid #dce6d8;
+  border-radius: 999px;
+  background: #fff;
+  color: #245a35;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.stays-availability-cta a:hover {
+  border-color: #8db08c;
+  background: #f4f7ef;
+}

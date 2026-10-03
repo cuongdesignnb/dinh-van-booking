@@ -560,6 +560,88 @@ export class PublicCatalogService {
     return { items, generatedAt: new Date().toISOString() };
   }
 
+  async availability(query: Record<string, string>) {
+    if (!(await this.settings.get<boolean>('publicAvailability.enabled'))) return { enabled: false, items: [], generatedAt: new Date().toISOString() };
+    const checkIn = query.checkIn;
+    const checkOut = query.checkOut;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checkIn ?? '') || !/^\d{4}-\d{2}-\d{2}$/.test(checkOut ?? '')) {
+      throw new NotFoundException('Cần chọn ngày nhận và trả phòng hợp lệ.');
+    }
+    const from = new Date(`${checkIn}T00:00:00.000Z`);
+    const to = new Date(`${checkOut}T00:00:00.000Z`);
+    const nightCount = Math.round((to.getTime() - from.getTime()) / 86_400_000);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from.toISOString().slice(0, 10) !== checkIn || to.toISOString().slice(0, 10) !== checkOut || nightCount < 1 || nightCount > 30) {
+      throw new NotFoundException('Khoảng lưu trú phải từ 1 đến 30 đêm.');
+    }
+    const quantity = Number(query.rooms ?? '1');
+    const adults = Number(query.adults ?? '1');
+    const children = Number(query.children ?? '0');
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 5 || !Number.isInteger(adults) || adults < 1 || adults > 20 || !Number.isInteger(children) || children < 0 || children > 12) {
+      throw new NotFoundException('Số phòng hoặc số khách không hợp lệ.');
+    }
+    const dates = Array.from({ length: nightCount }, (_, index) => {
+      const date = new Date(from);
+      date.setUTCDate(date.getUTCDate() + index);
+      return date;
+    });
+    const now = new Date();
+    const freshness = await this.settings.get<{ nearTermDays?: number; nearTermFreshHours?: number; fartherFreshDays?: number }>('inventory.freshness');
+    const properties = await this.prisma.property.findMany({
+      where: {
+        operatingStatus: 'active', content: { isDemo: false, publicationStatus: 'published', OR: [{ publishAt: null }, { publishAt: { lte: now } }] },
+        ...(query.area ? { area: { contains: query.area.trim().slice(0, 80), mode: 'insensitive' as const } } : {}),
+        ...(query.kind && ['homestay', 'hotel', 'resort', 'villa'].includes(query.kind) ? { kind: query.kind } : {}),
+      },
+      include: {
+        content: { select: { title: true, excerpt: true, routes: { where: { isCurrent: true }, take: 1, select: { path: true } }, media: { where: { role: 'cover', media: { isDemo: false, visibility: 'public', processingStatus: 'ready' } }, take: 1, select: { media: { select: { storageKey: true, altText: true, width: true, height: true } } } } } },
+        roomTypes: { where: { status: 'active', capacityVerified: true }, include: { ratePlans: { where: { active: true }, select: { baseRateVnd: true } } } },
+      },
+      take: 300,
+    });
+    const roomIds = properties.flatMap((property) => property.roomTypes.map((room) => room.id));
+    const [inventory, incidents] = roomIds.length ? await Promise.all([
+      this.prisma.inventoryDay.findMany({ where: { roomTypeId: { in: roomIds }, stayDate: { in: dates } } }),
+      this.prisma.inventoryIntegrityIncident.findMany({ where: { roomTypeId: { in: roomIds }, stayDate: { in: dates }, resolvedAt: null }, select: { roomTypeId: true, stayDate: true } }),
+    ]) : [[], []];
+    const inventoryByKey = new Map(inventory.map((row) => [`${row.roomTypeId}:${isoDate(row.stayDate)}`, row]));
+    const incidentKeys = new Set(incidents.map((row) => `${row.roomTypeId}:${isoDate(row.stayDate)}`));
+    const items = [] as Array<Record<string, unknown>>;
+    for (const property of properties) {
+      const route = property.content.routes[0]?.path;
+      if (!route || !route.startsWith('/phong-nghi/')) continue;
+      let best: Record<string, unknown> | null = null;
+      for (const room of property.roomTypes) {
+        if (adults > room.maxAdults * quantity || children > room.maxChildren * quantity || adults + children > room.maxOccupancy * quantity) continue;
+        const rows = dates.map((date) => inventoryByKey.get(`${room.id}:${isoDate(date)}`));
+        const hasIncident = dates.some((date) => incidentKeys.has(`${room.id}:${isoDate(date)}`));
+        const isFresh = rows.every((row, index) => {
+          if (!row?.lastConfirmedAt) return false;
+          const near = (dates[index].getTime() - now.getTime()) / 86_400_000 <= (freshness.nearTermDays ?? 7);
+          const maxAge = (near ? freshness.nearTermFreshHours ?? 24 : (freshness.fartherFreshDays ?? 7) * 24) * 3_600_000;
+          return now.getTime() - row.lastConfirmedAt.getTime() <= maxAge;
+        });
+        const eachNightAvailable = rows.map((row) => row ? row.capacity - row.blockedCount - row.heldCount - row.reservedCount : null);
+        const sellable = !hasIncident && isFresh && rows.every((row, index) => !!row && !row.stopSell && eachNightAvailable[index] !== null && eachNightAvailable[index]! >= quantity);
+        const hasRate = room.ratePlans.some((rate) => rate.baseRateVnd > 0n);
+        const status = hasIncident ? 'needs_check' : !isFresh ? 'stale' : sellable ? 'available' : 'sold_out';
+        const cover = property.content.media[0]?.media;
+        const candidate = {
+          propertyId: property.id, roomTypeId: room.id, name: property.content.title, roomTypeName: room.name,
+          area: property.area, excerpt: property.content.excerpt, path: route,
+          cover: cover ? { url: `${this.config.mediaPublicBase.replace(/\/$/, '')}/${cover.storageKey}`, alt: cover.altText, width: cover.width, height: cover.height } : null,
+          status, requestVerification: status === 'stale' || status === 'needs_check',
+          availableForStay: sellable, priceMode: !hasRate ? 'contact' : 'published_rate',
+          lastConfirmedAt: rows.map((row) => row?.lastConfirmedAt?.toISOString() ?? null).filter(Boolean).sort().at(0) ?? null,
+          checkIn, checkOut, nights: nightCount, quantity,
+        };
+        if (status === 'available') { best = candidate; break; }
+        if (!best || (status === 'needs_check' && best.status === 'sold_out')) best = candidate;
+      }
+      if (best) items.push(best);
+    }
+    return { enabled: true, items, generatedAt: new Date().toISOString(), timezone: 'Asia/Ho_Chi_Minh', checkIn, checkOut };
+  }
+
   async stay(slug: string): Promise<ReturnType<PublicCatalogService['toStay']>> {
     const node = await this.prisma.contentNode.findFirst({
       where: {

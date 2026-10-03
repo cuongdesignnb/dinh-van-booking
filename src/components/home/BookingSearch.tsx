@@ -1,6 +1,7 @@
 'use client';
 
 import { CalendarDays, ChevronDown, Search, UserRound } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
@@ -80,6 +81,7 @@ export function BookingSearch() {
   const guestsLabel = `${adults + children} khách`;
 
   return (
+    <>
     <form
       ref={formRef}
       id="tim-phong"
@@ -223,5 +225,7 @@ export function BookingSearch() {
         />
       </Popover>
     </form>
+    <Link className="search__availability-link" href="/lich-phong">Tra cứu tình trạng phòng theo từng đêm</Link>
+    </>
   );
 }
