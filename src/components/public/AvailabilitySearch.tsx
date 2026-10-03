@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
+import type { Selection } from '@/lib/selection';
 
 type AvailabilityItem = {
   propertyId: string;
@@ -56,9 +57,9 @@ const statusLabel: Record<AvailabilityItem['status'], string> = {
   sold_out: 'Chưa có quỹ phù hợp cho toàn bộ kỳ nghỉ',
 };
 
-export function AvailabilitySearch() {
-  const [checkIn, setCheckIn] = useState(businessToday);
-  const [checkOut, setCheckOut] = useState(() => shiftDay(businessToday(), 1));
+export function AvailabilitySearch({ initialSelection }: { initialSelection?: Selection }) {
+  const [checkIn, setCheckIn] = useState(() => initialSelection?.checkIn ?? businessToday());
+  const [checkOut, setCheckOut] = useState(() => initialSelection?.checkOut ?? shiftDay(initialSelection?.checkIn ?? businessToday(), 1));
   const [items, setItems] = useState<AvailabilityItem[]>([]);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [searched, setSearched] = useState(false);
@@ -100,9 +101,9 @@ export function AvailabilitySearch() {
       <form className="availability-form" onSubmit={(event) => void submit(event)}>
         <label>Ngày nhận phòng<input type="date" name="checkIn" value={checkIn} min={businessToday()} onChange={(event) => { setCheckIn(event.target.value); if (event.target.value >= checkOut) setCheckOut(shiftDay(event.target.value, 1)); }} required /></label>
         <label>Ngày trả phòng<input type="date" name="checkOut" value={checkOut} min={shiftDay(checkIn, 1)} onChange={(event) => setCheckOut(event.target.value)} required /></label>
-        <label>Số phòng<input type="number" name="rooms" min="1" max="5" defaultValue="1" required /></label>
-        <label>Người lớn<input type="number" name="adults" min="1" max="20" defaultValue="2" required /></label>
-        <label>Trẻ em<input type="number" name="children" min="0" max="12" defaultValue="0" required /></label>
+        <label>Số phòng<input type="number" name="rooms" min="1" max="5" defaultValue={initialSelection?.rooms ?? 1} required /></label>
+        <label>Người lớn<input type="number" name="adults" min="1" max="20" defaultValue={initialSelection?.adults ?? 2} required /></label>
+        <label>Trẻ em<input type="number" name="children" min="0" max="12" defaultValue={initialSelection?.children ?? 0} required /></label>
         <label>Khu vực<input type="text" name="area" maxLength={80} placeholder="Ví dụ: Cúc Phương" /></label>
         <label>Loại lưu trú<select name="kind" defaultValue=""><option value="">Tất cả loại hình</option><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option><option value="resort">Khu nghỉ dưỡng</option><option value="villa">Villa</option></select></label>
         <button type="submit" disabled={busy}>{busy ? 'Đang kiểm tra…' : 'Kiểm tra tình trạng phòng'}</button>

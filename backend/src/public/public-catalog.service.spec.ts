@@ -3,6 +3,25 @@ import test from 'node:test';
 import { hasSellableStayRoom } from './public-catalog.service';
 import { PublicCatalogService } from './public-catalog.service';
 import type { PrismaService } from '../prisma/prisma.service';
+import type { SettingsService } from '../settings/settings.service';
+
+test('public site exposes only the availability capability, false unless explicitly true', async () => {
+  const service = Object.create(PublicCatalogService.prototype) as PublicCatalogService;
+  let flag: unknown = false;
+  Object.defineProperty(service, 'prisma', { value: {} as PrismaService });
+  Object.defineProperty(service, 'settings', { value: {
+    publicSnapshot: async () => ({ 'brand.identity': { name: 'QA' } }),
+    get: async (key: string) => { assert.equal(key, 'publicAvailability.enabled'); return flag; },
+  } as unknown as SettingsService });
+  for (const value of [false, true, undefined, 'true']) {
+    flag = value;
+    const result = await service.site();
+    assert.deepEqual(result.features, { publicAvailability: value === true });
+    assert.equal('publicAvailability.enabled' in result.settings, false);
+    assert.equal('partnerPortal.enabled' in result.settings, false);
+    assert.equal('sheetsSync.enabled' in result.settings, false);
+  }
+});
 
 test('public stay needs an active room unit and active rate; zero means contact-only', () => {
   assert.equal(hasSellableStayRoom([{ capacityVerified: true, units: [{ active: true }], ratePlans: [{ active: true, baseRateVnd: 500000n }] }]), true);

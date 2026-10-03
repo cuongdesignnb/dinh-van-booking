@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { PageShell } from '@/components/layout/PageShell';
 import { AvailabilitySearch } from '@/components/public/AvailabilitySearch';
+import { parseSelection, selectionQuery } from '@/lib/selection';
 import './availability.css';
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/lich-phong' },
 };
 
-export default function AvailabilityPage() {
-  return <PageShell className="availability-page"><AvailabilitySearch /></PageShell>;
+export default async function AvailabilityPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const selection = parseSelection(await searchParams);
+  return <PageShell className="availability-page"><AvailabilitySearch key={selectionQuery(selection)} initialSelection={selection} /></PageShell>;
 }

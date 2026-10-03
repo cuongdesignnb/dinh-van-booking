@@ -19,6 +19,13 @@ type MenuPayload = { key: string; name: string; isDefault: boolean; items: MenuI
 type PublishedPage = { id: string; title: string; slug: string; path: string; publishAt: string | null };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SYSTEM_ROUTES = [
+  { label: 'Tra cứu phòng', href: '/lich-phong' },
+  { label: 'Cổng đối tác', href: '/doi-tac' },
+];
+const hasRoute = (items: MenuItem[], href: string) => items.some((item) =>
+  (item.externalUrl ?? item.href)?.split(/[?#]/)[0].replace(/\/+$/, '') === href,
+);
 
 function messageFor(reason: unknown) {
   return reason instanceof Error ? reason.message : 'Không thể hoàn tất thao tác.';
@@ -28,6 +35,7 @@ export function MenuManager() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [pages, setPages] = useState<PublishedPage[]>([]);
   const [selectedPageId, setSelectedPageId] = useState('');
+  const [selectedSystemRoute, setSelectedSystemRoute] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +97,17 @@ export function MenuManager() {
 
   const removeItem = (index: number) => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
 
+  const addSystemRoute = () => {
+    const route = SYSTEM_ROUTES.find((item) => item.href === selectedSystemRoute);
+    if (!route) return;
+    setItems((current) => hasRoute(current, route.href) ? current : [...current, {
+      id: `new-system-${route.href}`, label: route.label, contentId: null,
+      externalUrl: route.href, href: route.href, position: current.length, enabled: true,
+    }]);
+    setSelectedSystemRoute('');
+    setNotice(null);
+  };
+
   const reset = async () => {
     if (!window.confirm('Khôi phục Menu chính về các liên kết mặc định của website?')) return;
     setSaving(true);
@@ -125,7 +144,7 @@ export function MenuManager() {
       });
       setItems(saved.items);
       setIsDefault(false);
-      setNotice('Đã lưu Menu chính; các chuyên trang đã xuất bản sẽ xuất hiện theo thứ tự mới.');
+      setNotice('Đã lưu Menu chính; các liên kết đang bật sẽ xuất hiện theo thứ tự mới.');
     } catch (reason) {
       setError(messageFor(reason));
     } finally {
@@ -138,7 +157,7 @@ export function MenuManager() {
       <div className="settings-screen__head">
         <div>
           <h2>Quản lý Menu website</h2>
-          <p className="ahint">Sắp xếp các liên kết trên menu đầu trang. Chỉ chuyên trang đã xuất bản mới hiển thị cho khách.</p>
+          <p className="ahint">Sắp xếp liên kết hệ thống và chuyên trang trên menu đầu trang. Chuyên trang cần được xuất bản để hiển thị cho khách.</p>
         </div>
         <div className="menu-manager__head-actions">
           <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || saving}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
@@ -150,6 +169,17 @@ export function MenuManager() {
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}
       {isDefault && <p className="menu-manager__default">Đang dùng menu mặc định của website. Bấm “Lưu Menu” để bắt đầu quản lý thứ tự và chuyên trang.</p>}
+
+      <div className="acard menu-manager__add">
+        <label className="afield" htmlFor="menu-system-picker">
+          <span>Thêm liên kết hệ thống</span>
+          <select id="menu-system-picker" className="ainput" value={selectedSystemRoute} onChange={(event) => setSelectedSystemRoute(event.target.value)} disabled={loading || saving || loadFailed || SYSTEM_ROUTES.every((route) => hasRoute(items, route.href))}>
+            <option value="">Chọn trang hệ thống…</option>
+            {SYSTEM_ROUTES.filter((route) => !hasRoute(items, route.href)).map((route) => <option key={route.href} value={route.href}>{route.label} — {route.href}</option>)}
+          </select>
+        </label>
+        <button type="button" className="abtn abtn--ghost" onClick={addSystemRoute} disabled={!selectedSystemRoute || saving || loadFailed}><Plus size={15} aria-hidden="true" /> Thêm liên kết hệ thống</button>
+      </div>
 
       <div className="acard menu-manager__add">
         <label className="afield" htmlFor="menu-page-picker">

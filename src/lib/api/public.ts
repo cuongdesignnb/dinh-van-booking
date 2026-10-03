@@ -25,6 +25,7 @@ export interface PublicSeoUrl {
 }
 
 export interface PublicSiteData {
+  features?: { publicAvailability: boolean };
   identity: {
     name?: string;
     shortName?: string;
@@ -50,6 +51,7 @@ export interface PublicSiteData {
 }
 
 type PublicSiteResponse = {
+  features?: PublicSiteData['features'];
   settings?: Record<string, unknown>;
   media?: PublicSiteData['media'];
   assets?: PublicSiteData['assets'];
@@ -82,7 +84,7 @@ function asSite(value: Record<string, unknown>): PublicSiteData {
 
 const loadPublicSite = cache(async (): Promise<PublicSiteData> => {
   const response = await serverApiRequest<PublicSiteResponse>('/public/site');
-  return { ...asSite(response?.settings ?? {}), media: response?.media, assets: response?.assets ?? {} };
+  return { ...asSite(response?.settings ?? {}), features: response?.features, media: response?.media, assets: response?.assets ?? {} };
 });
 
 export function getPublicSite(): Promise<PublicSiteData> {

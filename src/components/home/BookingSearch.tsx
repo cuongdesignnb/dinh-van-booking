@@ -1,7 +1,6 @@
 'use client';
 
 import { CalendarDays, ChevronDown, Search, UserRound } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
@@ -10,10 +9,12 @@ import { Popover } from '@/components/ui/Popover';
 import { formatShort } from '@/lib/dates';
 import { onFocusSearch } from '@/lib/events';
 import { selectionQuery } from '@/lib/selection';
+import { useSiteData } from '@/components/site/SiteDataProvider';
 
 type Open = null | 'in' | 'out' | 'guests';
 
 export function BookingSearch() {
+  const availabilityEnabled = useSiteData().publicSite.features?.publicAvailability === true;
   const uid = useId();
   const router = useRouter();
   const [checkIn, setCheckIn] = useState<string | null>(null);
@@ -74,14 +75,16 @@ export function BookingSearch() {
       return;
     }
     setError(null);
-    router.push(`/phong-nghi?${selectionQuery({ checkIn, checkOut, adults, children, rooms: 1 })}`);
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const browse = submitter instanceof HTMLButtonElement && submitter.value === 'browse';
+    const route = availabilityEnabled && !browse ? '/lich-phong' : '/phong-nghi';
+    router.push(`${route}?${selectionQuery({ checkIn, checkOut, adults, children, rooms: 1 })}`);
   };
 
   const errId = `${uid}-err`;
   const guestsLabel = `${adults + children} khách`;
 
   return (
-    <>
     <form
       ref={formRef}
       id="tim-phong"
@@ -174,10 +177,13 @@ export function BookingSearch() {
         </button>
       </div>
 
-      <button type="submit" className="search__submit btn-shine" data-magnetic>
-        <Search size={22} strokeWidth={2} aria-hidden="true" />
-        <span>Tìm phòng</span>
-      </button>
+      <div className="search__actions">
+        <button type="submit" className="search__submit btn-shine" data-magnetic>
+          <Search size={22} strokeWidth={2} aria-hidden="true" />
+          <span>{availabilityEnabled ? 'Kiểm tra tình trạng phòng' : 'Xem tất cả phòng nghỉ'}</span>
+        </button>
+        {availabilityEnabled && <button type="submit" value="browse" className="search__browse">Xem tất cả phòng nghỉ</button>}
+      </div>
 
       {error && (
         <p id={errId} className="search__error" role="alert">
@@ -225,7 +231,5 @@ export function BookingSearch() {
         />
       </Popover>
     </form>
-    <Link className="search__availability-link" href="/lich-phong">Tra cứu tình trạng phòng theo từng đêm</Link>
-    </>
   );
 }
