@@ -814,8 +814,8 @@ function ValueField({
 }
 
 export function SettingsFormEditor({ settingKey, value, disabled, onChange }: { settingKey: string; value: unknown; disabled: boolean; onChange: (value: unknown) => void }) {
-  const root = isRecord(value) ? value : {};
   if (settingKey === 'home.sections') {
+    const root = isRecord(value) ? value : {};
     const incoming = Array.isArray(root.order) ? root.order.filter((item): item is string => typeof item === 'string') : [];
     const order = [...incoming, ...SECTIONS.map((item) => item.value).filter((id) => !incoming.includes(id))];
     const hidden = Array.isArray(root.hidden) ? root.hidden.filter((item): item is string => typeof item === 'string') : [];
@@ -849,7 +849,7 @@ export function SettingsFormEditor({ settingKey, value, disabled, onChange }: { 
   }
   return (
     <div className="settings-form">
-      <ValueField settingKey={settingKey} path="" value={root} onChange={onChange} disabled={disabled} />
+      <ValueField settingKey={settingKey} path="" value={value} onChange={onChange} disabled={disabled} />
     </div>
   );
 }
