@@ -25,7 +25,7 @@ export interface PublicSeoUrl {
 }
 
 export interface PublicSiteData {
-  features?: { publicAvailability: boolean };
+  features?: { publicAvailability: boolean; partnerPortal?: boolean };
   identity: {
     name?: string;
     shortName?: string;

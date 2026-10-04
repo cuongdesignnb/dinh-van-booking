@@ -16,6 +16,7 @@ const isActive = (path: string, href: string) =>
 
 export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] }) {
   const site = useSiteData();
+  const partnerEnabled = site.publicSite.features?.partnerPortal === true;
   const header = publicSetting(site.publicSite, 'site.header');
   const ctaLabel = publicText(header.ctaLabel);
   const ctaTarget = publicText(header.ctaTarget);
@@ -72,7 +73,7 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
     ));
 
   return (
-    <header className="site-header" id="top">
+    <header className={`site-header${partnerEnabled ? ' site-header--partners' : ''}`} id="top">
       <LeafSprig className="site-header__decor" />
       <div className="site-header__inner">
         <Link href="/" className="site-header__brand" aria-label={site.name || undefined}>
@@ -89,6 +90,15 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
         </div>
 
         <div className="site-header__actions">
+          {partnerEnabled && <details className="header-partner" onKeyDown={(event) => {
+            if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
+          }}>
+            <summary>Đối tác</summary>
+            <div className="header-partner__links">
+              <Link href="/doi-tac?mode=login">Đăng nhập đối tác</Link>
+              <Link href="/doi-tac?mode=register">Đăng ký đối tác</Link>
+            </div>
+          </details>}
           <button type="button" className="round-btn" aria-label="Tìm phòng" onClick={() => focusSearch()}>
             <Search size={17} strokeWidth={2.1} aria-hidden="true" />
           </button>
@@ -141,6 +151,10 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
             </button>
           </div>
           <ul className="drawer__list">{renderItems()}</ul>
+          {partnerEnabled && <div className="drawer-partner">
+            <Link href="/doi-tac?mode=login" onClick={() => setMenuOpen(false)}>Đăng nhập đối tác</Link>
+            <Link href="/doi-tac?mode=register" onClick={() => setMenuOpen(false)}>Đăng ký đối tác</Link>
+          </div>}
           {ctaLabel && ctaTarget && <Link href={ctaTarget} className="btn btn--primary drawer__cta" onClick={() => setMenuOpen(false)}>
             {ctaLabel} <ArrowRight size={16} aria-hidden="true" />
           </Link>}

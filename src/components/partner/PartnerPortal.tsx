@@ -89,10 +89,11 @@ function labelMonth(day: string) {
   return new Intl.DateTimeFormat('vi-VN', { timeZone: 'UTC', month: 'long', year: 'numeric' }).format(new Date(`${day.slice(0, 7)}-01T00:00:00.000Z`));
 }
 
-export function PartnerPortal({ editorRoute, initialPropertyId }: { editorRoute?: PartnerEditorRoute; initialPropertyId?: string }) {
+export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'login' }: { editorRoute?: PartnerEditorRoute; initialPropertyId?: string; initialMode?: 'login' | 'register' }) {
   const [user, setUser] = useState<PartnerUser | null>(null);
   const [checking, setChecking] = useState(true);
-  const [formMode, setFormMode] = useState<'login' | 'register'>('login');
+  const [formMode, setFormMode] = useState<'login' | 'register'>(initialMode);
+  useEffect(() => { setFormMode(initialMode); }, [initialMode]);
   const [formBusy, setFormBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');

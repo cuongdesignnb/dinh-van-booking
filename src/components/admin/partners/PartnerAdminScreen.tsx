@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 import { useAdminSession } from '@/components/admin/AdminAuthGate';
+import Link from 'next/link';
 
 type Tab = 'applications' | 'organizations' | 'claims' | 'grants' | 'revisions' | 'sheets';
 type Application = { id: string; status: string; version: number; submittedAt: string; reviewNote: string | null; applicant: { id: string; email: string; fullName: string; disabledAt: string | null }; organization: { id: string; name: string; phone: string; address: string | null; organizationType: string; status: string; verificationStatus: string } };
@@ -19,9 +20,10 @@ const tabs: Array<[Tab, string]> = [['applications', 'Hồ sơ đăng ký'], ['o
 const dateLabel = (value: string) => new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 const errorText = (error: unknown) => error instanceof ApiError ? error.message : error instanceof Error ? error.message : 'Thao tác chưa hoàn tất.';
 
-export function PartnerAdminScreen() {
+export function PartnerAdminScreen({ initialTab, initialGrantId }: { initialTab?: Tab; initialGrantId?: string }) {
   const { user } = useAdminSession();
-  const [tab, setTab] = useState<Tab>('applications');
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'applications');
+  useEffect(() => { if (initialTab) setTab(initialTab); }, [initialTab]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -58,6 +60,9 @@ export function PartnerAdminScreen() {
   }, [toast, user.permissions]);
 
   useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => {
+    if (tab === 'grants' && initialGrantId) document.getElementById(`grant-${initialGrantId}`)?.scrollIntoView({ block: 'center' });
+  }, [tab, grants, initialGrantId]);
 
   const mutate = async (id: string, action: () => Promise<unknown>, success: string) => {
     setBusyId(id);
@@ -99,7 +104,7 @@ export function PartnerAdminScreen() {
 
     {tab === 'claims' && <div className="admin-partners__list">{claims.filter((claim) => claim.status === 'pending').length ? claims.filter((claim) => claim.status === 'pending').map((item) => <ClaimCard key={item.id} item={item} busy={busyId === item.id} onReview={reviewClaim} />) : <Empty text="Không có yêu cầu quản lý cơ sở đang chờ." />}</div>}
 
-    {tab === 'grants' && <div className="admin-partners__list">{grants.length ? grants.map((item) => <GrantCard key={item.id} item={item} busy={busyId === item.id} onSave={(payload) => mutate(item.id, () => apiRequest(`/admin/partner-grants/${item.id}`, { method: 'PATCH', body: JSON.stringify({ ...payload, expectedVersion: item.version }) }), 'Đã cập nhật quyền theo phạm vi.')} />) : <Empty text="Chưa có quyền cơ sở được cấp." />}</div>}
+    {tab === 'grants' && <div className="admin-partners__list">{user.permissions.includes('partner.grant') && <Link className="admin-btn admin-btn--primary" href="/admin/doi-tac/cap-quyen">+ Cấp quyền thủ công</Link>}{grants.length ? grants.map((item) => <div id={`grant-${item.id}`} key={item.id}><GrantCard item={item} busy={busyId === item.id} onSave={(payload) => mutate(item.id, () => apiRequest(`/admin/partner-grants/${item.id}`, { method: 'PATCH', body: JSON.stringify({ ...payload, expectedVersion: item.version }) }), 'Đã cập nhật quyền theo phạm vi.')} /></div>) : <Empty text="Chưa có quyền cơ sở được cấp." />}</div>}
 
     {tab === 'revisions' && <div className="admin-partners__list">{revisions.filter((revision) => revision.status === 'pending').length ? revisions.filter((revision) => revision.status === 'pending').map((item) => <RevisionCard key={item.id} item={item} busy={busyId === item.id} onReview={(action, note) => mutate(item.id, () => apiRequest(`/admin/partner-revisions/${item.id}/review`, { method: 'POST', body: JSON.stringify({ action, expectedVersion: item.version, note }) }), action === 'approve' ? 'Đã duyệt và áp dụng nội dung.' : 'Đã cập nhật trạng thái bản đề xuất.')} />) : <Empty text="Không có đề xuất nội dung đang chờ." />}</div>}
 

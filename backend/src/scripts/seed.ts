@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 import { buildDatabaseUrl } from '../common/config/env';
+import { seedPrimaryMenu } from '../navigation/seed-primary-menu';
 import {
   PERMISSIONS,
   PERMISSION_MODULES,
@@ -12,7 +13,7 @@ import {
 
 /**
  * Seeds the fixed vocabulary the system needs to run: permission codes, roles
- * and their grants. It is idempotent and creates no people and no demo data —
+ * and their grants, plus missing primary system routes. It is idempotent and creates no people and no demo data —
  * the first account is made by `create-owner`.
  */
 async function main(): Promise<void> {
@@ -78,6 +79,7 @@ async function main(): Promise<void> {
     console.log(`role ${roleCode}: ${permissions.length} quyền`);
   }
 
+  console.log(`Menu chính: bổ sung ${await seedPrimaryMenu(prisma)} liên kết hệ thống còn thiếu.`);
   const [permissionCount, roleCount, userCount] = await Promise.all([
     prisma.permission.count(),
     prisma.role.count(),

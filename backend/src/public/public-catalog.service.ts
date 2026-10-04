@@ -228,7 +228,7 @@ export class PublicCatalogService {
 
   constructor(private readonly prisma: PrismaService, private readonly settings: SettingsService) {}
 
-  async site(): Promise<{ settings: Record<string, unknown>; features: { publicAvailability: boolean }; media: Record<string, unknown>; assets: Record<string, unknown>; generatedAt: string }> {
+  async site(): Promise<{ settings: Record<string, unknown>; features: { publicAvailability: boolean; partnerPortal: boolean }; media: Record<string, unknown>; assets: Record<string, unknown>; generatedAt: string }> {
     const settings = await this.settings.publicSnapshot();
     const identity = record(settings['brand.identity']);
     const seo = record(settings['seo.defaults']);
@@ -259,7 +259,10 @@ export class PublicCatalogService {
     const assets = Object.fromEntries(rows.map((row) => [row.id, toAsset(row.id)]));
     return {
       settings,
-      features: { publicAvailability: (await this.settings.get<boolean>('publicAvailability.enabled')) === true },
+      features: {
+        publicAvailability: (await this.settings.get<boolean>('publicAvailability.enabled')) === true,
+        partnerPortal: (await this.settings.get<boolean>('partnerPortal.enabled')) === true,
+      },
       media: {
         logo: toAsset(ids.logo),
         favicon: toAsset(ids.favicon) ? { src: '/api/v1/public/favicon.png', alt: toAsset(ids.favicon)?.alt, width: 96, height: 96 } : null,

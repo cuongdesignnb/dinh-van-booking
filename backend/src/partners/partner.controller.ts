@@ -9,6 +9,7 @@ import {
   AddPartnerMembershipDto, AddPartnerStaffDto, QuickSetPartnerInventoryDto, RegisterPartnerDto, ResubmitPartnerApplicationDto, ReviewPartnerApplicationDto,
   ReviewPartnerRevisionDto, ReviewPropertyClaimDto, SubmitPartnerRevisionDto,
   UpdatePartnerGrantDto, UpdatePartnerMembershipDto, UpdatePartnerOrganizationDto, UpdatePartnerStaffDto,
+  CreateManualPartnerGrantDto, CreateManualPartnerOrganizationDto,
 } from './partner.dto';
 import { PartnerService } from './partner.service';
 
@@ -119,6 +120,26 @@ export class PartnerController {
 @Controller('admin')
 export class AdminPartnerController {
   constructor(private readonly partners: PartnerService) {}
+
+  @Get('partner-user-candidates')
+  @RequirePermissions(PERMISSIONS.partnerGrant)
+  userCandidates(@Query('search') search?: string) { return this.partners.adminUserCandidates(search); }
+
+  @Get('partner-property-candidates')
+  @RequirePermissions(PERMISSIONS.partnerGrant)
+  propertyCandidates(@Query('search') search?: string) { return this.partners.adminPropertyCandidates(search); }
+
+  @Post('partner-organizations/manual')
+  @RequirePermissions(PERMISSIONS.partnerReview, PERMISSIONS.partnerGrant)
+  createManualOrganization(@Body() dto: CreateManualPartnerOrganizationDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.partners.createManualOrganization(dto, user);
+  }
+
+  @Post('partner-grants')
+  @RequirePermissions(PERMISSIONS.partnerGrant)
+  createManualGrant(@Body() dto: CreateManualPartnerGrantDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.partners.createManualGrant(dto, user);
+  }
 
   @Get('partner-applications')
   @RequirePermissions(PERMISSIONS.partnerRead)

@@ -7,6 +7,7 @@ import { Prisma } from '../generated/prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { hashPassword } from '../common/crypto';
 import type { AuthenticatedUser } from '../common/types';
+import { PERMISSIONS } from '../common/permissions';
 import { AuthService } from '../auth/auth.service';
 import { documentMediaIds, documentToText, sanitizeDocument } from '../content/document';
 import { pathForContent, uniqueSlug } from '../content/slug';
@@ -19,6 +20,7 @@ import {
   RegisterPartnerDto, ReviewPartnerApplicationDto, ReviewPartnerRevisionDto,
   ReviewPropertyClaimDto, SubmitPartnerRevisionDto, ResubmitPartnerApplicationDto,
   AddPartnerMembershipDto, AddPartnerStaffDto, UpdatePartnerMembershipDto, UpdatePartnerOrganizationDto, UpdatePartnerStaffDto,
+  CreateManualPartnerGrantDto, CreateManualPartnerOrganizationDto,
 } from './partner.dto';
 
 type JsonRecord = Record<string, unknown>;
@@ -788,6 +790,95 @@ export class PartnerService {
         email: membership.user.email, disabled: !!membership.user.disabledAt, role: membership.role, status: membership.status,
         version: membership.version, createdAt: membership.createdAt.toISOString() })),
     })) };
+  }
+
+  async adminUserCandidates(search?: string) {
+    const term = search?.trim().slice(0, 120) ?? '';
+    if (term.length < 2) return { items: [] };
+    const rows = await this.prisma.user.findMany({
+      where: { OR: [{ email: { contains: term, mode: 'insensitive' } }, { fullName: { contains: term, mode: 'insensitive' } }] },
+      take: 20, orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
+      select: { id: true, fullName: true, email: true, disabledAt: true, partnerMemberships: {
+        select: { status: true, organization: { select: { id: true, name: true, status: true } } },
+        orderBy: { createdAt: 'asc' }, take: 50,
+      } },
+    });
+    return { items: rows.map(({ disabledAt, partnerMemberships, ...user }) => ({ ...user, disabled: !!disabledAt,
+      partnerOrganizations: partnerMemberships.map(({ status, organization }) => ({ ...organization, membershipStatus: status })),
+    })) };
+  }
+
+  async adminPropertyCandidates(search?: string) {
+    const term = search?.trim().slice(0, 120) ?? '';
+    const rows = await this.prisma.property.findMany({
+      where: { content: { isDemo: false }, ...(term ? { OR: [{ code: { contains: term, mode: 'insensitive' } }, { content: { title: { contains: term, mode: 'insensitive' } } }] } : {}) },
+      take: 30, orderBy: [{ code: 'asc' }, { id: 'asc' }],
+      select: { id: true, code: true, content: { select: { title: true } }, roomTypes: { select: { id: true, name: true, code: true }, orderBy: { code: 'asc' } } },
+    });
+    return { items: rows.map(({ content, ...property }) => ({ ...property, name: content.title })) };
+  }
+
+  async createManualOrganization(input: CreateManualPartnerOrganizationDto, reviewer: AuthenticatedUser) {
+    if (![PERMISSIONS.partnerReview, PERMISSIONS.partnerGrant].every((permission) => reviewer.permissions.includes(permission))) throw new ForbiddenException('Không đủ quyền tạo hồ sơ đối tác.');
+    if (input.manuallyVerified !== true) throw new BadRequestException('Admin phải xác nhận đã xác minh thủ công.');
+    if (!input.name.trim() || !input.contactName.trim()) throw new BadRequestException('Tên tổ chức và người liên hệ không hợp lệ.');
+    return this.prisma.$transaction(async (tx) => {
+      // Serialize two manual creations for the same account without changing roles.
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${input.userId}::uuid FOR UPDATE`;
+      const user = await tx.user.findUnique({ where: { id: input.userId }, select: { id: true, email: true, disabledAt: true } });
+      if (!user || user.disabledAt) throw new BadRequestException('Tài khoản không hợp lệ hoặc đã bị khóa.');
+      const membership = await tx.partnerMembership.findFirst({ where: { userId: user.id, status: { not: 'revoked' } } });
+      if (membership) throw new ConflictException({ code: 'partner_organization_exists', message: 'Tài khoản đã có hồ sơ đối tác. Hãy chọn tổ chức hiện có.', organizationId: membership.organizationId });
+      const organization = await tx.partnerOrganization.create({ data: {
+        name: input.name.trim(), contactName: input.contactName.trim(), email: user.email,
+        phone: input.phone.trim(), address: input.address?.trim() || null,
+        organizationType: input.organizationType, status: 'active', verificationStatus: 'verified_by_admin', createdById: reviewer.id,
+      } });
+      await tx.partnerMembership.create({ data: { organizationId: organization.id, userId: user.id, status: 'active', role: input.membershipRole, grantedById: reviewer.id } });
+      await tx.auditLog.create({ data: { actorId: reviewer.id, action: 'partner.organization_manual_create', entityType: 'partner_organization', entityId: organization.id,
+        diff: { userId: user.id, membershipRole: input.membershipRole, verificationStatus: 'verified_by_admin', manuallyVerified: true } } });
+      return { id: organization.id, name: organization.name, status: organization.status, membershipStatus: 'active' };
+    });
+  }
+
+  async createManualGrant(input: CreateManualPartnerGrantDto, reviewer: AuthenticatedUser) {
+    if (!reviewer.permissions.includes(PERMISSIONS.partnerGrant)) throw new ForbiddenException('Không đủ quyền cấp quyền đối tác.');
+    const canReadInventory = input.canReadInventory ?? true;
+    if (input.canWriteInventory && !canReadInventory) throw new BadRequestException('Quyền ghi tồn cần đi cùng quyền xem tồn.');
+    const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
+    if (expiresAt && (!Number.isFinite(expiresAt.getTime()) || expiresAt <= new Date())) throw new BadRequestException('Thời hạn quyền phải là ngày trong tương lai hợp lệ.');
+    const duplicate = async () => {
+      const current = await this.prisma.partnerPropertyGrant.findUnique({ where: { organizationId_propertyId: { organizationId: input.organizationId, propertyId: input.propertyId } }, select: { id: true } });
+      return new ConflictException({ code: 'grant_already_exists', message: 'Quyền đã tồn tại.', grantId: current?.id });
+    };
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const membership = await tx.partnerMembership.findUnique({ where: { organizationId_userId: { organizationId: input.organizationId, userId: input.userId } }, include: { user: { select: { disabledAt: true } }, organization: { select: { status: true } } } });
+        if (!membership || membership.status !== 'active' || membership.organization.status !== 'active' || membership.user.disabledAt) throw new BadRequestException('Tài khoản phải là thành viên đang hoạt động của tổ chức đã duyệt.');
+        const property = await tx.property.findUnique({ where: { id: input.propertyId }, select: { id: true, roomTypes: { select: { id: true } } } });
+        if (!property) throw new BadRequestException('Cơ sở không hợp lệ.');
+        const allowed = new Set(property.roomTypes.map((room) => room.id));
+        if (new Set(input.roomTypeScope).size !== input.roomTypeScope.length || input.roomTypeScope.some((id) => !allowed.has(id))) throw new BadRequestException('Phạm vi hạng phòng không thuộc cơ sở này.');
+        if ((canReadInventory || input.canWriteInventory || input.canEditRates) && !input.roomTypeScope.length) throw new BadRequestException('Hãy chọn ít nhất một hạng phòng cho quyền quỹ phòng hoặc giá.');
+        const existing = await tx.partnerPropertyGrant.findUnique({ where: { organizationId_propertyId: { organizationId: input.organizationId, propertyId: input.propertyId } } });
+        if (existing) throw new ConflictException({ code: 'grant_already_exists', message: 'Quyền đã tồn tại.', grantId: existing.id });
+        const grant = await tx.partnerPropertyGrant.create({ data: {
+          organizationId: input.organizationId, propertyId: input.propertyId, roomTypeScope: input.roomTypeScope,
+          canReadInventory, canWriteInventory: input.canWriteInventory ?? false, canEditRates: input.canEditRates ?? false,
+          canEditProfile: input.canEditProfile ?? false, canUploadMedia: input.canUploadMedia ?? false,
+          approvedById: reviewer.id, approvedAt: new Date(), expiresAt, status: 'active',
+        } });
+        await tx.auditLog.create({ data: { actorId: reviewer.id, action: 'partner.manual_grant_create', entityType: 'partner_property_grant', entityId: grant.id,
+          diff: { userId: input.userId, organizationId: input.organizationId, propertyId: input.propertyId, roomTypeScope: input.roomTypeScope,
+            canReadInventory, canWriteInventory: grant.canWriteInventory, canEditRates: grant.canEditRates, canEditProfile: grant.canEditProfile,
+            canUploadMedia: grant.canUploadMedia, expiresAt: expiresAt?.toISOString() ?? null, note: input.note?.trim() || null } } });
+        await this.notifyOrg(tx, input.organizationId, 'manual_grant_created', 'Đã được cấp quyền cơ sở', input.note?.trim() || 'Quản trị viên đã cấp quyền theo phạm vi hạng phòng.');
+        return { id: grant.id, status: grant.status, version: grant.version };
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw await duplicate();
+      throw error;
+    }
   }
 
   async updateOrganization(id: string, input: UpdatePartnerOrganizationDto, reviewer: AuthenticatedUser) {

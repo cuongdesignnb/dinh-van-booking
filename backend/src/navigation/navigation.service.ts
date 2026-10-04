@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from '../common/types';
 import type { NavigationItemInputDto } from './navigation.dto';
 import { pathForContent } from '../content/slug';
+import { SettingsService } from '../settings/settings.service';
 
 const PRIMARY_MENU_KEY = 'primary';
 
@@ -41,7 +42,7 @@ function publicHref(value: string | null | undefined): string | null {
 
 @Injectable()
 export class NavigationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly settings: SettingsService) {}
 
   async adminPrimaryMenu() {
     const menu = (await this.prisma.navigationMenu.findUnique({
@@ -98,6 +99,7 @@ export class NavigationService {
 
     if (!menu) return [];
 
+    const availabilityEnabled = (await this.settings.get<boolean>('publicAvailability.enabled')) === true;
     const now = new Date();
     return menu.items.flatMap((item) => {
       if (item.contentId) {
@@ -112,6 +114,7 @@ export class NavigationService {
         return [{ label: item.label, href }];
       }
       const href = publicHref(item.externalUrl);
+      if (href && (href.split(/[?#]/)[0].replace(/\/+$/, '') === '/lich-phong') && !availabilityEnabled) return [];
       return href ? [{ label: item.label, href }] : [];
     });
   }

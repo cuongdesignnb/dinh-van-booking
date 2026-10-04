@@ -47,6 +47,8 @@ export function adminErrorToast(error: unknown): AdminToastEvent {
 
 export function adminMutationSuccess(path: string, method: string): string {
   const pathname = path.split('?')[0];
+  if (pathname === '/admin/partner-grants' && method === 'POST') return 'Cấp quyền thành công.';
+  if (pathname === '/admin/partner-organizations/manual' && method === 'POST') return 'Tạo hồ sơ đối tác thành công.';
   if (pathname === '/navigation/primary') return method === 'DELETE' ? 'Đã khôi phục Menu mặc định.' : 'Đã lưu Menu.';
   if (pathname === '/media/upload') return 'Đã tải ảnh lên thư viện.';
   if (/^\/media\/[^/]+$/.test(pathname)) return method === 'DELETE' ? 'Đã xoá ảnh khỏi thư viện.' : 'Đã cập nhật thông tin ảnh.';

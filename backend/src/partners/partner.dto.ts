@@ -1,5 +1,30 @@
 import { Type } from 'class-transformer';
-import { Allow, ArrayMaxSize, IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { Allow, ArrayMaxSize, ArrayUnique, Equals, IsArray, IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+
+export class CreateManualPartnerOrganizationDto {
+  @IsUUID() userId!: string;
+  @IsString() @MinLength(2) @MaxLength(180) name!: string;
+  @IsIn(['property_owner', 'agency']) organizationType!: string;
+  @IsString() @MinLength(2) @MaxLength(120) contactName!: string;
+  @IsString() @Matches(/^[+\d][\d ()-]{7,24}$/) phone!: string;
+  @IsOptional() @IsString() @MaxLength(240) address?: string;
+  @IsIn(['owner', 'manager']) membershipRole!: string;
+  @Equals(true) manuallyVerified!: boolean;
+}
+
+export class CreateManualPartnerGrantDto {
+  @IsUUID() userId!: string;
+  @IsUUID() organizationId!: string;
+  @IsUUID() propertyId!: string;
+  @IsArray() @ArrayMaxSize(500) @ArrayUnique() @IsUUID(undefined, { each: true }) roomTypeScope!: string[];
+  @IsOptional() @IsBoolean() canReadInventory?: boolean;
+  @IsOptional() @IsBoolean() canWriteInventory?: boolean;
+  @IsOptional() @IsBoolean() canEditRates?: boolean;
+  @IsOptional() @IsBoolean() canEditProfile?: boolean;
+  @IsOptional() @IsBoolean() canUploadMedia?: boolean;
+  @IsOptional() @IsDateString() expiresAt?: string | null;
+  @IsOptional() @IsString() @MaxLength(1000) note?: string;
+}
 
 export class RegisterPartnerDto {
   @IsString() @MinLength(2) @MaxLength(120) fullName!: string;
