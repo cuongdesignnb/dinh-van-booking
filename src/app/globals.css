@@ -619,7 +619,7 @@ svg {
 
 .hero {
   position: relative;
-  height: 316px;
+  height: clamp(430px, 30vw, 500px);
   overflow: hidden;
   isolation: isolate;
   background: #3b5a3a;
@@ -848,7 +848,7 @@ svg {
 }
 
 .hero__copy {
-  padding-top: 17px;
+  padding-top: 28px;
   color: #fff;
   text-shadow: 0 2px 14px rgb(0 0 0 / 22%);
 }
@@ -945,7 +945,7 @@ svg {
 .hero__search {
   position: absolute;
   left: 50px;
-  bottom: 18px;
+  bottom: 24px;
   width: 750px;
 }
 
@@ -3334,7 +3334,7 @@ svg {
     margin-left: 48px;
   }
   .hero {
-    height: 340px;
+    height: 410px;
   }
   .hero__note {
     left: auto;
@@ -3437,6 +3437,9 @@ svg {
     padding: 0 24px 28px;
     display: flex;
     flex-direction: column;
+  }
+  .hero__copy {
+    padding-top: 17px;
   }
   .hero__note {
     display: none;
