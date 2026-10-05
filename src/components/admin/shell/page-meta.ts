@@ -28,7 +28,7 @@ const META: Record<string, AdminPageMeta> = {
   },
   '/admin/ton-phong': {
     title: 'Quỹ phòng',
-    subtitle: 'Mở tồn theo ngày, thiết lập sức chứa, khoá phòng và trạng thái dừng bán.',
+    subtitle: 'Theo dõi và cập nhật số phòng còn bán theo từng hạng phòng và từng ngày.',
     script: 'Quản lý chủ động\nhành trình an tâm ♡',
   },
   '/admin/combo-du-lich': {

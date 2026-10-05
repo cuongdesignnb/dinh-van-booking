@@ -25,9 +25,10 @@ export function AdminInventoryMatrix() {
   useEffect(() => { const sequenceRef = requestSequence; void refresh(); return () => { sequenceRef.current++; }; }, [refresh]);
   const mutation = (path: string, data: unknown, key?: string) => apiRequest(path, { method: 'POST', headers: key ? { 'idempotency-key': key } : undefined, body: JSON.stringify(data) });
   if (!user.permissions.includes('inventory.read')) return <p role="alert">Không đủ quyền xem quỹ phòng.</p>;
-  return <div className="admin-ops admin-inventory"><h2>Quỹ phòng theo hạng phòng</h2><p>Chọn cơ sở, hạng phòng và ngày cần cập nhật. Chỉ người có quyền quản lý quỹ phòng mới được lưu thay đổi.</p>
-    {error && <p role="alert">{error}</p>}<label className="admin-inventory__property">Cơ sở / nơi lưu trú<select value={propertyId} onChange={(e) => { if (e.target.value !== propertyId) { setItems([]); setPropertyId(e.target.value); } }}>{properties.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.code}</option>)}</select></label>
+  return <div className="admin-inventory">
+    {error && <p className="inventory-matrix__error" role="alert">{error}</p>}
     {property && <InventoryCalendarMatrix mode="admin" propertyName={property.name} rooms={property.roomTypes} items={items} dates={dates} view={view} anchor={anchor} onView={setView} onAnchor={setAnchor} loading={loading} canWrite={user.permissions.includes('inventory.write')} onRefresh={refresh}
+      propertySelector={<label className="admin-inventory__property">Cơ sở<select value={propertyId} onChange={(e) => { if (e.target.value !== propertyId) { setItems([]); setPropertyId(e.target.value); } }}>{properties.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.code}</option>)}</select></label>}
       onSave={(change, key) => mutation('/admin/inventory/available', change, key)}
       onOpen={(room, day, capacity, key) => apiRequest(`/admin/inventory/${room.id}`, { method: 'PUT', headers: { 'idempotency-key': key }, body: JSON.stringify({ from: day, to: shiftInventoryDay(day, 1), capacity, expectedVersions: { [day]: 0 } }) })}
       onPreview={(changes: AvailableChange[]) => apiRequest('/admin/inventory/available/preview', { method: 'POST', body: JSON.stringify({ changes }) })}
