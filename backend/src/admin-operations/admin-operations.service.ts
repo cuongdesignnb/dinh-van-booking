@@ -458,6 +458,33 @@ export class AdminOperationsService {
     return { items: items.map((item) => ({ id: item.id, code: item.code, name: item.name, propertyId: item.propertyId, propertyCode: item.property.code, propertyName: item.property.content.title, status: item.status })) };
   }
 
+  async inventoryProperties() {
+    const items = await this.prisma.property.findMany({ where: { content: { isDemo: false } },
+      select: { id: true, code: true, content: { select: { title: true } }, roomTypes: { orderBy: [{ position: 'asc' }, { code: 'asc' }], select: { id: true, name: true, code: true, status: true, capacityVerified: true, approvedPoolLimit: true } } }, orderBy: { code: 'asc' } });
+    return { items: items.map(({ content, ...property }) => ({ ...property, name: content.title })) };
+  }
+
+  async inventoryMatrix(query: { propertyId: string; from: string; to: string }) {
+    const stay = range(query.from, query.to, 90);
+    const property = await this.prisma.property.findFirst({ where: { id: query.propertyId, content: { isDemo: false } }, select: { roomTypes: { select: { id: true } } } });
+    if (!property) throw new NotFoundException('Không tìm thấy cơ sở.');
+    const ids = property.roomTypes.map((room) => room.id);
+    const [rows, incidents] = await Promise.all([
+      this.prisma.inventoryDay.findMany({ where: { roomTypeId: { in: ids }, stayDate: { gte: stay.from, lt: stay.to } } }),
+      this.prisma.inventoryIntegrityIncident.findMany({ where: { roomTypeId: { in: ids }, stayDate: { gte: stay.from, lt: stay.to }, resolvedAt: null }, select: { roomTypeId: true, stayDate: true } }),
+    ]);
+    const byKey = new Map(rows.map((row) => [`${row.roomTypeId}:${dateKey(row.stayDate)}`, row]));
+    const incidentKeys = new Set(incidents.map((row) => `${row.roomTypeId}:${dateKey(row.stayDate)}`));
+    return { items: ids.flatMap((roomTypeId) => stay.dates.map((day) => {
+      const stayDate = dateKey(day), key = `${roomTypeId}:${stayDate}`, row = byKey.get(key);
+      return row ? { ...this.serialize(row), stayDate, available: row.stopSell ? 0 : availableRaw(row), integrityHold: incidentKeys.has(key) } : { roomTypeId, stayDate, available: null, version: null, capacity: null };
+    })) };
+  }
+
+  async setAvailable(changes: import('../inventory/inventory-mutation.service').AvailableChange[], actorId: string, key: string, preview = false) {
+    return this.inventoryMutations.setAvailableBatch(changes, actorId, key, preview);
+  }
+
   async checkAvailability(input: CreateQuoteDto) {
     const stay = range(input.checkIn, input.checkOut, 30);
     await this.assertAvailability(this.prisma, input.roomTypeId, stay.dates, input.quantity);

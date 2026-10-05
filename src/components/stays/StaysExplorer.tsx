@@ -2,7 +2,8 @@
 
 import { BedDouble, Info, LayoutGrid, List, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useId, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import { apiRequest } from '@/lib/api/client';
 import { Pagination } from '@/components/shared/Pagination';
 import { Modal } from '@/components/ui/Modal';
 import { AMENITIES, STAY_TYPES } from '@/lib/catalog/constants';
@@ -48,7 +49,16 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
   const pathname = usePathname();
   const selection = useMemo(() => parseSelection(params), [params]);
   const filters = useMemo(() => parseFilters(params), [params]);
-  const dataset = stays;
+  const badgeQuery = new URLSearchParams(selection.checkIn && selection.checkOut ? { checkIn: selection.checkIn, checkOut: selection.checkOut } : {}).toString();
+  const [badges, setBadges] = useState<{ query: string; items: Array<Pick<Stay, 'id' | 'availabilityStatus' | 'availabilityAsOf'>> }>({ query: badgeQuery, items: stays });
+  useEffect(() => {
+    const abort = new AbortController();
+    const refresh = () => { void apiRequest<{ items: Array<Pick<Stay, 'id' | 'availabilityStatus' | 'availabilityAsOf'>> }>(`/public/stay-availability?${badgeQuery}`, { cache: 'no-store', signal: abort.signal }).then((result) => { if (!abort.signal.aborted) setBadges({ query: badgeQuery, items: result.items }); }).catch(() => { if (!abort.signal.aborted) setBadges({ query: badgeQuery, items: [] }); }); };
+    refresh(); window.addEventListener('focus', refresh);
+    return () => { abort.abort(); window.removeEventListener('focus', refresh); };
+  }, [badgeQuery]);
+  const badgeMap = new Map(badges.query === badgeQuery ? badges.items.map((item) => [item.id, item]) : []);
+  const dataset = stays.map((stay) => ({ ...stay, availabilityStatus: badgeMap.get(stay.id)?.availabilityStatus ?? 'unknown', availabilityAsOf: badgeMap.get(stay.id)?.availabilityAsOf ?? null } as Stay));
   const hasCatalog = dataset.length > 0;
   const hasAdvisor = !!publicText(content.advisorTitle);
   const guests = selection.adults + selection.children;

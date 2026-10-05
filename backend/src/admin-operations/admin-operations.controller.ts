@@ -7,7 +7,7 @@ import {
   CreateBookingFromQuoteDto, CreateBookingNoteDto, CreateFollowUpDto, CreateInteractionDto,
   CreateManualPaymentDto, CreateQuoteDto, CreateRefundDto, HoldQuoteDto, ListAdminQuery,
   ListInventoryQuery, ReportQuery, UpdateBookingStatusDto, UpdateCouponDto, UpdateCustomerDto,
-  UpdateFollowUpDto, UpdateInventoryDto, UpdateRefundDto, CreateCouponDto,
+  UpdateFollowUpDto, UpdateInventoryDto, UpdateRefundDto, CreateCouponDto, InventoryMatrixQuery, SetAvailableDto, BulkAvailableDto,
 } from './dto';
 import { AdminOperationsService, type QuoteOwner } from './admin-operations.service';
 import { loadConfig } from '../common/config/env';
@@ -55,6 +55,27 @@ export class AdminOperationsController {
 
   @Get('inventory/room-types') @RequirePermissions(PERMISSIONS.inventoryRead)
   inventoryRoomTypes() { return this.operations.listInventoryRoomTypes(); }
+
+  @Get('inventory/properties') @RequirePermissions(PERMISSIONS.inventoryRead)
+  inventoryProperties() { return this.operations.inventoryProperties(); }
+
+  @Get('inventory/matrix') @RequirePermissions(PERMISSIONS.inventoryRead)
+  inventoryMatrix(@Query() query: InventoryMatrixQuery) { return this.operations.inventoryMatrix(query); }
+
+  @Post('inventory/available') @RequirePermissions(PERMISSIONS.inventoryWrite)
+  setAvailable(@Body() dto: SetAvailableDto, @Headers('idempotency-key') key: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.operations.setAvailable([dto], user.id, key);
+  }
+
+  @Post('inventory/available/preview') @RequirePermissions(PERMISSIONS.inventoryWrite)
+  previewAvailable(@Body() dto: BulkAvailableDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.operations.setAvailable(dto.changes, user.id, 'preview-request', true);
+  }
+
+  @Post('inventory/available/bulk') @RequirePermissions(PERMISSIONS.inventoryWrite)
+  bulkAvailable(@Body() dto: BulkAvailableDto, @Headers('idempotency-key') key: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.operations.setAvailable(dto.changes, user.id, key);
+  }
 
   @Post('inventory/availability') @RequirePermissions(PERMISSIONS.inventoryRead)
   inventoryAvailability(@Body() dto: CreateQuoteDto) { return this.operations.checkAvailability(dto); }

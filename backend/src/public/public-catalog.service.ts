@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { loadConfig } from '../common/config/env';
 import { documentToText } from '../content/document';
+import { badgeDateRange, propertyAvailability, roomAvailability } from '../inventory/availability-state';
 
 type AssetRow = {
   storageKey: string;
@@ -546,7 +547,7 @@ export class PublicCatalogService {
     };
   }
 
-  async stays(featured = false): Promise<{ items: ReturnType<PublicCatalogService['toStay']>[]; generatedAt: string }> {
+  async stays(featured = false, query: { checkIn?: string; checkOut?: string } = {}) {
     const nodes = await this.prisma.contentNode.findMany({
       where: {
         kind: 'stay',
@@ -558,10 +559,31 @@ export class PublicCatalogService {
       include: NODE_INCLUDE,
       orderBy: [{ featured: 'desc' }, { updatedAt: 'desc' }],
     });
-    const items = (nodes as unknown as PublicNode[])
-      .filter((node) => node.property?.operatingStatus === 'active' && hasSellableStayRoom(node.property.roomTypes))
-      .map((node) => this.toStay(node));
+    const publicNodes = (nodes as unknown as PublicNode[]).filter((node) => node.property?.operatingStatus === 'active' && hasSellableStayRoom(node.property.roomTypes));
+    const summaries = await this.stayAvailabilityProjection(publicNodes.map((node) => ({ id: node.id, roomTypes: node.property!.roomTypes })), query);
+    const items = publicNodes.map((node, index) => ({ ...this.toStay(node), ...summaries[index] }));
     return { items, generatedAt: new Date().toISOString() };
+  }
+
+  async stayBadges(query: { checkIn?: string; checkOut?: string }) {
+    const nodes = await this.prisma.contentNode.findMany({ where: { kind: 'stay', isDemo: false, publicationStatus: 'published', OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }], property: { operatingStatus: 'active' } },
+      select: { id: true, property: { select: { roomTypes: { where: { status: 'active', capacityVerified: true }, select: { id: true, status: true, capacityVerified: true } } } } } });
+    return { items: await this.stayAvailabilityProjection(nodes.map((node) => ({ id: node.id, roomTypes: node.property?.roomTypes ?? [] })), query), generatedAt: new Date().toISOString() };
+  }
+
+  private async stayAvailabilityProjection(properties: Array<{ id: string; roomTypes: Array<{ id: string; status: string; capacityVerified: boolean }> }>, query: { checkIn?: string; checkOut?: string }) {
+    const { dates } = badgeDateRange(query), now = new Date();
+    const roomIds = properties.flatMap((property) => property.roomTypes.filter((room) => room.status === 'active' && room.capacityVerified).map((room) => room.id));
+    if ((await this.settings.get<boolean>('publicAvailability.enabled')) !== true || !roomIds.length) return properties.map((property) => ({ id: property.id, availabilityStatus: 'unknown' as const, availabilityAsOf: null }));
+    const policy = await this.settings.get<import('../inventory/availability-state').FreshnessPolicy>('inventory.freshness');
+    const [rows, incidents] = await Promise.all([
+      this.prisma.inventoryDay.findMany({ where: { roomTypeId: { in: roomIds }, stayDate: { in: dates } } }),
+      this.prisma.inventoryIntegrityIncident.findMany({ where: { roomTypeId: { in: roomIds }, stayDate: { in: dates }, resolvedAt: null }, select: { roomTypeId: true, stayDate: true } }),
+    ]);
+    const key = (room: string, date: Date) => `${room}:${isoDate(date)}`;
+    const byKey = new Map(rows.map((row) => [key(row.roomTypeId, row.stayDate), row]));
+    const incidentKeys = new Set(incidents.map((row) => key(row.roomTypeId, row.stayDate)));
+    return properties.map((property) => ({ id: property.id, ...propertyAvailability(property.roomTypes.filter((room) => room.status === 'active' && room.capacityVerified).map((room) => roomAvailability(dates.map((date) => byKey.get(key(room.id, date))), dates, dates.some((date) => incidentKeys.has(key(room.id, date))), policy ?? {}, now))) }));
   }
 
   async availability(query: Record<string, string>) {
@@ -618,16 +640,10 @@ export class PublicCatalogService {
         if (adults > room.maxAdults * quantity || children > room.maxChildren * quantity || adults + children > room.maxOccupancy * quantity) continue;
         const rows = dates.map((date) => inventoryByKey.get(`${room.id}:${isoDate(date)}`));
         const hasIncident = dates.some((date) => incidentKeys.has(`${room.id}:${isoDate(date)}`));
-        const isFresh = rows.every((row, index) => {
-          if (!row?.lastConfirmedAt) return false;
-          const near = (dates[index].getTime() - now.getTime()) / 86_400_000 <= (freshness.nearTermDays ?? 7);
-          const maxAge = (near ? freshness.nearTermFreshHours ?? 24 : (freshness.fartherFreshDays ?? 7) * 24) * 3_600_000;
-          return now.getTime() - row.lastConfirmedAt.getTime() <= maxAge;
-        });
-        const eachNightAvailable = rows.map((row) => row ? row.capacity - row.blockedCount - row.heldCount - row.reservedCount : null);
-        const sellable = !hasIncident && isFresh && rows.every((row, index) => !!row && !row.stopSell && eachNightAvailable[index] !== null && eachNightAvailable[index]! >= quantity);
+        const state = roomAvailability(rows, dates, hasIncident, freshness ?? {}, now, quantity);
+        const sellable = state.status === 'available';
         const hasRate = room.ratePlans.some((rate) => rate.baseRateVnd > 0n);
-        const status = hasIncident ? 'needs_check' : !isFresh ? 'stale' : sellable ? 'available' : 'sold_out';
+        const status = hasIncident ? 'needs_check' : state.status === 'unknown' ? 'stale' : state.status;
         const cover = property.content.media[0]?.media;
         const candidate = {
           propertyId: property.id, roomTypeId: room.id, name: property.content.title, roomTypeName: room.name,
@@ -639,7 +655,8 @@ export class PublicCatalogService {
           checkIn, checkOut, nights: nightCount, quantity,
         };
         if (status === 'available') { best = candidate; break; }
-        if (!best || (status === 'needs_check' && best.status === 'sold_out')) best = candidate;
+        const priority: Record<string, number> = { available: 4, needs_check: 3, stale: 2, sold_out: 1 };
+        if (!best || priority[status] > priority[String(best.status)]) best = candidate;
       }
       if (best) items.push(best);
     }

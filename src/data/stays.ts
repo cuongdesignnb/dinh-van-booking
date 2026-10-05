@@ -35,6 +35,8 @@ export interface CardFeature {
 }
 
 export interface Stay {
+  availabilityStatus?: 'available' | 'sold_out' | 'unknown';
+  availabilityAsOf?: string | null;
   id: string;
   slug: string;
   publicPath?: string;

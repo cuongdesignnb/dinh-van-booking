@@ -41,9 +41,14 @@ export class PublicController {
   }
 
   @Get('stays')
-  stays(@Query('featured') featured?: string) {
-    return this.catalog.stays(featured === 'true');
+  @Header('Cache-Control', 'private, no-store')
+  stays(@Query() query: Record<string, string>) {
+    return this.catalog.stays(query.featured === 'true', query);
   }
+
+  @Get('stay-availability')
+  @Header('Cache-Control', 'private, no-store')
+  stayBadges(@Query() query: Record<string, string>) { return this.catalog.stayBadges(query); }
 
   @Get('stays/:slug')
   stay(@Param('slug') slug: string) {

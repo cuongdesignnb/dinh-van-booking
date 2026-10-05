@@ -58,3 +58,16 @@ Source-close verification on 2026-10-03: frontend lint/typecheck/build, backend 
 - No production account/property, property grant, room inventory, business price, published profile, or live invitation was changed by QA.
 - Full requirement-suite, production Chrome QA, full backup/restore, performance targets, and every mobile/accessibility breakpoint have not been accepted.
 - The full legacy Playwright suite was intentionally not run because its shared project setup/reset/restart behavior is not confirmed safe for this durable local environment. The isolated partner/public browser workflow was run instead.
+
+## Room-level matrix and public badges — 2026-10-05
+
+Task `DVB_INVENTORY_MATRIX_AND_PUBLIC_BADGES`, source baseline `2713f4630b9196618551cf78e7a828d95b22194e`.
+
+- `/admin/ton-phong` and `/doi-tac` now use the same `InventoryCalendarMatrix`: actual RoomType name/code rows, nightly cells, week/month navigation, sticky room/date headers and a seven-day mobile view with calendar-only scrolling.
+- Admin inventory matrix is system-wide (`inventory.read`/`inventory.write`), excludes demo properties and does not require PartnerGrant. Partner inventory matrix is scoped by active membership, active grant and room scope in the API, not just the UI.
+- Single-cell available updates and admin bulk preview/apply share `InventoryMutationService`. Expected versions, idempotency, ordered locks, ledger checks, held/reserved protection, audit and `inventory.changed` outbox remain transactional. A 409 keeps the entered draft; no automatic version substitution.
+- Missing day is explicitly **Chưa mở**. Only Admin can open verified capacity through the existing range mutation with version zero; Partner must request Admin assistance. Inactive/unverified room categories are visible but not sale-editable.
+- Homepage, stay grid and stay list share `AvailabilityBadge`. Status aggregates PostgreSQL InventoryDay over `[checkIn, checkOut)` for active/verified room categories. One category available for every night is enough for available; sold_out requires all eligible categories known/fresh. Missing/stale/integrity failures are unknown, never false sold_out. Default dates use Asia/Ho_Chi_Minh today/tomorrow.
+- No migration, permanent setting/env change or business data change. No production contact/deployment. Toast, dedicated editor pages and existing inventory writers/queues are retained.
+
+Targeted evidence: `backend/scripts/inventory-matrix-qa.mjs` uses guarded disposable PostgreSQL `dvb_inventory_matrix_qa` on loopback:51534, compiled API and local Next runtime. Real API/browser tests cover Admin ↔ Partner/Public, exact room/date updates, IDOR 403, missing opening/request, week/month, 409 draft retention, admin/partner idempotency, partially valid bulk rollback, commitments, audit/outbox, fresh/sold/missing/stale badges, query-range batch refresh, no internal counter leakage, and 1440/1024/390 viewports. Fixtures are removed in `finally`; this is targeted Chromium/local evidence, not production Chrome or Google acceptance. Screenshots are ignored QA artifacts, not committed business media. Fresh frontend typecheck/lint, backend build and 79/79 backend tests passed. Existing Google/recovery acceptance gaps above are unchanged.

@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID,
-  Matches, Max, MaxLength, Min, MinLength,
+  Matches, Max, MaxLength, Min, MinLength, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested,
 } from 'class-validator';
 
 export class ListAdminQuery {
@@ -57,6 +57,21 @@ export class ListInventoryQuery {
   @IsUUID() roomTypeId!: string;
   @IsDateString() from!: string;
   @IsDateString() to!: string;
+}
+export class InventoryMatrixQuery {
+  @IsUUID() propertyId!: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/) from!: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/) to!: string;
+}
+export class SetAvailableDto {
+  @IsUUID() roomTypeId!: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/) stayDate!: string;
+  @IsInt() @Min(0) @Max(5000) available!: number;
+  @IsInt() @Min(1) expectedVersion!: number;
+  @IsOptional() @IsBoolean() reopen?: boolean;
+}
+export class BulkAvailableDto {
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(90) @ValidateNested({ each: true }) @Type(() => SetAvailableDto) changes!: SetAvailableDto[];
 }
 
 export class UpdateInventoryDto {

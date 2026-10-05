@@ -1,5 +1,17 @@
 # UI → API → service → data → permission matrix
 
+## Room matrix / public badge delta (2026-10-05)
+
+| UI | Action / API (prefix `/api/v1`) | Service / authority |
+|---|---|---|
+| `/admin/ton-phong` | System-wide selector `GET /admin/inventory/properties`; nightly rows `GET /admin/inventory/matrix?propertyId&from&to` (end exclusive) | AdminOperationsService; `inventory.read`, all non-demo properties, no partner grant |
+| Shared admin/partner matrix | Short cell dialog showing actual property, RoomType name/code, date and captured version; main input is available, counters/provenance are read-only | Admin `POST /admin/inventory/available`, Partner existing `POST /partners/inventory/available`; same InventoryMutationService; admin `inventory.write` versus active scoped partner grant |
+| Admin missing cell | Explicit verified capacity confirmation; existing `PUT /admin/inventory/:roomTypeId` with `[from,to)` and expected version zero | No guessed capacity; Partner missing dialog requests Admin, cannot create inventory |
+| Admin date-range editor | One room category, inclusive last-night UI; `POST /admin/inventory/available/preview`, then `/bulk` with same captured versions | Preview makes no writes; apply is atomic and idempotent; 409 leaves the draft intact |
+| `/`, `/phong-nghi` grid/list | Shared bottom-left image badge; `GET /public/stays?checkIn&checkOut` for server rendering, `/public/stay-availability?checkIn&checkOut` as one client date-range batch | PublicCatalogService; shared freshness/aggregation; only status/asOf, no counts/ledger/version; `Cache-Control: private, no-store`, server fetch no-store |
+
+Both calendars use one component. Mobile is seven days with deliberate calendar scrolling, not a 31-column shrunken page. Public dates default to Vietnam today/tomorrow; missing/stale/integrity means **Đang cập nhật**. Availability feature OFF also yields unknown, not an active availability promise. Badge is separate from content/favorite badges and respects reduced motion. Targeted local browser/API acceptance passed at 1440, 1024 and 390px; this does not replace the broader historical acceptance gaps below.
+
 All API paths below are prefixed by `/api/v1`. Authentication uses the existing cookie/session infrastructure. Partner identities are not staff roles.
 
 | UI | User action | API | Service / persistence | Gate and behavior |

@@ -6,6 +6,7 @@ import type { Stay } from '@/data/stays';
 import { fromPrice, hasContactOnlyRooms } from '@/lib/catalog/pricing';
 import { stayContactHref } from '@/lib/contact/stay-contact';
 import { formatVnd } from '@/lib/format';
+import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge';
 
 const PinCheck = () => (
   <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" className="stay__meta-icon">
@@ -43,6 +44,7 @@ export function StayCard({ stay, index }: { stay: Stay; index: number }) {
           style={home.image.position ? { objectPosition: home.image.position } : undefined}
         />
         {stay.badge && <span className="stay__badge">{stay.badge}</span>}
+        <AvailabilityBadge status={stay.availabilityStatus} />
         <FavoriteButton id={stay.id} name={stay.name} />
       </div>
       <div className="stay__body">

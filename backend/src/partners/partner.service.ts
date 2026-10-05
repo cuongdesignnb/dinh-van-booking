@@ -12,6 +12,7 @@ import { AuthService } from '../auth/auth.service';
 import { documentMediaIds, documentToText, sanitizeDocument } from '../content/document';
 import { pathForContent, uniqueSlug } from '../content/slug';
 import { InventoryMutationService, availableRaw } from '../inventory/inventory-mutation.service';
+import { inventoryFresh } from '../inventory/availability-state';
 import { MediaService } from '../media/media.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
@@ -491,9 +492,7 @@ export class PartnerService {
     const items = scoped.flatMap((roomType) => dates.map((stayDate) => {
       const key = `${roomType.id}:${dayKey(stayDate)}`;
       const row = byKey.get(key);
-      const freshHours = (stayDate.getTime() - now) / 86_400_000 <= (freshness.nearTermDays ?? 7)
-        ? (freshness.nearTermFreshHours ?? 24) : (freshness.fartherFreshDays ?? 7) * 24;
-      const isFresh = !!row?.lastConfirmedAt && now - row.lastConfirmedAt.getTime() <= freshHours * 3_600_000;
+      const isFresh = inventoryFresh(row, stayDate, freshness ?? {}, new Date(now));
       return {
         roomTypeId: roomType.id, roomTypeName: roomType.name, stayDate: dayKey(stayDate),
         dataState: !row ? 'missing' : isFresh ? 'fresh' : 'stale',
@@ -502,6 +501,7 @@ export class PartnerService {
         heldCount: row?.heldCount ?? null, reservedCount: row?.reservedCount ?? null,
         available: !row || row.stopSell || incidentKeys.has(key) ? null : availableRaw(row),
         version: row?.version ?? null, lastConfirmedAt: row?.lastConfirmedAt?.toISOString() ?? null,
+        updatedAt: row?.updatedAt?.toISOString() ?? null, lastConfirmedSource: row?.lastConfirmedSource ?? null,
         integrityHold: incidentKeys.has(key),
       };
     }));

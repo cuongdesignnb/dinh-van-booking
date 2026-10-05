@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ApiError, apiPath, apiRequest } from '@/lib/api/client';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '@/components/admin/shared/RichTextEditor';
+import { InventoryCalendarMatrix } from '@/components/inventory/InventoryCalendarMatrix';
 
 type PartnerUser = { id: string; email: string; fullName: string; roles: string[] };
 type Grant = {
@@ -74,10 +75,6 @@ function labelDate(day: string) {
   return new Intl.DateTimeFormat('vi-VN', { timeZone: 'UTC', weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(`${day}T00:00:00.000Z`));
 }
 
-function shiftMonth(day: string, delta: number) {
-  const [year, month] = day.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0, 10);
-}
 
 function monthDates(day: string) {
   const [year, month] = day.split('-').map(Number);
@@ -85,9 +82,6 @@ function monthDates(day: string) {
   return Array.from({ length: count }, (_, index) => new Date(Date.UTC(year, month - 1, index + 1)).toISOString().slice(0, 10));
 }
 
-function labelMonth(day: string) {
-  return new Intl.DateTimeFormat('vi-VN', { timeZone: 'UTC', month: 'long', year: 'numeric' }).format(new Date(`${day.slice(0, 7)}-01T00:00:00.000Z`));
-}
 
 export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'login' }: { editorRoute?: PartnerEditorRoute; initialPropertyId?: string; initialMode?: 'login' | 'register' }) {
   const [user, setUser] = useState<PartnerUser | null>(null);
@@ -103,10 +97,6 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
-  const [editing, setEditing] = useState<InventoryItem | null>(null);
-  const [newAvailable, setNewAvailable] = useState('');
-  const [reopen, setReopen] = useState(false);
-  const [savingInventory, setSavingInventory] = useState(false);
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [calendarAnchor, setCalendarAnchor] = useState(todayInBusinessTimezone);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -330,25 +320,6 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
     try { await apiRequest('/auth/logout', { method: 'POST' }); } finally { setUser(null); setContext(null); setProperties([]); setInventory([]); }
   };
 
-  const editDay = (item: InventoryItem) => {
-    setError(''); setEditing(item); setNewAvailable(String(item.available ?? '')); setReopen(false);
-  };
-
-  const saveAvailable = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!editing || !selectedProperty || editing.version === null) return;
-    setSavingInventory(true); setError('');
-    try {
-      await apiRequest('/partners/inventory/available', {
-        method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() },
-        body: JSON.stringify({ organizationId: selectedProperty.organizationId, roomTypeId: editing.roomTypeId, stayDate: editing.stayDate, available: Number(newAvailable), expectedVersion: editing.version, reopen }),
-      });
-      setEditing(null); await loadInventory();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không lưu được. Dữ liệu đang nhập vẫn được giữ lại.');
-      await loadInventory();
-    } finally { setSavingInventory(false); }
-  };
 
   const previewBulkInventory = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -739,9 +710,11 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
             <section className="partner-card partner-property-summary"><div><span className="partner-eyebrow">{selectedProperty.code}</span><h2>{selectedProperty.name}</h2><p>{selectedProperty.area} · <span className="partner-status-pill">{statusText[selectedProperty.publicationStatus] ?? selectedProperty.publicationStatus}</span></p></div><div className="partner-summary-actions">{selectedProperty.capabilities.canEditProfile && <><Link href={`/doi-tac/chinh-sua?mode=profile&property=${selectedProperty.propertyId}`}>Đề xuất sửa hồ sơ</Link><Link href={`/doi-tac/chinh-sua?mode=room-create&property=${selectedProperty.propertyId}`}>Thêm hạng phòng</Link></>}{selectedProperty.publicPath && <a href={selectedProperty.publicPath} target="_blank" rel="noreferrer">Xem trang công khai</a>}</div></section>
             {(selectedProperty.capabilities.canEditProfile || selectedProperty.capabilities.canEditRates) && rooms.map((room) => <section className="partner-card partner-room-edit-card" key={`edit:${room.id}`}><div className="partner-card-head"><div><h3>{room.name} <small>{room.code}</small></h3><p>{room.status === 'draft' ? 'Hạng phòng nháp' : room.capacityVerified ? 'Sức chứa đã xác minh' : 'Sức chứa chưa xác minh'} · phiên bản {room.version}</p></div><div className="partner-summary-actions">{selectedProperty.capabilities.canEditProfile && <Link href={`/doi-tac/chinh-sua?mode=room&property=${selectedProperty.propertyId}&room=${room.id}`}>Sửa hạng phòng</Link>}{selectedProperty.capabilities.canEditRates && room.ratePlans.map((rate) => <Link key={rate.id} href={`/doi-tac/chinh-sua?mode=rate&property=${selectedProperty.propertyId}&room=${room.id}&rate=${rate.id}`}>Sửa giá · {rate.name}</Link>)}</div></div></section>)}
             {selectedProperty.capabilities.canUploadMedia && <section className="partner-card"><h3>Media Library của tổ chức</h3><p>Ảnh tải lên được chuyển thành WebP, lưu riêng tư; ALT bắt buộc. Ảnh chỉ công khai sau khi được duyệt và gắn vào hồ sơ.</p><form className="partner-upload-form" onSubmit={uploadMedia}><label>Mô tả ALT<input value={mediaAlt} onChange={(event) => setMediaAlt(event.target.value)} required /></label><label>Chọn ảnh<input name="file" type="file" accept="image/jpeg,image/png,image/webp" required /></label><button className="partner-primary" disabled={uploading}>{uploading ? 'Đang tải…' : 'Tải vào thư viện'}</button></form><div className="partner-media-grid">{media.map((item) => <button key={item.id} type="button" className={selectedMediaIds.includes(item.id) ? 'is-selected' : ''} onClick={() => setSelectedMediaIds((ids) => ids.includes(item.id) ? ids.filter((id) => id !== item.id) : [...ids, item.id])}><Image src={item.url} alt={item.altText ?? ''} width={item.width ?? 320} height={item.height ?? 220} unoptimized /><span>{item.altText || 'Chưa có ALT'} · {item.visibility === 'private' ? 'Riêng tư' : 'Công khai'}</span></button>)}</div></section>}
-            {selectedProperty.capabilities.canReadInventory ? <section className="partner-card"><div className="partner-card-head"><div><h2>Lịch quỹ phòng</h2><p>{calendarView === 'week' ? '7 ngày' : labelMonth(calendarAnchor)} · ngày lưu trú theo giờ Việt Nam</p></div><button type="button" onClick={() => void loadInventory()}>Tải lại</button></div>
-              <div className="partner-calendar-toolbar"><div><button type="button" onClick={() => setCalendarAnchor((day) => calendarView === 'week' ? shiftDay(day, -7) : shiftMonth(day, -1))} aria-label="Khoảng trước">←</button><button type="button" onClick={() => setCalendarAnchor(today)}>Hôm nay</button><button type="button" onClick={() => setCalendarAnchor((day) => calendarView === 'week' ? shiftDay(day, 7) : shiftMonth(day, 1))} aria-label="Khoảng sau">→</button><strong>{calendarView === 'week' ? `${labelDate(dates[0])} – ${labelDate(dates[dates.length - 1])}` : labelMonth(calendarAnchor)}</strong></div><label>Hiển thị<select value={calendarView} onChange={(event) => { setCalendarView(event.target.value as 'week' | 'month'); if (event.target.value === 'month') setCalendarAnchor((day) => `${day.slice(0, 7)}-01`); }}><option value="week">7 ngày</option><option value="month">Cả tháng</option></select></label></div>
-              {selectedProperty.capabilities.canWriteInventory && <details className="partner-bulk-edit" open={bulkOpen} onToggle={(event) => { if (!event.currentTarget.open) { setBulkOpen(false); setBulkPreview(null); setBulkPayload(null); } }}><summary onClick={(event) => { event.preventDefault(); setBulkOpen((open) => !open); setBulkPreview(null); setBulkPayload(null); }}>Cập nhật nhiều ngày</summary><p>Chọn một hạng phòng và khoảng đêm đã mở quỹ. Xem trước thay đổi trước khi lưu; một ngày xung đột sẽ làm cả lô bị từ chối.</p>
+            {selectedProperty.capabilities.canReadInventory ? <section className="partner-card">
+              <InventoryCalendarMatrix mode="partner" propertyName={selectedProperty.name} rooms={rooms} items={inventory} dates={dates} view={calendarView} anchor={calendarAnchor} onView={setCalendarView} onAnchor={setCalendarAnchor} canWrite={selectedProperty.capabilities.canWriteInventory} loading={inventoryLoading} onRefresh={loadInventory}
+                onSave={(change, key) => apiRequest('/partners/inventory/available', { method: 'POST', headers: { 'idempotency-key': key }, body: JSON.stringify({ ...change, organizationId: selectedProperty.organizationId }) })}
+                onConfirm={selectedProperty.capabilities.canWriteInventory ? confirmRoomRange : undefined} />
+              {selectedProperty.capabilities.canWriteInventory && <details className="partner-bulk-edit" open={bulkOpen} onToggle={(event) => { if (!event.currentTarget.open) { setBulkOpen(false); setBulkPreview(null); setBulkPayload(null); } }}><summary onClick={(event) => { event.preventDefault(); setBulkOpen((open) => !open); setBulkPreview(null); setBulkPayload(null); }}>Chi tiết nâng cao: khoá/bán ngoài quỹ</summary><p>Chọn một hạng phòng và khoảng đêm đã mở quỹ. Xem trước thay đổi trước khi lưu; một ngày xung đột sẽ làm cả lô bị từ chối.</p>
                 <form className="partner-form partner-form-grid" onSubmit={(event) => void previewBulkInventory(event)}>
                   <label>Hạng phòng<select name="roomTypeId" required><option value="">Chọn hạng phòng</option>{rooms.filter((room) => room.status === 'active').map((room) => <option key={room.id} value={room.id}>{room.name} · {room.code}</option>)}</select></label>
                   <label>Từ ngày<input name="from" type="date" defaultValue={dates[0]} required /></label><label>Đến trước ngày<input name="toExclusive" type="date" defaultValue={shiftDay(dates[dates.length - 1], 1)} required /></label>
@@ -750,10 +723,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
                 </form>
                 {bulkPreview && <div className="partner-bulk-preview" role="status"><strong>Xem trước · {bulkPreview.items.length} đêm · cập nhật nguyên lô</strong><ul>{bulkPreview.items.map((item) => { const beforeAvailable = item.before.stopSell ? 0 : item.before.capacity - item.before.blockedCount - item.before.heldCount - item.before.reservedCount; return <li key={`${item.roomTypeId}:${item.stayDate}`}>{labelDate(item.stayDate)}: {beforeAvailable} → {item.after.available} phòng{item.after.stopSell ? ' · Dừng bán' : ''}</li>; })}</ul><div className="partner-form-actions"><button type="button" className="partner-primary" disabled={bulkBusy} onClick={() => void applyBulkInventory()}>{bulkBusy ? 'Đang lưu…' : 'Xác nhận và lưu lô'}</button><button type="button" onClick={() => { setBulkPreview(null); setBulkPayload(null); }}>Sửa đề xuất</button></div></div>}
               </details>}
-              {rooms.length === 0 ? <p className="partner-muted">Chưa có hạng phòng trong phạm vi cấp quyền.</p> : inventoryLoading && inventory.length === 0 ? <p className="partner-muted">Đang tải lịch…</p> : <div className="partner-calendar-wrap"><table className="partner-calendar"><thead><tr><th>Hạng phòng</th>{dates.map((day) => <th key={day}>{labelDate(day)}</th>)}</tr></thead><tbody>{rooms.filter((room) => room.status === 'active').map((room) => <tr key={room.id}><th scope="row"><strong>{room.name}</strong><small>{room.code}</small>{selectedProperty.capabilities.canWriteInventory && <button className="partner-confirm-range" type="button" disabled={bulkBusy || dates.some((day) => !inventoryByKey.get(`${room.id}:${day}`)?.version)} onClick={() => void confirmRoomRange(room.id)}>Đã kiểm tra, không đổi</button>}</th>{dates.map((day) => { const item = inventoryByKey.get(`${room.id}:${day}`); return <td key={day}>{item ? <button type="button" disabled={!selectedProperty.capabilities.canWriteInventory || item.version === null} onClick={() => item && editDay(item)} className={`partner-inventory-cell is-${item.dataState} is-${item.saleState}`}><strong>{item.available === null ? '—' : item.available}</strong><span>{statusText[item.dataState]}{item.saleState === 'stop_sell' ? ' · Dừng bán' : ''}</span></button> : <span className="partner-muted">Chưa mở</span>}</td>; })}</tr>)}</tbody></table></div>}
-              <p className="partner-legend"><span>Vừa xác nhận</span><span>Cần xác nhận</span><span>Chưa mở quỹ</span></p>
             </section> : <section className="partner-card"><h2>Lịch quỹ phòng</h2><p>Chưa có quyền xem hoặc cập nhật tồn cho cơ sở này. Quyền này do quản trị viên cấp riêng.</p></section>}
-            {editing && <div className="partner-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditing(null); }}><section className="partner-modal" role="dialog" aria-modal="true" aria-labelledby="partner-edit-title"><h2 id="partner-edit-title">Cập nhật số còn bán</h2><p>{editing.roomTypeName} · {labelDate(editing.stayDate)}</p><form className="partner-form" onSubmit={saveAvailable}><label>Số phòng còn bán được<input type="number" min="0" max="5000" step="1" value={newAvailable} onChange={(event) => setNewAvailable(event.target.value)} required /></label><small>Không thay đổi phòng đang giữ/đã đặt. Nếu cần tăng số còn bán, hãy kiểm tra trước quỹ bán ngoài, bảo trì và giữ riêng.</small>{editing.saleState === 'stop_sell' && <label className="partner-check"><input type="checkbox" checked={reopen} onChange={(event) => setReopen(event.target.checked)} /> Xác nhận mở bán lại cho ngày này</label>}<div className="partner-form-actions"><button className="partner-primary" disabled={savingInventory}>{savingInventory ? 'Đang lưu…' : 'Lưu cập nhật'}</button><button type="button" onClick={() => setEditing(null)}>Huỷ</button></div></form></section></div>}
           </>}
           {selectedProperty && <section className="partner-card partner-revision-list"><div className="partner-card-head"><div><h2>Lịch sử đề xuất</h2><p>Đề xuất chờ duyệt chưa làm thay đổi dữ liệu công khai.</p></div><button type="button" onClick={() => activeOrg && void loadRevisions(activeOrg.id)}>Tải lại</button></div>
             {revisions.filter((item) => item.propertyId === selectedProperty.propertyId).length === 0 ? <p className="partner-muted">Chưa gửi đề xuất chỉnh sửa.</p> : revisions.filter((item) => item.propertyId === selectedProperty.propertyId).map((item) => <article key={item.id}><div><strong>Đề xuất #{item.revision}</strong><span className={`partner-status-pill is-${item.status}`}>{statusText[item.status] ?? item.status}</span><small>{new Date(item.submittedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</small></div>{item.reviewNote && <p>{item.reviewNote}</p>}</article>)}

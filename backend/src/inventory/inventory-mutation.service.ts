@@ -5,6 +5,7 @@ import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type Tx = Prisma.TransactionClient;
+export type AvailableChange = { roomTypeId: string; stayDate: string; available: number; expectedVersion: number; reopen?: boolean };
 export type InventoryNight = { roomTypeId: string; stayDate: Date; quantity: number };
 export type PartnerInventoryChange = {
   roomTypeId: string; stayDate: string; expectedVersion: number;
@@ -361,18 +362,48 @@ export class InventoryMutationService {
     organizationId: string; actorId: string; roomTypeId: string; stayDate: string; available: number;
     expectedVersion: number; idempotencyKey: string; reopen?: boolean;
   }) {
+    const result = await this.setAvailableBatch([{
+      roomTypeId: input.roomTypeId, stayDate: input.stayDate, available: input.available,
+      expectedVersion: input.expectedVersion, reopen: input.reopen ?? false,
+    }], input.actorId, input.idempotencyKey, false, input.organizationId);
+    return { ...result.items[0], replayed: result.replayed };
+  }
+
+  async setAvailableBatch(changes: AvailableChange[], actorId: string, idempotencyKey: string, preview = false, organizationId?: string) {
+    if (!changes.length || changes.length > 90) throw new BadRequestException('Chọn từ 1 đến 90 ô quỹ phòng.');
+    if (!preview && (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 160)) throw new BadRequestException('Cần Idempotency-Key hợp lệ');
+    const ordered = [...changes].sort((a, b) => a.roomTypeId.localeCompare(b.roomTypeId) || a.stayDate.localeCompare(b.stayDate));
+    if (ordered.some((change) => !Number.isInteger(change.expectedVersion) || change.expectedVersion < 1)) throw new BadRequestException('Thiếu phiên bản nền hợp lệ.');
+    if (new Set(ordered.map((c) => `${c.roomTypeId}:${c.stayDate}`)).size !== ordered.length) throw new BadRequestException('Một ô chỉ được xuất hiện một lần.');
+    return this.prisma.$transaction(async (tx) => {
+      await this.lockRows(tx, ordered.map((c) => ({ roomTypeId: c.roomTypeId, stayDate: dateOnly(c.stayDate) })));
+      if (!preview) {
+        const source = organizationId ? `partner:${organizationId}` : `admin:${actorId}:available`;
+        const prior = await tx.inventoryChange.findMany({ where: { source, idempotencyKey } });
+        const cells = new Set(ordered.map((c) => `${c.roomTypeId}:${c.stayDate}`));
+        if (prior.length && (prior.length !== ordered.length || prior.some((row) => !cells.has(`${row.roomTypeId}:${dateKey(row.stayDate)}`)))) {
+          throw new ConflictException('Idempotency-Key đã được dùng cho phạm vi khác. Hãy tạo lệnh mới.');
+        }
+      }
+      const items = [];
+      for (const change of ordered) items.push(await this.quickSetAvailableTx(tx, { ...change, actorId, organizationId, idempotencyKey }, preview, ordered));
+      return { items, replayed: items.every((row) => row.replayed), atomic: true, preview };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
+  }
+
+  private async quickSetAvailableTx(tx: Tx, input: AvailableChange & { organizationId?: string; actorId: string; idempotencyKey: string }, preview: boolean, request: AvailableChange[]) {
     if (!Number.isInteger(input.available) || input.available < 0 || input.available > 5000) throw new BadRequestException('Số lượng còn bán phải là số nguyên từ 0 đến 5.000');
     if (!input.idempotencyKey || input.idempotencyKey.length < 8 || input.idempotencyKey.length > 160) throw new BadRequestException('Cần Idempotency-Key hợp lệ');
     const stayDate = dateOnly(input.stayDate);
-    return this.prisma.$transaction(async (tx) => {
-      const room = await tx.roomType.findUnique({ where: { id: input.roomTypeId }, select: { id: true, propertyId: true, approvedPoolLimit: true } });
+      const room = await tx.roomType.findUnique({ where: { id: input.roomTypeId }, select: { id: true, propertyId: true, approvedPoolLimit: true, status: true, capacityVerified: true, property: { select: { content: { select: { isDemo: true } } } } } });
       if (!room) throw new NotFoundException('Không tìm thấy hạng phòng');
-      await this.assertActiveGrant(tx, input.organizationId, input.actorId, room.propertyId, input.roomTypeId, 'write');
-      await this.lockRows(tx, [{ roomTypeId: input.roomTypeId, stayDate }]);
-      const previous = await tx.inventoryChange.findFirst({ where: { source: `partner:${input.organizationId}`, idempotencyKey: input.idempotencyKey, roomTypeId: input.roomTypeId, stayDate } });
+      if (input.organizationId) await this.assertActiveGrant(tx, input.organizationId, input.actorId, room.propertyId, input.roomTypeId, 'write');
+      else if (room.property.content.isDemo || room.status !== 'active' || !room.capacityVerified) throw new ConflictException('Hạng phòng chưa hoạt động hoặc chưa xác minh sức chứa; chưa được thao tác bán.');
+      const source = input.organizationId ? `partner:${input.organizationId}` : `admin:${input.actorId}:available`;
+      const previous = preview ? null : await tx.inventoryChange.findFirst({ where: { source, idempotencyKey: input.idempotencyKey, roomTypeId: input.roomTypeId, stayDate } });
       if (previous) {
-        const saved = previous.toSnapshot as { requestedAvailable?: number; row?: DaySnapshot };
-        if (previous.command !== 'quick_set_available' || saved.requestedAvailable !== input.available || !saved.row) {
+        const saved = previous.toSnapshot as { requestedAvailable?: number; request?: AvailableChange[]; row?: DaySnapshot };
+        if (previous.command !== 'quick_set_available' || saved.requestedAvailable !== input.available || (saved.request && !isDeepStrictEqual(saved.request, JSON.parse(JSON.stringify(request)))) || !saved.row) {
           throw new ConflictException('Idempotency-Key đã được dùng cho dữ liệu khác. Hãy tạo lệnh mới.');
         }
         return { ...saved.row, stayDate: dateKey(new Date(saved.row.stayDate)), available: saved.row.stopSell ? 0 : availableRaw(saved.row), replayed: true };
@@ -388,7 +419,7 @@ export class InventoryMutationService {
         where: { status: 'active', nights: { some: { roomTypeId: input.roomTypeId, stayDate } } },
         include: { nights: { where: { roomTypeId: input.roomTypeId, stayDate }, select: { quantity: true } } },
       });
-      const ownWithheld = blocks.filter((block) => block.kind === 'owner_withheld' && block.ownerOrganizationId === input.organizationId);
+      const ownWithheld = blocks.filter((block) => input.organizationId ? block.kind === 'owner_withheld' && block.ownerOrganizationId === input.organizationId : block.kind === 'admin_calendar');
       const ownCount = ownWithheld.reduce((sum, block) => sum + block.nights.reduce((nightSum, night) => nightSum + night.quantity, 0), 0);
       const ledgerCount = blocks.reduce((sum, block) => sum + block.nights.reduce((nightSum, night) => nightSum + night.quantity, 0), 0);
       if (ledgerCount !== current.blockedCount) {
@@ -399,11 +430,13 @@ export class InventoryMutationService {
       const newOwnWithheld = maxAvailableWithoutOwn - input.available;
       if (newOwnWithheld < 0) throw new ConflictException(`Số còn bán vượt mức cho phép (${Math.max(0, maxAvailableWithoutOwn)}); kiểm tra bán ngoài/bảo trì/giữ riêng trước.`);
       if (room.approvedPoolLimit !== null && current.capacity > room.approvedPoolLimit) throw new ConflictException('Quỹ ngày vượt mức tối đa đã duyệt; quản trị viên cần rà soát.');
+      validateInventoryInvariant(current);
+      if (preview) return { ...current, stayDate: input.stayDate, available: input.available, beforeAvailable: current.stopSell ? 0 : availableRaw(current), replayed: false };
 
       if (ownWithheld.length) await tx.inventoryBlock.updateMany({ where: { id: { in: ownWithheld.map((block) => block.id) }, status: 'active' }, data: { status: 'released', releasedAt: new Date(), version: { increment: 1 } } });
       if (newOwnWithheld > 0) await tx.inventoryBlock.create({ data: {
-        kind: 'owner_withheld', reason: 'Điều chỉnh số còn bán từ Portal đối tác', status: 'active',
-        ownerOrganizationId: input.organizationId, createdBy: input.actorId, sourceKey: `partner:${randomUUID()}`,
+        kind: input.organizationId ? 'owner_withheld' : 'admin_calendar', reason: 'Điều chỉnh số còn bán từ lịch hạng phòng', status: 'active',
+        ownerOrganizationId: input.organizationId ?? null, createdBy: input.actorId, sourceKey: `${source}:${randomUUID()}`,
         nights: { create: { roomTypeId: input.roomTypeId, stayDate, quantity: newOwnWithheld } },
       } });
       const updated = await tx.inventoryDay.update({
@@ -411,24 +444,23 @@ export class InventoryMutationService {
         data: {
           blockedCount: current.blockedCount - ownCount + newOwnWithheld,
           stopSell: input.reopen ? false : current.stopSell,
-          lastConfirmedAt: new Date(), lastConfirmedById: input.actorId, lastConfirmedSource: 'partner_portal',
+          lastConfirmedAt: new Date(), lastConfirmedById: input.actorId, lastConfirmedSource: input.organizationId ? 'partner_portal' : 'admin',
           version: { increment: 1 },
         },
       });
       validateInventoryInvariant(updated);
-      const toSnapshot = toJson({ requestedAvailable: input.available, row: updated });
+      const toSnapshot = toJson({ requestedAvailable: input.available, request, row: updated });
       await tx.inventoryChange.create({ data: {
         organizationId: input.organizationId, roomTypeId: input.roomTypeId, stayDate,
-        source: `partner:${input.organizationId}`, command: 'quick_set_available', idempotencyKey: input.idempotencyKey,
+        source, command: 'quick_set_available', idempotencyKey: input.idempotencyKey,
         fromSnapshot: toJson(current), toSnapshot, actorId: input.actorId,
       } });
       await tx.auditLog.create({ data: {
-        actorId: input.actorId, action: 'inventory.partner_quick_set', entityType: 'room_type', entityId: input.roomTypeId,
-        diff: toJson({ organizationId: input.organizationId, stayDate: input.stayDate, version: updated.version, requestedAvailable: input.available, source: 'partner_portal' }),
+        actorId: input.actorId, action: input.organizationId ? 'inventory.partner_quick_set' : 'inventory.admin_quick_set', entityType: 'room_type', entityId: input.roomTypeId,
+        diff: toJson({ organizationId: input.organizationId ?? null, stayDate: input.stayDate, version: updated.version, requestedAvailable: input.available, source }),
       } });
-      await this.enqueueChanged(tx, updated, 'partner_portal', 'quick_set_available');
+      await this.enqueueChanged(tx, updated, input.organizationId ? 'partner_portal' : 'admin', 'quick_set_available');
       return { ...updated, stayDate: input.stayDate, available: updated.stopSell ? 0 : availableRaw(updated), replayed: false };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }
 
   async confirmUnchanged(input: {

@@ -56,7 +56,7 @@ export default async function StaysPage({
 }) {
   // Per-request render so filters/selection from the URL are server-rendered.
   const query = await searchParams;
-  const [stays, reviews, site, urls] = await Promise.all([getPublicStays(), getPublicReviews(), getPublicSite(), getPublicSeoUrls()]);
+  const [stays, reviews, site, urls] = await Promise.all([getPublicStays(false, typeof query.checkIn === 'string' ? query.checkIn : undefined, typeof query.checkOut === 'string' ? query.checkOut : undefined), getPublicReviews(), getPublicSite(), getPublicSeoUrls()]);
   const pageContent = publicSetting(site, 'catalog.staysPage');
   const mapImage = publicAsset(site, pageContent.mapImageMediaId);
   const faqItems = (Array.isArray(pageContent.faqs) ? pageContent.faqs : []).flatMap((value, index) => {

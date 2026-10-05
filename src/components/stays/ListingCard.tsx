@@ -8,6 +8,7 @@ import { fromPrice, hasContactOnlyRooms } from '@/lib/catalog/pricing';
 import { stayContactHref } from '@/lib/contact/stay-contact';
 import { formatRating, formatVnd } from '@/lib/format';
 import { parseSelection } from '@/lib/selection';
+import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge';
 
 /**
  * Listing card (grid) and row (list). The name and CTA are the only links;
@@ -44,6 +45,7 @@ export function ListingCard({
           className="lcard__img"
         />
         {stay.badge && <span className="lcard__badge">{stay.badge}</span>}
+        <AvailabilityBadge status={stay.availabilityStatus} />
         <FavoriteButton id={stay.id} name={stay.name} className="fav lcard__fav" />
       </div>
       <div className="lcard__body">

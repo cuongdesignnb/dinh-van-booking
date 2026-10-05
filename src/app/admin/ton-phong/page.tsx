@@ -1,5 +1,5 @@
-import { AdminOperationsScreen } from '@/components/admin/operations/AdminOperationsScreen';
+import { AdminInventoryMatrix } from '@/components/admin/operations/AdminInventoryMatrix';
 
 export default function Page() {
-  return <AdminOperationsScreen section="inventory" />;
+  return <AdminInventoryMatrix />;
 }

@@ -173,13 +173,16 @@ function normalizeStay(value: ApiStay): Stay | null {
   };
 }
 
-const loadPublicStays = cache(async (featured = false): Promise<Stay[]> => {
-  const response = await serverApiRequest<{ items?: ApiStay[] }>(`/public/stays${featured ? '?featured=true' : ''}`);
+const loadPublicStays = cache(async (featured = false, checkIn?: string, checkOut?: string): Promise<Stay[]> => {
+  const query = new URLSearchParams();
+  if (featured) query.set('featured', 'true');
+  if (checkIn && checkOut) { query.set('checkIn', checkIn); query.set('checkOut', checkOut); }
+  const response = await serverApiRequest<{ items?: ApiStay[] }>(`/public/stays${query.size ? `?${query}` : ''}`);
   return (response?.items ?? []).map(normalizeStay).filter((item): item is Stay => !!item);
 });
 
-export function getPublicStays(featured = false): Promise<Stay[]> {
-  return loadPublicStays(featured);
+export function getPublicStays(featured = false, checkIn?: string, checkOut?: string): Promise<Stay[]> {
+  return loadPublicStays(featured, checkIn, checkOut);
 }
 
 async function loadPublicStay(slug: string): Promise<Stay | null> {
