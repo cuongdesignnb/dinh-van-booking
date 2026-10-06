@@ -444,6 +444,40 @@ const settingOverrides = {
     formTitle: 'Gửi yêu cầu tư vấn', formIntro: doc('Thông tin của bạn được dùng để liên hệ và hỗ trợ cho yêu cầu này.'), formMessageLabel: 'Bạn đang cần hỗ trợ điều gì?', formMessagePlaceholder: 'Ví dụ: cần phòng cho gia đình, dự kiến đi 2 ngày 1 đêm...', formPrivacyNote: null, formSubmitLabel: 'Gửi yêu cầu', formSuccessMessage: doc('Đã nhận yêu cầu (demo).'),
     quickTitle: 'Liên hệ trực tiếp', quickIntro: doc('Bạn có thể gọi trực tiếp nếu cần trao đổi nhanh.'), hoursTitle: 'Giờ làm việc', advisorName: 'Đinh Vân', advisorRole: 'Người tư vấn địa phương', advisorDescription: doc('Hỗ trợ gợi ý lưu trú và hành trình tại khu vực Cúc Phương – Ninh Bình.'), advisorImageMediaId: null, advisorHighlights: [], advisorNote: null,
     mapTitle: 'Khu vực hỗ trợ', mapDescription: doc('Cúc Phương – Tràng An – Tam Cốc (bản đồ minh hoạ).'), mapImageMediaId: SITE_MEDIA.mapContact, scenicImageMediaId: SITE_MEDIA.scenic, scriptNote: null, showFaq: false, faqTitle: null, faqs: [] },
+  // Same truthful copy as the backend bootstrap; only contact details are demo values.
+  'about.page': { enabled: true, heroEyebrow: 'Về mình', title: 'Xin chào, mình là Đinh Vân', intro: doc('Người tư vấn địa phương của Cúc Phương Travel – một dịch vụ nhỏ, độc lập, giúp bạn chọn chỗ nghỉ và lên lịch trình cho chuyến đi Cúc Phương – Ninh Bình.'), heroImageMediaId: SITE_MEDIA.hero,
+    phoneCtaLabel: 'Gọi cho Đinh Vân', zaloCtaLabel: 'Nhắn Zalo', contactCtaLabel: 'Gửi yêu cầu tư vấn',
+    storyTitle: 'Câu chuyện của mình', greeting: 'Rất vui được làm quen với bạn!',
+    story: { type: 'doc', content: [
+      'Cúc Phương Travel là một dịch vụ nhỏ và độc lập, do mình – Đinh Vân – trực tiếp phụ trách. Mình tư vấn, hỗ trợ đặt chỗ nghỉ và gợi ý lịch trình cho những ai muốn đến Cúc Phương và các điểm quanh Ninh Bình.',
+      'Trước khi giới thiệu một chỗ nghỉ hay một lịch trình, mình tự kiểm tra thông tin và chỉ gợi ý những gì phù hợp với nhu cầu của bạn. Điều gì chưa chắc chắn, mình sẽ nói rõ để bạn cân nhắc.',
+      'Từ lúc bạn bắt đầu tìm hiểu cho đến khi đã tới nơi, bạn có thể gọi điện hoặc nhắn Zalo để mình hỗ trợ.',
+    ].map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })) },
+    portraitMediaId: null, signatureNote: 'Hẹn gặp bạn ở Cúc Phương!', quote: 'Mình chỉ gợi ý những chỗ nghỉ và lịch trình mà mình đã tự kiểm tra.',
+    valuesTitle: 'Điều mình luôn giữ', valuesIntro: 'Những nguyên tắc nhỏ để chuyến đi của bạn rõ ràng và yên tâm hơn.', values: [
+      { id: 'checked', enabled: true, icon: 'check', title: 'Tự kiểm tra trước khi gợi ý', text: 'Mình xem kỹ thông tin chỗ nghỉ và lịch trình trước khi giới thiệu cho bạn.' },
+      { id: 'personal', enabled: true, icon: 'message', title: 'Tư vấn theo nhu cầu thật', text: 'Gợi ý dựa trên thời gian, số người và mong muốn của chính bạn.' },
+      { id: 'clear', enabled: true, icon: 'shield', title: 'Rõ ràng, minh bạch', text: 'Tình trạng phòng, giá và điều kiện đặt được xác nhận với bạn trước khi hoàn tất.' },
+      { id: 'reachable', enabled: true, icon: 'phone', title: 'Luôn giữ liên lạc', text: 'Bạn có thể gọi điện hoặc nhắn Zalo cho mình trong suốt chuyến đi.' },
+    ],
+    stepsTitle: 'Cách mình đồng hành', stepsIntro: 'Bốn bước đơn giản, từ lúc bạn liên hệ đến khi lên đường.', steps: [
+      { id: 'share', enabled: true, title: 'Bạn chia sẻ nhu cầu', text: 'Gọi, nhắn Zalo hoặc gửi yêu cầu: thời gian dự kiến, số người và kiểu chỗ nghỉ bạn thích.' },
+      { id: 'suggest', enabled: true, title: 'Mình kiểm tra và gợi ý', text: 'Mình kiểm tra chỗ nghỉ, lịch trình phù hợp rồi gửi bạn vài lựa chọn kèm lưu ý.' },
+      { id: 'confirm', enabled: true, title: 'Xác nhận rõ ràng', text: 'Tình trạng phòng, giá và điều kiện đặt được xác nhận trước khi bạn quyết định.' },
+      { id: 'support', enabled: true, title: 'Hỗ trợ khi bạn tới nơi', text: 'Cần hỏi đường hay đổi kế hoạch giữa chuyến, bạn cứ gọi hoặc nhắn cho mình.' },
+    ],
+    areasTitle: 'Khu vực mình hỗ trợ', areasIntro: 'Cúc Phương và những điểm quanh Ninh Bình – nơi mình giúp bạn chọn chỗ nghỉ và lên lịch trình.', areas: [
+      { id: 'national-park', enabled: true, icon: 'trees', title: 'Vườn quốc gia Cúc Phương', text: 'Rừng nguyên sinh, đường mòn và các điểm tham quan trong vườn quốc gia.', linkLabel: 'Xem điểm đến', linkTarget: '/diem-den', imageMediaId: null },
+      { id: 'stays', enabled: true, icon: 'house', title: 'Chỗ nghỉ quanh Cúc Phương', text: 'Homestay, nhà nghỉ, bungalow gần rừng – chọn theo nhu cầu và ngân sách của bạn.', linkLabel: 'Xem chỗ nghỉ', linkTarget: '/phong-nghi', imageMediaId: null },
+      { id: 'ninh-binh', enabled: true, icon: 'mountain', title: 'Các điểm quanh Ninh Bình', text: 'Gợi ý kết hợp Cúc Phương với những điểm tham quan khác trong tỉnh Ninh Bình.', linkLabel: 'Xem điểm đến', linkTarget: '/diem-den', imageMediaId: null },
+    ],
+    showFaq: true, faqTitle: 'Bạn có thể đang thắc mắc', faqs: [
+      { id: 'who', enabled: true, question: 'Cúc Phương Travel là công ty du lịch lớn phải không?', answer: doc('Không. Cúc Phương Travel là một dịch vụ nhỏ, độc lập, do Đinh Vân trực tiếp tư vấn và hỗ trợ khách.') },
+      { id: 'checked', enabled: true, question: 'Chỗ nghỉ có được kiểm tra trước khi gợi ý không?', answer: doc('Có. Đinh Vân tự kiểm tra thông tin chỗ nghỉ và lịch trình trước khi gợi ý; tình trạng phòng và giá được xác nhận với bạn trước khi đặt.') },
+      { id: 'contact', enabled: true, question: 'Làm sao để liên hệ với Đinh Vân?', answer: doc('Bạn có thể gọi theo số điện thoại trên trang này, nhắn Zalo hoặc gửi yêu cầu ở trang Liên hệ.') },
+    ],
+    ctaTitle: 'Bắt đầu chuyến đi Cúc Phương của bạn', ctaText: doc('Kể cho mình nghe bạn định đi khi nào, đi mấy người – mình sẽ gợi ý chỗ nghỉ và lịch trình phù hợp.'), ctaStaysLabel: 'Xem chỗ nghỉ',
+    areaServed: 'Cúc Phương, Ninh Bình', seoTitle: 'Về mình – Đinh Vân', seoDescription: 'Đinh Vân – người tư vấn địa phương của Cúc Phương Travel, tự kiểm tra và gợi ý chỗ nghỉ, lịch trình Cúc Phương – Ninh Bình, hỗ trợ bạn qua điện thoại, Zalo.' },
   'catalog.staysPage': { heroTitle: 'Phòng nghỉ Cúc Phương', heroKicker: 'Gợi ý lưu trú cho hành trình gần thiên nhiên', heroDescription: doc('Khám phá các nơi lưu trú (dữ liệu minh hoạ) hoặc liên hệ để trao đổi nhu cầu của bạn.'), heroImageMediaId: SITE_MEDIA.staysHero, heroNote: null,
     reviewsTitle: 'Khách hàng nói gì', reviewsSubtitle: doc('Đánh giá minh hoạ trong bản demo.'), advisorTitle: 'Cần gợi ý chỗ nghỉ?', advisorDescription: doc('Gọi để trao đổi về thời gian đi, số người và nhu cầu lưu trú.'), advisorCtaLabel: 'Liên hệ tư vấn', advisorImageMediaId: null, advisorBenefits: [],
     faqTitle: 'Câu hỏi về lưu trú', faqs: [{ id: 'checkin', enabled: true, question: 'Giờ nhận phòng là mấy giờ?', answer: doc('Thường từ 14:00, tuỳ cơ sở (thông tin minh hoạ).') }, { id: 'kids', enabled: true, question: 'Có phù hợp với trẻ nhỏ không?', answer: doc('Nhiều cơ sở có phòng gia đình; hãy hỏi trước khi đặt.') }],
@@ -465,6 +499,13 @@ const settingOverrides = {
   'sheetsSync.enabled': false,
   'sheetsSync.importEnabled': false,
 };
+// DEMO_SEO_INDEX=1 flips the demo into an "approved, indexable" site so JSON-LD and
+// canonical tags can be checked; pair it with SEO_INDEXING_ALLOWED=true and
+// SEO_APPROVED_CANONICAL_ORIGIN=https://cucphuongtravel.example.com on the Next server.
+if (process.env.DEMO_SEO_INDEX === '1') {
+  settingOverrides['seo.defaults'] = { ...settingOverrides['seo.defaults'], canonicalBase: 'https://cucphuongtravel.example.com', robotsIndex: true };
+  settingOverrides['ops.dataMode'] = { ...settingOverrides['ops.dataMode'], usesDemoData: false };
+}
 const SETTINGS = REGISTRY.map((d, i) => {
   const custom = Object.prototype.hasOwnProperty.call(settingOverrides, d.key);
   const base = d.defaultValue;
@@ -746,7 +787,7 @@ const NAV = [
   { label: 'Lưu trú', href: '/phong-nghi' },
   { label: 'Trải nghiệm', href: '/combo-du-lich' },
   { label: 'Cẩm nang', href: '/diem-den' },
-  { label: 'Về mình', href: '/lien-he' },
+  { label: 'Về mình', href: '/ve-minh' },
   { label: 'Dành cho đối tác', href: '/doi-tac' },
 ];
 const menuPayload = () => ({ key: 'primary', name: 'Menu chính', isDefault: false, items: NAV.map((n, i) => ({ id: `0000000${i + 1}-demo-4000-8000-00000000000${i + 1}`, label: n.label, contentId: null, externalUrl: n.href, href: n.href, position: i, enabled: true, kind: 'external', publicationStatus: null })) });
@@ -816,7 +857,7 @@ export function handle({ method = 'GET', path, query, persona = 'anon', body } =
     if (a === 'pages' && !b) return ok({ items: PAGES.map(publicPage).map(({ id, title, slug, path: p, updatedAt, noindex }) => ({ id, title, slug, path: p, updatedAt, noindex })), generatedAt: new Date().toISOString() });
     if (a === 'pages' && b) { const p = PAGES.find((x) => x.slug === b); return p ? ok(publicPage(p)) : notFound('Không tìm thấy chuyên trang'); }
     if (a === 'seo' && b === 'urls') {
-      const paths = ['/', '/phong-nghi', '/combo-du-lich', '/diem-den', '/lien-he', '/bai-viet', '/chuyen-trang', ...PROPERTIES.map((p) => `/phong-nghi/${p.slug}`), ...COMBOS.map((c) => `/combo-du-lich/${c.slug}`), ...DESTINATIONS.map((d) => `/diem-den/${d.slug}`), ...ARTICLES.map((x) => `/bai-viet/${x.slug}`), ...PAGES.map((x) => `/chuyen-trang/${x.slug}`)];
+      const paths = ['/', '/phong-nghi', '/combo-du-lich', '/diem-den', '/lien-he', '/ve-minh', '/bai-viet', '/chuyen-trang', ...PROPERTIES.map((p) => `/phong-nghi/${p.slug}`), ...COMBOS.map((c) => `/combo-du-lich/${c.slug}`), ...DESTINATIONS.map((d) => `/diem-den/${d.slug}`), ...ARTICLES.map((x) => `/bai-viet/${x.slug}`), ...PAGES.map((x) => `/chuyen-trang/${x.slug}`)];
       return ok({ items: paths.map((p) => ({ path: p, lastModified: daysAgo(2) })) });
     }
     if (a === 'seo' && b === 'policy') return ok({ indexingAllowed: false, canonicalOrigin: null, blockedReasons: ['Môi trường triển khai chưa bật SEO_INDEXING_ALLOWED.', 'Nội dung website đang chờ xác minh (bản demo).'], structuredData: { core: true, offers: false, reviews: false, vacationRental: false, blockedCommercialReasons: { offers: 'Bản demo.', reviews: 'Bản demo.', vacationRental: 'Bản demo.' } } });

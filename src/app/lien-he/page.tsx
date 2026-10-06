@@ -1,5 +1,6 @@
-import { CheckCircle2, Clock3, Headset, Mail, Map as MapIcon, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3, Headset, Mail, Map as MapIcon, MapPin, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import Image from '@/components/ui/ManagedImage';
 import { ConsultationForm } from '@/components/contact/ConsultationForm';
 import { PageShell } from '@/components/layout/PageShell';
@@ -111,6 +112,8 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const showAdvisor = !!(advisorName || advisorRole || richDocumentHasContent(page.advisorDescription) || advisorImage);
   const showMap = !!(mapTitle || richDocumentHasContent(page.mapDescription) || mapImage || mapUrl);
   const showAside = showQuick || showAdvisor || showMap;
+  const aboutPage = publicSetting(site, 'about.page');
+  const showAboutLink = aboutPage.enabled === true && publicText(aboutPage.title) !== '';
 
   return (
     <PageShell className="page-contact">
@@ -159,6 +162,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
             {richDocumentHasContent(page.advisorDescription) && <RichContentRenderer document={page.advisorDescription as RichDocument} />}
             {highlights.length > 0 && <ul className="contact-advisor__list">{highlights.map((item, index) => <li key={`${item}-${index}`}><CheckCircle2 size={17} aria-hidden="true" />{item}</li>)}</ul>}
             {richDocumentHasContent(page.advisorNote) && <RichContentRenderer document={page.advisorNote as RichDocument} />}
+            {showAboutLink && <Link className="link-more contact-advisor__more" href="/ve-minh">Tìm hiểu thêm về mình<ArrowRight size={17} strokeWidth={2.2} aria-hidden="true" /></Link>}
           </section>}
 
           {showMap && <section className="contact-map">

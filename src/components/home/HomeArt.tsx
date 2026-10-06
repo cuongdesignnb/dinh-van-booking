@@ -41,3 +41,28 @@ export function ScriptHeart({ className }: { className?: string }) {
     </svg>
   );
 }
+
+const initials = (name: string) => {
+  const words = name.split(/\s+/).filter(Boolean);
+  return words.slice(-2).map((word) => word.charAt(0).toUpperCase()).join('');
+};
+
+/** Illustrated monogram ("ĐV" over hills) used while no advisor photo has been uploaded. */
+export function AdvisorMonogram({ name, className, idPrefix = 'ha' }: { name: string; className?: string; idPrefix?: string }) {
+  const sky = `${idPrefix}-sky`;
+  return (
+    <svg className={className} viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id={sky} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f3efe2" />
+          <stop offset="1" stopColor="#dfe9dc" />
+        </linearGradient>
+      </defs>
+      <rect width="200" height="200" fill={`url(#${sky})`} />
+      <path d="M0 150 40 104l22 24 34-46 40 52 22-20 42 36v50H0Z" fill="#b9cdb5" />
+      <path d="M0 168c34-12 66-12 100-2s68 8 100-6v40H0Z" fill="#8fb08e" />
+      <path d="M0 184c40-8 80-6 120 2 30 6 56 4 80-2v16H0Z" fill="#5e8a6a" />
+      <text x="100" y="92" textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif" fontSize="58" fontWeight="600" fill="#1f4d3a">{initials(name)}</text>
+    </svg>
+  );
+}

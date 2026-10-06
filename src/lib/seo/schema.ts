@@ -216,3 +216,61 @@ function validDate(value: string | null | undefined): string | null {
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
+
+/**
+ * `/ve-minh`: AboutPage whose mainEntity is the advisor (Person), plus the
+ * usual site graph and breadcrumb. FAQPage is added only when FAQs exist, and
+ * every optional field is emitted only when it has a real value.
+ */
+export function buildAboutGraph(site: PublicSiteData, options: {
+  path: string;
+  title: string;
+  description?: string | null;
+  person: { name: string; jobTitle?: string | null; telephone?: string | null; image?: { src?: string } | null; description?: string | null };
+  areaServed?: string[];
+  faqs?: Array<{ question: string; answer: string }>;
+}): JsonValue | null {
+  const graph = buildSiteGraph(site, {
+    path: options.path,
+    title: options.title,
+    description: options.description,
+    breadcrumbs: [{ label: 'Trang chủ', href: '/' }, { label: 'Về mình' }],
+  });
+  const origin = siteOrigin(site);
+  const url = origin && canonicalUrl(origin, options.path);
+  const name = options.person.name.trim();
+  if (!graph || !origin || !url || !name) return graph;
+
+  const nodes = (graph as { '@graph': JsonValue[] })['@graph'];
+  const page = nodes.find((node) => typeof node === 'object' && node !== null && (node as Record<string, JsonValue>)['@type'] === 'WebPage') as Record<string, JsonValue> | undefined;
+  const personId = `${origin}/#advisor`;
+  const brand = site.identity.name?.trim();
+  const areas = (options.areaServed ?? []).map((area) => area.trim()).filter(Boolean);
+  const image = imageList(origin, options.person.image);
+  if (page) {
+    page['@type'] = 'AboutPage';
+    page.mainEntity = { '@id': personId };
+  }
+  nodes.push({
+    '@type': 'Person',
+    '@id': personId,
+    name,
+    url,
+    ...(options.person.jobTitle?.trim() ? { jobTitle: options.person.jobTitle.trim() } : {}),
+    ...(options.person.telephone?.trim() ? { telephone: options.person.telephone.trim() } : {}),
+    ...(options.person.description?.trim() ? { description: options.person.description.trim() } : {}),
+    ...(image ? { image: image[0] } : {}),
+    ...(brand ? { worksFor: { '@type': 'TravelAgency', name: brand, url: `${origin}/`, ...(areas.length ? { areaServed: areas.map((area) => ({ '@type': 'Place', name: area })) } : {}) } } : {}),
+    ...(areas.length ? { areaServed: areas.map((area) => ({ '@type': 'Place', name: area })) } : {}),
+  });
+
+  const faqs = (options.faqs ?? []).filter((item) => item.question.trim() && item.answer.trim());
+  if (faqs.length) {
+    nodes.push({
+      '@type': 'FAQPage',
+      '@id': `${url}#faq`,
+      mainEntity: faqs.map((item) => ({ '@type': 'Question', name: item.question.trim(), acceptedAnswer: { '@type': 'Answer', text: item.answer.trim() } })),
+    });
+  }
+  return graph;
+}

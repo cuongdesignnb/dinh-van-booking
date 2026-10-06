@@ -14,5 +14,7 @@ Rule for successors: build on what is committed; never reset / force-push. Commi
 ## Done
 - backend: `about.page` registry key, bootstrap copy (`paragraphsDoc`), menu Về mình → `/ve-minh`, `seoUrls()` adds `/ve-minh` when enabled+title, `ve-minh` reserved slug (backend + src/lib/slug.ts), spec updated. `scripts/backend.sh build` PASS, `test` 79/79 PASS.
 
+- admin FIELD_META + row templates for `about.page`; `src/app/ve-minh/page.tsx` + `src/styles/site/about.css`; `buildAboutGraph` in `src/lib/seo/schema.ts`; `AdvisorMonogram` moved to `HomeArt`; `/lien-he` advisor card links "Tìm hiểu thêm về mình"; demo data (`about.page`, nav, seo url, `DEMO_SEO_INDEX=1` switch). typecheck + lint PASS.
+
 ## Next
-- Step 2–3 (admin meta, route, CSS, JSON-LD).
+- Build, demo QA + screenshots (step 5).

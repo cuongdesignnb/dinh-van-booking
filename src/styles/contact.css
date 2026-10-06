@@ -201,6 +201,11 @@
   color: var(--dvb-brand-600);
 }
 
+.contact-advisor__more {
+  min-height: 44px;
+  margin-top: 6px;
+}
+
 .contact-map figure {
   margin: 12px 0 8px;
 }
