@@ -3,6 +3,8 @@
 // Every property / combo / destination name is prefixed with "Demo · ".
 import { readFileSync } from 'node:fs';
 
+// Public projections are noindex in the demo unless DEMO_SEO_INDEX=1 (approved-mode SEO QA).
+const DEMO_NOINDEX = process.env.DEMO_SEO_INDEX !== '1';
 const REGISTRY = JSON.parse(readFileSync(new URL('./settings-registry.json', import.meta.url), 'utf8'));
 const ABOUT_PAGE = JSON.parse(readFileSync(new URL('./about-page.json', import.meta.url), 'utf8'));
 
@@ -232,7 +234,7 @@ function publicStay(p, dates) {
   const amen = p.amenities;
   return {
     id: p.id, slug: p.slug, publicPath: `/phong-nghi/${p.slug}`, name: p.name,
-    metaTitle: `${p.name} | Dữ liệu minh hoạ`, metaDescription: p.excerpt, noindex: true,
+    metaTitle: `${p.name} | Dữ liệu minh hoạ`, metaDescription: p.excerpt, noindex: DEMO_NOINDEX,
     firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(3),
     type: p.kind, area: /tràng|trang/i.test(p.area) ? 'trang-an' : 'cuc-phuong',
     rating: p.rating, reviewCount: p.reviewCount, checkInTime: '14:00', checkOutTime: '12:00',
@@ -319,7 +321,7 @@ export const REVIEWS = [
 
 function publicCombo(c) {
   return {
-    id: c.id, slug: c.slug, publicPath: `/combo-du-lich/${c.slug}`, title: c.title, metaTitle: `${c.title} | Dữ liệu minh hoạ`, metaDescription: c.subtitle, noindex: true,
+    id: c.id, slug: c.slug, publicPath: `/combo-du-lich/${c.slug}`, title: c.title, metaTitle: `${c.title} | Dữ liệu minh hoạ`, metaDescription: c.subtitle, noindex: DEMO_NOINDEX,
     firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(5), subtitle: c.subtitle,
     body: doc(c.subtitle, 'Lịch trình, giá và dịch vụ trong combo này là dữ liệu minh hoạ để chụp ảnh giao diện, không phải sản phẩm đang bán.'),
     image: c.image, durationDays: c.durationDays, durationNights: c.durationNights, audienceTags: c.audienceTags,
@@ -329,7 +331,7 @@ function publicCombo(c) {
 }
 function publicDestination(d) {
   return {
-    id: d.id, slug: d.slug, publicPath: `/diem-den/${d.slug}`, name: d.name, metaTitle: `${d.name} | Dữ liệu minh hoạ`, metaDescription: d.summary, noindex: true,
+    id: d.id, slug: d.slug, publicPath: `/diem-den/${d.slug}`, name: d.name, metaTitle: `${d.name} | Dữ liệu minh hoạ`, metaDescription: d.summary, noindex: DEMO_NOINDEX,
     firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(8), featured: d.featured, category: d.tags[0], location: d.location,
     summary: d.summary, description: `${d.summary} Nội dung này là dữ liệu minh hoạ cho ảnh chụp giao diện.`,
     body: doc(d.summary, 'Nội dung này là dữ liệu minh hoạ cho ảnh chụp giao diện; thông tin thực tế cần được xác minh trước khi xuất bản.'),
@@ -340,7 +342,7 @@ function publicArticle(a) {
   return {
     id: a.id, slug: a.slug, path: `/bai-viet/${a.slug}`, title: a.title, excerpt: a.excerpt,
     body: doc(a.excerpt, 'Bài viết minh hoạ cho ảnh chụp giao diện. Nội dung không phải hướng dẫn chính thức.'),
-    metaTitle: a.title, metaDescription: a.excerpt, noindex: true, cover: a.cover, authorName: 'Biên tập viên demo', readMinutes: a.readMinutes,
+    metaTitle: a.title, metaDescription: a.excerpt, noindex: DEMO_NOINDEX, cover: a.cover, authorName: 'Biên tập viên demo', readMinutes: a.readMinutes,
     firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(2), isDemo: false,
   };
 }
@@ -348,7 +350,7 @@ function publicPage(p) {
   return {
     id: p.id, title: p.title, slug: p.slug, path: `/chuyen-trang/${p.slug}`, excerpt: p.excerpt,
     body: doc('Huỷ trước 7 ngày: hoàn 100%. Huỷ trước 3 ngày: hoàn 50%. (Chính sách minh hoạ, không áp dụng thực tế.)'),
-    metaTitle: p.title, metaDescription: p.excerpt, noindex: true, cover: null, updatedAt: daysAgo(10), firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(10),
+    metaTitle: p.title, metaDescription: p.excerpt, noindex: DEMO_NOINDEX, cover: null, updatedAt: daysAgo(10), firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(10),
   };
 }
 
@@ -475,8 +477,7 @@ const settingOverrides = {
 if (process.env.DEMO_SEO_INDEX === '1') {
   settingOverrides['seo.defaults'] = { ...settingOverrides['seo.defaults'], canonicalBase: 'https://cucphuongtravel.example.com', robotsIndex: true };
   settingOverrides['ops.dataMode'] = { ...settingOverrides['ops.dataMode'], usesDemoData: false };
-  // The frontend policy (src/lib/seo/policy.ts) only accepts a plain-string brand description.
-  settingOverrides['brand.identity'] = { ...settingOverrides['brand.identity'], description: 'Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.' };
+  // brand.identity.description stays a rich document: the frontend policy reads its text (fixed in the SEO task).
 }
 const SETTINGS = REGISTRY.map((d, i) => {
   const custom = Object.prototype.hasOwnProperty.call(settingOverrides, d.key);
@@ -832,7 +833,15 @@ export function handle({ method = 'GET', path, query, persona = 'anon', body } =
       const paths = ['/', '/phong-nghi', '/combo-du-lich', '/diem-den', '/lien-he', '/ve-minh', '/bai-viet', '/chuyen-trang', ...PROPERTIES.map((p) => `/phong-nghi/${p.slug}`), ...COMBOS.map((c) => `/combo-du-lich/${c.slug}`), ...DESTINATIONS.map((d) => `/diem-den/${d.slug}`), ...ARTICLES.map((x) => `/bai-viet/${x.slug}`), ...PAGES.map((x) => `/chuyen-trang/${x.slug}`)];
       return ok({ items: paths.map((p) => ({ path: p, lastModified: daysAgo(2) })) });
     }
+    if (a === 'seo' && b === 'policy' && process.env.DEMO_SEO_INDEX === '1') return ok({ indexingAllowed: true, canonicalOrigin: 'https://cucphuongtravel.example.com', blockedReasons: [], structuredData: { core: true, localBusiness: false, offers: false, reviews: false, vacationRental: false, blockedCommercialReasons: {} } });
     if (a === 'seo' && b === 'policy') return ok({ indexingAllowed: false, canonicalOrigin: null, blockedReasons: ['Môi trường triển khai chưa bật SEO_INDEXING_ALLOWED.', 'Nội dung website đang chờ xác minh (bản demo).'], structuredData: { core: true, offers: false, reviews: false, vacationRental: false, blockedCommercialReasons: { offers: 'Bản demo.', reviews: 'Bản demo.', vacationRental: 'Bản demo.' } } });
+    if (a === 'routes' && b === 'resolve') {
+      // Current detail paths resolve as current; one demo historical slug shows the one-hop 308.
+      const current = [...PROPERTIES.map((p) => `/phong-nghi/${p.slug}`), ...COMBOS.map((c) => `/combo-du-lich/${c.slug}`), ...DESTINATIONS.map((d) => `/diem-den/${d.slug}`), ...ARTICLES.map((x) => `/bai-viet/${x.slug}`)];
+      if (current.includes(q.path)) return ok({ kind: 'current' });
+      if (PROPERTIES[0] && q.path === `/phong-nghi/${PROPERTIES[0].slug}-ten-cu`) return ok({ kind: 'redirect', path: `/phong-nghi/${PROPERTIES[0].slug}`, status: 308 });
+      return notFound('Không tìm thấy đường dẫn công khai');
+    }
     if (a === 'legacy-target' || a === 'routes' || a === 'favicon.png') return notFound();
     return null;
   }

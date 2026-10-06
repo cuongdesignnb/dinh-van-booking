@@ -223,6 +223,10 @@ function approvedOrigin(value: unknown): string | null {
   }
 }
 
+function textOf(value: unknown): string {
+  return documentToText(value) || (typeof value === 'string' ? value.trim() : '');
+}
+
 @Injectable()
 export class PublicCatalogService {
   private readonly config = loadConfig();
@@ -304,6 +308,10 @@ export class PublicCatalogService {
       blockedReasons,
       structuredData: {
         core: record(settings['seo.structuredData']).core !== false,
+        // TravelAgency is emitted only when the Owner flag is on and phone + address exist.
+        localBusiness: record(settings['seo.structuredData']).localBusiness === true
+          && !!(textOf(record(settings['brand.contact']).phone) || textOf(record(settings['brand.contact']).hotline))
+          && !!textOf(record(settings['brand.contact']).address),
         offers: false,
         reviews: false,
         vacationRental: false,

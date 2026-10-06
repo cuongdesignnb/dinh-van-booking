@@ -144,6 +144,7 @@ const FIELD_META: Record<string, FieldMeta> = {
   'seo.structuredData.core': { label: 'Schema nền tảng', kind: 'boolean', help: 'Website, tổ chức, trang, danh mục và breadcrumb từ dữ liệu public thật.' },
   'seo.structuredData.offers': { label: 'Schema giá và ưu đãi', kind: 'boolean', help: 'Chưa phát ra cho tới khi API giá và tồn phòng được xác minh đầy đủ.' },
   'seo.structuredData.reviews': { label: 'Schema đánh giá', kind: 'boolean', help: 'Chưa phát ra cho tới khi quy trình duyệt và dữ liệu review public đủ điều kiện.' },
+  'seo.structuredData.localBusiness': { label: 'Đã xác minh thông tin doanh nghiệp (TravelAgency)', kind: 'boolean', help: 'Chỉ bật khi tên, số điện thoại, địa chỉ và khu vực phục vụ trong Cài đặt là thật và đang hiển thị trên website. Khi tắt, Schema chỉ dùng Organization.' },
   'seo.structuredData.vacationRental': { label: 'Schema Vacation Rental', kind: 'boolean', help: 'Đang khóa theo điều kiện eligibility và tích hợp Google Hotels; không bật chỉ bằng một công tắc.' },
 
   'analytics.providers.googleAnalyticsId': { label: 'Mã Google Analytics', placeholder: 'G-XXXXXXXXXX' },

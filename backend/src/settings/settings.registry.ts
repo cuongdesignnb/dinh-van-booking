@@ -182,7 +182,9 @@ export const SETTING_DEFINITIONS: SettingDefinition[] = [
     description: 'Chọn các loại Schema được phép dựng từ dữ liệu đã công khai. Tính năng thương mại bị chặn cho tới khi có nguồn dữ liệu và phê duyệt phù hợp.',
     isPublic: true,
     schemaVersion: 1,
-    defaultValue: { core: true, offers: false, reviews: false, vacationRental: false },
+    // localBusiness: Owner confirms name, phone, address and area served are real;
+    // only then is the site Organization emitted as TravelAgency.
+    defaultValue: { core: true, offers: false, reviews: false, vacationRental: false, localBusiness: false },
   }),
   def({
     key: 'analytics.providers',

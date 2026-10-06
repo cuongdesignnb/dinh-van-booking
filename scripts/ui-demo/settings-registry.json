@@ -656,7 +656,8 @@
    "core": true,
    "offers": false,
    "reviews": false,
-   "vacationRental": false
+   "vacationRental": false,
+   "localBusiness": false
   }
  },
  {
