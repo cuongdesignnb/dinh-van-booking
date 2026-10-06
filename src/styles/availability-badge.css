@@ -1,1 +1,53 @@
-.availability-badge{position:absolute;left:12px;bottom:12px;display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.25;border:1px solid #ffffffa6;background:#faf7f0ee;color:#5d6054;backdrop-filter:blur(6px);box-shadow:0 2px 8px #17351a1a;pointer-events:none}.availability-badge--available{background:#e7f4e9ed;color:var(--dvb-green-800,#215c36);border-color:#b6d5b1}.availability-badge--sold_out{background:#f7e9e4ed;color:#803d43;border-color:#dcb5b0}.availability-badge__dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.availability-badge--available .availability-badge__dot{animation:availability-pulse 3s ease-in-out infinite}@keyframes availability-pulse{50%{opacity:.55}}@media(prefers-reduced-motion:reduce){.availability-badge__dot{animation:none!important}}
+/* Public availability badge on stay cards: label + dot, never colour alone. */
+.availability-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  padding: 5px 11px;
+  border: 1px solid var(--dvb-neutral-line);
+  border-radius: var(--dvb-r-pill);
+  background: rgb(255 255 255 / 94%);
+  color: var(--dvb-neutral);
+  font-size: var(--dvb-fs-xs);
+  font-weight: 700;
+  line-height: 1.25;
+  box-shadow: 0 2px 10px rgb(16 48 31 / 14%);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.availability-badge--available {
+  border-color: var(--dvb-success-line);
+  background: rgb(228 242 231 / 96%);
+  color: var(--dvb-success);
+}
+
+.availability-badge--sold_out {
+  border-color: var(--dvb-danger-line);
+  background: rgb(251 234 232 / 96%);
+  color: var(--dvb-danger);
+}
+
+.availability-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .availability-badge--available .availability-badge__dot {
+    animation: availability-pulse 3s ease-in-out infinite;
+  }
+}
+
+@keyframes availability-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}

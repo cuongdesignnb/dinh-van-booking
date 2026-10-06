@@ -1115,3 +1115,12 @@
     rotate: 360deg;
   }
 }
+
+/* Touch targets: every interactive primitive reaches 44px on coarse pointers. */
+@media (pointer: coarse) {
+  .ui-chip,
+  .ui-btn--sm,
+  .ui-tab {
+    min-height: var(--dvb-control-md);
+  }
+}

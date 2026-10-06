@@ -3034,13 +3034,17 @@ svg {
   flex-direction: column;
   gap: 18px;
   translate: 100% 0;
-  transition: translate 0.45s var(--ease-out);
-  box-shadow: -20px 0 50px rgb(0 0 0 / 18%);
+  /* Closed: hidden (no shadow bleeding into the viewport, links not tabbable). */
+  visibility: hidden;
+  transition: translate 0.45s var(--ease-out), visibility 0s linear 0.45s;
   overflow-y: auto;
 }
 
 .drawer[data-open] .drawer__panel {
   translate: 0 0;
+  visibility: visible;
+  box-shadow: -20px 0 50px rgb(0 0 0 / 18%);
+  transition: translate 0.45s var(--ease-out), visibility 0s;
 }
 
 .drawer__head {

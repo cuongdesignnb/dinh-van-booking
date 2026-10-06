@@ -1,6 +1,7 @@
 'use client';
 
-import { BedDouble, Info, LayoutGrid, List, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowUpDown, BedDouble, CalendarDays, Info, LayoutGrid, List, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { apiRequest } from '@/lib/api/client';
@@ -141,10 +142,9 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
       {hasCatalog && <div className="stays-search content-shell">
         <StaySearchBar
           selection={selection}
-          filters={filters}
           onSearch={(sel) => navigate(sel, { ...filters, page: 1 })}
-          onFilters={patchFilters}
         />
+        <p className="stays-availability-cta"><Link href="/lich-phong"><CalendarDays size={16} aria-hidden="true" /> Xem phòng trống theo ngày cụ thể</Link></p>
       </div>}
 
       <div className={`stays-layout content-shell${hasCatalog ? '' : ` stays-layout--empty${hasAdvisor ? '' : ' stays-layout--empty-single'}`}`}>
@@ -170,20 +170,21 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
                 <SlidersHorizontal size={16} aria-hidden="true" /> Lọc
                 {activeFilterCount(filters) > 0 && <span className="tool-btn__badge">{activeFilterCount(filters)}</span>}
               </button>
-              {results.length > 0 && <label className="tool-btn tool-btn--select">
-                <span className="sr-only">Sắp xếp</span>
-                <select value={filters.sort} onChange={(e) => patchFilters({ sort: e.target.value as StayFilters['sort'] })}>
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>}
               {hasMap && <a className="tool-btn" href="#ban-do">
                 <MapIcon size={16} aria-hidden="true" /> Bản đồ
               </a>}
             </div>
+            {results.length > 0 && <label className="stays-sort">
+              <ArrowUpDown size={15} aria-hidden="true" />
+              <span className="sr-only">Sắp xếp</span>
+              <select className="ui-select" value={filters.sort} onChange={(e) => patchFilters({ sort: e.target.value as StayFilters['sort'] })}>
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>}
             {results.length > 0 && <div className="view-toggle" role="group" aria-label="Kiểu hiển thị">
               <button
                 type="button"
