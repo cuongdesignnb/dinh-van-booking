@@ -1167,6 +1167,8 @@ textarea.ainput {
 .about-form__nav a:hover { background: #eef5ee; }
 .about-form__nav a:focus-visible { outline: 2px solid var(--dvb-admin-green-700); outline-offset: 2px; }
 .about-form__section { scroll-margin-top: 56px; display: grid; gap: 12px; }
+.about-form__section:focus { outline: none; }
+.about-form__section:focus-visible { outline: 2px solid var(--dvb-admin-green-700); outline-offset: 2px; }
 .about-form__section > legend { font-size: 13px; }
 .about-form__metered { display: grid; gap: 4px; min-width: 0; }
 .about-form__meter { color: var(--dvb-admin-muted); font-size: 11px; }

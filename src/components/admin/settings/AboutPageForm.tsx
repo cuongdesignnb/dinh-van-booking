@@ -68,13 +68,31 @@ function Meter({ count, unit, min, max, note }: { count: number; unit: string; m
 
 function meterFor(key: string, value: unknown) {
   switch (key) {
-    case 'intro': return <Meter count={words(value)} unit="từ" min={60} max={90} />;
-    case 'story': return <Meter count={words(value)} unit="từ" min={250} max={400} />;
+    case 'intro': return <Meter count={words(value)} unit="từ (không tính dấu câu)" min={60} max={90} />;
+    case 'story': return <Meter count={words(value)} unit="từ (không tính dấu câu)" min={250} max={400} />;
     case 'seoTitle': return <Meter count={plain(value).length + (plain(value) ? BRAND_SUFFIX.length : 0)} unit="ký tự" max={60} note="(đã gồm “| Cúc Phương Travel”)" />;
     case 'seoDescription': return <Meter count={plain(value).length} unit="ký tự" min={150} max={160} />;
     case 'ogDescription': return <Meter count={plain(value).length} unit="ký tự" max={120} />;
     default: return null;
   }
+}
+
+/**
+ * The Admin shell scrolls an inner panel, so a plain `#hash` jump (or
+ * scrollIntoView) would also scroll the locked outer document. Scroll only the
+ * nearest scrollable ancestor, then move focus to the section for keyboard users.
+ */
+function jumpTo(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  let scroller = target.parentElement;
+  while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement;
+  const behavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  // Keep the section legend clear of the sticky section nav.
+  const offset = (target.closest('.about-form')?.querySelector('.about-form__nav')?.getBoundingClientRect().height ?? 0) + 16;
+  if (scroller) scroller.scrollTo({ top: target.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - offset, behavior });
+  else window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - offset, behavior });
+  target.focus({ preventScroll: true });
 }
 
 function newId(prefix: string, rows: unknown[]): string {
@@ -146,11 +164,11 @@ export function AboutPageForm({ value, onChange, disabled, Field }: { value: unk
   return (
     <div className="settings-form about-form" data-about-form>
       <nav className="about-form__nav" aria-label="Các phần của trang Về mình">
-        {SECTIONS.map((section, index) => <a key={section.id} href={`#about-form-${section.id}`}>{index + 1}. {section.title}</a>)}
+        {SECTIONS.map((section, index) => <a key={section.id} href={`#about-form-${section.id}`} onClick={(event) => { event.preventDefault(); jumpTo(`about-form-${section.id}`); }}>{index + 1}. {section.title}</a>)}
         <a href="/ve-minh" target="_blank" rel="noopener">Xem trang ↗</a>
       </nav>
       {SECTIONS.map((section, index) => (
-        <fieldset key={section.id} id={`about-form-${section.id}`} className="settings-form__section about-form__section">
+        <fieldset key={section.id} id={`about-form-${section.id}`} tabIndex={-1} className="settings-form__section about-form__section">
           <legend>{index + 1}. {section.title}</legend>
           {section.hint && <p className="ahint">{section.hint}</p>}
           <div className="settings-form__grid">

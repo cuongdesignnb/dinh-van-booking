@@ -27,5 +27,13 @@ Rule for successors: build on what is committed; never reset / force-push. Commi
 
 - Final build + public QA re-run on final code: BUILD PASS, QA 60/60 OK. Final report `docs/ui-redesign/final-report-v3-about.md`.
 
+## Addendum (2026-10-06 evening): full SEO copy + structured Admin form
+- ef85383 backend: new `about.page` copy (H1 with "Đặt phòng Cúc Phương", intro 81 words, story 331 words / 4 paragraphs, 4 values 33–36 words, 4 steps, 4 "Hiểu Cúc Phương như người nhà" cards, 6 FAQs, CTA), `ogDescription` + `ogImageMediaId`, `normalizeAboutPage` server validation (TipTap whitelist via `sanitizeDocument`, UUID media ids, internal links, bounded lists, trimmed/limited texts). Backend tests 85/85.
+- d49b246 frontend: `AboutPageForm` (8 sections, existing `ValueField` → TipTap + Media Library picker, list add/remove/↑↓/drag-handle, SEO length meters), OG description/image in metadata, 4-card area grid, demo data now read from `scripts/ui-demo/about-page.json` (snapshot of the bootstrap).
+- Docker rebuilt; seed `--only about.` dry-run → `SETTING_SKIP about.page DIFFERS`; row was v1 with only the bootstrap audit entry, so `--apply --replace-existing --only about.` → `SETTING_REPLACED=1`.
+- `scripts/ui-demo/about-admin-e2e.mjs` on :18473: edit intro (TipTap) + pick card image (Media Library) + reorder value → save → /ve-minh shows it → undo via form → stored value equals original. First attempt saved but failed to undo (script mistook the brand e-mail field for the login form); restored with the seed replace, fixed the script, final run all PASS (v6→v7→v8).
+- Form section nav: hash jumps scrolled the locked outer admin document; replaced with nearest-scroll-container scrolling.
+- QA 60/60 OK, build PASS, SEO approved-mode check PASS (FAQPage 6 questions). Screenshots refreshed + `about-admin-1440.png`.
+
 ## Next
 - Nothing required. Task finished; production deploy intentionally not done.

@@ -1,0 +1,74 @@
+{
+ "base": "http://localhost:18473",
+ "marker": "E2E-muwniqa1",
+ "steps": [
+  {
+   "name": "load original setting",
+   "ok": true,
+   "detail": {
+    "version": 6
+   }
+  },
+  {
+   "name": "backend rejects invalid input",
+   "ok": true,
+   "detail": {
+    "badLink": "Trang Về mình – Thẻ địa phương 1 – đường dẫn: chỉ nhận đường dẫn nội bộ bắt đầu bằng / (ví dụ /diem-den).",
+    "badMedia": "Trang Về mình – Ảnh chân dung: hãy chọn ảnh từ Media Library.",
+    "badRich": "Trang Về mình – Câu chuyện: nội dung soạn thảo không hợp lệ."
+   }
+  },
+  {
+   "name": "rejected writes changed nothing",
+   "ok": true
+  },
+  {
+   "name": "reorder in form",
+   "ok": true,
+   "detail": {
+    "before": [
+     "Tự kiểm tra trước khi gợi ý",
+     "Tư vấn theo nhu cầu thật"
+    ],
+    "after": [
+     "Tư vấn theo nhu cầu thật",
+     "Tự kiểm tra trước khi gợi ý"
+    ]
+   }
+  },
+  {
+   "name": "saved through Admin",
+   "ok": true,
+   "detail": {
+    "version": 7,
+    "imageMediaId": "1345db93-f987-4192-9797-d428e6655533"
+   }
+  },
+  {
+   "name": "/ve-minh shows the edit",
+   "ok": true,
+   "detail": {
+    "status": 200,
+    "firstAreaImg": true,
+    "firstValue": "Tư vấn theo nhu cầu thật"
+   }
+  },
+  {
+   "name": "restored value equals original",
+   "ok": true,
+   "detail": {
+    "version": 8
+   }
+  },
+  {
+   "name": "/ve-minh back to original",
+   "ok": true
+  },
+  {
+   "name": "no page errors",
+   "ok": true,
+   "detail": []
+  }
+ ],
+ "ok": true
+}

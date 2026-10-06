@@ -1,143 +1,37 @@
 {
- "checkedAt": "2026-10-06",
- "mode": "demo API with DEMO_SEO_INDEX=1, SEO_INDEXING_ALLOWED=true, SEO_APPROVED_CANONICAL_ORIGIN=https://cucphuongtravel.example.com",
- "h1Count": 1,
- "title": "Về mình – Đinh Vân | Cúc Phương Travel",
- "robots": [
-  "index, follow"
+ "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+ "description": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán.",
+ "robots": "index, follow",
+ "canonical": "https://cucphuongtravel.example.com/ve-minh",
+ "og:description": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+ "og:image": "https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp",
+ "twitter:card": "summary_large_image",
+ "twitter:description": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+ "jsonld_blocks_parsed": 1,
+ "types": [
+  "AboutPage",
+  "Answer",
+  "BreadcrumbList",
+  "FAQPage",
+  "ListItem",
+  "Organization",
+  "Person",
+  "Place",
+  "Question",
+  "TravelAgency",
+  "WebSite"
  ],
- "canonical": [
-  "https://cucphuongtravel.example.com/ve-minh"
+ "faq_questions": [
+  "Đi Cúc Phương mùa nào đẹp nhất?",
+  "Từ Hà Nội đi Cúc Phương bằng cách nào?",
+  "Nên mang theo gì khi đến Cúc Phương?",
+  "Gửi yêu cầu đặt phòng xong thì điều gì xảy ra?",
+  "Giá và tình trạng phòng có được xác nhận trước khi thanh toán không?",
+  "Có thể nhờ tư vấn lịch trình tham quan không?"
  ],
- "meta": [
-  "<meta name=\"description\" content=\"Đinh Vân – người tư vấn địa phương của Cúc Phương Travel, tự kiểm tra và gợi ý chỗ nghỉ, lịch trình Cúc Phương – Ninh Bình, hỗ trợ bạn qua điện thoại, Zalo.\"",
-  "<meta property=\"og:title\" content=\"Về mình – Đinh Vân | Cúc Phương Travel\"",
-  "<meta property=\"og:description\" content=\"Đinh Vân – người tư vấn địa phương của Cúc Phương Travel, tự kiểm tra và gợi ý chỗ nghỉ, lịch trình Cúc Phương – Ninh Bình, hỗ trợ bạn qua điện thoại, Zalo.\"",
-  "<meta property=\"og:url\" content=\"https://cucphuongtravel.example.com/ve-minh\"",
-  "<meta property=\"og:locale\" content=\"vi_VN\"",
-  "<meta property=\"og:image\" content=\"https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp\"",
-  "<meta property=\"og:image:width\" content=\"1672\"",
-  "<meta property=\"og:image:height\" content=\"941\"",
-  "<meta property=\"og:image:alt\" content=\"Hiên nhà gỗ nhìn ra núi rừng (ảnh minh hoạ)\"",
-  "<meta property=\"og:type\" content=\"website\"",
-  "<meta name=\"twitter:card\" content=\"summary_large_image\"",
-  "<meta name=\"twitter:title\" content=\"Về mình – Đinh Vân | Cúc Phương Travel\"",
-  "<meta name=\"twitter:description\" content=\"Đinh Vân – người tư vấn địa phương của Cúc Phương Travel, tự kiểm tra và gợi ý chỗ nghỉ, lịch trình Cúc Phương – Ninh Bình, hỗ trợ bạn qua điện thoại, Zalo.\"",
-  "<meta name=\"twitter:image\" content=\"https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp\""
- ],
- "jsonld": {
-  "@context": "https://schema.org",
-  "@graph": [
-   {
-    "@type": "Organization",
-    "@id": "https://cucphuongtravel.example.com/#organization",
-    "name": "Cúc Phương Travel",
-    "url": "https://cucphuongtravel.example.com/",
-    "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
-    "sameAs": [
-     "https://facebook.com/",
-     "https://instagram.com/",
-     "https://youtube.com/"
-    ]
-   },
-   {
-    "@type": "WebSite",
-    "@id": "https://cucphuongtravel.example.com/#website",
-    "name": "Cúc Phương Travel",
-    "url": "https://cucphuongtravel.example.com/",
-    "publisher": {
-     "@id": "https://cucphuongtravel.example.com/#organization"
-    },
-    "inLanguage": "vi-VN"
-   },
-   {
-    "@type": "AboutPage",
-    "@id": "https://cucphuongtravel.example.com/ve-minh#webpage",
-    "url": "https://cucphuongtravel.example.com/ve-minh",
-    "name": "Về mình – Đinh Vân",
-    "description": "Đinh Vân – người tư vấn địa phương của Cúc Phương Travel, tự kiểm tra và gợi ý chỗ nghỉ, lịch trình Cúc Phương – Ninh Bình, hỗ trợ bạn qua điện thoại, Zalo.",
-    "inLanguage": "vi-VN",
-    "isPartOf": {
-     "@id": "https://cucphuongtravel.example.com/#website"
-    },
-    "breadcrumb": {
-     "@id": "https://cucphuongtravel.example.com/ve-minh#breadcrumb"
-    },
-    "mainEntity": {
-     "@id": "https://cucphuongtravel.example.com/#advisor"
-    }
-   },
-   {
-    "@type": "BreadcrumbList",
-    "@id": "https://cucphuongtravel.example.com/ve-minh#breadcrumb",
-    "itemListElement": [
-     {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Trang chủ",
-      "item": "https://cucphuongtravel.example.com/"
-     },
-     {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Về mình"
-     }
-    ]
-   },
-   {
-    "@type": "Person",
-    "@id": "https://cucphuongtravel.example.com/#advisor",
-    "name": "Đinh Vân",
-    "url": "https://cucphuongtravel.example.com/ve-minh",
-    "jobTitle": "Người tư vấn địa phương",
-    "telephone": "0900000000",
-    "description": "Người tư vấn địa phương của Cúc Phương Travel – một dịch vụ nhỏ, độc lập, giúp bạn chọn chỗ nghỉ và lên lịch trình cho chuyến đi Cúc Phương – Ninh Bình.",
-    "worksFor": {
-     "@type": "TravelAgency",
-     "name": "Cúc Phương Travel",
-     "url": "https://cucphuongtravel.example.com/",
-     "areaServed": [
-      {
-       "@type": "Place",
-       "name": "Cúc Phương"
-      },
-      {
-       "@type": "Place",
-       "name": "Ninh Bình"
-      }
-     ]
-    }
-   },
-   {
-    "@type": "FAQPage",
-    "@id": "https://cucphuongtravel.example.com/ve-minh#faq",
-    "mainEntity": [
-     {
-      "@type": "Question",
-      "name": "Cúc Phương Travel là công ty du lịch lớn phải không?",
-      "acceptedAnswer": {
-       "@type": "Answer",
-       "text": "Không. Cúc Phương Travel là một dịch vụ nhỏ, độc lập, do Đinh Vân trực tiếp tư vấn và hỗ trợ khách."
-      }
-     },
-     {
-      "@type": "Question",
-      "name": "Chỗ nghỉ có được kiểm tra trước khi gợi ý không?",
-      "acceptedAnswer": {
-       "@type": "Answer",
-       "text": "Có. Đinh Vân tự kiểm tra thông tin chỗ nghỉ và lịch trình trước khi gợi ý; tình trạng phòng và giá được xác nhận với bạn trước khi đặt."
-      }
-     },
-     {
-      "@type": "Question",
-      "name": "Làm sao để liên hệ với Đinh Vân?",
-      "acceptedAnswer": {
-       "@type": "Answer",
-       "text": "Bạn có thể gọi theo số điện thoại trên trang này, nhắn Zalo hoặc gửi yêu cầu ở trang Liên hệ."
-      }
-     }
-    ]
-   }
-  ]
- }
+ "title_len": 54,
+ "description_len": 156,
+ "og_description_len": 109,
+ "h1_count": 1,
+ "sitemap_has_ve_minh": true
 }
