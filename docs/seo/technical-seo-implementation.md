@@ -1,5 +1,7 @@
 # Technical SEO & structured data — implementation status
 
+> **Historical (2026-09-23).** Current state: see [`final-report.md`](final-report.md), [`route-map.md`](route-map.md), [`slug-lifecycle.md`](slug-lifecycle.md), [`schema-matrix.md`](schema-matrix.md) and [`technical-seo-operations.md`](technical-seo-operations.md) (2026-10-06). That task fixed the brand-description policy bug and the rest of the gaps noted below where they were in scope.
+
 Last checked: 2026-09-23. Baseline: `54c246bbe9f70ed3bf298401e39df3e30a73057c`. Work is local and uncommitted; the existing dirty worktree was preserved.
 
 ## Safety state
