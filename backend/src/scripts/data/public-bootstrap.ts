@@ -23,12 +23,16 @@ export const PUBLIC_BOOTSTRAP_MENU = [
   { label: 'Lưu trú', externalUrl: '/phong-nghi' },
   { label: 'Trải nghiệm', externalUrl: '/combo-du-lich' },
   { label: 'Cẩm nang', externalUrl: '/diem-den' },
-  { label: 'Về mình', externalUrl: '/lien-he' },
+  { label: 'Về mình', externalUrl: '/ve-minh' },
   { label: 'Dành cho đối tác', externalUrl: '/doi-tac' },
 ] as const;
 
 export function paragraphDoc(text: string): object {
   return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] };
+}
+
+export function paragraphsDoc(...texts: string[]): object {
+  return { type: 'doc', content: texts.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })) };
 }
 
 export function publicBootstrapSettings(media: Record<BootstrapMediaKey, string | null>): Record<string, Record<string, unknown>> {
@@ -161,6 +165,65 @@ export function publicBootstrapSettings(media: Record<BootstrapMediaKey, string 
       advisorRole: 'Người tư vấn địa phương',
       advisorDescription: paragraphDoc('Hỗ trợ gợi ý lưu trú và hành trình tại khu vực Cúc Phương – Ninh Bình.'),
       advisorImageMediaId: null,
+    },
+    // Only known facts: a small independent local service run by Đinh Vân, who checks
+    // stays/itineraries herself and supports guests by phone/Zalo. No years, awards,
+    // guest counts, testimonials or portrait. Personal details are left for the owner.
+    'about.page': {
+      enabled: true,
+      heroEyebrow: 'Về mình',
+      title: 'Xin chào, mình là Đinh Vân',
+      intro: paragraphDoc('Người tư vấn địa phương của Cúc Phương Travel – một dịch vụ nhỏ, độc lập, giúp bạn chọn chỗ nghỉ và lên lịch trình cho chuyến đi Cúc Phương – Ninh Bình.'),
+      heroImageMediaId: media.hero,
+      phoneCtaLabel: 'Gọi cho Đinh Vân',
+      zaloCtaLabel: 'Nhắn Zalo',
+      contactCtaLabel: 'Gửi yêu cầu tư vấn',
+      storyTitle: 'Câu chuyện của mình',
+      greeting: 'Rất vui được làm quen với bạn!',
+      story: paragraphsDoc(
+        'Cúc Phương Travel là một dịch vụ nhỏ và độc lập, do mình – Đinh Vân – trực tiếp phụ trách. Mình tư vấn, hỗ trợ đặt chỗ nghỉ và gợi ý lịch trình cho những ai muốn đến Cúc Phương và các điểm quanh Ninh Bình.',
+        'Trước khi giới thiệu một chỗ nghỉ hay một lịch trình, mình tự kiểm tra thông tin và chỉ gợi ý những gì phù hợp với nhu cầu của bạn. Điều gì chưa chắc chắn, mình sẽ nói rõ để bạn cân nhắc.',
+        'Từ lúc bạn bắt đầu tìm hiểu cho đến khi đã tới nơi, bạn có thể gọi điện hoặc nhắn Zalo để mình hỗ trợ.',
+      ),
+      portraitMediaId: null,
+      signatureNote: 'Hẹn gặp bạn ở Cúc Phương!',
+      quote: 'Mình chỉ gợi ý những chỗ nghỉ và lịch trình mà mình đã tự kiểm tra.',
+      valuesTitle: 'Điều mình luôn giữ',
+      valuesIntro: 'Những nguyên tắc nhỏ để chuyến đi của bạn rõ ràng và yên tâm hơn.',
+      values: [
+        { id: 'checked', enabled: true, icon: 'check', title: 'Tự kiểm tra trước khi gợi ý', text: 'Mình xem kỹ thông tin chỗ nghỉ và lịch trình trước khi giới thiệu cho bạn.' },
+        { id: 'personal', enabled: true, icon: 'message', title: 'Tư vấn theo nhu cầu thật', text: 'Gợi ý dựa trên thời gian, số người và mong muốn của chính bạn.' },
+        { id: 'clear', enabled: true, icon: 'shield', title: 'Rõ ràng, minh bạch', text: 'Tình trạng phòng, giá và điều kiện đặt được xác nhận với bạn trước khi hoàn tất.' },
+        { id: 'reachable', enabled: true, icon: 'phone', title: 'Luôn giữ liên lạc', text: 'Bạn có thể gọi điện hoặc nhắn Zalo cho mình trong suốt chuyến đi.' },
+      ],
+      stepsTitle: 'Cách mình đồng hành',
+      stepsIntro: 'Bốn bước đơn giản, từ lúc bạn liên hệ đến khi lên đường.',
+      steps: [
+        { id: 'share', enabled: true, title: 'Bạn chia sẻ nhu cầu', text: 'Gọi, nhắn Zalo hoặc gửi yêu cầu: thời gian dự kiến, số người và kiểu chỗ nghỉ bạn thích.' },
+        { id: 'suggest', enabled: true, title: 'Mình kiểm tra và gợi ý', text: 'Mình kiểm tra chỗ nghỉ, lịch trình phù hợp rồi gửi bạn vài lựa chọn kèm lưu ý.' },
+        { id: 'confirm', enabled: true, title: 'Xác nhận rõ ràng', text: 'Tình trạng phòng, giá và điều kiện đặt được xác nhận trước khi bạn quyết định.' },
+        { id: 'support', enabled: true, title: 'Hỗ trợ khi bạn tới nơi', text: 'Cần hỏi đường hay đổi kế hoạch giữa chuyến, bạn cứ gọi hoặc nhắn cho mình.' },
+      ],
+      areasTitle: 'Khu vực mình hỗ trợ',
+      areasIntro: 'Cúc Phương và những điểm quanh Ninh Bình – nơi mình giúp bạn chọn chỗ nghỉ và lên lịch trình.',
+      areas: [
+        { id: 'national-park', enabled: true, icon: 'trees', title: 'Vườn quốc gia Cúc Phương', text: 'Rừng nguyên sinh, đường mòn và các điểm tham quan trong vườn quốc gia.', linkLabel: 'Xem điểm đến', linkTarget: '/diem-den', imageMediaId: null },
+        { id: 'stays', enabled: true, icon: 'house', title: 'Chỗ nghỉ quanh Cúc Phương', text: 'Homestay, nhà nghỉ, bungalow gần rừng – chọn theo nhu cầu và ngân sách của bạn.', linkLabel: 'Xem chỗ nghỉ', linkTarget: '/phong-nghi', imageMediaId: null },
+        { id: 'ninh-binh', enabled: true, icon: 'mountain', title: 'Các điểm quanh Ninh Bình', text: 'Gợi ý kết hợp Cúc Phương với những điểm tham quan khác trong tỉnh Ninh Bình.', linkLabel: 'Xem điểm đến', linkTarget: '/diem-den', imageMediaId: null },
+      ],
+      showFaq: true,
+      faqTitle: 'Bạn có thể đang thắc mắc',
+      faqs: [
+        { id: 'who', enabled: true, question: 'Cúc Phương Travel là công ty du lịch lớn phải không?', answer: paragraphDoc('Không. Cúc Phương Travel là một dịch vụ nhỏ, độc lập, do Đinh Vân trực tiếp tư vấn và hỗ trợ khách.') },
+        { id: 'checked', enabled: true, question: 'Chỗ nghỉ có được kiểm tra trước khi gợi ý không?', answer: paragraphDoc('Có. Đinh Vân tự kiểm tra thông tin chỗ nghỉ và lịch trình trước khi gợi ý; tình trạng phòng và giá được xác nhận với bạn trước khi đặt.') },
+        { id: 'contact', enabled: true, question: 'Làm sao để liên hệ với Đinh Vân?', answer: paragraphDoc('Bạn có thể gọi theo số điện thoại trên trang này, nhắn Zalo hoặc gửi yêu cầu ở trang Liên hệ.') },
+      ],
+      ctaTitle: 'Bắt đầu chuyến đi Cúc Phương của bạn',
+      ctaText: paragraphDoc('Kể cho mình nghe bạn định đi khi nào, đi mấy người – mình sẽ gợi ý chỗ nghỉ và lịch trình phù hợp.'),
+      ctaStaysLabel: 'Xem chỗ nghỉ',
+      areaServed: 'Cúc Phương, Ninh Bình',
+      seoTitle: 'Về mình – Đinh Vân',
+      seoDescription: 'Đinh Vân – người tư vấn địa phương của Cúc Phương Travel, tự kiểm tra và gợi ý chỗ nghỉ, lịch trình Cúc Phương – Ninh Bình, hỗ trợ bạn qua điện thoại, Zalo.',
     },
     'catalog.staysPage': {
       heroTitle: 'Phòng nghỉ Cúc Phương',

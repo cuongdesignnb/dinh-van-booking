@@ -6,7 +6,7 @@
 const RESERVED = new Set([
   'admin', 'api', 'media', '_next', 'static', 'robots', 'sitemap', 'favicon', 'icon', 'apple-icon',
   'opengraph-image', 'twitter-image', 'manifest', 'phong-nghi', 'combo-du-lich', 'diem-den',
-  'bai-viet', 'chuyen-trang', 'dat-phong', 'lien-he', 'tai-khoan', 'tra-cuu',
+  'bai-viet', 'chuyen-trang', 'dat-phong', 'lien-he', 'tai-khoan', 'tra-cuu', 've-minh',
 ]);
 
 export function slugify(input: string): string {

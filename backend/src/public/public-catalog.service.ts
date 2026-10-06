@@ -489,10 +489,13 @@ export class PublicCatalogService {
     ];
     for (const [path, kind] of collections) if (indexableByKind.has(kind)) paths.set(path, latest(kind));
 
-    const contact = record((await this.settings.publicSnapshot())['brand.contact']);
+    const snapshot = await this.settings.publicSnapshot();
+    const contact = record(snapshot['brand.contact']);
     if ((typeof contact.phone === 'string' && contact.phone.trim()) || (typeof contact.email === 'string' && contact.email.trim())) {
       paths.set('/lien-he', null);
     }
+    const about = record(snapshot['about.page']);
+    if (about.enabled === true && typeof about.title === 'string' && about.title.trim()) paths.set('/ve-minh', null);
     return { items: [...paths].map(([path, lastModified]) => ({ path, lastModified })) };
   }
 

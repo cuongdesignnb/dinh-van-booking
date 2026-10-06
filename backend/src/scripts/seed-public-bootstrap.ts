@@ -137,7 +137,7 @@ async function run(): Promise<void> {
     console.log(`ACTOR=${actor.email}`);
     printCount('BRAND_SETTINGS', plan.filter((item) => item.key.startsWith('brand.')).length);
     printCount('HOME_SETTINGS', plan.filter((item) => item.key.startsWith('home.')).length);
-    printCount('PAGE_SETTINGS', plan.filter((item) => item.key.startsWith('catalog.') || item.key === 'contact.page').length);
+    printCount('PAGE_SETTINGS', plan.filter((item) => item.key.startsWith('catalog.') || item.key === 'contact.page' || item.key === 'about.page').length);
     printCount('SEO_SETTINGS', plan.filter((item) => item.key.startsWith('seo.')).length);
     printCount('SETTING_CREATE', plan.filter((item) => item.action === 'create').length);
     printCount('SETTING_SKIP_EXISTING', plan.filter((item) => item.action === 'skip').length);
