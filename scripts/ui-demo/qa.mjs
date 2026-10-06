@@ -27,6 +27,7 @@ const ROUTES = [
   { persona: 'anon', path: '/diem-den', key: 'public-destinations' },
   { persona: 'anon', path: '/diem-den/demo-rung-quoc-gia-cuc-phuong', key: 'public-destination-detail' },
   { persona: 'anon', path: '/lien-he', key: 'public-contact' },
+  { persona: 'anon', path: '/ve-minh', key: 'public-about' },
   { persona: 'anon', path: '/dat-phong', key: 'public-booking' },
   { persona: 'anon', path: '/dat-phong?stay=demo-nha-rung-cuc-phuong&room=demo-rt-rung-std&checkIn=2026-10-20&checkOut=2026-10-22&adults=2&children=0&rooms=1', key: 'public-booking-form' },
   { persona: 'anon', path: '/lich-phong', key: 'public-availability', shots: [1440], search: true },

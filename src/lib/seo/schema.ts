@@ -261,7 +261,6 @@ export function buildAboutGraph(site: PublicSiteData, options: {
     ...(options.person.description?.trim() ? { description: options.person.description.trim() } : {}),
     ...(image ? { image: image[0] } : {}),
     ...(brand ? { worksFor: { '@type': 'TravelAgency', name: brand, url: `${origin}/`, ...(areas.length ? { areaServed: areas.map((area) => ({ '@type': 'Place', name: area })) } : {}) } } : {}),
-    ...(areas.length ? { areaServed: areas.map((area) => ({ '@type': 'Place', name: area })) } : {}),
   });
 
   const faqs = (options.faqs ?? []).filter((item) => item.question.trim() && item.answer.trim());

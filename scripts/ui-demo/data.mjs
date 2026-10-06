@@ -505,6 +505,8 @@ const settingOverrides = {
 if (process.env.DEMO_SEO_INDEX === '1') {
   settingOverrides['seo.defaults'] = { ...settingOverrides['seo.defaults'], canonicalBase: 'https://cucphuongtravel.example.com', robotsIndex: true };
   settingOverrides['ops.dataMode'] = { ...settingOverrides['ops.dataMode'], usesDemoData: false };
+  // The frontend policy (src/lib/seo/policy.ts) only accepts a plain-string brand description.
+  settingOverrides['brand.identity'] = { ...settingOverrides['brand.identity'], description: 'Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.' };
 }
 const SETTINGS = REGISTRY.map((d, i) => {
   const custom = Object.prototype.hasOwnProperty.call(settingOverrides, d.key);
