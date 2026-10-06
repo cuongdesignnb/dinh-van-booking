@@ -1,0 +1,762 @@
+{
+  "base": "http://localhost:18473",
+  "mode": "gated",
+  "origin": "https://cucphuongtravel.example.com",
+  "checkedAt": "2026-10-06T16:07:22.839Z",
+  "passed": 108,
+  "failed": 0,
+  "results": [
+    {
+      "name": "page /: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /: meta description",
+      "ok": true,
+      "detail": "Tư vấn lưu trú và hành trình Cúc Phương – Ninh Bình theo nhu cầu của bạn."
+    },
+    {
+      "name": "page /: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=2 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "page /phong-nghi: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /phong-nghi: title",
+      "ok": true,
+      "detail": "Phòng nghỉ Cúc Phương | Cúc Phương Travel"
+    },
+    {
+      "name": "page /phong-nghi: meta description",
+      "ok": true,
+      "detail": "Xem nơi lưu trú đã được xuất bản hoặc liên hệ Đinh Vân để được tư vấn."
+    },
+    {
+      "name": "page /phong-nghi: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /phong-nghi: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /phong-nghi: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /phong-nghi: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "page /combo-du-lich: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /combo-du-lich: title",
+      "ok": true,
+      "detail": "Combo du lịch Cúc Phương | Cúc Phương Travel"
+    },
+    {
+      "name": "page /combo-du-lich: meta description",
+      "ok": true,
+      "detail": "Theo dõi các combo du lịch khi thông tin dịch vụ đã được xác nhận và xuất bản."
+    },
+    {
+      "name": "page /combo-du-lich: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /combo-du-lich: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /combo-du-lich: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /combo-du-lich: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "page /diem-den: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /diem-den: title",
+      "ok": true,
+      "detail": "Điểm đến Cúc Phương – Ninh Bình | Cúc Phương Travel"
+    },
+    {
+      "name": "page /diem-den: meta description",
+      "ok": true,
+      "detail": "Khám phá điểm đến được cập nhật cho hành trình Cúc Phương – Ninh Bình."
+    },
+    {
+      "name": "page /diem-den: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /diem-den: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /diem-den: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /diem-den: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "page /bai-viet: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /bai-viet: title",
+      "ok": true,
+      "detail": "Bài viết Cúc Phương – Ninh Bình | Cúc Phương Travel"
+    },
+    {
+      "name": "page /bai-viet: meta description",
+      "ok": true,
+      "detail": "Bài viết và kinh nghiệm khám phá được cập nhật trên Cúc Phương Travel."
+    },
+    {
+      "name": "page /bai-viet: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /bai-viet: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=0 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /bai-viet: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /bai-viet: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "page /lien-he: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /lien-he: title",
+      "ok": true,
+      "detail": "Liên hệ Cúc Phương Travel"
+    },
+    {
+      "name": "page /lien-he: meta description",
+      "ok": true,
+      "detail": "Gọi 0974045828 hoặc gửi yêu cầu để Đinh Vân hỗ trợ chuyến đi Cúc Phương – Ninh Bình."
+    },
+    {
+      "name": "page /lien-he: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /lien-he: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /lien-he: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /lien-he: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "page /ve-minh: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /ve-minh: title",
+      "ok": true,
+      "detail": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel"
+    },
+    {
+      "name": "page /ve-minh: meta description",
+      "ok": true,
+      "detail": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán."
+    },
+    {
+      "name": "page /ve-minh: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /ve-minh: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /ve-minh: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: robots noindex (indexing closed)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "page /ve-minh: no canonical while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: no JSON-LD while closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "private /dat-phong: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, nofollow / noindex, follow"
+    },
+    {
+      "name": "private /dat-phong: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /dat-phong: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "private /lich-phong: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "private /lich-phong: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /lich-phong: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "private /doi-tac: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, nofollow / noindex, follow"
+    },
+    {
+      "name": "private /doi-tac: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /doi-tac: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "private /admin: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, nofollow / noindex, follow"
+    },
+    {
+      "name": "private /admin: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /admin: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "query: sort/filter → noindex, no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "noindex, follow null"
+    },
+    {
+      "name": "query: /lich-phong with dates → noindex",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "trailing slash → 308 to no-slash URL",
+      "ok": true,
+      "detail": "308 /phong-nghi"
+    },
+    {
+      "name": "uppercase path → 308 lowercase",
+      "ok": true,
+      "detail": "308 /phong-nghi"
+    },
+    {
+      "name": "unknown detail URL → 404 (not a 200 shell)",
+      "ok": true,
+      "detail": "404"
+    },
+    {
+      "name": "unknown root URL → 404",
+      "ok": true,
+      "detail": "404"
+    },
+    {
+      "name": "robots.txt 200",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "robots.txt disallows /admin/ and /api/",
+      "ok": true,
+      "detail": "User-Agent: * | Allow: / | Disallow: /admin/ | Disallow: /api/ |  | "
+    },
+    {
+      "name": "robots.txt does not block the public site",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "robots.txt has no Sitemap line while closed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap.xml 200",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap: empty while indexing is closed",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "browser /: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /phong-nghi: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /phong-nghi: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /combo-du-lich: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /combo-du-lich: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /diem-den: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /diem-den: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /bai-viet: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /bai-viet: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /lien-he: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /lien-he: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /ve-minh: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /ve-minh: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "pages": {
+    "/": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Tư vấn lưu trú và hành trình Cúc Phương – Ninh Bình theo nhu cầu của bạn.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Tư vấn lưu trú và hành trình Cúc Phương – Ninh Bình theo nhu cầu của bạn.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Tư vấn lưu trú và hành trình Cúc Phương – Ninh Bình theo nhu cầu của bạn.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 2,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/phong-nghi": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Phòng nghỉ Cúc Phương | Cúc Phương Travel",
+      "description": "Xem nơi lưu trú đã được xuất bản hoặc liên hệ Đinh Vân để được tư vấn.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Phòng nghỉ Cúc Phương | Cúc Phương Travel",
+        "description": "Xem nơi lưu trú đã được xuất bản hoặc liên hệ Đinh Vân để được tư vấn.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Phòng nghỉ Cúc Phương | Cúc Phương Travel",
+        "description": "Xem nơi lưu trú đã được xuất bản hoặc liên hệ Đinh Vân để được tư vấn.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/combo-du-lich": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Combo du lịch Cúc Phương | Cúc Phương Travel",
+      "description": "Theo dõi các combo du lịch khi thông tin dịch vụ đã được xác nhận và xuất bản.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Combo du lịch Cúc Phương | Cúc Phương Travel",
+        "description": "Theo dõi các combo du lịch khi thông tin dịch vụ đã được xác nhận và xuất bản.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Combo du lịch Cúc Phương | Cúc Phương Travel",
+        "description": "Theo dõi các combo du lịch khi thông tin dịch vụ đã được xác nhận và xuất bản.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/diem-den": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Điểm đến Cúc Phương – Ninh Bình | Cúc Phương Travel",
+      "description": "Khám phá điểm đến được cập nhật cho hành trình Cúc Phương – Ninh Bình.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Điểm đến Cúc Phương – Ninh Bình | Cúc Phương Travel",
+        "description": "Khám phá điểm đến được cập nhật cho hành trình Cúc Phương – Ninh Bình.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Điểm đến Cúc Phương – Ninh Bình | Cúc Phương Travel",
+        "description": "Khám phá điểm đến được cập nhật cho hành trình Cúc Phương – Ninh Bình.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/bai-viet": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Bài viết Cúc Phương – Ninh Bình | Cúc Phương Travel",
+      "description": "Bài viết và kinh nghiệm khám phá được cập nhật trên Cúc Phương Travel.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Bài viết Cúc Phương – Ninh Bình | Cúc Phương Travel",
+        "description": "Bài viết và kinh nghiệm khám phá được cập nhật trên Cúc Phương Travel.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Bài viết Cúc Phương – Ninh Bình | Cúc Phương Travel",
+        "description": "Bài viết và kinh nghiệm khám phá được cập nhật trên Cúc Phương Travel.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 0,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/lien-he": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Liên hệ Cúc Phương Travel",
+      "description": "Gọi 0974045828 hoặc gửi yêu cầu để Đinh Vân hỗ trợ chuyến đi Cúc Phương – Ninh Bình.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Liên hệ Cúc Phương Travel",
+        "description": "Gọi 0974045828 hoặc gửi yêu cầu để Đinh Vân hỗ trợ chuyến đi Cúc Phương – Ninh Bình.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Liên hệ Cúc Phương Travel",
+        "description": "Gọi 0974045828 hoặc gửi yêu cầu để Đinh Vân hỗ trợ chuyến đi Cúc Phương – Ninh Bình.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/ve-minh": {
+      "status": 200,
+      "xRobots": "noindex, follow",
+      "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+      "description": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán.",
+      "robots": "noindex, follow",
+      "canonical": null,
+      "og": {
+        "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+        "description": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+        "url": null,
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+        "description": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+        "image": null
+      },
+      "graphs": [],
+      "types": [],
+      "ids": [],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    }
+  }
+}

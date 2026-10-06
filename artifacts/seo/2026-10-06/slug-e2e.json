@@ -1,0 +1,375 @@
+{
+  "base": "http://localhost:18473",
+  "startedAt": "2026-10-06T16:06:52.506Z",
+  "steps": [
+    {
+      "name": "A1 typing the title does not create a slug (\"Chưa tạo\")",
+      "ok": true
+    },
+    {
+      "name": "A2 Generate → /bai-viet/qa-seo-nha-san-forest-home",
+      "ok": true,
+      "detail": "/bai-viet/qa-seo-nha-san-forest-home"
+    },
+    {
+      "name": "A3 editing the title after Generate keeps the generated slug",
+      "ok": true
+    },
+    {
+      "name": "A4 Save Draft stores exactly the generated slug (no hidden regenerate)",
+      "ok": true,
+      "detail": {
+        "slug": "qa-seo-nha-san-forest-home",
+        "path": "/bai-viet/qa-seo-nha-san-forest-home"
+      }
+    },
+    {
+      "name": "B1 editing title + SEO and saving keeps the slug",
+      "ok": true,
+      "detail": {
+        "slug": "qa-seo-nha-san-forest-home",
+        "title": "[QA-SEO] Nhà Sàn Forest Home Cúc Phương"
+      }
+    },
+    {
+      "name": "B2 \"Generate lại slug\" asks for confirmation with old/new URL",
+      "ok": true,
+      "detail": "Đổi đường dẫn của nội dung này?\nURL cũ\n/bai-viet/qa-seo-nha-san-forest-home\nURL mới\n/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong\n\nHệ thống sẽ giữ redirect vĩnh viễn từ URL cũ sang URL mới.\n\nHuỷ\nGenerate & đổi URL"
+    },
+    {
+      "name": "B3 route history shows the old URL as 308 with actor",
+      "ok": true,
+      "detail": "Lịch sử đường dẫn (1 URL cũ)\nURL\tChuyển hướng\tNgày đổi\tNgười đổi\n/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong\tURL hiện tại\t23:06:55 6/10/2026\t—\n/bai-viet/qa-seo-nha-san-forest-home\t308 → URL hiện tại\t23:06:55 6/10/2026\tChu so huu local"
+    },
+    {
+      "name": "B4 saving after Generate works and keeps the new slug",
+      "ok": true,
+      "detail": "qa-seo-nha-san-forest-home-cuc-phuong"
+    },
+    {
+      "name": "C1 generic update with slug → 400 (Save ≠ change slug)",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "body": {
+          "message": [
+            "property slug should not exist"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "name": "C2 stale expectedVersion → 409 version_conflict",
+      "ok": true,
+      "detail": {
+        "code": "version_conflict",
+        "message": "Nội dung đã được người khác sửa. Tải lại rồi thử lại.",
+        "currentVersion": 4
+      }
+    },
+    {
+      "name": "C3 create without Generate → slug null, no route (no hidden autoslug)",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "slug": null,
+        "path": null
+      }
+    },
+    {
+      "name": "C4 create with a non-normalised slug → 400 (must come from Generate)",
+      "ok": true,
+      "detail": {
+        "code": "slug_invalid",
+        "message": "Đường dẫn không hợp lệ. Hãy bấm Generate để tạo đường dẫn."
+      }
+    },
+    {
+      "name": "C5 Generate onto another item's current slug → 409 slug_conflict + suggestion",
+      "ok": true,
+      "detail": {
+        "code": "slug_conflict",
+        "message": "Đường dẫn /bai-viet/qa-seo-nha-san-forest-home-cuc-phuong đã thuộc nội dung khác (kể cả URL cũ đang chuyển hướng). Hãy dùng cụm từ khác.",
+        "suggestion": "qa-seo-nha-san-forest-home-cuc-phuong-2",
+        "suggestionPath": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong-2"
+      }
+    },
+    {
+      "name": "C6 historical slug of another item stays reserved → 409",
+      "ok": true,
+      "detail": {
+        "code": "slug_conflict",
+        "message": "Đường dẫn /bai-viet/qa-seo-nha-san-forest-home đã thuộc nội dung khác (kể cả URL cũ đang chuyển hướng). Hãy dùng cụm từ khác.",
+        "suggestion": "qa-seo-nha-san-forest-home-2",
+        "suggestionPath": "/bai-viet/qa-seo-nha-san-forest-home-2"
+      }
+    },
+    {
+      "name": "C7 reserved slug → 400 slug_reserved; preview flags reserved root path",
+      "ok": true,
+      "detail": {
+        "reserved": {
+          "code": "slug_reserved",
+          "message": "\"phong-nghi\" là đường dẫn hệ thống được bảo vệ. Hãy dùng cụm từ khác."
+        },
+        "preview": {
+          "source": "Đối tác",
+          "slug": "doi-tac",
+          "path": "/doi-tac",
+          "currentSlug": null,
+          "currentPath": null,
+          "unchanged": false,
+          "available": false,
+          "reserved": true,
+          "conflict": false,
+          "reactivatesHistory": false,
+          "suggestion": null,
+          "suggestionPath": null,
+          "isPublished": false,
+          "requiresConfirmation": false
+        }
+      }
+    },
+    {
+      "name": "C8 create preview on a taken slug → visible -2 suggestion",
+      "ok": true,
+      "detail": {
+        "source": "[QA-SEO] Nhà Sàn Forest Home Cúc Phương",
+        "slug": "qa-seo-nha-san-forest-home-cuc-phuong",
+        "path": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong",
+        "currentSlug": null,
+        "currentPath": null,
+        "unchanged": false,
+        "available": false,
+        "reserved": false,
+        "conflict": true,
+        "reactivatesHistory": false,
+        "suggestion": "qa-seo-nha-san-forest-home-cuc-phuong-2",
+        "suggestionPath": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong-2",
+        "isPublished": false,
+        "requiresConfirmation": false
+      }
+    },
+    {
+      "name": "C9 stay create preview (catalog endpoint) → /phong-nghi/nha-san-dinh-van",
+      "ok": true,
+      "detail": {
+        "source": "Nhà Sàn Đinh Vân",
+        "slug": "nha-san-dinh-van",
+        "path": "/phong-nghi/nha-san-dinh-van",
+        "currentSlug": null,
+        "currentPath": null,
+        "unchanged": false,
+        "available": true,
+        "reserved": false,
+        "conflict": false,
+        "reactivatesHistory": false,
+        "suggestion": null,
+        "suggestionPath": null,
+        "isPublished": false,
+        "requiresConfirmation": false
+      }
+    },
+    {
+      "name": "D0 a Media Library image exists for the QA cover",
+      "ok": true,
+      "detail": "1345db93-f987-4192-9797-d428e6655533"
+    },
+    {
+      "name": "D1 QA article published (local only)",
+      "ok": true,
+      "detail": 200
+    },
+    {
+      "name": "D2 published URL answers 200 with noindex while indexing is closed",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "xRobots": "noindex, follow"
+      }
+    },
+    {
+      "name": "D3 changing a published URL without confirmation → 400",
+      "ok": true,
+      "detail": {
+        "code": "public_url_change_unconfirmed",
+        "message": "Nội dung đang công khai. Xác nhận đổi URL trước khi Generate.",
+        "previousPath": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong",
+        "path": "/bai-viet/qa-seo-forest-home-ninh-binh"
+      }
+    },
+    {
+      "name": "D4 confirmed Generate → new path, redirectCreated",
+      "ok": true,
+      "detail": {
+        "slug": "qa-seo-forest-home-ninh-binh",
+        "path": "/bai-viet/qa-seo-forest-home-ninh-binh",
+        "previousPath": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong",
+        "redirectCreated": true,
+        "version": 7,
+        "unchanged": false
+      }
+    },
+    {
+      "name": "D5 old URL /bai-viet/qa-seo-nha-san-forest-home-cuc-phuong → 308 straight to the current URL",
+      "ok": true,
+      "detail": {
+        "status": 308,
+        "location": "/bai-viet/qa-seo-forest-home-ninh-binh"
+      }
+    },
+    {
+      "name": "D5 old URL /bai-viet/qa-seo-nha-san-forest-home → 308 straight to the current URL",
+      "ok": true,
+      "detail": {
+        "status": 308,
+        "location": "/bai-viet/qa-seo-forest-home-ninh-binh"
+      }
+    },
+    {
+      "name": "D6 redirect target answers 200 (one hop, no loop)",
+      "ok": true,
+      "detail": 200
+    },
+    {
+      "name": "D7 route history: 1 current + 2 old URLs, each 308 to current",
+      "ok": true,
+      "detail": {
+        "current": {
+          "path": "/bai-viet/qa-seo-forest-home-ninh-binh",
+          "isCurrent": true,
+          "redirectStatus": null,
+          "createdAt": "2026-10-06T16:06:57.117Z",
+          "replacedAt": null,
+          "actor": null
+        },
+        "history": [
+          {
+            "path": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong",
+            "isCurrent": false,
+            "redirectStatus": 308,
+            "createdAt": "2026-10-06T16:06:55.987Z",
+            "replacedAt": "2026-10-06T16:06:57.118Z",
+            "actor": "Chu so huu local"
+          },
+          {
+            "path": "/bai-viet/qa-seo-nha-san-forest-home",
+            "isCurrent": false,
+            "redirectStatus": 308,
+            "createdAt": "2026-10-06T16:06:54.905Z",
+            "replacedAt": "2026-10-06T16:06:55.988Z",
+            "actor": "Chu so huu local"
+          }
+        ]
+      }
+    },
+    {
+      "name": "D8 sitemap stays empty while indexing is closed (no QA/old URLs)",
+      "ok": true,
+      "detail": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n</urlset>\n"
+    },
+    {
+      "name": "D9 audit-backed history has actor names",
+      "ok": true,
+      "detail": [
+        {
+          "path": "/bai-viet/qa-seo-nha-san-forest-home-cuc-phuong",
+          "isCurrent": false,
+          "redirectStatus": 308,
+          "createdAt": "2026-10-06T16:06:55.987Z",
+          "replacedAt": "2026-10-06T16:06:57.118Z",
+          "actor": "Chu so huu local"
+        },
+        {
+          "path": "/bai-viet/qa-seo-nha-san-forest-home",
+          "isCurrent": false,
+          "redirectStatus": 308,
+          "createdAt": "2026-10-06T16:06:54.905Z",
+          "replacedAt": "2026-10-06T16:06:55.988Z",
+          "actor": "Chu so huu local"
+        }
+      ]
+    },
+    {
+      "name": "D10 archive → current and old URLs 404 (no redirect to home)",
+      "ok": true,
+      "detail": {
+        "archived": 200,
+        "current": 404,
+        "old": 404,
+        "oldLocation": null
+      }
+    },
+    {
+      "name": "D11 no page errors in Admin during the UI steps",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "E1 cleanup: every QA item deleted, none remain",
+      "ok": true,
+      "detail": [
+        {
+          "id": "0c9414b9-829e-4724-967e-05bb22da8253",
+          "status": 204
+        },
+        {
+          "id": "2ddda55d-fe13-41cb-ae2b-4daf9c7c2589",
+          "status": 204
+        },
+        {
+          "remainingQaItems": 0
+        },
+        {
+          "id": "b82e434b-9a3a-42d5-a92d-032f978253c7",
+          "status": 204
+        },
+        {
+          "id": "1a93f9cc-7d6d-455e-9304-e258cd65587a",
+          "status": 204
+        },
+        {
+          "remainingQaItems": 0
+        }
+      ]
+    },
+    {
+      "name": "E2 deleted QA URL → 404",
+      "ok": true,
+      "detail": 404
+    }
+  ],
+  "cleanup": [
+    {
+      "id": "0c9414b9-829e-4724-967e-05bb22da8253",
+      "status": 204
+    },
+    {
+      "id": "2ddda55d-fe13-41cb-ae2b-4daf9c7c2589",
+      "status": 204
+    },
+    {
+      "remainingQaItems": 0
+    },
+    {
+      "id": "b82e434b-9a3a-42d5-a92d-032f978253c7",
+      "status": 204
+    },
+    {
+      "id": "1a93f9cc-7d6d-455e-9304-e258cd65587a",
+      "status": 204
+    },
+    {
+      "remainingQaItems": 0
+    }
+  ],
+  "precleaned": [
+    "0c9414b9-829e-4724-967e-05bb22da8253",
+    "2ddda55d-fe13-41cb-ae2b-4daf9c7c2589"
+  ],
+  "finishedAt": "2026-10-06T16:06:57.458Z",
+  "passed": 32,
+  "failed": 0
+}
