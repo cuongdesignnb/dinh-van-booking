@@ -21,5 +21,9 @@ Rule for successors: build on what is committed; never reset / force-push. Commi
 - SEO-on check (`DEMO_SEO_INDEX=1` + env): index/follow, canonical, OG/Twitter, JSON-LD Organization/WebSite/AboutPage/BreadcrumbList/Person/FAQPage, sitemap has `/ve-minh`; `?q=` → noindex, `?utm_` keeps canonical. Evidence `artifacts/ui-redesign-v2/about-seo-check.json`.
 - Found (pre-existing, not changed): frontend `getSeoPolicy` requires `brand.identity.description` to be a plain string; bootstrap stores a rich doc, so the site can never become indexable even after Owner approval. Backend `seoPolicy` handles docs.
 
+- Docker `compose.sh up -d --build web api worker` OK (migrate clean). Seed `--dry-run --only about.` → only `SETTING_CREATE about.page`, 0 replace, 0 media import; `--apply` → `SETTING_CREATED=1`, `DVB_PUBLIC_BOOTSTRAP_APPLY=PASS`. Menu via `PUT /api/v1/navigation/primary`: Về mình `/lien-he` → `/ve-minh` (other items untouched, "Tra cứu phòng" stays disabled).
+- `PageHero` image now uses the media's own alt (was replaced by the generic "Ảnh minh họa"); web container rebuilt again.
+- :18473 and :18480 `/ve-minh` 200, 1 h1, tel:0974045828, 0 console errors, 0 overflow. `artifacts/ui-redesign-v2/about-real-1440.png` (via new `scripts/ui-demo/real-shot.mjs`).
+
 ## Next
-- Docker rebuild web/api/worker, seed `--only about.` dry-run → apply, menu via Admin API, real-stack screenshot, final report.
+- Final report `docs/ui-redesign/final-report-v3-about.md`, push, STOP.

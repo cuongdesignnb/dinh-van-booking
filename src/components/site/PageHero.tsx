@@ -23,7 +23,7 @@ export function PageHero({ id, title, eyebrow, lead, image, crumbs, children, si
   const text = typeof lead === 'string' ? publicText(lead) : '';
   return (
     <section className={`cp-page-hero cp-page-hero--${size}${image?.src ? '' : ' cp-page-hero--noimg'}`} aria-labelledby={id}>
-      {image?.src && <Image src={image.src} alt="" fill priority sizes="100vw" className="cp-page-hero__img" unoptimized />}
+      {image?.src && <Image src={image.src} alt={image.alt ?? ''} fill priority sizes="100vw" className="cp-page-hero__img" unoptimized />}
       <div className="cp-page-hero__inner">
         {crumbs && crumbs.length > 0 && <div className="cp-page-hero__crumbs"><Breadcrumb variant="light" items={crumbs} /></div>}
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
