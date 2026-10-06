@@ -81,7 +81,7 @@
 
 .hh__copy {
   padding-left: clamp(0px, 13.5vw, 200px);
-  max-width: 820px;
+  max-width: 900px;
 }
 
 .hh__eyebrow {
@@ -92,7 +92,7 @@
 
 .hh__title {
   display: grid;
-  font-size: clamp(36px, 3.7vw, 56px);
+  font-size: clamp(34px, 3.3vw, 50px);
   font-weight: 500;
   line-height: 1.13;
   color: #fff;
@@ -113,10 +113,15 @@
   margin-top: 6px;
 }
 
+.hh__lead .rich-content,
+.hh__lead .rich-content :is(p, strong, em, a) {
+  color: inherit;
+}
+
 .hh__trust {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 30px;
+  gap: 12px 26px;
   margin-top: 26px;
 }
 
