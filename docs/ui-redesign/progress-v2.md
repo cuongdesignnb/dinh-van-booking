@@ -20,10 +20,11 @@ Rule for successors: build on what is committed; never reset / force-push. Commi
 - 3baf1b2 /phong-nghi uses shared `StayCard` (grid + `sc--row`), `ListingCard` deleted; dead CSS pruned with `scripts/ui-demo/prune-css.mjs`
 - 7244dd7 contact page cards/icons/monogram; floating filter bars on combos/destinations
 
+- cedd556..ebf1ea7 stay detail decor removed, favicon, QA (prod build) all PASS, screenshots + composite, backend build/test PASS, Docker web+api+worker rebuilt, local DB brand update (`--only brand.,site.,home.,seo.`), primary menu updated via Admin API
+- final report: `docs/ui-redesign/final-report-v2.md`
+
 ## Next
-- stay detail: drop leaf sprig / floating script decor, SectionHead headings
-- /lich-phong polish; 1024/768/390 pass on all routes
-- lint + build, screenshots in artifacts/ui-redesign-v2 (+ composite), Docker web+api rebuild, DB brand update, final-report-v2.md
+- Nothing required. Task finished; production deploy intentionally not done.
 
 ## Dev notes
 - Demo: `DEMO_API_PORT=4100 node scripts/ui-demo/server.mjs`; `NEXT_DIST_DIR=.next-dev INTERNAL_API_BASE_URL=http://127.0.0.1:4100/api/v1 npx next dev -p 3199`
