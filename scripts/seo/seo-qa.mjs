@@ -77,7 +77,8 @@ function parse(html) {
     imgs: imgs.length,
     imgsNoAlt: imgs.filter((tag) => !/\balt="/.test(tag)).length,
     imgsBadAlt: imgs.filter((tag) => /\balt="(?:undefined|null|[^"]*\.(?:jpe?g|png|webp))"/i.test(tag)).length,
-    imgsNoSize: imgs.filter((tag) => !/\bwidth="/.test(tag) || !/\bheight="/.test(tag)).length,
+    // next/image `fill` images are sized by their positioned container (no CLS), so they count as sized.
+    imgsNoSize: imgs.filter((tag) => !/data-nimg="fill"/.test(tag) && (!/\bwidth="/.test(tag) || !/\bheight="/.test(tag))).length,
     imgsUndefinedSrc: imgs.filter((tag) => /src="[^"]*undefined/.test(tag)).length,
   };
 }
@@ -98,9 +99,11 @@ for (const route of PUBLIC_INDEXABLE) {
   check(`${label}: JSON-LD cannot break out of <script>`, page.jsonLdRaw?.every?.((raw) => !raw.includes('</')) ?? true);
   if (MODE === 'approved') {
     const expectedUrl = `${ORIGIN}${route.path === '/' ? '/' : route.path}`;
+    // Next.js prints the root canonical without the trailing slash; both forms are the same URL.
+    const sameUrl = (value) => value === expectedUrl || (route.path === '/' && value === ORIGIN);
     check(`${label}: robots index`, /(^|,\s*)index/.test(page.robots ?? '') && !/noindex/.test(page.robots ?? ''), page.robots ?? '');
-    check(`${label}: canonical absolute = clean URL`, page.canonical === expectedUrl, page.canonical ?? 'none');
-    check(`${label}: Open Graph title/description/url`, !!page.og.title && !!page.og.description && page.og.url === expectedUrl, JSON.stringify(page.og));
+    check(`${label}: canonical absolute = clean URL`, sameUrl(page.canonical), page.canonical ?? 'none');
+    check(`${label}: Open Graph title/description/url`, !!page.og.title && !!page.og.description && sameUrl(page.og.url), JSON.stringify(page.og));
     check(`${label}: Twitter card`, !!page.twitter.card && !!page.twitter.title, JSON.stringify(page.twitter));
     check(`${label}: og:image absolute https when present`, !page.og.image || page.og.image.startsWith(`${ORIGIN}/`), page.og.image ?? 'none');
     const types = page.types.map((type) => (['Hotel', 'Resort', 'Motel', 'BedAndBreakfast'].includes(type) ? 'LodgingBusiness' : type));

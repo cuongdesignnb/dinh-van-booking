@@ -1,0 +1,2909 @@
+{
+  "base": "http://127.0.0.1:3199",
+  "mode": "approved",
+  "origin": "https://cucphuongtravel.example.com",
+  "checkedAt": "2026-10-06T16:01:52.561Z",
+  "passed": 280,
+  "failed": 0,
+  "results": [
+    {
+      "name": "page /: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /: meta description",
+      "ok": true,
+      "detail": "Bản demo giao diện với dữ liệu minh hoạ."
+    },
+    {
+      "name": "page /: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=6 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com"
+    },
+    {
+      "name": "page /: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"url\":\"https://cucphuongtravel.example.com\",\"image\":null,\"type\":\"website\"}"
+    },
+    {
+      "name": "page /: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary\",\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"image\":null}"
+    },
+    {
+      "name": "page /: og:image absolute https when present",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "page /: schema Organization",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage"
+    },
+    {
+      "name": "page /: schema WebSite",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage"
+    },
+    {
+      "name": "page /: schema WebPage",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage"
+    },
+    {
+      "name": "page /: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/#webpage"
+    },
+    {
+      "name": "page /: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/#webpage"
+    },
+    {
+      "name": "page /: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /phong-nghi: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /phong-nghi: meta description",
+      "ok": true,
+      "detail": "Bản demo giao diện với dữ liệu minh hoạ."
+    },
+    {
+      "name": "page /phong-nghi: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /phong-nghi: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=7 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /phong-nghi: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /phong-nghi: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/phong-nghi"
+    },
+    {
+      "name": "page /phong-nghi: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"url\":\"https://cucphuongtravel.example.com/phong-nghi\",\"image\":null,\"type\":\"website\"}"
+    },
+    {
+      "name": "page /phong-nghi: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary\",\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"image\":null}"
+    },
+    {
+      "name": "page /phong-nghi: og:image absolute https when present",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "page /phong-nghi: schema CollectionPage",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /phong-nghi: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /phong-nghi: schema ItemList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /phong-nghi: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/phong-nghi#webpage https://cucphuongtravel.example.com/phong-nghi#breadcrumb https://cucphuongtravel.example.com/phong-nghi#itemlist"
+    },
+    {
+      "name": "page /phong-nghi: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/phong-nghi#webpage https://cucphuongtravel.example.com/phong-nghi#breadcrumb https://cucphuongtravel.example.com/phong-nghi#itemlist"
+    },
+    {
+      "name": "page /phong-nghi: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: title",
+      "ok": true,
+      "detail": "Demo · Nhà Rừng Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: meta description",
+      "ok": true,
+      "detail": "Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày."
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=7 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Demo · Nhà Rừng Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel\",\"description\":\"Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày.\",\"url\":\"https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp\",\"type\":\"website\"}"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary_large_image\",\"title\":\"Demo · Nhà Rừng Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel\",\"description\":\"Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày.\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp\"}"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: og:image absolute https when present",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: schema WebPage",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,LodgingBusiness"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,LodgingBusiness"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: schema LodgingBusiness",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,LodgingBusiness"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#webpage https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#breadcrumb https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#lodging"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#webpage https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#breadcrumb https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#lodging"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: entity id #lodging",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#webpage https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#breadcrumb https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#lodging"
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /phong-nghi/demo-nha-rung-cuc-phuong: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /combo-du-lich: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /combo-du-lich: meta description",
+      "ok": true,
+      "detail": "Bản demo giao diện với dữ liệu minh hoạ."
+    },
+    {
+      "name": "page /combo-du-lich: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /combo-du-lich: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=7 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /combo-du-lich: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /combo-du-lich: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/combo-du-lich"
+    },
+    {
+      "name": "page /combo-du-lich: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"url\":\"https://cucphuongtravel.example.com/combo-du-lich\",\"image\":null,\"type\":\"website\"}"
+    },
+    {
+      "name": "page /combo-du-lich: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary\",\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"image\":null}"
+    },
+    {
+      "name": "page /combo-du-lich: og:image absolute https when present",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "page /combo-du-lich: schema CollectionPage",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /combo-du-lich: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /combo-du-lich: schema ItemList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /combo-du-lich: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/combo-du-lich#webpage https://cucphuongtravel.example.com/combo-du-lich#breadcrumb https://cucphuongtravel.example.com/combo-du-lich#itemlist"
+    },
+    {
+      "name": "page /combo-du-lich: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/combo-du-lich#webpage https://cucphuongtravel.example.com/combo-du-lich#breadcrumb https://cucphuongtravel.example.com/combo-du-lich#itemlist"
+    },
+    {
+      "name": "page /combo-du-lich: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: title",
+      "ok": true,
+      "detail": "Demo · Eco Retreat Cúc Phương 2N1Đ | Dữ liệu minh hoạ | Cúc Phương Travel"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: meta description",
+      "ok": true,
+      "detail": "Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu."
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Demo · Eco Retreat Cúc Phương 2N1Đ | Dữ liệu minh hoạ | Cúc Phương Travel\",\"description\":\"Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.\",\"url\":\"https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/combos/cuc-phuong-eco-retreat.webp\",\"type\":\"website\"}"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary_large_image\",\"title\":\"Demo · Eco Retreat Cúc Phương 2N1Đ | Dữ liệu minh hoạ | Cúc Phương Travel\",\"description\":\"Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/combos/cuc-phuong-eco-retreat.webp\"}"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: og:image absolute https when present",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/images/dinh-van-booking/combos/cuc-phuong-eco-retreat.webp"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: schema WebPage",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,TouristTrip"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,TouristTrip"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: schema TouristTrip",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,TouristTrip"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#webpage https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#breadcrumb https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#trip"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#webpage https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#breadcrumb https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#trip"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: entity id #trip",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#webpage https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#breadcrumb https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#trip"
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /diem-den: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /diem-den: meta description",
+      "ok": true,
+      "detail": "Bản demo giao diện với dữ liệu minh hoạ."
+    },
+    {
+      "name": "page /diem-den: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /diem-den: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=7 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /diem-den: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /diem-den: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/diem-den"
+    },
+    {
+      "name": "page /diem-den: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"url\":\"https://cucphuongtravel.example.com/diem-den\",\"image\":null,\"type\":\"website\"}"
+    },
+    {
+      "name": "page /diem-den: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary\",\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"image\":null}"
+    },
+    {
+      "name": "page /diem-den: og:image absolute https when present",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "page /diem-den: schema CollectionPage",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /diem-den: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /diem-den: schema ItemList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /diem-den: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/diem-den#webpage https://cucphuongtravel.example.com/diem-den#breadcrumb https://cucphuongtravel.example.com/diem-den#itemlist"
+    },
+    {
+      "name": "page /diem-den: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/diem-den#webpage https://cucphuongtravel.example.com/diem-den#breadcrumb https://cucphuongtravel.example.com/diem-den#itemlist"
+    },
+    {
+      "name": "page /diem-den: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: title",
+      "ok": true,
+      "detail": "Demo · Rừng Quốc Gia Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: meta description",
+      "ok": true,
+      "detail": "Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ."
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Demo · Rừng Quốc Gia Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel\",\"description\":\"Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.\",\"url\":\"https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/destinations/vuon-quoc-gia-cuc-phuong.webp\",\"type\":\"website\"}"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary_large_image\",\"title\":\"Demo · Rừng Quốc Gia Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel\",\"description\":\"Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/destinations/vuon-quoc-gia-cuc-phuong.webp\"}"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: og:image absolute https when present",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/images/dinh-van-booking/destinations/vuon-quoc-gia-cuc-phuong.webp"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: schema WebPage",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,TouristDestination"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,TouristDestination"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: schema TouristDestination",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,TouristDestination"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#webpage https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#breadcrumb https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#destination"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#webpage https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#breadcrumb https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#destination"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: entity id #destination",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#webpage https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#breadcrumb https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#destination"
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /diem-den/demo-rung-quoc-gia-cuc-phuong: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /bai-viet: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /bai-viet: meta description",
+      "ok": true,
+      "detail": "Bản demo giao diện với dữ liệu minh hoạ."
+    },
+    {
+      "name": "page /bai-viet: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /bai-viet: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=5 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /bai-viet: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /bai-viet: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/bai-viet"
+    },
+    {
+      "name": "page /bai-viet: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"url\":\"https://cucphuongtravel.example.com/bai-viet\",\"image\":null,\"type\":\"website\"}"
+    },
+    {
+      "name": "page /bai-viet: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary\",\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"image\":null}"
+    },
+    {
+      "name": "page /bai-viet: og:image absolute https when present",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "page /bai-viet: schema CollectionPage",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /bai-viet: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /bai-viet: schema ItemList",
+      "ok": true,
+      "detail": "Organization,WebSite,CollectionPage,BreadcrumbList,ItemList"
+    },
+    {
+      "name": "page /bai-viet: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/bai-viet#webpage https://cucphuongtravel.example.com/bai-viet#breadcrumb https://cucphuongtravel.example.com/bai-viet#itemlist"
+    },
+    {
+      "name": "page /bai-viet: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/bai-viet#webpage https://cucphuongtravel.example.com/bai-viet#breadcrumb https://cucphuongtravel.example.com/bai-viet#itemlist"
+    },
+    {
+      "name": "page /bai-viet: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: title",
+      "ok": true,
+      "detail": "Demo · Cúc Phương mùa nào đẹp nhất? | Cúc Phương Travel"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: meta description",
+      "ok": true,
+      "detail": "Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm."
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Demo · Cúc Phương mùa nào đẹp nhất? | Cúc Phương Travel\",\"description\":\"Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.\",\"url\":\"https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/seasons/xuan.webp\",\"type\":\"article\"}"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary_large_image\",\"title\":\"Demo · Cúc Phương mùa nào đẹp nhất? | Cúc Phương Travel\",\"description\":\"Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/seasons/xuan.webp\"}"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: og:image absolute https when present",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/images/dinh-van-booking/seasons/xuan.webp"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: schema WebPage",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,BlogPosting"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,BlogPosting"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: schema BlogPosting",
+      "ok": true,
+      "detail": "Organization,WebSite,WebPage,BreadcrumbList,BlogPosting"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#webpage https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#breadcrumb https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#article"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#webpage https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#breadcrumb https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#article"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: entity id #article",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#webpage https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#breadcrumb https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#article"
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /bai-viet/demo-cuc-phuong-mua-nao-dep: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /lien-he: title",
+      "ok": true,
+      "detail": "Cúc Phương Travel — Cúc Phương, Ninh Bình"
+    },
+    {
+      "name": "page /lien-he: meta description",
+      "ok": true,
+      "detail": "Bản demo giao diện với dữ liệu minh hoạ."
+    },
+    {
+      "name": "page /lien-he: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /lien-he: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=3 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /lien-he: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /lien-he: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/lien-he"
+    },
+    {
+      "name": "page /lien-he: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"url\":\"https://cucphuongtravel.example.com/lien-he\",\"image\":null,\"type\":\"website\"}"
+    },
+    {
+      "name": "page /lien-he: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary\",\"title\":\"Cúc Phương Travel — Cúc Phương, Ninh Bình\",\"description\":\"Bản demo giao diện với dữ liệu minh hoạ.\",\"image\":null}"
+    },
+    {
+      "name": "page /lien-he: og:image absolute https when present",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "page /lien-he: schema ContactPage",
+      "ok": true,
+      "detail": "Organization,WebSite,ContactPage,BreadcrumbList"
+    },
+    {
+      "name": "page /lien-he: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,ContactPage,BreadcrumbList"
+    },
+    {
+      "name": "page /lien-he: schema Organization",
+      "ok": true,
+      "detail": "Organization,WebSite,ContactPage,BreadcrumbList"
+    },
+    {
+      "name": "page /lien-he: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/lien-he#webpage https://cucphuongtravel.example.com/lien-he#breadcrumb"
+    },
+    {
+      "name": "page /lien-he: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/lien-he#webpage https://cucphuongtravel.example.com/lien-he#breadcrumb"
+    },
+    {
+      "name": "page /lien-he: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /lien-he: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: HTTP 200",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "page /ve-minh: title",
+      "ok": true,
+      "detail": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel"
+    },
+    {
+      "name": "page /ve-minh: meta description",
+      "ok": true,
+      "detail": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán."
+    },
+    {
+      "name": "page /ve-minh: one H1 in SSR HTML",
+      "ok": true,
+      "detail": "h1=1"
+    },
+    {
+      "name": "page /ve-minh: images have alt + width/height, no undefined src",
+      "ok": true,
+      "detail": "imgs=1 noAlt=0 badAlt=0 noSize=0 undefinedSrc=0"
+    },
+    {
+      "name": "page /ve-minh: JSON-LD parses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: JSON-LD cannot break out of <script>",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: robots index",
+      "ok": true,
+      "detail": "index, follow"
+    },
+    {
+      "name": "page /ve-minh: canonical absolute = clean URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/ve-minh"
+    },
+    {
+      "name": "page /ve-minh: Open Graph title/description/url",
+      "ok": true,
+      "detail": "{\"title\":\"Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel\",\"description\":\"Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.\",\"url\":\"https://cucphuongtravel.example.com/ve-minh\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp\",\"type\":\"website\"}"
+    },
+    {
+      "name": "page /ve-minh: Twitter card",
+      "ok": true,
+      "detail": "{\"card\":\"summary_large_image\",\"title\":\"Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel\",\"description\":\"Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.\",\"image\":\"https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp\"}"
+    },
+    {
+      "name": "page /ve-minh: og:image absolute https when present",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp"
+    },
+    {
+      "name": "page /ve-minh: schema AboutPage",
+      "ok": true,
+      "detail": "Organization,WebSite,AboutPage,BreadcrumbList,Person,FAQPage"
+    },
+    {
+      "name": "page /ve-minh: schema BreadcrumbList",
+      "ok": true,
+      "detail": "Organization,WebSite,AboutPage,BreadcrumbList,Person,FAQPage"
+    },
+    {
+      "name": "page /ve-minh: schema Person",
+      "ok": true,
+      "detail": "Organization,WebSite,AboutPage,BreadcrumbList,Person,FAQPage"
+    },
+    {
+      "name": "page /ve-minh: schema ids absolute on the approved origin",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/ve-minh#webpage https://cucphuongtravel.example.com/ve-minh#breadcrumb https://cucphuongtravel.example.com/#advisor https://cucphuongtravel.example.com/ve-minh#faq"
+    },
+    {
+      "name": "page /ve-minh: stable WebPage/breadcrumb ids",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/#organization https://cucphuongtravel.example.com/#website https://cucphuongtravel.example.com/ve-minh#webpage https://cucphuongtravel.example.com/ve-minh#breadcrumb https://cucphuongtravel.example.com/#advisor https://cucphuongtravel.example.com/ve-minh#faq"
+    },
+    {
+      "name": "page /ve-minh: no rating/review/geo/offer/internal counters in schema",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: no Docker/local host in metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page /ve-minh: breadcrumb JSON-LD present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "private /dat-phong: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, nofollow / noindex, follow"
+    },
+    {
+      "name": "private /dat-phong: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /dat-phong: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "private /lich-phong: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, follow / noindex, follow"
+    },
+    {
+      "name": "private /lich-phong: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /lich-phong: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "private /doi-tac: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, nofollow / noindex, follow"
+    },
+    {
+      "name": "private /doi-tac: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /doi-tac: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "private /admin: noindex (meta or header)",
+      "ok": true,
+      "detail": "noindex, nofollow / noindex, follow"
+    },
+    {
+      "name": "private /admin: X-Robots-Tag noindex header",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "private /admin: no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "null 0"
+    },
+    {
+      "name": "query: UTM/gclid → canonical clean URL, still index",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/phong-nghi index, follow"
+    },
+    {
+      "name": "query: detail with dates → canonical clean detail URL",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong"
+    },
+    {
+      "name": "query: sort/filter → noindex, no canonical, no JSON-LD",
+      "ok": true,
+      "detail": "noindex, follow null"
+    },
+    {
+      "name": "query: /lich-phong with dates → noindex",
+      "ok": true,
+      "detail": "noindex, follow"
+    },
+    {
+      "name": "trailing slash → 308 to no-slash URL",
+      "ok": true,
+      "detail": "308 /phong-nghi"
+    },
+    {
+      "name": "uppercase path → 308 lowercase",
+      "ok": true,
+      "detail": "308 /phong-nghi"
+    },
+    {
+      "name": "unknown detail URL → 404 (not a 200 shell)",
+      "ok": true,
+      "detail": "404"
+    },
+    {
+      "name": "unknown root URL → 404",
+      "ok": true,
+      "detail": "404"
+    },
+    {
+      "name": "old slug /phong-nghi/demo-nha-rung-cuc-phuong-ten-cu → 308 /phong-nghi/demo-nha-rung-cuc-phuong",
+      "ok": true,
+      "detail": "308 /phong-nghi/demo-nha-rung-cuc-phuong"
+    },
+    {
+      "name": "redirect is one hop (target answers 200, not another redirect)",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "canonical of the target is the target itself",
+      "ok": true,
+      "detail": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong"
+    },
+    {
+      "name": "robots.txt 200",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "robots.txt disallows /admin/ and /api/",
+      "ok": true,
+      "detail": "User-Agent: * | Allow: / | Disallow: /admin/ | Disallow: /api/ |  | Sitemap: https://cucphuongtravel.example.com/sitemap.xml | "
+    },
+    {
+      "name": "robots.txt does not block the public site",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "robots.txt advertises the sitemap on the approved origin",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap.xml 200",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap has URLs",
+      "ok": true,
+      "detail": "32"
+    },
+    {
+      "name": "sitemap: only approved-origin absolute URLs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap: no /admin /api /dat-phong /doi-tac /lich-phong",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap: no query URLs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap: no historical redirect URLs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap: contains published detail pages",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sitemap: every sampled URL answers 200 and is index (no 404/redirect/noindex)",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "browser /: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /phong-nghi: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /phong-nghi: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /phong-nghi/demo-nha-rung-cuc-phuong: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /phong-nghi/demo-nha-rung-cuc-phuong: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /combo-du-lich: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /combo-du-lich: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /diem-den: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /diem-den: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /diem-den/demo-rung-quoc-gia-cuc-phuong: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /diem-den/demo-rung-quoc-gia-cuc-phuong: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /bai-viet: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /bai-viet: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /bai-viet/demo-cuc-phuong-mua-nao-dep: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /bai-viet/demo-cuc-phuong-mua-nao-dep: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /lien-he: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /lien-he: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /ve-minh: 0 hydration errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "browser /ve-minh: 0 console/page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "pages": {
+    "/": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com",
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "url": "https://cucphuongtravel.example.com",
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "image": null
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://cucphuongtravel.example.com/#webpage",
+              "url": "https://cucphuongtravel.example.com/",
+              "name": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+              "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              }
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "WebPage"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/#webpage"
+      ],
+      "h1": 1,
+      "imgs": 6,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/phong-nghi": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/phong-nghi",
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "url": "https://cucphuongtravel.example.com/phong-nghi",
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "image": null
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "CollectionPage",
+              "@id": "https://cucphuongtravel.example.com/phong-nghi#webpage",
+              "url": "https://cucphuongtravel.example.com/phong-nghi",
+              "name": "Phòng nghỉ Cúc Phương",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/phong-nghi#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/phong-nghi#itemlist"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/phong-nghi#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Phòng nghỉ Cúc Phương"
+                }
+              ]
+            },
+            {
+              "@type": "ItemList",
+              "@id": "https://cucphuongtravel.example.com/phong-nghi#itemlist",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Demo · Nhà Rừng Cúc Phương",
+                  "url": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Demo · Bungalow Hồ Đồng Chương",
+                  "url": "https://cucphuongtravel.example.com/phong-nghi/demo-bungalow-ho-dong-chuong"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Homestay Thung Nham",
+                  "url": "https://cucphuongtravel.example.com/phong-nghi/demo-homestay-thung-nham"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 4,
+                  "name": "Demo · Eco Lodge Suối Rùa",
+                  "url": "https://cucphuongtravel.example.com/phong-nghi/demo-eco-lodge-suoi-rua"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 5,
+                  "name": "Demo · Nhà Sàn Bản Mường",
+                  "url": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-san-ban-muong"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 6,
+                  "name": "Demo · Lodge Ven Sông Tràng An",
+                  "url": "https://cucphuongtravel.example.com/phong-nghi/demo-lodge-ven-song-trang-an"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "CollectionPage",
+        "BreadcrumbList",
+        "ItemList"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/phong-nghi#webpage",
+        "https://cucphuongtravel.example.com/phong-nghi#breadcrumb",
+        "https://cucphuongtravel.example.com/phong-nghi#itemlist"
+      ],
+      "h1": 1,
+      "imgs": 7,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/phong-nghi/demo-nha-rung-cuc-phuong": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Demo · Nhà Rừng Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel",
+      "description": "Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong",
+      "og": {
+        "title": "Demo · Nhà Rừng Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel",
+        "description": "Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày.",
+        "url": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp",
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary_large_image",
+        "title": "Demo · Nhà Rừng Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel",
+        "description": "Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày.",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp"
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#webpage",
+              "url": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong",
+              "name": "Demo · Nhà Rừng Cúc Phương",
+              "description": "Nhà gỗ mộc giữa tán rừng, hợp cặp đôi và gia đình nhỏ muốn sống chậm vài ngày.",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#lodging"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Phòng nghỉ",
+                  "item": "https://cucphuongtravel.example.com/phong-nghi"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Nhà Rừng Cúc Phương"
+                }
+              ]
+            },
+            {
+              "@type": "LodgingBusiness",
+              "@id": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#lodging",
+              "name": "Demo · Nhà Rừng Cúc Phương",
+              "url": "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong",
+              "description": "Demo · Nhà Rừng Cúc Phương là cơ sở lưu trú hư cấu dùng cho ảnh chụp giao diện. Những căn nhà gỗ nằm dưới tán cây, cửa kính lớn nhìn ra rừng, có hiên ngồi và khu bếp chung. Khách có thể đạp xe vào cổng vườn quốc gia, tham gia bữa tối quây quần hoặc nghỉ ngơi trên võng. Toàn bộ thông tin, giá và tình trạng phòng ở đây chỉ là dữ liệu minh hoạ.",
+              "image": [
+                "https://cucphuongtravel.example.com/images/dinh-van-booking/stays/cuc-phuong-forest-homestay.webp"
+              ],
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Thôn Demo 1, xã Cúc Phương, Nho Quan, Ninh Bình (địa chỉ minh hoạ)",
+                "addressCountry": "VN"
+              },
+              "checkinTime": "14:00:00",
+              "checkoutTime": "12:00:00",
+              "amenityFeature": [
+                {
+                  "@type": "LocationFeatureSpecification",
+                  "name": "Wi-Fi",
+                  "value": true
+                },
+                {
+                  "@type": "LocationFeatureSpecification",
+                  "name": "Bữa sáng",
+                  "value": true
+                },
+                {
+                  "@type": "LocationFeatureSpecification",
+                  "name": "View rừng",
+                  "value": true
+                },
+                {
+                  "@type": "LocationFeatureSpecification",
+                  "name": "Phù hợp gia đình",
+                  "value": true
+                },
+                {
+                  "@type": "LocationFeatureSpecification",
+                  "name": "Chỗ đậu xe",
+                  "value": true
+                },
+                {
+                  "@type": "LocationFeatureSpecification",
+                  "name": "Thân thiện môi trường",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "WebPage",
+        "BreadcrumbList",
+        "LodgingBusiness"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#webpage",
+        "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#breadcrumb",
+        "https://cucphuongtravel.example.com/phong-nghi/demo-nha-rung-cuc-phuong#lodging"
+      ],
+      "h1": 1,
+      "imgs": 7,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/combo-du-lich": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/combo-du-lich",
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "url": "https://cucphuongtravel.example.com/combo-du-lich",
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "image": null
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "CollectionPage",
+              "@id": "https://cucphuongtravel.example.com/combo-du-lich#webpage",
+              "url": "https://cucphuongtravel.example.com/combo-du-lich",
+              "name": "Combo du lịch Cúc Phương",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/combo-du-lich#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/combo-du-lich#itemlist"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/combo-du-lich#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Combo du lịch Cúc Phương"
+                }
+              ]
+            },
+            {
+              "@type": "ItemList",
+              "@id": "https://cucphuongtravel.example.com/combo-du-lich#itemlist",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Demo · Khám Phá Rừng Cúc Phương 2N1Đ",
+                  "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-kham-pha-rung-cuc-phuong-2n1d"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Demo · Kỳ Nghỉ Gia Đình Xanh 3N2Đ",
+                  "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-ky-nghi-gia-dinh-xanh-3n2d"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Tràng An – Bái Đính 2N1Đ",
+                  "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-trang-an-bai-dinh-2n1d"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 4,
+                  "name": "Demo · Ninh Bình Trọn Vẹn 3N2Đ",
+                  "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-ninh-binh-tron-ven-3n2d"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 5,
+                  "name": "Demo · Team Building Ven Rừng 2N1Đ",
+                  "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-team-building-ven-rung-2n1d"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 6,
+                  "name": "Demo · Eco Retreat Cúc Phương 2N1Đ",
+                  "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "CollectionPage",
+        "BreadcrumbList",
+        "ItemList"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/combo-du-lich#webpage",
+        "https://cucphuongtravel.example.com/combo-du-lich#breadcrumb",
+        "https://cucphuongtravel.example.com/combo-du-lich#itemlist"
+      ],
+      "h1": 1,
+      "imgs": 7,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Demo · Eco Retreat Cúc Phương 2N1Đ | Dữ liệu minh hoạ | Cúc Phương Travel",
+      "description": "Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d",
+      "og": {
+        "title": "Demo · Eco Retreat Cúc Phương 2N1Đ | Dữ liệu minh hoạ | Cúc Phương Travel",
+        "description": "Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.",
+        "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/combos/cuc-phuong-eco-retreat.webp",
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary_large_image",
+        "title": "Demo · Eco Retreat Cúc Phương 2N1Đ | Dữ liệu minh hoạ | Cúc Phương Travel",
+        "description": "Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/combos/cuc-phuong-eco-retreat.webp"
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#webpage",
+              "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d",
+              "name": "Demo · Eco Retreat Cúc Phương 2N1Đ",
+              "description": "Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#trip"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Combo du lịch",
+                  "item": "https://cucphuongtravel.example.com/combo-du-lich"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Eco Retreat Cúc Phương 2N1Đ"
+                }
+              ]
+            },
+            {
+              "@type": "TouristTrip",
+              "@id": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#trip",
+              "name": "Demo · Eco Retreat Cúc Phương 2N1Đ",
+              "url": "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d",
+              "description": "Nghỉ dưỡng tĩnh lặng, yoga buổi sáng và tour đêm xem đom đóm. Giá theo yêu cầu.",
+              "image": [
+                "https://cucphuongtravel.example.com/images/dinh-van-booking/combos/cuc-phuong-eco-retreat.webp"
+              ],
+              "itinerary": [
+                {
+                  "@type": "ItemList",
+                  "name": "1",
+                  "itemListElement": [
+                    {
+                      "@type": "ListItem",
+                      "position": 1,
+                      "name": "Nhận phòng mái lá"
+                    },
+                    {
+                      "@type": "ListItem",
+                      "position": 2,
+                      "name": "Tour đêm"
+                    }
+                  ]
+                },
+                {
+                  "@type": "ItemList",
+                  "name": "2",
+                  "itemListElement": [
+                    {
+                      "@type": "ListItem",
+                      "position": 1,
+                      "name": "Yoga bình minh"
+                    },
+                    {
+                      "@type": "ListItem",
+                      "position": 2,
+                      "name": "Trả phòng"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "WebPage",
+        "BreadcrumbList",
+        "TouristTrip"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#webpage",
+        "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#breadcrumb",
+        "https://cucphuongtravel.example.com/combo-du-lich/demo-eco-retreat-cuc-phuong-2n1d#trip"
+      ],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/diem-den": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/diem-den",
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "url": "https://cucphuongtravel.example.com/diem-den",
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "image": null
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "CollectionPage",
+              "@id": "https://cucphuongtravel.example.com/diem-den#webpage",
+              "url": "https://cucphuongtravel.example.com/diem-den",
+              "name": "Điểm đến Cúc Phương – Ninh Bình",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/diem-den#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/diem-den#itemlist"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/diem-den#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Điểm đến Cúc Phương – Ninh Bình"
+                }
+              ]
+            },
+            {
+              "@type": "ItemList",
+              "@id": "https://cucphuongtravel.example.com/diem-den#itemlist",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Demo · Rừng Quốc Gia Cúc Phương",
+                  "url": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Demo · Quần Thể Tràng An",
+                  "url": "https://cucphuongtravel.example.com/diem-den/demo-quan-the-trang-an"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Hang Múa",
+                  "url": "https://cucphuongtravel.example.com/diem-den/demo-hang-mua"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 4,
+                  "name": "Demo · Động Người Xưa",
+                  "url": "https://cucphuongtravel.example.com/diem-den/demo-dong-nguoi-xua"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 5,
+                  "name": "Demo · Hồ Yên Quang",
+                  "url": "https://cucphuongtravel.example.com/diem-den/demo-ho-yen-quang"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 6,
+                  "name": "Demo · Ẩm Thực Ninh Bình",
+                  "url": "https://cucphuongtravel.example.com/diem-den/demo-am-thuc-ninh-binh"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "CollectionPage",
+        "BreadcrumbList",
+        "ItemList"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/diem-den#webpage",
+        "https://cucphuongtravel.example.com/diem-den#breadcrumb",
+        "https://cucphuongtravel.example.com/diem-den#itemlist"
+      ],
+      "h1": 1,
+      "imgs": 7,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/diem-den/demo-rung-quoc-gia-cuc-phuong": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Demo · Rừng Quốc Gia Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel",
+      "description": "Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong",
+      "og": {
+        "title": "Demo · Rừng Quốc Gia Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel",
+        "description": "Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.",
+        "url": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/destinations/vuon-quoc-gia-cuc-phuong.webp",
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary_large_image",
+        "title": "Demo · Rừng Quốc Gia Cúc Phương | Dữ liệu minh hoạ | Cúc Phương Travel",
+        "description": "Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/destinations/vuon-quoc-gia-cuc-phuong.webp"
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#webpage",
+              "url": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong",
+              "name": "Demo · Rừng Quốc Gia Cúc Phương",
+              "description": "Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#destination"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Điểm đến",
+                  "item": "https://cucphuongtravel.example.com/diem-den"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Rừng Quốc Gia Cúc Phương"
+                }
+              ]
+            },
+            {
+              "@type": "TouristDestination",
+              "@id": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#destination",
+              "name": "Demo · Rừng Quốc Gia Cúc Phương",
+              "url": "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong",
+              "description": "Khu rừng nguyên sinh với cây chò ngàn năm, động vật hoang dã và nhiều cung đường đi bộ.",
+              "image": [
+                "https://cucphuongtravel.example.com/images/dinh-van-booking/destinations/vuon-quoc-gia-cuc-phuong.webp"
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "WebPage",
+        "BreadcrumbList",
+        "TouristDestination"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#webpage",
+        "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#breadcrumb",
+        "https://cucphuongtravel.example.com/diem-den/demo-rung-quoc-gia-cuc-phuong#destination"
+      ],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/bai-viet": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/bai-viet",
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "url": "https://cucphuongtravel.example.com/bai-viet",
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "image": null
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "CollectionPage",
+              "@id": "https://cucphuongtravel.example.com/bai-viet#webpage",
+              "url": "https://cucphuongtravel.example.com/bai-viet",
+              "name": "Bài viết",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/bai-viet#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/bai-viet#itemlist"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/bai-viet#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Bài viết"
+                }
+              ]
+            },
+            {
+              "@type": "ItemList",
+              "@id": "https://cucphuongtravel.example.com/bai-viet#itemlist",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Demo · Cúc Phương mùa nào đẹp nhất?",
+                  "url": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Demo · Chuẩn bị hành lý đi rừng 2 ngày",
+                  "url": "https://cucphuongtravel.example.com/bai-viet/demo-chuan-bi-hanh-ly-di-rung"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Đi rừng cùng trẻ nhỏ",
+                  "url": "https://cucphuongtravel.example.com/bai-viet/demo-di-rung-cung-tre-nho"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 4,
+                  "name": "Demo · 5 món nên thử ở Ninh Bình",
+                  "url": "https://cucphuongtravel.example.com/bai-viet/demo-5-mon-nen-thu"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 5,
+                  "name": "Demo · Mùa đom đóm trong rừng",
+                  "url": "https://cucphuongtravel.example.com/bai-viet/demo-mua-dom-dom"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "CollectionPage",
+        "BreadcrumbList",
+        "ItemList"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/bai-viet#webpage",
+        "https://cucphuongtravel.example.com/bai-viet#breadcrumb",
+        "https://cucphuongtravel.example.com/bai-viet#itemlist"
+      ],
+      "h1": 1,
+      "imgs": 5,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/bai-viet/demo-cuc-phuong-mua-nao-dep": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Demo · Cúc Phương mùa nào đẹp nhất? | Cúc Phương Travel",
+      "description": "Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep",
+      "og": {
+        "title": "Demo · Cúc Phương mùa nào đẹp nhất? | Cúc Phương Travel",
+        "description": "Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.",
+        "url": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/seasons/xuan.webp",
+        "type": "article"
+      },
+      "twitter": {
+        "card": "summary_large_image",
+        "title": "Demo · Cúc Phương mùa nào đẹp nhất? | Cúc Phương Travel",
+        "description": "Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/seasons/xuan.webp"
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#webpage",
+              "url": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep",
+              "name": "Demo · Cúc Phương mùa nào đẹp nhất?",
+              "description": "Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#article"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Bài viết",
+                  "item": "https://cucphuongtravel.example.com/bai-viet"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": "Demo · Cúc Phương mùa nào đẹp nhất?"
+                }
+              ]
+            },
+            {
+              "@type": "BlogPosting",
+              "@id": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#article",
+              "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#webpage"
+              },
+              "headline": "Demo · Cúc Phương mùa nào đẹp nhất?",
+              "description": "Gợi ý chọn mùa đi rừng theo nhịp thời tiết và mùa bướm.",
+              "image": [
+                "https://cucphuongtravel.example.com/images/dinh-van-booking/seasons/xuan.webp"
+              ],
+              "datePublished": "2026-03-02T03:00:00.000Z",
+              "dateModified": "2026-10-04T16:01:38.249Z",
+              "author": {
+                "@type": "Person",
+                "name": "Biên tập viên demo"
+              },
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "WebPage",
+        "BreadcrumbList",
+        "BlogPosting"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#webpage",
+        "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#breadcrumb",
+        "https://cucphuongtravel.example.com/bai-viet/demo-cuc-phuong-mua-nao-dep#article"
+      ],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/lien-he": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+      "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/lien-he",
+      "og": {
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "url": "https://cucphuongtravel.example.com/lien-he",
+        "image": null,
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary",
+        "title": "Cúc Phương Travel — Cúc Phương, Ninh Bình",
+        "description": "Bản demo giao diện với dữ liệu minh hoạ.",
+        "image": null
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ],
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "customer service",
+                "availableLanguage": "vi",
+                "telephone": "0900000000",
+                "email": "demo@example.invalid"
+              }
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "ContactPage",
+              "@id": "https://cucphuongtravel.example.com/lien-he#webpage",
+              "url": "https://cucphuongtravel.example.com/lien-he",
+              "name": "Cùng lên kế hoạch cho chuyến đi Cúc Phương",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/lien-he#breadcrumb"
+              },
+              "about": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/lien-he#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Cùng lên kế hoạch cho chuyến đi Cúc Phương"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "ContactPage",
+        "BreadcrumbList"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/lien-he#webpage",
+        "https://cucphuongtravel.example.com/lien-he#breadcrumb"
+      ],
+      "h1": 1,
+      "imgs": 3,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    },
+    "/ve-minh": {
+      "status": 200,
+      "xRobots": null,
+      "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+      "description": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán.",
+      "robots": "index, follow",
+      "canonical": "https://cucphuongtravel.example.com/ve-minh",
+      "og": {
+        "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+        "description": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+        "url": "https://cucphuongtravel.example.com/ve-minh",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp",
+        "type": "website"
+      },
+      "twitter": {
+        "card": "summary_large_image",
+        "title": "Đặt phòng Cúc Phương cùng Đinh Vân | Cúc Phương Travel",
+        "description": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+        "image": "https://cucphuongtravel.example.com/images/dinh-van-booking/hero-cuc-phuong-balcony.webp"
+      },
+      "graphs": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://cucphuongtravel.example.com/#organization",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "description": "Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.",
+              "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://cucphuongtravel.example.com/#website",
+              "name": "Cúc Phương Travel",
+              "url": "https://cucphuongtravel.example.com/",
+              "publisher": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              },
+              "inLanguage": "vi-VN"
+            },
+            {
+              "@type": "AboutPage",
+              "@id": "https://cucphuongtravel.example.com/ve-minh#webpage",
+              "url": "https://cucphuongtravel.example.com/ve-minh",
+              "name": "Đặt phòng Cúc Phương cùng Đinh Vân",
+              "description": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán.",
+              "inLanguage": "vi-VN",
+              "isPartOf": {
+                "@id": "https://cucphuongtravel.example.com/#website"
+              },
+              "breadcrumb": {
+                "@id": "https://cucphuongtravel.example.com/ve-minh#breadcrumb"
+              },
+              "mainEntity": {
+                "@id": "https://cucphuongtravel.example.com/#advisor"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "@id": "https://cucphuongtravel.example.com/ve-minh#breadcrumb",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Trang chủ",
+                  "item": "https://cucphuongtravel.example.com/"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Về mình"
+                }
+              ]
+            },
+            {
+              "@type": "Person",
+              "@id": "https://cucphuongtravel.example.com/#advisor",
+              "name": "Đinh Vân",
+              "url": "https://cucphuongtravel.example.com/ve-minh",
+              "jobTitle": "Người tư vấn địa phương",
+              "telephone": "0900000000",
+              "description": "Mình là Đinh Vân, người bản địa Cúc Phương và là người trực tiếp tư vấn tại Cúc Phương Travel – một dịch vụ nhỏ, độc lập chuyên hỗ trợ đặt phòng Cúc Phương và lên lịch trình quanh Ninh Bình. Mình tự kiểm tra chỗ nghỉ trước khi gợi ý, giúp bạn chọn homestay Cúc Phương hợp với nhu cầu và hỗ trợ bạn qua điện thoại hoặc Zalo, từ lúc còn đang tìm hiểu cho đến khi đã tới nơi.",
+              "worksFor": {
+                "@id": "https://cucphuongtravel.example.com/#organization"
+              }
+            },
+            {
+              "@type": "FAQPage",
+              "@id": "https://cucphuongtravel.example.com/ve-minh#faq",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "Đi Cúc Phương mùa nào đẹp nhất?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Mỗi mùa Cúc Phương có nét riêng. Khoảng tháng 4–5 là mùa bướm, rừng rất sinh động. Mùa khô, từ cuối thu sang xuân, đường mòn khô ráo và dễ đi bộ hơn. Mùa mưa giữa năm cây cối xanh tốt nhưng đường trơn, có thể có vắt, nên bạn cần chuẩn bị kỹ. Bạn cho mình biết thời gian dự kiến, mình sẽ tư vấn cụ thể hơn."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Từ Hà Nội đi Cúc Phương bằng cách nào?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Bạn có thể tự lái xe, thuê xe riêng hoặc đi xe khách về Ninh Bình rồi nối chuyến vào Cúc Phương. Mình không ghi giờ xe cố định ở đây vì lịch có thể thay đổi; khi bạn liên hệ, mình sẽ gợi ý cách đi hợp với số người và lịch trình của bạn."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Nên mang theo gì khi đến Cúc Phương?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Giày đi bộ bám đường, quần áo dài tay, áo mưa mỏng, kem chống côn trùng, nước uống và đèn pin nếu bạn muốn vào hang động. Mùa đông nên mang thêm áo ấm vì sáng sớm và buổi tối trong rừng khá lạnh. Mình sẽ dặn thêm theo lịch trình cụ thể của bạn."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Gửi yêu cầu đặt phòng xong thì điều gì xảy ra?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yêu cầu của bạn là một lời nhờ tư vấn, chưa phải đơn đặt chắc chắn. Mình kiểm tra phòng trống, chọn lựa chọn phù hợp rồi liên hệ lại qua điện thoại hoặc Zalo. Khi bạn đồng ý với thông tin đã được xác nhận, việc đặt chỗ mới hoàn tất."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Giá và tình trạng phòng có được xác nhận trước khi thanh toán không?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Có. Trước khi bạn thanh toán, mình xác nhận rõ tình trạng phòng, giá và điều kiện đặt như quy định nhận, trả hay hủy phòng. Bạn chỉ thanh toán khi đã đồng ý với các thông tin đó."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Có thể nhờ tư vấn lịch trình tham quan không?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Có. Dựa trên số ngày, số người và sở thích của bạn, mình gợi ý lịch trình kết hợp Cúc Phương với các điểm khác quanh Ninh Bình, kèm lưu ý về đường đi và thời điểm tham quan phù hợp."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "types": [
+        "Organization",
+        "WebSite",
+        "AboutPage",
+        "BreadcrumbList",
+        "Person",
+        "FAQPage"
+      ],
+      "ids": [
+        "https://cucphuongtravel.example.com/#organization",
+        "https://cucphuongtravel.example.com/#website",
+        "https://cucphuongtravel.example.com/ve-minh#webpage",
+        "https://cucphuongtravel.example.com/ve-minh#breadcrumb",
+        "https://cucphuongtravel.example.com/#advisor",
+        "https://cucphuongtravel.example.com/ve-minh#faq"
+      ],
+      "h1": 1,
+      "imgs": 1,
+      "imgsNoAlt": 0,
+      "imgsBadAlt": 0,
+      "imgsNoSize": 0,
+      "imgsUndefinedSrc": 0
+    }
+  }
+}

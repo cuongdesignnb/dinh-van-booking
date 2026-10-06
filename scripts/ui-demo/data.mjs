@@ -341,7 +341,7 @@ function publicDestination(d) {
 function publicArticle(a) {
   return {
     id: a.id, slug: a.slug, path: `/bai-viet/${a.slug}`, title: a.title, excerpt: a.excerpt,
-    body: doc(a.excerpt, 'Bài viết minh hoạ cho ảnh chụp giao diện. Nội dung không phải hướng dẫn chính thức.'),
+    body: doc(a.excerpt, 'Bài viết minh hoạ cho ảnh chụp giao diện. Nội dung không phải hướng dẫn chính thức.', 'Đoạn văn minh hoạ thứ hai giúp bài đủ độ dài để kiểm tra SEO ở chế độ đã duyệt: tiêu đề, mô tả, ảnh đại diện, tác giả và ngày xuất bản đều có sẵn.'),
     metaTitle: a.title, metaDescription: a.excerpt, noindex: DEMO_NOINDEX, cover: a.cover, authorName: 'Biên tập viên demo', readMinutes: a.readMinutes,
     firstPublishedAt: FIRST_PUBLISHED, lastPublicChangedAt: daysAgo(2), isDemo: false,
   };

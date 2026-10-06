@@ -463,7 +463,9 @@ export class PublicCatalogService {
       loaded += rows.length;
       for (const row of rows) {
         const path = row.routes[0]?.path;
-        const bodyText = `${row.excerpt ?? ''} ${textFromDocument(row.bodyDocument)}`.replace(/\s+/g, ' ').trim();
+        // Same rule as the page's index gate (`isSubstantivePublicContent(body)`):
+        // body text only, so a URL in the sitemap is never a noindex page.
+        const bodyText = textFromDocument(row.bodyDocument).replace(/\s+/g, ' ').trim();
         if (!path || !row.slugSource || !row.title.trim() || bodyText.length < 160 || !row.media.length) continue;
         if (path.includes('?') || path.includes('#') || path.startsWith('//') || path !== `/${path.split('/').filter(Boolean).join('/')}`) continue;
         const kindEligible = row.kind === 'stay'
