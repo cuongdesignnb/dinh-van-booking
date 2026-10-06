@@ -25,5 +25,7 @@ Rule for successors: build on what is committed; never reset / force-push. Commi
 - `PageHero` image now uses the media's own alt (was replaced by the generic "Ảnh minh họa"); web container rebuilt again.
 - :18473 and :18480 `/ve-minh` 200, 1 h1, tel:0974045828, 0 console errors, 0 overflow. `artifacts/ui-redesign-v2/about-real-1440.png` (via new `scripts/ui-demo/real-shot.mjs`).
 
+- Final build + public QA re-run on final code: BUILD PASS, QA 60/60 OK. Final report `docs/ui-redesign/final-report-v3-about.md`.
+
 ## Next
-- Final report `docs/ui-redesign/final-report-v3-about.md`, push, STOP.
+- Nothing required. Task finished; production deploy intentionally not done.
