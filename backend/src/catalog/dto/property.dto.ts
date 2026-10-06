@@ -49,9 +49,10 @@ export class CreatePropertyDto {
   @MaxLength(300)
   address!: string;
 
+  /** Exactly the slug returned by Generate (preview); omitted = "Chưa tạo". */
   @IsOptional()
   @IsString()
-  @MaxLength(160)
+  @MaxLength(120)
   slug?: string;
 
   @IsOptional()
@@ -196,10 +197,8 @@ export class UpdatePropertyDto {
   @MaxLength(300)
   address?: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(160)
-  slug?: string;
+  // No `slug`: generic save never changes the URL (unknown fields are rejected).
+  // Use POST /properties/:id/slug/generate.
 
   @IsOptional()
   @IsString()
@@ -387,4 +386,25 @@ export class UpdateRoomDto {
 
   @Type(() => Number) @IsInt() @Min(1)
   expectedVersion!: number;
+}
+
+export class PropertySlugPreviewDto {
+  @IsString()
+  @MaxLength(300)
+  source!: string;
+}
+
+export class PropertyGenerateSlugDto {
+  @IsString()
+  @MaxLength(300)
+  source!: string;
+
+  /** The stay's content version (`contentVersion` in the property view). */
+  @IsInt()
+  @Min(1)
+  expectedVersion!: number;
+
+  @IsOptional()
+  @IsBoolean()
+  confirmPublicChange?: boolean;
 }

@@ -242,9 +242,10 @@ export class CreateContentDto {
   @MaxLength(300)
   title!: string;
 
+  /** Exactly the slug returned by Generate (preview); omitted = "Chưa tạo". */
   @IsOptional()
   @IsString()
-  @MaxLength(160)
+  @MaxLength(120)
   slug?: string;
 
   @IsOptional()
@@ -290,16 +291,16 @@ export class CreateContentDto {
   details?: ContentDetailsDto;
 }
 
+/**
+ * Generic save. There is deliberately no `slug` field: with the global
+ * `forbidNonWhitelisted` pipe a request that sends one is rejected (400).
+ * Slugs change only through `POST /content/:id/slug/generate`.
+ */
 export class UpdateContentDto {
   @IsOptional()
   @IsString()
   @MaxLength(300)
   title?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(160)
-  slug?: string;
 
   @IsOptional()
   @IsString()
@@ -364,4 +365,37 @@ export class RestoreContentDto {
   @IsInt()
   @Min(1)
   expectedVersion!: number;
+}
+
+/** Generate preview for the create form (no id yet). */
+export class SlugPreviewForKindDto {
+  @IsIn(CONTENT_KINDS as unknown as string[])
+  kind!: string;
+
+  @IsString()
+  @MaxLength(300)
+  source!: string;
+}
+
+/** Generate preview for an existing item. */
+export class SlugPreviewDto {
+  @IsString()
+  @MaxLength(300)
+  source!: string;
+}
+
+/** Generate apply: the only request that creates or changes a slug. */
+export class GenerateSlugDto {
+  @IsString()
+  @MaxLength(300)
+  source!: string;
+
+  @IsInt()
+  @Min(1)
+  expectedVersion!: number;
+
+  /** Required (true) when the item is published and already has a public URL. */
+  @IsOptional()
+  @IsBoolean()
+  confirmPublicChange?: boolean;
 }

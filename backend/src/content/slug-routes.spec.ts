@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Prisma } from '../generated/prisma/client';
-import { resolveUpdatedSlug, switchCurrentRoute } from './slug-routes';
+import { switchCurrentRoute } from './slug-routes';
 import { pathForContent } from './slug';
 
 type Route = { contentId: string; path: string; isCurrent: boolean; redirectStatus: number };
@@ -27,7 +27,7 @@ function mockRoutes(initial: Route[]) {
 }
 
 for (const kind of ['stay', 'combo', 'destination', 'article', 'page']) {
-  test(`${kind}: omitted/same/title-only stable, explicit rename and own history restore`, async () => {
+  test(`${kind}: explicit rename keeps one current route and restores own history`, async () => {
     const original = pathForContent(kind, 'forest-home');
     const newer = pathForContent(kind, 'forest-home-new');
     const { routes, tx } = mockRoutes([
@@ -35,9 +35,6 @@ for (const kind of ['stay', 'combo', 'destination', 'article', 'page']) {
       { contentId: 'other', path: pathForContent(kind, 'occupied'), isCurrent: true, redirectStatus: 301 },
     ]);
 
-    assert.equal(resolveUpdatedSlug('forest-home', undefined), 'forest-home');
-    assert.equal(resolveUpdatedSlug('forest-home', 'Forest Home'), 'forest-home');
-    // A title edit never reaches this route helper unless slug was explicitly changed.
     assert.equal(routes.get(original)?.isCurrent, true);
     await switchCurrentRoute(tx, 'own', kind, 'forest-home-new');
     assert.deepEqual(routes.get(original), { contentId: 'own', path: original, isCurrent: false, redirectStatus: 308 });
@@ -58,9 +55,3 @@ for (const kind of ['stay', 'combo', 'destination', 'article', 'page']) {
     assert.equal([...routes.values()].find((route) => route.contentId === 'own' && route.isCurrent)?.path, original);
   });
 }
-
-test('update rejects blank and protected slugs, without hidden -2 suffix', () => {
-  assert.throws(() => resolveUpdatedSlug('original', '  '), /Slug đường dẫn không được để trống/);
-  assert.throws(() => resolveUpdatedSlug('original', 'admin'), /đường dẫn hệ thống/);
-  assert.equal(resolveUpdatedSlug('original', 'New Title'), 'new-title');
-});

@@ -10,7 +10,6 @@ import type { AuthenticatedUser } from '../common/types';
 import { PERMISSIONS } from '../common/permissions';
 import { AuthService } from '../auth/auth.service';
 import { documentMediaIds, documentToText, sanitizeDocument } from '../content/document';
-import { pathForContent, uniqueSlug } from '../content/slug';
 import { InventoryMutationService, availableRaw } from '../inventory/inventory-mutation.service';
 import { inventoryFresh } from '../inventory/availability-state';
 import { MediaService } from '../media/media.service';
@@ -385,13 +384,12 @@ export class PartnerService {
       : sanitizeDocument(input.descriptionDocument, { allowedBlocks: editor.allowedBlocks });
     const excerpt = input.excerpt?.trim() || documentToText(description).slice(0, 500) || null;
     const created = await this.prisma.$transaction(async (tx) => {
-      const siblings = await tx.contentNode.findMany({ where: { kind: 'stay' }, select: { slugSource: true } });
-      const slug = uniqueSlug(title, new Set(siblings.map((row) => row.slugSource).filter((value): value is string => !!value)));
+      // Partner drafts get no URL: the slug is created later by Admin with Generate.
+      const slug: string | null = null;
       const node = await tx.contentNode.create({ data: {
-        kind: 'stay', title, slugSource: slug, excerpt, bodyDocument: json(description),
+        kind: 'stay', title, slugSource: null, excerpt, bodyDocument: json(description),
         metaTitle: title, metaDescription: excerpt?.slice(0, 320) ?? null, publicationStatus: 'draft', noindex: true, isDemo: false,
       } });
-      await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent('stay', slug), redirectStatus: 308 } });
       await tx.contentRevision.create({ data: { contentId: node.id, documentSnapshot: json(description), note: 'Tạo nháp từ Cổng đối tác', authorId: user.id } });
       const property = await tx.property.create({ data: {
         contentId: node.id, code: `PT-${randomUUID().slice(0, 8).toUpperCase()}`, kind: input.kind,
@@ -409,7 +407,7 @@ export class PartnerService {
       await tx.auditLog.create({ data: { actorId: user.id, action: 'partner.property_draft_created', entityType: 'property', entityId: property.id, diff: { organizationId: input.organizationId, contentId: node.id, slug, mediaCount: mediaIds.length } } });
       return { propertyId: property.id, slug };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    return { id: created.propertyId, slug: created.slug, path: pathForContent('stay', created.slug), status: 'draft', publicationStatus: 'draft', noindex: true };
+    return { id: created.propertyId, slug: created.slug, path: null, status: 'draft', publicationStatus: 'draft', noindex: true };
   }
 
   async createRoomTypeDraft(user: AuthenticatedUser, propertyId: string, input: CreatePartnerRoomTypeDto) {

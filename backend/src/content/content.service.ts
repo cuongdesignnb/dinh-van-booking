@@ -3,8 +3,16 @@ import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { documentMediaIds, documentToText, sanitizeDocument, type RichNode } from './document';
-import { pathForContent, uniqueSlug } from './slug';
-import { resolveUpdatedSlug, switchCurrentRoute } from './slug-routes';
+import { pathForContent } from './slug';
+import {
+  applyGeneratedSlug,
+  assertCreateSlug,
+  previewSlug,
+  routeHistory,
+  type GenerateSlugResult,
+  type RouteHistoryEntry,
+  type SlugPreview,
+} from './slug-lifecycle';
 import type { Paginated } from '../common/types';
 
 export const CONTENT_KINDS = ['stay', 'combo', 'destination', 'article', 'page'] as const;
@@ -90,6 +98,7 @@ export interface ContentView {
 export interface UpsertContentInput {
   kind?: string;
   title?: string;
+  /** Create only: the exact slug returned by Generate. Update never accepts a slug. */
   slug?: string;
   excerpt?: string | null;
   body?: unknown;
@@ -162,10 +171,13 @@ export class ContentService {
     if (!CONTENT_KINDS.includes(kind as ContentKind)) throw new BadRequestException('Loại nội dung không hợp lệ');
     if (!input.title?.trim()) throw new BadRequestException('Thiếu tiêu đề');
 
-    const slug = await this.reserveSlug(kind, input.slug?.trim() || input.title);
+    // No title fallback: without an explicit Generate result the item is saved
+    // with "slug not created yet" and cannot be published until Admin generates one.
+    const slug = input.slug?.trim() || null;
     const body = await this.cleanBody(input.body);
 
     const created = await this.prisma.$transaction(async (tx) => {
+      if (slug) await assertCreateSlug(tx, kind, slug);
       const node = await tx.contentNode.create({
         data: {
           kind,
@@ -181,7 +193,7 @@ export class ContentService {
           publicationStatus: 'draft',
         },
       });
-      await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent(kind, slug), redirectStatus: 308 } });
+      if (slug) await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent(kind, slug), redirectStatus: 308 } });
       if (input.media?.length) await this.replaceMedia(tx, node.id, input.media);
       await this.syncDetails(tx, node.id, kind, input.details);
       await tx.contentRevision.create({
@@ -194,7 +206,7 @@ export class ContentService {
         },
       });
       return node;
-    });
+    }, { isolationLevel: 'Serializable' });
 
     await this.audit(userId, 'content.create', created.id, { kind, slug });
     return this.getOne(created.id);
@@ -206,15 +218,16 @@ export class ContentService {
     if (input.expectedVersion === undefined) throw new BadRequestException('Thiếu phiên bản nội dung cần cập nhật');
     this.assertVersion(current.version, input.expectedVersion);
 
+    if (input.slug !== undefined) {
+      throw new BadRequestException({ code: 'slug_not_editable', message: 'Lưu không đổi đường dẫn. Dùng nút Generate để tạo hoặc đổi slug.' });
+    }
     const body = input.body === undefined ? null : await this.cleanBody(input.body);
-    const nextSlug = resolveUpdatedSlug(current.slugSource ?? '', input.slug);
 
     await this.prisma.$transaction(async (tx) => {
       const update = await tx.contentNode.updateMany({
         where: { id, version: input.expectedVersion },
         data: {
           title: input.title?.trim().slice(0, 300) ?? undefined,
-          slugSource: nextSlug !== current.slugSource ? nextSlug : undefined,
           excerpt: input.excerpt === undefined ? undefined : input.excerpt?.slice(0, 500) ?? null,
           bodyDocument: body === null ? undefined : (body as object),
           metaTitle: input.metaTitle === undefined ? undefined : input.metaTitle?.slice(0, 200) ?? null,
@@ -228,8 +241,6 @@ export class ContentService {
         },
       });
       if (update.count !== 1) await this.throwWriteConflict(tx, id, input.expectedVersion!);
-
-      if (nextSlug !== current.slugSource) await switchCurrentRoute(tx, id, current.kind, nextSlug);
 
       if (input.media) await this.replaceMedia(tx, id, input.media);
       if (input.details) await this.syncDetails(tx, id, current.kind, input.details);
@@ -249,8 +260,31 @@ export class ContentService {
       });
     });
 
-    await this.audit(userId, 'content.update', id, { slug: nextSlug });
+    await this.audit(userId, 'content.update', id, { slug: current.slugSource });
     return this.getOne(id);
+  }
+
+  /** Generate preview: create form (kind, no id) or edit form (id). Never writes. */
+  previewSlug(input: { kind?: string; contentId?: string | null; source: unknown }): Promise<SlugPreview> {
+    return previewSlug(this.prisma, input);
+  }
+
+  /** The only write path that creates or changes a slug. */
+  async generateSlug(
+    id: string,
+    input: { source: unknown; expectedVersion: number; confirmPublicChange?: boolean },
+    userId: string,
+  ): Promise<GenerateSlugResult> {
+    return this.prisma.$transaction(
+      (tx) => applyGeneratedSlug(tx, { contentId: id, ...input, userId }),
+      { isolationLevel: 'Serializable' },
+    );
+  }
+
+  async routes(id: string): Promise<{ current: RouteHistoryEntry | null; history: RouteHistoryEntry[] }> {
+    const exists = await this.prisma.contentNode.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) throw new NotFoundException('Không tìm thấy nội dung');
+    return routeHistory(this.prisma, id);
   }
 
   /** Moves a node along draft → review → scheduled/published → archived. */
@@ -387,10 +421,12 @@ export class ContentService {
         ratePlans: Array<{ baseRateVnd: bigint }>;
       }>;
     } | null;
+    combo?: { days?: unknown[] } | null;
+    article?: { authorName?: string | null } | null;
   }): string[] {
     const problems: string[] = [];
     if (!node.title?.trim()) problems.push('Thiếu tiêu đề');
-    if (!node.slugSource) problems.push('Thiếu đường dẫn');
+    if (!node.slugSource) problems.push('Slug/đường dẫn chưa được tạo. Hãy bấm Generate trước khi xuất bản.');
     if (!node.metaTitle?.trim()) problems.push('Thiếu tiêu đề SEO');
     if (!node.metaDescription?.trim()) problems.push('Thiếu mô tả SEO');
     if (documentToText(node.bodyDocument).length < 40) problems.push('Nội dung quá ngắn');
@@ -404,6 +440,9 @@ export class ContentService {
         item.media.processingStatus === 'ready',
     );
     if (!hasValidCover) problems.push('Chưa có ảnh đại diện hợp lệ');
+
+    if (node.kind === 'combo' && !node.combo?.days?.length) problems.push('Combo chưa có lịch trình');
+    if (node.kind === 'article' && !node.article?.authorName?.trim()) problems.push('Bài viết chưa có tác giả');
 
     if (node.kind === 'stay') {
       const property = node.property;
@@ -454,16 +493,12 @@ export class ContentService {
       const snapshot = revision.contentSnapshot && typeof revision.contentSnapshot === 'object' && !Array.isArray(revision.contentSnapshot)
         ? revision.contentSnapshot as Record<string, unknown>
         : null;
-      const nextSlug = resolveUpdatedSlug(
-        current.slugSource ?? '',
-        snapshot && typeof snapshot.slugSource === 'string' ? snapshot.slugSource : undefined,
-      );
+      // Restoring content never moves the URL: the slug stays as it is now.
       const body = snapshot?.bodyDocument ?? revision.documentSnapshot;
       const saved = await tx.contentNode.updateMany({
         where: { id, version: expectedVersion },
         data: {
           title: snapshot && typeof snapshot.title === 'string' ? snapshot.title : current.title,
-          slugSource: nextSlug,
           excerpt: snapshot && (typeof snapshot.excerpt === 'string' || snapshot.excerpt === null) ? snapshot.excerpt : current.excerpt,
           bodyDocument: body as object,
           metaTitle: snapshot && (typeof snapshot.metaTitle === 'string' || snapshot.metaTitle === null) ? snapshot.metaTitle : current.metaTitle,
@@ -476,8 +511,6 @@ export class ContentService {
         },
       });
       if (saved.count !== 1) await this.throwWriteConflict(tx, id, expectedVersion);
-
-      if (nextSlug !== current.slugSource) await switchCurrentRoute(tx, id, current.kind, nextSlug);
 
       if (snapshot && Array.isArray(snapshot.media)) {
         const media = snapshot.media.flatMap((item) => {
@@ -692,30 +725,6 @@ export class ContentService {
   private async currentPath(contentId: string): Promise<string | null> {
     const route = await this.prisma.publicRoute.findFirst({ where: { contentId, isCurrent: true } });
     return route?.path ?? null;
-  }
-
-  private async reserveSlug(kind: string, desired: string): Promise<string> {
-    const [siblings, routes] = await Promise.all([
-      this.prisma.contentNode.findMany({
-        where: { kind },
-        select: { slugSource: true },
-      }),
-      // Renaming a node leaves its old path behind as a redirect, and that row
-      // still owns the path. Reusing the freed slug would collide with it.
-      this.prisma.publicRoute.findMany({
-        where: { path: { startsWith: pathForContent(kind, '') } },
-        select: { path: true },
-      }),
-    ]);
-
-    const taken = new Set(siblings.map((s) => s.slugSource).filter((s): s is string => !!s));
-    const prefix = pathForContent(kind, '');
-    for (const route of routes) {
-      const rest = route.path.slice(prefix.length);
-      // Only reserve direct children of this section as slugs.
-      if (rest && !rest.includes('/')) taken.add(rest);
-    }
-    return uniqueSlug(desired, taken);
   }
 
   private async cleanBody(body: unknown): Promise<RichNode> {

@@ -3,8 +3,8 @@ import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { documentMediaIds, sanitizeDocument } from '../content/document';
-import { pathForContent, uniqueSlug } from '../content/slug';
-import { resolveUpdatedSlug, switchCurrentRoute } from '../content/slug-routes';
+import { pathForContent } from '../content/slug';
+import { applyGeneratedSlug, assertCreateSlug, previewSlug, routeHistory, type GenerateSlugResult, type SlugPreview } from '../content/slug-lifecycle';
 import type { CreatePropertyDto, CreateRoomDto, DeletePropertyQuery, UpdatePropertyDto, UpdateRoomDto } from './dto/property.dto';
 import { ROOM_AMENITIES, ROOM_AMENITY_CODES } from './room-amenities';
 
@@ -215,7 +215,8 @@ export class PropertiesService {
       rateName: input.rateName?.trim() || 'Giá tiêu chuẩn',
     } : null;
 
-    const slug = await this.reserveSlug(input.slug?.trim() || title);
+    // Slug only from an explicit Generate result; never derived from the title.
+    const slug = input.slug?.trim() || null;
     const body = input.descriptionDocument === undefined
       ? paragraphDocument(description)
       : await this.cleanDescriptionDocument(input.descriptionDocument);
@@ -234,6 +235,7 @@ export class PropertiesService {
           }
         }
         await this.assertGalleryMedia(tx, [...(input.galleryMediaIds ?? []), ...(input.roomGalleryMediaIds ?? [])]);
+        if (slug) await assertCreateSlug(tx, 'stay', slug);
 
         const node = await tx.contentNode.create({
           data: {
@@ -250,7 +252,7 @@ export class PropertiesService {
           },
         });
 
-        await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent('stay', slug), redirectStatus: 308 } });
+        if (slug) await tx.publicRoute.create({ data: { contentId: node.id, path: pathForContent('stay', slug), redirectStatus: 308 } });
         await tx.contentRevision.create({
           data: { contentId: node.id, documentSnapshot: body, note: 'Tạo nơi lưu trú mới', authorId: userId },
         });
@@ -392,7 +394,9 @@ export class PropertiesService {
         : paragraphDocument(description);
     const bodyText = body === undefined ? undefined : documentToText(body);
     const nextDescription = description ?? bodyText;
-    const nextSlug = resolveUpdatedSlug(current.content.slugSource ?? '', input.slug);
+    if ((input as { slug?: unknown }).slug !== undefined) {
+      throw new BadRequestException({ code: 'slug_not_editable', message: 'Lưu không đổi đường dẫn. Dùng nút Generate để tạo hoặc đổi slug.' });
+    }
 
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -412,15 +416,10 @@ export class PropertiesService {
         }
         await this.assertGalleryMedia(tx, [...(input.galleryMediaIds ?? []), ...roomGalleries.flatMap((item) => item.mediaIds)]);
 
-        if (nextSlug !== current.content.slugSource) {
-          await switchCurrentRoute(tx, current.contentId, 'stay', nextSlug);
-        }
-
         await tx.contentNode.update({
           where: { id: current.contentId },
           data: {
             title,
-            slugSource: nextSlug !== current.content.slugSource ? nextSlug : undefined,
             excerpt:
               input.excerpt === undefined
                 ? undefined
@@ -483,7 +482,7 @@ export class PropertiesService {
               contentId: current.contentId,
               code: current.code,
               fields: Object.keys(input).filter((field) => !field.startsWith('expected')),
-              slug: nextSlug,
+              slug: current.content.slugSource,
             } as object,
           },
         });
@@ -733,26 +732,32 @@ export class PropertiesService {
     });
   }
 
-  private async reserveSlug(desired: string): Promise<string> {
-    const [siblings, routes] = await Promise.all([
-      this.prisma.contentNode.findMany({
-        where: { kind: 'stay' },
-        select: { slugSource: true },
-      }),
-      this.prisma.publicRoute.findMany({
-        // Keep old routes of the same content reserved too: they remain
-        // redirects after a slug change and must not be reused accidentally.
-        where: { path: { startsWith: pathForContent('stay', '') } },
-        select: { path: true },
-      }),
-    ]);
-    const taken = new Set(siblings.map((item) => item.slugSource).filter((value): value is string => !!value));
-    const prefix = pathForContent('stay', '');
-    for (const route of routes) {
-      const rest = route.path.slice(prefix.length);
-      if (rest && !rest.includes('/')) taken.add(rest);
-    }
-    return uniqueSlug(desired, taken);
+  private async contentIdOf(id: string): Promise<string> {
+    const property = await this.prisma.property.findUnique({ where: { id }, select: { contentId: true } });
+    if (!property) throw new NotFoundException('Không tìm thấy nơi lưu trú');
+    return property.contentId;
+  }
+
+  /** Generate preview for the stay create form (no id) or an existing stay. */
+  async previewSlug(id: string | null, source: unknown): Promise<SlugPreview> {
+    return previewSlug(this.prisma, id ? { contentId: await this.contentIdOf(id), source } : { kind: 'stay', source });
+  }
+
+  /** Apply Generate for a stay; `expectedVersion` is the stay's content version. */
+  async generateSlug(
+    id: string,
+    input: { source: unknown; expectedVersion: number; confirmPublicChange?: boolean },
+    userId: string,
+  ): Promise<GenerateSlugResult> {
+    const contentId = await this.contentIdOf(id);
+    return this.prisma.$transaction(
+      (tx) => applyGeneratedSlug(tx, { contentId, ...input, userId }),
+      { isolationLevel: 'Serializable' },
+    );
+  }
+
+  async routes(id: string) {
+    return routeHistory(this.prisma, await this.contentIdOf(id));
   }
 
   private isUniqueViolation(error: unknown): boolean {

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } fr
 import { CurrentUser, RequirePermissions } from '../common/decorators';
 import { PERMISSIONS } from '../common/permissions';
 import type { AuthenticatedUser } from '../common/types';
-import { CreatePropertyDto, CreateRoomDto, DeletePropertyQuery, UpdatePropertyDto, UpdateRoomDto } from './dto/property.dto';
+import { CreatePropertyDto, CreateRoomDto, DeletePropertyQuery, PropertyGenerateSlugDto, PropertySlugPreviewDto, UpdatePropertyDto, UpdateRoomDto } from './dto/property.dto';
 import { PropertiesService, type PropertyView } from './properties.service';
 
 @Controller('properties')
@@ -13,6 +13,35 @@ export class PropertiesController {
   @RequirePermissions(PERMISSIONS.catalogRead)
   list(): Promise<{ items: PropertyView[] }> {
     return this.properties.list();
+  }
+
+  /** Generate preview for the create form. Read-only. */
+  @Post('slug/preview')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.catalogWrite)
+  previewNewSlug(@Body() dto: PropertySlugPreviewDto) {
+    return this.properties.previewSlug(null, dto.source);
+  }
+
+  @Post(':id/slug/preview')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.catalogWrite)
+  previewSlug(@Param('id') id: string, @Body() dto: PropertySlugPreviewDto) {
+    return this.properties.previewSlug(id, dto.source);
+  }
+
+  /** The only endpoint that creates or changes a stay URL. */
+  @Post(':id/slug/generate')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.catalogWrite)
+  generateSlug(@Param('id') id: string, @Body() dto: PropertyGenerateSlugDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.properties.generateSlug(id, dto, user.id);
+  }
+
+  @Get(':id/routes')
+  @RequirePermissions(PERMISSIONS.catalogRead)
+  routes(@Param('id') id: string) {
+    return this.properties.routes(id);
   }
 
   @Get(':id')

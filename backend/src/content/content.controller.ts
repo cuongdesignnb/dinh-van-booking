@@ -14,7 +14,10 @@ import {
 import { ContentService, type ContentView } from './content.service';
 import {
   CreateContentDto,
+  GenerateSlugDto,
   ListContentQuery,
+  SlugPreviewDto,
+  SlugPreviewForKindDto,
   SetStatusDto,
   RestoreContentDto,
   UpdateContentDto,
@@ -37,6 +40,37 @@ export class ContentController {
   @RequirePermissions(PERMISSIONS.contentRead)
   getOne(@Param('id') id: string): Promise<ContentView> {
     return this.content.getOne(id);
+  }
+
+  /** Generate (create form): normalised slug, public path and collision suggestion. Read-only. */
+  @Post('slug/preview')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.contentWrite)
+  previewNewSlug(@Body() dto: SlugPreviewForKindDto) {
+    return this.content.previewSlug({ kind: dto.kind, source: dto.source });
+  }
+
+  /** Generate (edit form): candidate vs current URL, conflicts, confirmation need. Read-only. */
+  @Post(':id/slug/preview')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.contentWrite)
+  previewSlug(@Param('id') id: string, @Body() dto: SlugPreviewDto) {
+    return this.content.previewSlug({ contentId: id, source: dto.source });
+  }
+
+  /** Apply Generate: the only endpoint that creates or changes a slug. */
+  @Post(':id/slug/generate')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.contentWrite)
+  generateSlug(@Param('id') id: string, @Body() dto: GenerateSlugDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.content.generateSlug(id, dto, user.id);
+  }
+
+  /** Current URL and old URLs (each a 308 straight to the current URL). */
+  @Get(':id/routes')
+  @RequirePermissions(PERMISSIONS.contentRead)
+  routes(@Param('id') id: string) {
+    return this.content.routes(id);
   }
 
   @Get(':id/revisions')
