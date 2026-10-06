@@ -65,6 +65,12 @@ function nightsBetween(checkIn: string, checkOut: string) {
   return Math.max(0, Math.round((new Date(`${checkOut}T00:00:00Z`).getTime() - new Date(`${checkIn}T00:00:00Z`).getTime()) / 86_400_000));
 }
 
+function updatedLabel(iso: string) {
+  const date = new Date(iso);
+  const zone = { timeZone: 'Asia/Ho_Chi_Minh' } as const;
+  return `${date.toLocaleTimeString('vi-VN', { ...zone, hour: '2-digit', minute: '2-digit' })}, ${date.toLocaleDateString('vi-VN', { ...zone, day: '2-digit', month: '2-digit' })}`;
+}
+
 export function AvailabilitySearch({ initialSelection }: { initialSelection?: Selection }) {
   const [checkIn, setCheckIn] = useState(() => initialSelection?.checkIn ?? businessToday());
   const [checkOut, setCheckOut] = useState(() => initialSelection?.checkOut ?? shiftDay(initialSelection?.checkIn ?? businessToday(), 1));
@@ -195,7 +201,7 @@ export function AvailabilitySearch({ initialSelection }: { initialSelection?: Se
             </div>
             <div className="availability-result__aside">
               <span className="availability-result__price">{item.priceMode === 'contact' ? 'Giá: liên hệ' : 'Giá niêm yết'}</span>
-              {item.lastConfirmedAt && <small>Cập nhật {new Date(item.lastConfirmedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</small>}
+              {item.lastConfirmedAt && <small>Cập nhật {updatedLabel(item.lastConfirmedAt)}</small>}
               {bookable
                 ? <Link className="ui-btn ui-btn--primary" href={item.path}>Xem phòng <ArrowRight size={16} aria-hidden="true" /></Link>
                 : <Link className="ui-btn" href={item.status === 'sold_out' ? '/lien-he' : item.path}>{item.status === 'sold_out' ? 'Nhờ tìm phòng khác' : 'Xem chi tiết'}</Link>}

@@ -49,8 +49,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 12.4px;
-  line-height: 15.5px;
+  font-size: 13.5px;
+  line-height: 18px;
   color: #f4f5ee;
   text-shadow: 0 1px 5px rgb(0 0 0 / 40%);
 }
@@ -243,7 +243,7 @@
   padding: 3px 4px 3px 10px;
   border-radius: 999px;
   background: #e9f1e1;
-  font-size: 12px;
+  font-size: 13.5px;
   color: #1c4a27;
   animation: pop-in 0.3s var(--ease-spring);
 }
@@ -267,7 +267,7 @@
   background: #fff4f0;
   border: 1px solid #f1c7b8;
   color: #9c2f14;
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .cform__grid {
@@ -289,7 +289,7 @@
 }
 
 .cfield__label {
-  font-size: 12.4px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #1a251d;
   line-height: 20px;
@@ -374,14 +374,14 @@
 .cfield__box--area textarea {
   height: 100%;
   resize: none;
-  line-height: 16px;
+  line-height: 19px;
 }
 
 .cfield__count {
   position: absolute;
   right: 10px;
   bottom: 7px;
-  font-size: 10.5px;
+  font-size: 12.5px;
   color: #6b716c;
 }
 
@@ -391,7 +391,7 @@
 }
 
 .cfield__err {
-  font-size: 11.8px;
+  font-size: 13px;
   color: #b3371c;
   animation: pop-in 0.25s var(--ease-spring);
 }
@@ -423,7 +423,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 9px;
-  font-size: 10.6px;
+  font-size: 12.5px;
   color: #56605a;
 }
 
@@ -459,7 +459,7 @@
 
 .faq-card__sub {
   margin-top: 3px;
-  font-size: 11.4px;
+  font-size: 12.5px;
   color: #56605a;
 }
 
@@ -472,7 +472,7 @@
 .contact-faq .faq--boxed .faq__q button {
   min-height: 28px;
   padding: 2px 8px 2px 14px;
-  font-size: 12.2px;
+  font-size: 13.5px;
   font-weight: 400;
   color: #26312a;
 }
@@ -501,8 +501,8 @@
 .quick__sub {
   margin-top: 3px;
   padding: 0 20px 0 14px;
-  font-size: 11.8px;
-  line-height: 15.5px;
+  font-size: 13px;
+  line-height: 18px;
   color: #454e48;
 }
 
@@ -522,8 +522,8 @@
   border: 0;
   border-radius: 11px;
   text-align: left;
-  font-size: 11.5px;
-  line-height: 15px;
+  font-size: 13px;
+  line-height: 18px;
   transition:
     transform 0.25s var(--ease-out),
     box-shadow 0.25s;
@@ -650,14 +650,14 @@
 }
 
 .profile__role {
-  font-size: 12.4px;
+  font-size: 13.5px;
   color: #1c4a27;
 }
 
 .profile__quote {
   margin-top: 8px;
-  font-size: 10.9px;
-  line-height: 15.5px;
+  font-size: 12.5px;
+  line-height: 18px;
   color: #454e48;
 }
 
@@ -674,7 +674,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 11.6px;
+  font-size: 13px;
   color: #3a443d;
 }
 
@@ -711,8 +711,8 @@
 
 .social__sub {
   margin-top: 2px;
-  font-size: 11.4px;
-  line-height: 15px;
+  font-size: 12.5px;
+  line-height: 18px;
   color: #56605a;
   max-width: 370px;
 }
@@ -824,8 +824,8 @@
   align-items: center;
   gap: 9px;
   text-align: center;
-  font-size: 11.4px;
-  line-height: 15px;
+  font-size: 12.5px;
+  line-height: 18px;
   color: #3a443d;
 }
 
@@ -874,13 +874,13 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12.8px;
+  font-size: 13.5px;
   color: #26312a;
 }
 
 .cmap-card__head .link-more {
   margin-top: 10px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #16311e;
 }
@@ -906,8 +906,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  line-height: 13px;
+  font-size: 12.5px;
+  line-height: 15px;
   font-weight: 500;
   color: #1c2a20;
 }
@@ -927,7 +927,7 @@
 .cmap__place--td {
   left: 75%;
   top: 8%;
-  font-size: 12px;
+  font-size: 13.5px;
 }
 
 .cmap__place--nq {
@@ -940,7 +940,7 @@
   top: 52%;
   flex-direction: column;
   gap: 2px;
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .cmap__road {
@@ -951,7 +951,7 @@
   border-radius: 3px;
   background: #3a78c9;
   color: #fff;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -979,14 +979,14 @@
   border-radius: 8px;
   background: rgb(255 255 255 / 94%);
   box-shadow: 0 6px 16px rgb(0 0 0 / 12%);
-  font-size: 10.6px;
-  line-height: 14px;
+  font-size: 12.5px;
+  line-height: 17px;
   color: #56605a;
   max-width: 130px;
 }
 
 .cmap__pop strong {
-  font-size: 12px;
+  font-size: 13.5px;
   color: #16241b;
 }
 
@@ -1008,7 +1008,7 @@
   padding: 0 6px;
   border-radius: 3px;
   background: rgb(255 255 255 / 85%);
-  font-size: 9.5px;
+  font-size: 12px;
   color: #56605a;
 }
 
@@ -1207,7 +1207,7 @@
     gap: 14px;
   }
   .cform__privacy {
-    font-size: 12px;
+    font-size: 13.5px;
   }
   .quick__cards {
     grid-template-columns: minmax(0, 1fr);
@@ -1237,7 +1237,7 @@
   }
   .promise__list li {
     font-size: 13px;
-    line-height: 17px;
+    line-height: 20px;
   }
   .cmap {
     height: 230px;

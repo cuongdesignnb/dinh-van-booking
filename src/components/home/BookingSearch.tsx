@@ -180,7 +180,7 @@ export function BookingSearch() {
       <div className="search__actions">
         <button type="submit" className="search__submit btn-shine" data-magnetic>
           <Search size={22} strokeWidth={2} aria-hidden="true" />
-          <span>{availabilityEnabled ? 'Kiểm tra tình trạng phòng' : 'Xem tất cả phòng nghỉ'}</span>
+          <span>{availabilityEnabled ? 'Tìm phòng trống' : 'Xem tất cả phòng nghỉ'}</span>
         </button>
         {availabilityEnabled && <button type="submit" value="browse" className="search__browse">Xem tất cả phòng nghỉ</button>}
       </div>

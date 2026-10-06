@@ -11,7 +11,7 @@
 }
 
 .phero--dest .crumbs--light {
-  font-size: 11.6px;
+  font-size: 13px;
   color: #f1f3ec;
 }
 
@@ -62,8 +62,8 @@
 }
 
 .phero__quotebox-text {
-  font-size: 12.8px;
-  line-height: 16.5px;
+  font-size: 13.5px;
+  line-height: 19px;
   font-style: italic;
   color: #f1f3ec;
   text-shadow: 0 1px 6px rgb(0 0 0 / 35%);
@@ -123,7 +123,7 @@
   height: 34px;
   padding: 0 22px 0 18px;
   gap: 14px;
-  font-size: 12.8px;
+  font-size: 13.5px;
 }
 
 .dest-chip:first-child {
@@ -135,7 +135,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 12.6px;
+  font-size: 13.5px;
   color: #26312a;
   padding-right: 40px;
 }
@@ -170,11 +170,11 @@
 
 .dest-list__head .section-sub {
   margin-top: 3px;
-  font-size: 12.4px;
+  font-size: 13.5px;
 }
 
 .dest-list__all {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #16311e;
   margin-bottom: 20px;
@@ -240,7 +240,7 @@
   border-radius: 5px;
   background: rgb(38 110 50 / 92%);
   color: #fff;
-  font-size: 10.8px;
+  font-size: 12.5px;
 }
 
 .dcard__badge--van-hoa {
@@ -274,8 +274,8 @@
 
 .dcard__sum {
   margin-top: 2px;
-  font-size: 10.9px;
-  line-height: 15px;
+  font-size: 12.5px;
+  line-height: 18px;
   color: #5b635d;
 }
 
@@ -292,8 +292,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 10.6px;
-  line-height: 15px;
+  font-size: 12.5px;
+  line-height: 18px;
   color: #56605a;
 }
 
@@ -306,7 +306,7 @@
   width: 100%;
   height: 22px;
   margin-top: auto;
-  font-size: 11px;
+  font-size: 12.5px;
   border-radius: 5px;
   gap: 9px;
 }
@@ -393,12 +393,12 @@
 }
 
 .itin__tab strong {
-  font-size: 11.6px;
+  font-size: 13px;
   color: #1a251d;
 }
 
 .itin__tab span {
-  font-size: 10.6px;
+  font-size: 12.5px;
 }
 
 .itin__tab[aria-selected='true'] {
@@ -444,7 +444,7 @@
 
 .itin__daytitle {
   margin: 4px 0 2px 26px;
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--dvb-green-800);
 }
@@ -475,7 +475,7 @@
 
 .itin__time {
   grid-column: 2;
-  font-size: 11.6px;
+  font-size: 13px;
   font-weight: 700;
   color: #1a251d;
 }
@@ -489,13 +489,13 @@
   grid-column: 4;
   display: flex;
   flex-direction: column;
-  font-size: 10.8px;
-  line-height: 14px;
+  font-size: 12.5px;
+  line-height: 17px;
   color: #26312a;
 }
 
 .itin__text small {
-  font-size: 10px;
+  font-size: 12px;
   color: #6b716c;
 }
 
@@ -592,15 +592,15 @@
 
 .season__name {
   padding: 4px 8px 0;
-  font-size: 11.6px;
+  font-size: 13px;
   font-weight: 700;
   color: #1a251d;
 }
 
 .season__sum {
   padding: 1px 8px 0;
-  font-size: 9.8px;
-  line-height: 12.5px;
+  font-size: 12px;
+  line-height: 15px;
   color: #6b716c;
 }
 
@@ -626,7 +626,7 @@
 }
 
 .lmap-card .dsec-head .link-more {
-  font-size: 11.5px;
+  font-size: 13px;
 }
 
 .lmap {
@@ -692,8 +692,8 @@
 
 .lmap__label {
   max-width: 80px;
-  font-size: 10.4px;
-  line-height: 12px;
+  font-size: 12px;
+  line-height: 14px;
   font-weight: 500;
   color: #1c2a20;
   text-shadow: 0 0 3px #fff;
@@ -726,7 +726,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #1c2a20;
 }
@@ -738,7 +738,7 @@
   padding: 0 5px;
   border-radius: 3px;
   background: rgb(255 255 255 / 80%);
-  font-size: 9px;
+  font-size: 12px;
   color: #56605a;
 }
 
@@ -747,7 +747,7 @@
   right: 0;
   top: 44px;
   font-size: 13px;
-  line-height: 17px;
+  line-height: 20px;
   color: #1c3b25;
   transform: rotate(-12deg);
   text-align: left;
@@ -783,15 +783,15 @@
 
 .note-card__quote {
   margin-top: 3px;
-  font-size: 9.4px;
-  line-height: 12.4px;
+  font-size: 12px;
+  line-height: 15px;
   color: #454e48;
 }
 
 .note-card__by {
   margin-top: 3px;
-  font-size: 10px;
-  line-height: 12px;
+  font-size: 12px;
+  line-height: 14px;
   color: #3a443d;
 }
 
@@ -967,7 +967,7 @@
     line-height: 18px;
   }
   .itin__text small {
-    font-size: 12px;
+    font-size: 13.5px;
   }
   .itin__tab {
     height: 52px;
@@ -976,14 +976,14 @@
     font-size: 13px;
   }
   .itin__tab span {
-    font-size: 11.5px;
+    font-size: 13px;
   }
   .season__name {
     font-size: 13.5px;
   }
   .season__sum {
-    font-size: 12.5px;
-    line-height: 16px;
+    font-size: 13.5px;
+    line-height: 19px;
   }
   .lmap {
     height: 220px;
@@ -1005,7 +1005,101 @@
     line-height: 18px;
   }
   .note-card__by {
-    font-size: 12.5px;
-    line-height: 16px;
+    font-size: 13.5px;
+    line-height: 19px;
   }
+}
+
+/* ---------- Redesign layer (Phase C) ---------- */
+
+.dest-list {
+  padding-top: 32px;
+}
+
+.dest-list__head {
+  margin-bottom: 20px;
+}
+
+.dest-list__head .section-title {
+  font-size: clamp(24px, 2.2vw, 31px);
+}
+
+.dest-list__head .section-sub {
+  font-size: 15px;
+}
+
+.dest-list__all {
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.dest-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 20px;
+}
+
+.dcard {
+  height: auto;
+  min-height: 100%;
+  border-color: var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+}
+
+.dcard__media {
+  height: auto;
+  aspect-ratio: 16 / 10;
+}
+
+.dcard__badge {
+  left: 12px;
+  bottom: 10px;
+  padding: 3px 10px;
+  border-radius: var(--dvb-r-pill);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.dcard__body {
+  gap: 6px;
+  padding: 14px 16px 16px;
+}
+
+.dcard__title {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.dcard__sum {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dcard__tips {
+  margin: 4px 0 14px;
+  gap: 6px;
+}
+
+.dcard__tips li {
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+
+.dcard__cta {
+  height: auto;
+  min-height: 44px;
+  font-size: 14px;
+  border-radius: var(--dvb-r-md);
+}
+
+.dest-filters {
+  height: auto;
+  min-height: 64px;
+  padding-block: 10px;
+}
+
+.dest-chip {
+  height: auto;
+  min-height: 44px;
+  font-size: 14.5px;
 }
