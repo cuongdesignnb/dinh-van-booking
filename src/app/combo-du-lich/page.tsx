@@ -1,10 +1,10 @@
 import { Gem, Heart, Leaf, MoveRight, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
-import Image from '@/components/ui/ManagedImage';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { ComboExplorer } from '@/components/combos/ComboExplorer';
 import { ComboReviews } from '@/components/combos/ComboReviews';
 import { PageShell } from '@/components/layout/PageShell';
+import { PageHero } from '@/components/site/PageHero';
 import { FaqList } from '@/components/shared/FaqList';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { getPublicCombos, getPublicLegacyTarget, getPublicReviews, getPublicSeoUrls, getPublicSite } from '@/lib/api/public';
@@ -73,17 +73,7 @@ export default async function CombosPage({ searchParams }: { searchParams: Promi
   const reviewsTitle = publicText(page.reviewsTitle);
 
   return <PageShell className="page-combos">
-    {heroTitle && <section className="phero phero--combo" aria-labelledby="combo-h1">
-      <div className="phero__media" aria-hidden="true">
-        {heroImage?.src && <Image src={heroImage.src} alt={heroImage.alt ?? ''} fill priority sizes="100vw" className="phero__img" unoptimized />}
-        <div className="phero__shade" />
-      </div>
-      <div className="phero__inner content-shell">
-        <h1 id="combo-h1" className="phero__title" data-reveal="fade-up">{heroTitle}</h1>
-        {heroKicker && <p className="phero__script handwritten" data-reveal="write">{heroKicker}</p>}
-        {richDocumentHasContent(page.heroDescription) && <div className="phero__text" data-reveal="fade-up"><RichContentRenderer document={page.heroDescription as RichDocument} /></div>}
-      </div>
-    </section>}
+    {heroTitle && <PageHero id="combo-h1" title={heroTitle} eyebrow={heroKicker} lead={page.heroDescription} image={heroImage} crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Trải nghiệm' }]} />}
 
     <ComboExplorer combos={combos} config={page} />
 

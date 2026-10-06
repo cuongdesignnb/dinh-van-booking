@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Image from '@/components/ui/ManagedImage';
 import { ConsultationForm } from '@/components/contact/ConsultationForm';
 import { PageShell } from '@/components/layout/PageShell';
+import { PageHero } from '@/components/site/PageHero';
 import { FaqList } from '@/components/shared/FaqList';
-import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { getPublicCombo, getPublicDestination, getPublicSeoUrls, getPublicSite, getPublicStay } from '@/lib/api/public';
 import { readParam } from '@/lib/selection';
@@ -108,18 +108,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   return (
     <PageShell className="page-contact">
       {title && <>
-        <section className="phero phero--contact" aria-labelledby="contact-h1">
-          <div className="phero__media" aria-hidden="true">
-            {heroImage?.src && <Image src={heroImage.src} alt={heroImage.alt ?? ''} fill priority sizes="100vw" className="phero__img" unoptimized />}
-            <div className="phero__shade" />
-          </div>
-          <div className="phero__inner content-shell">
-            <Breadcrumb variant="light" items={[{ label: 'Trang chủ', href: '/' }, { label: title }]} />
-            {publicText(page.heroEyebrow) && <p className="phero__script handwritten">{publicText(page.heroEyebrow)}</p>}
-            <h1 id="contact-h1" className="phero__title">{title}</h1>
-            {richDocumentHasContent(page.intro) && <div className="phero__text"><RichContentRenderer document={page.intro as RichDocument} /></div>}
-          </div>
-        </section>
+        <PageHero id="contact-h1" title={title} eyebrow={publicText(page.heroEyebrow)} lead={page.intro} image={heroImage} crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Liên hệ' }]} />
 
         {promises.length > 0 && <ul className="contact-promises content-shell">{promises.map((item) => <li key={item.id}><strong>{item.title}</strong>{item.description && <span>{item.description}</span>}</li>)}</ul>}
       </>}

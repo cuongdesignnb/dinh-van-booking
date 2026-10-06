@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import Image from '@/components/ui/ManagedImage';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { DestinationExplorer } from '@/components/destinations/DestinationExplorer';
 import { DestinationNote, ItineraryTabs, Seasons } from '@/components/destinations/DiscoveryLower';
 import { PageShell } from '@/components/layout/PageShell';
-import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import { PageHero } from '@/components/site/PageHero';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { getPublicDestinations, getPublicLegacyTarget, getPublicSeoUrls, getPublicSite } from '@/lib/api/public';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -62,19 +61,9 @@ export default async function DestinationsPage({ searchParams }: { searchParams:
 
   return (
     <PageShell className="page-destinations">
-      {heroTitle && <section className="phero phero--dest" aria-labelledby="dest-h1">
-        <div className="phero__media" aria-hidden="true">
-          {heroImage?.src && <Image src={heroImage.src} alt={heroImage.alt ?? ''} fill priority sizes="100vw" className="phero__img" unoptimized />}
-          <div className="phero__shade" />
-        </div>
-        <div className="phero__inner content-shell">
-          <Breadcrumb variant="light" items={[{ label: 'Trang chủ', href: '/' }, { label: heroTitle }]} />
-          {heroKicker && <p className="phero__script handwritten" data-reveal="write">{heroKicker}</p>}
-          <h1 id="dest-h1" className="phero__title" data-reveal="fade-up">{heroTitle}</h1>
-          {richDocumentHasContent(page.heroDescription) && <div className="phero__text" data-reveal="fade-up"><RichContentRenderer document={page.heroDescription as RichDocument} /></div>}
-          {richDocumentHasContent(page.heroQuote) && <div className="phero__quotebox" data-reveal="fade-up"><RichContentRenderer document={page.heroQuote as RichDocument} /></div>}
-        </div>
-      </section>}
+      {heroTitle && <PageHero id="dest-h1" title={heroTitle} eyebrow={heroKicker} lead={page.heroDescription} image={heroImage} crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Cẩm nang' }]}>
+        {richDocumentHasContent(page.heroQuote) && <div className="cp-page-hero__quote"><RichContentRenderer document={page.heroQuote as RichDocument} /></div>}
+      </PageHero>}
 
       <DestinationExplorer destinations={destinations} config={page} />
 
