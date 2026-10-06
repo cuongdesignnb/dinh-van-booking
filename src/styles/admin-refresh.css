@@ -439,3 +439,41 @@
     gap: 4px;
   }
 }
+
+/* ---------- Operations filters: one aligned toolbar row ---------- */
+
+.admin-operations__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-operations__filters > .afield,
+.admin-operations__filters > .ainput {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-operations__search {
+  grid-column: span 2;
+  height: var(--dvb-control-md);
+  min-width: 0;
+  border-radius: var(--dvb-r-md);
+}
+
+.admin-operations__filters .ainput {
+  min-height: var(--dvb-control-md);
+}
+
+@media (max-width: 767px) {
+  .admin-operations__search {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Inquiry cards: the stage picker is a compact control, not a full-width bar. */
+.settings-item > .field {
+  max-width: 320px;
+}

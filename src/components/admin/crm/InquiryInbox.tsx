@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
 
+/** 2026-10-13 → 13/10/2026 (date-only values, no timezone shift). */
+const viDate = (value: string) => { const [y, m, d] = value.slice(0, 10).split('-'); return d && m && y ? `${d}/${m}/${y}` : value; };
+
 type Stage = 'new' | 'contacted' | 'quoted' | 'won' | 'lost';
 type Inquiry = {
   id: string;
@@ -97,7 +100,7 @@ export function InquiryInbox() {
                 </div>
                 <time className="settings-item__meta" dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString('vi-VN')}</time>
               </div>
-              <p><strong>Nhu cầu:</strong> {item.intent ? INTENT_LABEL[item.intent] ?? 'Tư vấn khác' : 'Tư vấn chung'} · {item.desiredCheckIn ?? 'chưa chọn ngày'}{item.desiredCheckOut ? ' → ' + item.desiredCheckOut : ''} · {item.adults} người lớn, {item.children} trẻ em{item.requestedRooms ? ` · ${item.requestedRooms} phòng/căn` : ''}</p>
+              <p><strong>Nhu cầu:</strong> {item.intent ? INTENT_LABEL[item.intent] ?? 'Tư vấn khác' : 'Tư vấn chung'} · {item.desiredCheckIn ? viDate(item.desiredCheckIn) : 'chưa chọn ngày'}{item.desiredCheckOut ? ' – ' + viDate(item.desiredCheckOut) : ''} · {item.adults} người lớn, {item.children} trẻ em{item.requestedRooms ? ` · ${item.requestedRooms} phòng/căn` : ''}</p>
               {(item.relatedContentId || item.relatedRoomTypeId) && <p><strong>Quan tâm:</strong> {item.relatedContentTitle ?? 'Nội dung không còn trong hệ thống'}{item.relatedRoomName ? ` · Hạng phòng ${item.relatedRoomName}` : ''}</p>}
               {item.message && <p className="inquiry-message">{item.message}</p>}
               <label className="field">

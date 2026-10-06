@@ -57,7 +57,7 @@ export type PartnerEditorRoute = { mode: 'property-create' | 'room-create' | 'pr
 const statusText: Record<string, string> = {
   pending: 'Đang chờ quản trị viên xem xét', needs_info: 'Cần bổ sung thông tin', needs_information: 'Cần bổ sung thông tin',
   approved: 'Đã duyệt tài khoản', rejected: 'Chưa được duyệt', active: 'Đang hoạt động', pending_review: 'Đang chờ duyệt',
-  needs_changes: 'Cần chỉnh sửa', conflict: 'Có xung đột phiên bản',
+  needs_changes: 'Cần chỉnh sửa', conflict: 'Có người khác vừa cập nhật',
   draft: 'Bản nháp', published: 'Đang công khai', fresh: 'Vừa xác nhận', stale: 'Cần xác nhận lại', missing: 'Chưa mở quỹ',
   open: 'Đang bán', stop_sell: 'Đang dừng bán', not_on_sale: 'Chưa mở bán', revoked: 'Đã thu hồi',
 };

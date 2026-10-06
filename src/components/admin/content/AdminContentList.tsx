@@ -496,8 +496,8 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
       {editorMode && !form && <div className="acard apending">{loading || busy ? 'Đang tải dữ liệu…' : 'Không tìm thấy nội dung cần chỉnh sửa.'}</div>}
       {!editorMode && (loading ? <div className="acard apending">Đang tải dữ liệu…</div> : loadFailed ? <div className="acard apending content-manager__error-state">Không tải được nội dung từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending content-manager__empty"><FilePenLine size={22} aria-hidden="true" /><div><h3>Chưa có {KIND_LABEL[kind].toLowerCase()}</h3><p>Bấm “Tạo mới” để viết bài đầu tiên.</p></div></div> : <div className="settings-screen__list">
         {items.map((item) => <article className="acard settings-item content-manager__item" key={item.id}>
-          <div className="settings-item__head"><div><h3>{item.title}</h3><code>{item.path ?? item.slug ?? item.id}</code></div><span className="settings-item__meta">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · v{item.version}</span></div>
-          {item.excerpt && <p>{item.excerpt}</p>}<p className="ahint">Cập nhật {new Date(item.updatedAt).toLocaleString('vi-VN')} · {item.media.length} media</p>
+          <div className="settings-item__head"><div><h3>{item.title}</h3><code>{item.path ?? item.slug ?? item.id}</code></div><span className="settings-item__meta">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus}</span></div>
+          {item.excerpt && <p>{item.excerpt}</p>}<p className="ahint">Cập nhật {new Date(item.updatedAt).toLocaleString('vi-VN')} · {item.media.length} ảnh</p>
           <div className="content-manager__actions">
             <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openEdit(item)} disabled={busy === item.id || saving}><FilePenLine size={14} aria-hidden="true" /> Sửa</button>
             <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openEdit(item, true)} disabled={busy === item.id || saving}><Copy size={14} aria-hidden="true" /> Nhân bản</button>

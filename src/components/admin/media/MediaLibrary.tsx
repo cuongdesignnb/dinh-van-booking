@@ -235,7 +235,7 @@ export function MediaLibrary({
                 setQuery(event.target.value);
                 setPage(1);
               }}
-              placeholder="Tìm tên tệp, alt, chú thích…"
+              placeholder="Tìm tên tệp, mô tả ảnh, chú thích…"
               aria-label="Tìm trong thư viện ảnh"
             />
           </label>
@@ -251,7 +251,7 @@ export function MediaLibrary({
 
       <div className="media-library__upload-meta">
         <label className="afield">
-          <span>Alt mặc định cho ảnh tải lên</span>
+          <span>Mô tả ảnh mặc định (cho người khiếm thị và SEO)</span>
           <input className="ainput" value={altText} onChange={(event) => setAltText(event.target.value)} maxLength={500} placeholder="Để trống sẽ dùng tên tệp" />
         </label>
         <label className="afield">
@@ -344,7 +344,7 @@ export function MediaLibrary({
                 </div>
               </>
             ) : (
-              <div className="media-library__detail-empty">Chọn một ảnh để xem metadata và thao tác.</div>
+              <div className="media-library__detail-empty">Chọn một ảnh để xem thông tin và thao tác.</div>
             )}
           </aside>
         )}
