@@ -21,7 +21,7 @@
 }
 
 .home__group[data-home-group='featured'] + .home__group[data-home-group='why'] {
-  margin-top: 40px;
+  margin-top: 24px;
 }
 
 .home__group:last-child {
@@ -375,7 +375,7 @@
 .hw {
   position: relative;
   isolation: isolate;
-  padding: 56px 0 72px;
+  padding: 40px 0 64px;
   background: linear-gradient(180deg, var(--dvb-page) 0%, #f2f4ec 60%, #eaf0e6 100%);
   overflow: hidden;
 }
@@ -392,7 +392,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
   gap: 48px;
-  align-items: center;
+  align-items: start;
 }
 
 .hw--solo .hw__inner,
