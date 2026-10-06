@@ -565,15 +565,47 @@
 }
 
 .admin-slug-field { grid-column: 1 / -1; gap: 6px; }
+.admin-slug-field__label { font-weight: 600; }
+.admin-slug-field__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--dvb-ink-600); }
+.admin-slug-field__current code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--dvb-ink-900, inherit); overflow-wrap: anywhere; }
+.admin-slug-field__url { font-size: var(--dvb-fs-xs); overflow-wrap: anywhere; }
 .admin-slug-field__row { display: flex; align-items: stretch; gap: 8px; }
 .admin-slug-field__row .ainput { flex: 1; min-width: 0; }
 .admin-slug-field__row .abtn { white-space: nowrap; }
 .admin-slug-field__preview { color: var(--dvb-ink-600); font-size: var(--dvb-fs-xs); overflow-wrap: anywhere; }
 .admin-slug-field__preview code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
-.admin-slug-field__warning { display: flex; gap: 7px; align-items: flex-start; margin: 3px 0 8px; color: var(--dvb-warning); font-size: var(--dvb-fs-xs); }
-.admin-slug-field__warning svg { flex: none; }
-.admin-slug-field__invalid { color: var(--dvb-danger); font-size: var(--dvb-fs-xs); }
+.admin-slug-field__msg { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin: 2px 0 4px; font-size: var(--dvb-fs-xs); }
+.admin-slug-field__msg svg { flex: none; }
+.admin-slug-field__msg--error { color: var(--dvb-danger); }
+.admin-slug-field__msg--success { color: var(--dvb-success, #2f6b3a); }
+.admin-slug-field__msg--info { color: var(--dvb-ink-600); }
+.admin-slug-field__confirm { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--dvb-warning); border-radius: 10px; background: color-mix(in srgb, var(--dvb-warning) 8%, white); }
+.admin-slug-field__confirm dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+.admin-slug-field__confirm dt { font-weight: 600; }
+.admin-slug-field__confirm dd { margin: 0; overflow-wrap: anywhere; }
+.admin-slug-field__confirm p { margin: 0; }
+.admin-slug-field__confirm-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.admin-slug-field__history summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: center; font-size: var(--dvb-fs-xs); }
+.admin-slug-field__history table { width: 100%; margin-top: 6px; border-collapse: collapse; font-size: var(--dvb-fs-xs); }
+.admin-slug-field__history th, .admin-slug-field__history td { padding: 5px 8px; border-bottom: 1px solid rgba(0, 0, 0, .08); text-align: left; overflow-wrap: anywhere; }
 @media (max-width: 650px) { .admin-slug-field__row { flex-direction: column; } }
+
+.admin-seo-panel { display: grid; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid rgba(0, 0, 0, .1); border-radius: 12px; background: #fff; }
+.admin-seo-panel h4 { margin: 0; }
+.admin-seo-panel__serp { display: grid; gap: 2px; padding: 10px 12px; border-radius: 8px; background: #f8f9fa; font-family: Arial, sans-serif; }
+.admin-seo-panel__serp-url { color: #1e6a39; font-size: 13px; overflow-wrap: anywhere; }
+.admin-seo-panel__serp-title { color: #1a0dab; font-size: 18px; font-weight: 400; line-height: 1.3; }
+.admin-seo-panel__serp-desc { color: #4d5156; font-size: 13px; line-height: 1.45; }
+.admin-seo-panel__facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: var(--dvb-fs-xs); }
+.admin-seo-panel__facts dt { font-weight: 600; }
+.admin-seo-panel__facts dd { margin: 0; overflow-wrap: anywhere; }
+.admin-seo-panel__warnings, .admin-seo-panel__schema ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: var(--dvb-fs-xs); }
+.admin-seo-panel__warnings li { display: flex; gap: 6px; align-items: flex-start; color: var(--dvb-warning); }
+.admin-seo-panel__warnings svg, .admin-seo-panel__schema svg { flex: none; margin-top: 2px; }
+.admin-seo-panel__schema { display: grid; gap: 6px; }
+.admin-seo-panel__schema li { display: flex; gap: 6px; align-items: flex-start; }
+.admin-seo-panel__schema li.is-ok { color: var(--dvb-success, #2f6b3a); }
+.admin-seo-panel__schema li.is-missing { color: var(--dvb-ink-600); }
 
 .ainput,
 .admin-partner-field input,

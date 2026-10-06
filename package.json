@@ -9,6 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
+    "seo:routes": "node scripts/check-human-routes.mjs",
+    "seo:test": "node scripts/check-human-routes.mjs && playwright test -c playwright.seo.config.ts",
     "audit:admin-runtime": "node scripts/audit-admin-runtime.mjs",
     "audit:no-hardcode": "node scripts/no-hardcode-runtime.mjs",
     "audit:public-content": "node scripts/audit-public-content.mjs",

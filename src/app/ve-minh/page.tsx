@@ -177,7 +177,6 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
   const phoneCta = tel && phoneLabel ? { href: `tel:${tel}`, label: phoneLabel } : null;
   const zaloCta = zaloUrl && zaloLabel ? { href: zaloUrl, label: zaloLabel } : null;
   const crumbs = [{ label: 'Trang chủ', href: '/' }, { label: 'Về mình' }];
-  const areaServed = publicText(page.areaServed).split(',').map((item) => item.trim()).filter(Boolean);
 
   const structuredData = isSeoSchemaAllowed(site, PATH, { eligible: urls.some((entry) => entry.path === PATH), searchParams: query })
     ? buildAboutGraph(site, {
@@ -185,7 +184,6 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
       title: about.seoTitle,
       description: about.seoDescription,
       person: { name, jobTitle: role, telephone: phone, image: about.portrait, description: richDocumentToText(page.intro) },
-      areaServed,
       faqs: about.faqs.map((item) => ({ question: item.question, answer: item.text })),
     })
     : null;

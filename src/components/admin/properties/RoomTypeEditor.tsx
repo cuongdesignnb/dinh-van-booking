@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { BedDouble } from 'lucide-react';
 import { apiRequest } from '@/lib/api/client';
 import { searchKey } from '@/lib/admin/formatters';
-import { slugFromTitle } from '@/lib/slug';
+import { slugify } from '@/lib/slug';
 import { ROOM_UNIT_KINDS } from '@/lib/room-unit-kind';
 import { ROOM_AMENITIES } from '@/lib/room-amenities';
 import { formatVndInput, normalizeVndInput, parseVndInput } from '@/lib/vnd-input';
@@ -64,7 +64,7 @@ function suggestedRoomCode(name: string, existingRooms: Pick<PropertyRoom, 'name
   if (!name.trim()) return '';
   const matchingRoom = existingRooms.find((item) => roomNameKey(item.name) === roomNameKey(name));
   if (matchingRoom) return matchingRoom.code;
-  const base = slugFromTitle(name).toUpperCase().slice(0, 40).replace(/-+$/g, '');
+  const base = slugify(name).toUpperCase().slice(0, 40).replace(/-+$/g, '');
   const used = new Set(existingRooms.map((item) => item.code.toUpperCase()));
   if (!used.has(base)) return base;
   for (let index = 2; ; index += 1) {

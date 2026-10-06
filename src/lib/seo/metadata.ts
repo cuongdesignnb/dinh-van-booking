@@ -5,6 +5,7 @@ import type { ImageAsset } from '@/data/types';
 import { getPublicSite, type PublicSiteData } from '@/lib/api/public';
 import { canonicalUrl, classifySeoQuery, getSeoPolicy, getSiteName } from './policy';
 import { richDocumentToText } from '@/lib/content/rich-document';
+import { applyTitleTemplate } from './title';
 
 type MetadataOptions = {
   path: string;
@@ -30,14 +31,6 @@ function object(value: unknown): Record<string, unknown> {
 function clean(value: unknown): string | undefined {
   const result = richDocumentToText(value);
   return result || undefined;
-}
-
-function applyTemplate(title: string, templateValue: unknown, siteName: string): string {
-  const template = clean(templateValue);
-  const alreadyBranded = title.toLocaleLowerCase('vi').endsWith(siteName.toLocaleLowerCase('vi'));
-  if (template?.includes('%s')) return template.replaceAll('%s', title);
-  if (template) return `${title} | ${template}`;
-  return alreadyBranded ? title : `${title} | ${siteName}`;
 }
 
 function queryString(searchParams: MetadataOptions['searchParams']): URLSearchParams {
@@ -81,7 +74,7 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
   const queryPolicy = classifySeoQuery(options.path, queryString(options.searchParams));
   const rawTitle = clean(pageSeo.title) ?? (configuredPageKey ? undefined : clean(options.title)) ?? clean(seo.defaultTitle) ?? clean(site.identity.name);
   const siteName = getSiteName(site);
-  const title = rawTitle ? applyTemplate(rawTitle, seo.titleTemplate, siteName) : undefined;
+  const title = rawTitle ? applyTitleTemplate(rawTitle, clean(seo.titleTemplate) ?? null, siteName) : undefined;
   const description = clean(pageSeo.description) ?? (configuredPageKey ? undefined : clean(options.description)) ?? clean(seo.defaultDescription) ?? clean(site.identity.description);
   const socialDescription = (configuredPageKey ? undefined : clean(options.socialDescription)) ?? description;
   const index = policy.indexingAllowed && options.eligible === true && options.noindex !== true && !queryPolicy.noindex;
@@ -132,4 +125,18 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
   const favicon = siteImage(site, 'favicon');
   if (favicon) result.icons = { icon: [{ url: favicon.src, type: 'image/png', sizes: '96x96' }] };
   return result;
+}
+
+/**
+ * Private / transactional screens (admin, partner portal): noindex, nofollow,
+ * no canonical. The brand comes from settings; an API outage keeps the label only.
+ */
+export async function buildPrivateMetadata(label: string): Promise<Metadata> {
+  let siteName = '';
+  try {
+    siteName = getSiteName(await getPublicSite());
+  } catch {
+    // Keep the private screen usable when the public API is down.
+  }
+  return { title: siteName ? `${label} — ${siteName}` : label, robots: { index: false, follow: false } };
 }

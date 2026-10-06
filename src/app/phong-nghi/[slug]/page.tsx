@@ -65,7 +65,11 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
     eligible: !!stay.image && stay.roomTypes.length > 0 && isSubstantivePublicContent(stay.descriptionDocument ?? stay.description),
     noindex: stay.noindex,
     searchParams: query,
-  }) ? buildStayGraph(site, stay, stay.publicPath ?? `/phong-nghi/${slug}`) : null;
+  }) ? buildStayGraph(site, stay, stay.publicPath ?? `/phong-nghi/${slug}`, {
+    // Check-in/out times only when the facts card actually shows them.
+    checkInTime: publicText(publicSetting(site, 'catalog.stayDetail').checkInLabel) ? stay.checkInTime : null,
+    checkOutTime: publicText(publicSetting(site, 'catalog.stayDetail').checkOutLabel) ? stay.checkOutTime : null,
+  }) : null;
   const detail = publicSetting(site, 'catalog.stayDetail');
   const introTitle = publicText(detail.introTitle);
   const quoteAuthor = publicText(detail.introQuoteAuthor);

@@ -13,6 +13,10 @@ import { getPublicCombo, getPublicDestination, getPublicSeoUrls, getPublicSite, 
 import { readParam } from '@/lib/selection';
 import type { ConsultationContext } from '@/lib/services/consultation';
 import { buildPageMetadata } from '@/lib/seo/metadata';
+import { isSeoSchemaAllowed } from '@/lib/seo/policy';
+import { buildContactGraph } from '@/lib/seo/schema';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { PUBLIC_ROUTES } from '@/lib/routes';
 import { publicAsset, publicRecord, publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import '@/styles/contact.css';
@@ -64,7 +68,7 @@ function monogram(name: string) {
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<ContactQuery> }) {
   const query = await searchParams;
-  const [site, { context, warning }] = await Promise.all([getPublicSite(), resolveContactContext(query)]);
+  const [site, { context, warning }, urls] = await Promise.all([getPublicSite(), resolveContactContext(query), getPublicSeoUrls()]);
   const page = publicSetting(site, 'contact.page');
   const heroImage = publicAsset(site, page.heroImageMediaId);
   const advisorImage = publicAsset(site, page.advisorImageMediaId);
@@ -114,9 +118,17 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const showAside = showQuick || showAdvisor || showMap;
   const aboutPage = publicSetting(site, 'about.page');
   const showAboutLink = aboutPage.enabled === true && publicText(aboutPage.title) !== '';
+  // ContactPage JSON-LD only with the same gate as index: content exists and /lien-he is in the sitemap.
+  const structuredData = title && isSeoSchemaAllowed(site, PUBLIC_ROUTES.contact, {
+    eligible: page.enabled === true && urls.some((entry) => entry.path === PUBLIC_ROUTES.contact),
+    searchParams: query,
+  })
+    ? buildContactGraph(site, { path: PUBLIC_ROUTES.contact, title, visible: { telephone: phone || hotline || null, email: email || null } })
+    : null;
 
   return (
     <PageShell className="page-contact">
+      <JsonLd data={structuredData} />
       {title && <>
         <PageHero id="contact-h1" title={title} eyebrow={publicText(page.heroEyebrow)} lead={page.intro} image={heroImage} crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Liên hệ' }]} />
 

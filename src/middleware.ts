@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { ALWAYS_NOINDEX_PATTERN, CONTENT_SECTIONS as SECTION_BY_KIND, PUBLIC_ROUTES, RESERVED_ROOT_SEGMENTS } from '@/lib/routes';
 
-const ROOT_RESERVED = new Set([
-  'admin', 'api', 'media', '_next', 'static', 'robots.txt', 'sitemap.xml', 'favicon.ico', 'icon.svg', 'apple-icon.png',
-  'phong-nghi', 'combo-du-lich', 'diem-den', 'bai-viet', 'chuyen-trang', 'dat-phong', 'lien-he',
+const ROOT_RESERVED = new Set<string>([
+  ...RESERVED_ROOT_SEGMENTS, 'robots.txt', 'sitemap.xml', 'favicon.ico', 'icon.svg', 'apple-icon.png',
 ]);
-const CONTENT_SECTIONS = new Set(['/phong-nghi', '/combo-du-lich', '/diem-den', '/bai-viet', '/chuyen-trang']);
+const CONTENT_SECTIONS = new Set<string>([...Object.values(SECTION_BY_KIND).filter(Boolean), PUBLIC_ROUTES.staticPages]);
 
 function decodeSegment(value: string): string | null {
   try {
@@ -27,9 +27,23 @@ function isContentPath(pathname: string): boolean {
   return !!decoded && !decoded.includes('/') && /^[a-z0-9-]+$/i.test(decoded);
 }
 
+/** Human routes are lowercase; `/Phong-Nghi` → 308 `/phong-nghi` (one hop, query kept). */
+function lowercaseRedirect(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  if (!/[A-Z]/.test(pathname.replace(/%[0-9a-f]{2}/gi, '')) || /^\/(?:api|media|_next)(?:\/|$)/i.test(pathname) || /\.[a-z0-9]+$/i.test(pathname)) return null;
+  const target = request.nextUrl.clone();
+  target.pathname = pathname.toLowerCase();
+  return NextResponse.redirect(target, 308);
+}
+
 export async function middleware(request: NextRequest) {
+  const lowercase = lowercaseRedirect(request);
+  if (lowercase) return lowercase;
   const response = NextResponse.next();
-  if (process.env.SEO_INDEXING_ALLOWED !== 'true') {
+  if (ALWAYS_NOINDEX_PATTERN.test(request.nextUrl.pathname)) {
+    // Private/transactional routes stay out of search even after indexing is enabled.
+    response.headers.set('X-Robots-Tag', 'noindex, follow');
+  } else if (process.env.SEO_INDEXING_ALLOWED !== 'true') {
     response.headers.set('X-Robots-Tag', 'noindex, follow');
   }
 

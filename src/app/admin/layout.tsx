@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
+import { buildPrivateMetadata } from '@/lib/seo/metadata';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
 import '@/styles/admin.css';
 import '@/styles/admin-shell.css';
@@ -19,11 +20,10 @@ import '@/styles/admin-toast.css';
 import '@/styles/admin-partners.css';
 import '@/styles/admin-refresh.css';
 
-export const metadata: Metadata = {
-  title: 'Quản trị — Cúc Phương Travel',
-  // The admin is never indexed; this is not an access control.
-  robots: { index: false, follow: false },
-};
+// The admin is never indexed (noindex, nofollow; robots.txt also disallows it); this is not an access control.
+export function generateMetadata(): Promise<Metadata> {
+  return buildPrivateMetadata('Quản trị');
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (

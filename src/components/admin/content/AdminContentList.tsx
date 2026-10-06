@@ -13,12 +13,14 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
-import { slugFromTitle, withTitle, type SlugMode } from '@/lib/slug';
+import { richDocumentToText } from '@/lib/content/rich-document';
+import { publicPath } from '@/lib/slug';
 import { comboAudienceTag, normalizeComboAudienceTags } from '@/lib/catalog/combo-audience';
 import { COMBO_CATEGORIES } from '@/lib/catalog/constants';
 import type { ComboAudience, ComboCategory } from '@/data/combos';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '@/components/admin/shared/RichTextEditor';
-import { AdminSlugField } from '@/components/admin/shared/AdminSlugField';
+import { AdminSlugField, type GenerateSlugResult } from '@/components/admin/shared/AdminSlugField';
+import { AdminSeoPanel } from '@/components/admin/shared/AdminSeoPanel';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { MediaPicker } from '../media/MediaPicker';
 import { AlbumEditor } from '../media/AlbumEditor';
@@ -80,8 +82,8 @@ type ContentForm = {
   id: string | null;
   version?: number;
   title: string;
+  /** Create: '' until Generate. Edit: the saved slug (read-only here; Generate changes it). */
   slug: string;
-  slugMode: SlugMode;
   excerpt: string;
   metaTitle: string;
   metaDescription: string;
@@ -120,7 +122,7 @@ const COMBO_AUDIENCE_CHOICES = COMBO_CATEGORIES.filter((item): item is typeof it
 
 function newForm(kind: ContentKind): ContentForm {
   return {
-    id: null, title: '', slug: '', slugMode: 'auto', excerpt: '', metaTitle: '', metaDescription: '', featured: false, noindex: false,
+    id: null, title: '', slug: '', excerpt: '', metaTitle: '', metaDescription: '', featured: false, noindex: false,
     body: EMPTY_DOCUMENT, media: [],
     details: kind === 'destination'
       ? { destination: { ...EMPTY_DESTINATION } }
@@ -174,7 +176,7 @@ function errorMessage(reason: unknown): string {
 function formFromItem(item: ContentItem, kind: ContentKind): ContentForm {
   const blank = newForm(kind);
   return {
-    ...blank, id: item.id, version: item.version, title: item.title, slug: item.slug ?? '', slugMode: 'manual', excerpt: item.excerpt ?? '',
+    ...blank, id: item.id, version: item.version, title: item.title, slug: item.slug ?? '', excerpt: item.excerpt ?? '',
     metaTitle: item.metaTitle ?? '', metaDescription: item.metaDescription ?? '', featured: item.featured, noindex: item.noindex,
     body: item.body ?? EMPTY_DOCUMENT, media: item.media ?? [], details: item.details ?? blank.details,
   };
@@ -255,7 +257,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
     try {
       const full = await apiRequest<ContentItem>(`/content/${encodeURIComponent(item.id)}`);
       const next = formFromItem(full, kind);
-      if (duplicate) { next.id = null; next.version = undefined; next.title = `${next.title} (bản sao)`; next.slug = slugFromTitle(next.title); next.slugMode = 'auto'; next.media = []; }
+      if (duplicate) { next.id = null; next.version = undefined; next.title = `${next.title} (bản sao)`; next.slug = ''; next.media = []; }
       setForm(next); setEditorKey((current) => current + 1);
       setNotice(duplicate ? 'Đã nạp bản sao. Bấm “Lưu bản nháp” để tạo bản ghi mới.' : null);
       if (navigate) {
@@ -271,9 +273,8 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   }, [busy, editId, form?.id, items, loading, openEdit]);
 
   const updateForm = <K extends keyof ContentForm>(key: K, value: ContentForm[K]) => {
-    setForm((current) => current ? key === 'title'
-      ? withTitle(current, value as string, !current.id)
-      : { ...current, [key]: value } : current);
+    // Title edits never touch the slug; only Generate does.
+    setForm((current) => current ? { ...current, [key]: value } : current);
   };
   const updateDestination = (patch: Partial<DestinationDetails>) => setForm((current) => current ? { ...current, details: { ...current.details, destination: { ...EMPTY_DESTINATION, ...current.details.destination, ...patch } } } : current);
   const updateCombo = (patch: Partial<ComboDetails>) => setForm((current) => current ? { ...current, details: { ...current.details, combo: { ...EMPTY_COMBO, ...current.details.combo, ...patch } } } : current);
@@ -302,13 +303,13 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
           }
         : form.details;
       const common = {
-        title: form.title, slug: form.id ? form.slug : form.slug.trim() || undefined, excerpt: form.excerpt.trim() || undefined, body: form.body,
+        title: form.title, excerpt: form.excerpt.trim() || undefined, body: form.body,
         metaTitle: form.metaTitle.trim() || undefined, metaDescription: form.metaDescription.trim() || undefined,
         featured: form.featured, noindex: form.noindex, media: media.map(({ mediaId, role, position }) => ({ mediaId, role, position })), details,
       };
       const saved = form.id
         ? await apiRequest<ContentItem>(`/content/${encodeURIComponent(form.id)}`, { method: 'PUT', body: JSON.stringify({ ...common, expectedVersion: form.version }) })
-        : await apiRequest<ContentItem>('/content', { method: 'POST', body: JSON.stringify({ kind, ...common }) });
+        : await apiRequest<ContentItem>('/content', { method: 'POST', body: JSON.stringify({ kind, ...common, slug: form.slug || undefined }) });
       setItems((current) => form.id ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]);
       setForm(formFromItem(saved, kind));
       setNotice(form.id ? 'Đã lưu thay đổi và tạo revision mới.' : 'Đã tạo bản nháp.');
@@ -316,6 +317,11 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
     } catch (reason) {
       setError(errorMessage(reason));
     } finally { setSaving(false); }
+  };
+
+  const applyGenerated = (result: GenerateSlugResult) => {
+    setForm((current) => current ? { ...current, slug: result.slug, version: result.version } : current);
+    setItems((current) => current.map((item) => item.id === form?.id ? { ...item, slug: result.slug, path: result.path, version: result.version } : item));
   };
 
   const pickInlineImage = (insert: (attrs: { src: string; alt?: string; mediaId?: string }) => void) => {
@@ -358,6 +364,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   const destination = form?.details.destination;
   const article = form?.details.article;
   const currentCover = form?.media.find((item) => item.role === 'cover');
+  const savedItem = form?.id ? items.find((item) => item.id === form.id) : undefined;
 
   return (
     <section className="crm content-manager">
@@ -385,12 +392,18 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
           <div className="content-editor__head"><div><h3>{form.id ? 'Chỉnh sửa' : 'Tạo'} {KIND_LABEL[kind].toLowerCase()}</h3><p className="ahint">Lưu lần đầu là bản nháp. Muốn đưa lên website, hãy bổ sung SEO, ảnh đại diện và nội dung rồi bấm “Xuất bản”.</p></div><button type="button" className="abtn abtn--ghost abtn--sm" onClick={closeEditor} disabled={saving}>Đóng</button></div>
           <div className="content-editor__grid">
             <label className="afield content-editor__wide"><span>Tiêu đề *</span><input className="ainput" value={form.title} onChange={(event) => updateForm('title', event.target.value)} required maxLength={300} placeholder="Tiêu đề hiển thị trên website" /></label>
-            <AdminSlugField
-              title={form.title} value={form.slug} originalValue={form.id ? items.find((item) => item.id === form.id)?.slug : null}
-              mode={form.id ? 'edit' : 'create'} kind={kind}
-              onChange={(slug) => setForm((current) => current ? { ...current, slug, slugMode: 'manual' } : current)}
-              disabled={saving}
-            />
+            {form.id && form.version
+              ? <AdminSlugField
+                  mode="edit" kind={kind} title={form.title} value={form.slug || null}
+                  currentPath={savedItem?.path ?? null} published={savedItem?.publicationStatus === 'published'}
+                  expectedVersion={form.version} endpointBase={`/content/${encodeURIComponent(form.id)}`}
+                  onGenerated={applyGenerated} disabled={saving}
+                />
+              : <AdminSlugField
+                  mode="create" kind={kind} title={form.title} value={form.slug}
+                  onChange={(slug) => setForm((current) => current ? { ...current, slug } : current)}
+                  previewEndpoint="/content/slug/preview" previewBody={{ kind }} disabled={saving}
+                />}
             <label className="afield"><span>Hiển thị nổi bật</span><span className="atoggle content-editor__toggle"><input type="checkbox" checked={form.featured} onChange={(event) => updateForm('featured', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Đưa lên vị trí nổi bật</strong><small>Chỉ áp dụng khi nội dung đã xuất bản.</small></span></span></label>
             <label className="afield content-editor__wide"><span>Tóm tắt</span><textarea className="ainput" value={form.excerpt} onChange={(event) => updateForm('excerpt', event.target.value)} maxLength={500} placeholder="Mô tả ngắn dùng cho thẻ danh sách và SEO fallback" /></label>
           </div>
@@ -444,7 +457,8 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
             onPickImage={pickInlineImage}
             aiContext={{ kind, title: form.title, excerpt: form.excerpt, currentContentId: form.id }}
             onAiGenerated={(generated) => setForm((current) => current ? {
-              ...withTitle(current, generated.title, !current.id),
+              ...current,
+              title: generated.title,
               excerpt: generated.excerpt,
               metaTitle: generated.metaTitle,
               metaDescription: generated.metaDescription,
@@ -469,7 +483,12 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
           <div className="content-editor__section"><h4>SEO và ảnh đại diện</h4><div className="content-editor__grid">
             <label className="afield"><span>Tiêu đề SEO *</span><input className="ainput" value={form.metaTitle} onChange={(event) => updateForm('metaTitle', event.target.value)} maxLength={200} placeholder="Tối đa khoảng 60 ký tự" /></label>
             <label className="afield"><span>Mô tả SEO *</span><textarea className="ainput" value={form.metaDescription} onChange={(event) => updateForm('metaDescription', event.target.value)} maxLength={320} placeholder="Mô tả khoảng 120–160 ký tự" /></label>
-          </div><div className="content-editor__media">
+          </div><AdminSeoPanel
+            kind={kind} title={form.title} metaTitle={form.metaTitle} metaDescription={form.metaDescription}
+            path={form.slug ? savedItem?.path ?? publicPath(kind, form.slug) : null}
+            hasCover={!!currentCover} bodyText={richDocumentToText(form.body)} noindex={form.noindex}
+            schema={{ itineraryDays: combo?.days.filter((day) => day.title.trim() || day.activities.some((activity) => activity.text.trim())).length, authorName: article?.authorName }}
+          /><div className="content-editor__media">
             <MediaPicker
               value={currentCover?.url}
               mediaId={currentCover?.mediaId}

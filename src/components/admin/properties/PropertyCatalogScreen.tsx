@@ -8,13 +8,14 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { ApiError, apiRequest } from '@/lib/api/client';
 import { KIND_LABEL } from '@/lib/admin/formatters';
 import { roomUnitKindLabel } from '@/lib/room-unit-kind';
-import { withTitle, type SlugMode } from '@/lib/slug';
+import { richDocumentToText } from '@/lib/content/rich-document';
 import { MediaPicker } from '../media/MediaPicker';
 import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { AlbumEditor, type AlbumItem } from '../media/AlbumEditor';
 import type { PropertyRoom } from './RoomTypeEditor';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
-import { AdminSlugField } from '../shared/AdminSlugField';
+import { AdminSlugField, type GenerateSlugResult } from '../shared/AdminSlugField';
+import { AdminSeoPanel } from '../shared/AdminSeoPanel';
 import { useAdminToast } from '@/components/admin/toast/useAdminToast';
 
 type PropertyItem = {
@@ -46,8 +47,8 @@ type PropertyItem = {
 
 type FormState = {
   title: string;
+  /** '' until Generate; sent once with the create request. */
   slug: string;
-  slugMode: SlugMode;
   code: string;
   kind: string;
   area: string;
@@ -61,7 +62,6 @@ type EditFormState = {
   kind: string;
   area: string;
   address: string;
-  slug: string;
   excerpt: string;
   description: string;
   descriptionDocument: RichDocument;
@@ -77,7 +77,6 @@ type SelectedMedia = Pick<MediaAsset, 'id' | 'url' | 'altText'>;
 const EMPTY_FORM: FormState = {
   title: '',
   slug: '',
-  slugMode: 'auto',
   code: '',
   kind: 'homestay',
   area: 'Cúc Phương, Ninh Bình',
@@ -91,7 +90,6 @@ const EMPTY_EDIT_FORM: EditFormState = {
   kind: 'homestay',
   area: 'Cúc Phương, Ninh Bình',
   address: '',
-  slug: '',
   excerpt: '',
   description: '',
   descriptionDocument: EMPTY_DOCUMENT,
@@ -194,7 +192,6 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
       kind: item.kind,
       area: item.area,
       address: item.address,
-      slug: item.slug ?? '',
       excerpt: item.excerpt ?? '',
       description: item.description,
       descriptionDocument: item.descriptionDocument ?? plainTextDocument(item.description),
@@ -244,9 +241,8 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
   };
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((current) => key === 'title'
-      ? withTitle(current, value as string, true)
-      : { ...current, [key]: value });
+    // Title edits never touch the slug; only Generate does.
+    setForm((current) => ({ ...current, [key]: value }));
   };
 
   const updateEdit = <K extends keyof EditFormState>(key: K, value: EditFormState[K]) => {
@@ -373,7 +369,6 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
           kind: editForm.kind,
           area: editForm.area,
           address: editForm.address,
-          slug: editForm.slug,
           excerpt: editForm.excerpt || null,
           description: editForm.description,
           descriptionDocument: editForm.descriptionDocument,
@@ -395,6 +390,12 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
     } finally {
       setEditBusy(false);
     }
+  };
+
+  const applyGenerated = (result: GenerateSlugResult) => {
+    const patch = { slug: result.slug, path: result.path, contentVersion: result.version };
+    setEditing((current) => current ? { ...current, ...patch } : current);
+    setItems((current) => current.map((item) => item.id === editing?.id ? { ...item, ...patch } : item));
   };
 
   const remove = async (item: PropertyItem) => {
@@ -488,8 +489,10 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
               <input className="ainput" value={editForm.address} onChange={(event) => updateEdit('address', event.target.value)} required maxLength={300} />
             </label>
             <AdminSlugField
-              title={editForm.title} value={editForm.slug} originalValue={editing.slug}
-              mode="edit" kind="stay" onChange={(slug) => updateEdit('slug', slug)} disabled={editBusy}
+              mode="edit" kind="stay" title={editForm.title} value={editing.slug}
+              currentPath={editing.path} published={editing.publicationStatus === 'published'}
+              expectedVersion={editing.contentVersion} endpointBase={`/properties/${encodeURIComponent(editing.id)}`}
+              onGenerated={applyGenerated} disabled={editBusy}
             />
             <label className="afield">
               <span>Trích yếu</span>
@@ -521,6 +524,14 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
               <span>Mô tả SEO</span>
               <input className="ainput" value={editForm.metaDescription} onChange={(event) => updateEdit('metaDescription', event.target.value)} maxLength={320} />
             </label>
+            <div className="property-form__wide">
+              <AdminSeoPanel
+                kind="stay" title={editForm.title} metaTitle={editForm.metaTitle} metaDescription={editForm.metaDescription}
+                path={editing.slug ? editing.path : null} hasCover={!!editCover}
+                bodyText={`${editForm.excerpt} ${richDocumentToText(editForm.descriptionDocument)}`} noindex={editForm.noindex}
+                schema={{ propertyKind: editForm.kind, roomTypeCount: editing.roomTypes.filter((room) => room.status === 'active').length }}
+              />
+            </div>
           </div>
           <div className="property-form__section" id="hang-phong">
             <div className="album-editor__head"><div><h4>Hạng phòng ({editing.roomTypes.length})</h4><p className="ahint">Mỗi hạng phòng có giá, sức chứa và album riêng. Quỹ phòng theo ngày quản lý ở mục “Quỹ phòng”.</p></div><div className="property-form__room-actions"><Link className="abtn abtn--ghost abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}`}>Xem danh sách hạng phòng</Link><Link className="abtn abtn--primary abtn--sm" href={`/admin/hang-phong?property=${encodeURIComponent(editing.id)}&room=create`}><Plus size={15} /> Thêm hạng phòng</Link></div></div>
@@ -578,8 +589,9 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
               <input className="ainput" value={form.title} onChange={(event) => update('title', event.target.value)} required maxLength={300} placeholder="Ví dụ: Nhà sàn Đinh Vân" />
             </label>
             <AdminSlugField
-              title={form.title} value={form.slug} mode="create" kind="stay"
-              onChange={(slug) => setForm((current) => ({ ...current, slug, slugMode: 'manual' }))} disabled={busy}
+              mode="create" kind="stay" title={form.title} value={form.slug}
+              onChange={(slug) => setForm((current) => ({ ...current, slug }))}
+              previewEndpoint="/properties/slug/preview" disabled={busy}
             />
             <label className="afield">
               <span>Mã nơi lưu trú *</span>
@@ -609,7 +621,8 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
                 disabled={busy}
                 aiContext={{ kind: 'stay', title: form.title }}
                 onAiGenerated={(generated) => setForm((current) => ({
-                  ...withTitle(current, generated.title, true),
+                  ...current,
+                  title: generated.title,
                   description: generated.excerpt,
                 }))}
               />
@@ -682,7 +695,7 @@ export function PropertyCatalogScreen({ routeMode, routeId }: { routeMode?: 'cre
                         {publishing === item.id ? 'Đang xuất bản…' : 'Xuất bản'}
                       </button>
                     )}
-                    <span className="ahint">{item.path ?? `/${item.slug ?? ''}`}</span>
+                    <span className="ahint">{item.path ?? 'Đường dẫn: chưa tạo'}</span>
                   </div>
                 </div>
               </article>
