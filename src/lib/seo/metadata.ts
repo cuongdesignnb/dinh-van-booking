@@ -10,6 +10,8 @@ type MetadataOptions = {
   path: string;
   title?: string | null;
   description?: string | null;
+  /** Shorter Open Graph/Twitter description; falls back to `description`. */
+  socialDescription?: string | null;
   image?: ImageAsset | null;
   noindex?: boolean;
   eligible?: boolean;
@@ -81,6 +83,7 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
   const siteName = getSiteName(site);
   const title = rawTitle ? applyTemplate(rawTitle, seo.titleTemplate, siteName) : undefined;
   const description = clean(pageSeo.description) ?? (configuredPageKey ? undefined : clean(options.description)) ?? clean(seo.defaultDescription) ?? clean(site.identity.description);
+  const socialDescription = (configuredPageKey ? undefined : clean(options.socialDescription)) ?? description;
   const index = policy.indexingAllowed && options.eligible === true && options.noindex !== true && !queryPolicy.noindex;
   const pathForCanonical = queryPolicy.canonicalPath;
   const canonical = options.canonical !== false && pathForCanonical && policy.canonicalOrigin
@@ -101,7 +104,7 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
       locale: 'vi_VN',
       ...(siteName ? { siteName } : {}),
       ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
+      ...(socialDescription ? { description: socialDescription } : {}),
       ...(canonical ? { url: canonical } : {}),
       ...(options.type === 'article' ? {
         ...(options.publishedTime ? { publishedTime: options.publishedTime } : {}),
@@ -112,7 +115,7 @@ export function metadataForSite(site: PublicSiteData, options: MetadataOptions):
     twitter: {
       card: openGraphImages ? 'summary_large_image' : 'summary',
       ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
+      ...(socialDescription ? { description: socialDescription } : {}),
       ...(openGraphImages ? { images: openGraphImages.map((entry) => entry.url) } : {}),
     },
   };

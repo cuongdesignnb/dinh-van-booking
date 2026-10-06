@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { AdminMediaField } from '../media/AdminMediaField';
 import { MediaLibrary } from '../media/MediaLibrary';
 import { RichTextEditor, type RichDocument } from '../shared/RichTextEditor';
+import { AboutPageForm } from './AboutPageForm';
 
 type Option = { value: string; label: string; description?: string };
 type FieldKind = 'text' | 'textarea' | 'rich' | 'number' | 'time' | 'email' | 'url' | 'route' | 'tel' | 'select' | 'radio' | 'boolean' | 'media' | 'bytes' | 'multi' | 'ordered';
@@ -287,8 +288,8 @@ const FIELD_META: Record<string, FieldMeta> = {
   'contact.page.faqs[].answer': { label: 'Câu trả lời', kind: 'rich' },
   'about.page.enabled': { label: 'Hiển thị trang Về mình (/ve-minh)', kind: 'boolean', help: 'Tên, vai trò, ảnh người tư vấn mặc định lấy từ Khối tư vấn trang chủ; điện thoại và Zalo lấy từ mục Liên hệ.' },
   'about.page.heroEyebrow': { label: 'Lời dẫn đầu trang', placeholder: 'Về mình' },
-  'about.page.title': { label: 'Tiêu đề trang (H1)', required: true, placeholder: 'Xin chào, mình là Đinh Vân' },
-  'about.page.intro': { label: 'Giới thiệu ngắn dưới tiêu đề', kind: 'rich' },
+  'about.page.title': { label: 'Tiêu đề trang (H1)', required: true, maxLength: 120, placeholder: 'Đặt phòng Cúc Phương cùng Đinh Vân' },
+  'about.page.intro': { label: 'Giới thiệu ngắn dưới tiêu đề', kind: 'rich', help: 'Đoạn mở đầu khoảng 60–90 từ, nhắc tự nhiên từ khoá chính.' },
   'about.page.heroImageMediaId': { label: 'Ảnh đầu trang (phong cảnh)', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
   'about.page.phoneCtaLabel': { label: 'Nhãn nút gọi điện', placeholder: 'Gọi cho Đinh Vân' },
   'about.page.zaloCtaLabel': { label: 'Nhãn nút Zalo', help: 'Chỉ hiện khi đã nhập link Zalo ở mục Liên hệ.' },
@@ -298,27 +299,27 @@ const FIELD_META: Record<string, FieldMeta> = {
   'about.page.story': { label: 'Câu chuyện của bạn', kind: 'rich', help: 'Hãy kể bằng lời của chính bạn: bạn gắn bó với Cúc Phương thế nào, vì sao bắt đầu làm tư vấn… Chỉ viết điều có thật.' },
   'about.page.portraitMediaId': { label: 'Ảnh chân dung thật của bạn', kind: 'media', help: 'Để trống thì dùng ảnh ở Khối tư vấn trang chủ; nếu cũng trống, website hiện biểu tượng chữ cái. Không dùng ảnh người khác.', recommendedWidth: 800, recommendedHeight: 1000, recommendedRatio: 0.8 },
   'about.page.signatureNote': { label: 'Dòng chữ ký', placeholder: 'Hẹn gặp bạn ở Cúc Phương!' },
-  'about.page.quote': { label: 'Câu trích nổi bật' },
+  'about.page.quote': { label: 'Câu trích nổi bật', kind: 'textarea', maxLength: 300 },
   'about.page.valuesTitle': { label: 'Tiêu đề khối giá trị' },
-  'about.page.valuesIntro': { label: 'Mô tả khối giá trị' },
+  'about.page.valuesIntro': { label: 'Mô tả khối giá trị', kind: 'textarea', maxLength: 300 },
   'about.page.values': { label: 'Giá trị / cam kết', help: 'Nên có 3–4 mục.' },
   'about.page.values[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
   'about.page.values[].icon': { label: 'Biểu tượng', kind: 'select', options: [{ value: 'check', label: 'Dấu kiểm' }, { value: 'message', label: 'Tư vấn' }, { value: 'shield', label: 'Khiên' }, { value: 'phone', label: 'Điện thoại' }, { value: 'heart', label: 'Trái tim' }, { value: 'leaf', label: 'Lá' }, { value: 'map', label: 'Bản đồ' }, { value: 'house', label: 'Nhà' }] },
   'about.page.values[].title': { label: 'Tiêu đề' },
-  'about.page.values[].text': { label: 'Mô tả ngắn' },
+  'about.page.values[].text': { label: 'Mô tả ngắn', kind: 'textarea', maxLength: 400, help: 'Khoảng 25–40 từ.' },
   'about.page.stepsTitle': { label: 'Tiêu đề “Cách mình đồng hành”' },
-  'about.page.stepsIntro': { label: 'Mô tả các bước' },
+  'about.page.stepsIntro': { label: 'Mô tả các bước', kind: 'textarea', maxLength: 300 },
   'about.page.steps': { label: 'Các bước', help: 'Nên có 3–4 bước, hiển thị theo thứ tự.' },
   'about.page.steps[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
   'about.page.steps[].title': { label: 'Tên bước' },
-  'about.page.steps[].text': { label: 'Mô tả ngắn' },
-  'about.page.areasTitle': { label: 'Tiêu đề khu vực am hiểu' },
-  'about.page.areasIntro': { label: 'Mô tả khu vực' },
-  'about.page.areas': { label: 'Khu vực / địa điểm' },
+  'about.page.steps[].text': { label: 'Mô tả ngắn', kind: 'textarea', maxLength: 400 },
+  'about.page.areasTitle': { label: 'Tiêu đề khối địa phương', placeholder: 'Hiểu Cúc Phương như người nhà' },
+  'about.page.areasIntro': { label: 'Mô tả khối địa phương', kind: 'textarea', maxLength: 400 },
+  'about.page.areas': { label: 'Thẻ địa phương' },
   'about.page.areas[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
   'about.page.areas[].icon': { label: 'Biểu tượng (khi chưa có ảnh)', kind: 'select', options: [{ value: 'trees', label: 'Rừng' }, { value: 'mountain', label: 'Núi' }, { value: 'house', label: 'Chỗ nghỉ' }, { value: 'waves', label: 'Sông hồ' }, { value: 'map', label: 'Bản đồ' }] },
-  'about.page.areas[].title': { label: 'Tên khu vực' },
-  'about.page.areas[].text': { label: 'Mô tả ngắn' },
+  'about.page.areas[].title': { label: 'Tiêu đề thẻ' },
+  'about.page.areas[].text': { label: 'Mô tả ngắn', kind: 'textarea', maxLength: 500, help: 'Chỉ ghi thông tin công khai đã kiểm chứng; số liệu nên để ở mức “khoảng”.' },
   'about.page.areas[].linkLabel': { label: 'Nhãn liên kết' },
   'about.page.areas[].linkTarget': { label: 'Đường dẫn nội bộ', kind: 'route', placeholder: '/diem-den' },
   'about.page.areas[].imageMediaId': { label: 'Ảnh phong cảnh (không bắt buộc)', kind: 'media', recommendedWidth: 1200, recommendedHeight: 800, recommendedRatio: 1.5 },
@@ -326,14 +327,16 @@ const FIELD_META: Record<string, FieldMeta> = {
   'about.page.faqTitle': { label: 'Tiêu đề FAQ' },
   'about.page.faqs': { label: 'Câu hỏi và trả lời' },
   'about.page.faqs[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
-  'about.page.faqs[].question': { label: 'Câu hỏi' },
+  'about.page.faqs[].question': { label: 'Câu hỏi', maxLength: 200 },
   'about.page.faqs[].answer': { label: 'Câu trả lời', kind: 'rich' },
   'about.page.ctaTitle': { label: 'Tiêu đề dải kêu gọi cuối trang' },
   'about.page.ctaText': { label: 'Nội dung dải kêu gọi', kind: 'rich' },
   'about.page.ctaStaysLabel': { label: 'Nhãn nút xem chỗ nghỉ (tới /phong-nghi)' },
   'about.page.areaServed': { label: 'Khu vực phục vụ (cho Google)', placeholder: 'Cúc Phương, Ninh Bình', help: 'Các địa danh cách nhau bằng dấu phẩy; dùng trong dữ liệu có cấu trúc.' },
-  'about.page.seoTitle': { label: 'Tiêu đề SEO', placeholder: 'Về mình – Đinh Vân', help: 'Tên thương hiệu được thêm tự động phía sau.' },
+  'about.page.seoTitle': { label: 'Tiêu đề SEO', maxLength: 70, placeholder: 'Đặt phòng Cúc Phương cùng Đinh Vân', help: 'Tên thương hiệu được thêm tự động phía sau; cả tiêu đề nên ≤ 60 ký tự.' },
   'about.page.seoDescription': { label: 'Mô tả SEO', kind: 'textarea', maxLength: 170, help: 'Khoảng 150–160 ký tự.' },
+  'about.page.ogDescription': { label: 'Mô tả khi chia sẻ (Facebook, Zalo…)', kind: 'textarea', maxLength: 200, help: 'Một câu ngắn. Để trống thì dùng mô tả SEO.' },
+  'about.page.ogImageMediaId': { label: 'Ảnh khi chia sẻ', kind: 'media', recommendedWidth: 1200, recommendedHeight: 630, recommendedRatio: 1.91, help: 'Để trống thì dùng ảnh đầu trang.' },
   'catalog.staysPage.heroTitle': { label: 'Tiêu đề Hero phòng nghỉ' },
   'catalog.staysPage.heroKicker': { label: 'Lời dẫn Hero' },
   'catalog.staysPage.heroDescription': { label: 'Mô tả Hero', kind: 'rich' },
@@ -519,10 +522,6 @@ const OBJECT_TEMPLATES: Record<string, Record<string, unknown>> = {
   'contact.page.promises': { enabled: true, title: '', description: '' },
   'contact.page.advisorHighlights': { enabled: true, text: '' },
   'contact.page.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
-  'about.page.values': { enabled: true, icon: 'check', title: '', text: '' },
-  'about.page.steps': { enabled: true, title: '', text: '' },
-  'about.page.areas': { enabled: true, icon: 'trees', title: '', text: '', linkLabel: '', linkTarget: '', imageMediaId: null },
-  'about.page.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
   'catalog.staysPage.advisorBenefits': { enabled: true, icon: 'headset', text: '' },
   'catalog.staysPage.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
   'catalog.destinationsPage.itineraries': { enabled: true, label: '', subtitle: '', title: '', days: [] },
@@ -920,6 +919,7 @@ export function SettingsFormEditor({ settingKey, value, disabled, onChange }: { 
       </ol>
     );
   }
+  if (settingKey === 'about.page') return <AboutPageForm value={value} onChange={onChange} disabled={disabled} Field={ValueField} />;
   return (
     <div className="settings-form">
       <ValueField settingKey={settingKey} path="" value={value} onChange={onChange} disabled={disabled} />

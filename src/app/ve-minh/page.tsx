@@ -67,10 +67,12 @@ function aboutContent(site: PublicSiteData) {
     role: publicText(panel.advisorRole) || publicText(contactPage.advisorRole),
     portrait: publicAsset(site, page.portraitMediaId) ?? publicAsset(site, panel.imageMediaId) ?? publicAsset(site, contactPage.advisorImageMediaId),
     heroImage: publicAsset(site, page.heroImageMediaId),
+    ogImage: publicAsset(site, page.ogImageMediaId) ?? publicAsset(site, page.heroImageMediaId),
     phone: publicText(site.contact?.hotline) || publicText(site.contact?.phone),
     zaloUrl: publicText(site.contact?.zaloUrl),
     seoTitle: publicText(page.seoTitle) || (name ? `Về mình – ${name}` : title),
     seoDescription: publicText(page.seoDescription) || richDocumentToText(page.intro),
+    ogDescription: publicText(page.ogDescription),
     faqs,
   };
 }
@@ -83,8 +85,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     path: PATH,
     title: about.seoTitle,
     description: about.seoDescription,
-    image: about.heroImage?.src && about.heroImage.width && about.heroImage.height
-      ? { src: about.heroImage.src, alt: about.heroImage.alt ?? '', width: about.heroImage.width, height: about.heroImage.height }
+    socialDescription: about.ogDescription,
+    image: about.ogImage?.src && about.ogImage.width && about.ogImage.height
+      ? { src: about.ogImage.src, alt: about.ogImage.alt ?? '', width: about.ogImage.width, height: about.ogImage.height }
       : null,
     eligible: urls.some((entry) => entry.path === PATH),
     searchParams: query,
@@ -181,7 +184,7 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
       path: PATH,
       title: about.seoTitle,
       description: about.seoDescription,
-      person: { name, jobTitle: role, telephone: phone, image: about.portrait,description: richDocumentToText(page.intro) },
+      person: { name, jobTitle: role, telephone: phone, image: about.portrait, description: richDocumentToText(page.intro) },
       areaServed,
       faqs: about.faqs.map((item) => ({ question: item.question, answer: item.text })),
     })
@@ -247,7 +250,7 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
       {areasTitle && areas.length > 0 && <section className="ab-areas" aria-labelledby="ab-areas-t">
         <div className="content-shell">
           <SectionHead id="ab-areas-t" title={areasTitle} sub={publicText(page.areasIntro) || null} />
-          <ul className="ab-areas__grid">
+          <ul className={`ab-areas__grid ab-areas__grid--${Math.min(areas.length, 4)}`}>
             {areas.map((area, index) => (
               <li key={area.id}>
                 <article className="ab-area">

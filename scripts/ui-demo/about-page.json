@@ -1,0 +1,312 @@
+{
+ "enabled": true,
+ "heroEyebrow": "Về mình · Người bản địa Cúc Phương",
+ "title": "Đặt phòng Cúc Phương cùng Đinh Vân",
+ "intro": {
+  "type": "doc",
+  "content": [
+   {
+    "type": "paragraph",
+    "content": [
+     {
+      "type": "text",
+      "text": "Mình là Đinh Vân, người bản địa Cúc Phương và là người trực tiếp tư vấn tại Cúc Phương Travel – một dịch vụ nhỏ, độc lập chuyên hỗ trợ đặt phòng Cúc Phương và lên lịch trình quanh Ninh Bình. Mình tự kiểm tra chỗ nghỉ trước khi gợi ý, giúp bạn chọn homestay Cúc Phương hợp với nhu cầu và hỗ trợ bạn qua điện thoại hoặc Zalo, từ lúc còn đang tìm hiểu cho đến khi đã tới nơi."
+     }
+    ]
+   }
+  ]
+ },
+ "heroImageMediaId": "__HERO__",
+ "phoneCtaLabel": "Gọi cho Đinh Vân",
+ "zaloCtaLabel": "Nhắn Zalo",
+ "contactCtaLabel": "Gửi yêu cầu tư vấn",
+ "storyTitle": "Vì sao mình làm tư vấn du lịch Cúc Phương",
+ "greeting": "Rất vui được làm quen với bạn!",
+ "story": {
+  "type": "doc",
+  "content": [
+   {
+    "type": "paragraph",
+    "content": [
+     {
+      "type": "text",
+      "text": "Với mình, Cúc Phương không chỉ là một cái tên trên bản đồ du lịch. Đây là vùng đất mình gắn bó, nơi có khu rừng nguyên sinh được bảo vệ từ năm 1962, có những con đường, bản làng và mùa mưa nắng mà người ở xa khó hình dung hết khi chỉ xem ảnh trên mạng. Mỗi lần có người hỏi nên ở đâu, đi thế nào, mình đều mong họ có một chuyến đi nhẹ nhàng và đúng như mong đợi."
+     }
+    ]
+   },
+   {
+    "type": "paragraph",
+    "content": [
+     {
+      "type": "text",
+      "text": "Cúc Phương Travel là một dịch vụ nhỏ và độc lập do chính mình phụ trách, không phải một công ty lữ hành lớn. Người nghe điện thoại, đọc tin nhắn Zalo và trả lời từng câu hỏi của bạn cũng là mình. Nhờ vậy, mình có thể tư vấn đặt phòng Cúc Phương sát với nhu cầu thật của từng chuyến đi: gia đình có trẻ nhỏ, nhóm bạn thích khám phá hay người chỉ muốn tìm một homestay yên tĩnh giữa núi rừng."
+     }
+    ]
+   },
+   {
+    "type": "paragraph",
+    "content": [
+     {
+      "type": "text",
+      "text": "Trước khi giới thiệu một chỗ nghỉ, mình tự kiểm tra thông tin: phòng ra sao, đường vào thế nào, có hợp với người lớn tuổi hay trẻ nhỏ không. Với lịch trình cũng vậy, mình gợi ý dựa trên thời gian, sức khỏe và sở thích của bạn chứ không theo một khuôn có sẵn. Điều gì chưa chắc chắn, mình nói rõ để bạn cân nhắc. Đặt phòng qua mình bắt đầu bằng một yêu cầu tư vấn: mình kiểm tra phòng trống, xác nhận giá và điều kiện, bạn đồng ý rồi mới hoàn tất."
+     }
+    ]
+   },
+   {
+    "type": "paragraph",
+    "content": [
+     {
+      "type": "text",
+      "text": "Mình mong mỗi người rời Cúc Phương với cảm giác như vừa ghé nhà một người bạn bản địa: được dặn dò kỹ, được hỏi han khi cần và có thêm lý do để quay lại. Nếu bạn đang chuẩn bị cho chuyến lưu trú Cúc Phương Ninh Bình, cứ gọi hoặc nhắn Zalo cho mình, mình sẵn lòng cùng bạn lên kế hoạch."
+     }
+    ]
+   }
+  ]
+ },
+ "portraitMediaId": null,
+ "signatureNote": "Hẹn gặp bạn ở Cúc Phương!",
+ "quote": "Mình chỉ gợi ý những gì chính mình đã kiểm tra, để bạn yên tâm lên đường.",
+ "valuesTitle": "Điều mình luôn giữ",
+ "valuesIntro": "Bốn nguyên tắc để việc đặt phòng Cúc Phương của bạn rõ ràng và yên tâm.",
+ "values": [
+  {
+   "id": "checked",
+   "enabled": true,
+   "icon": "check",
+   "title": "Tự kiểm tra trước khi gợi ý",
+   "text": "Mình chỉ giới thiệu chỗ nghỉ và lịch trình sau khi đã tự kiểm tra thông tin. Điều gì chưa chắc chắn, mình nói rõ ngay từ đầu để bạn có đủ dữ kiện cân nhắc."
+  },
+  {
+   "id": "personal",
+   "enabled": true,
+   "icon": "message",
+   "title": "Tư vấn theo nhu cầu thật",
+   "text": "Mỗi chuyến đi một khác: đi cùng trẻ nhỏ, người lớn tuổi hay nhóm bạn. Mình hỏi kỹ thời gian, số người và mong muốn của bạn rồi mới gợi ý homestay Cúc Phương phù hợp."
+  },
+  {
+   "id": "clear",
+   "enabled": true,
+   "icon": "shield",
+   "title": "Rõ ràng trước khi thanh toán",
+   "text": "Đặt phòng qua mình là một yêu cầu tư vấn. Tình trạng phòng, giá và điều kiện đặt đều được xác nhận với bạn trước, bạn đồng ý rồi mới tiến hành thanh toán."
+  },
+  {
+   "id": "reachable",
+   "enabled": true,
+   "icon": "phone",
+   "title": "Giữ liên lạc suốt chuyến đi",
+   "text": "Từ lúc bạn còn phân vân đến khi đã tới Cúc Phương, bạn có thể gọi điện hoặc nhắn Zalo cho mình để hỏi đường, đổi kế hoạch hay cần thêm gợi ý."
+  }
+ ],
+ "stepsTitle": "Cách mình đồng hành",
+ "stepsIntro": "Bốn bước đơn giản, từ lúc bạn nhắn tin cho mình đến khi đã tới nơi.",
+ "steps": [
+  {
+   "id": "share",
+   "enabled": true,
+   "title": "Bạn chia sẻ nhu cầu",
+   "text": "Gọi điện, nhắn Zalo hoặc gửi yêu cầu tư vấn: thời gian dự kiến, số người, ngân sách và kiểu chỗ nghỉ bạn thích."
+  },
+  {
+   "id": "suggest",
+   "enabled": true,
+   "title": "Mình kiểm tra và gợi ý",
+   "text": "Mình kiểm tra phòng trống, chọn vài chỗ nghỉ và lịch trình phù hợp rồi gửi bạn kèm những lưu ý cần biết."
+  },
+  {
+   "id": "confirm",
+   "enabled": true,
+   "title": "Xác nhận trước khi thanh toán",
+   "text": "Giá, tình trạng phòng và điều kiện đặt được xác nhận rõ với bạn. Bạn đồng ý rồi mới thanh toán và hoàn tất."
+  },
+  {
+   "id": "support",
+   "enabled": true,
+   "title": "Đồng hành khi bạn tới nơi",
+   "text": "Cần hỏi đường, đổi kế hoạch hay muốn gợi ý thêm điểm tham quan giữa chuyến, bạn cứ gọi hoặc nhắn Zalo cho mình."
+  }
+ ],
+ "areasTitle": "Hiểu Cúc Phương như người nhà",
+ "areasIntro": "Vài điều mình hay kể cho khách trước chuyến đi, để bạn hiểu nơi mình sắp đến và chọn chỗ lưu trú Cúc Phương Ninh Bình cho hợp.",
+ "areas": [
+  {
+   "id": "national-park",
+   "enabled": true,
+   "icon": "trees",
+   "title": "Vườn quốc gia đầu tiên của Việt Nam",
+   "text": "Cúc Phương được thành lập năm 1962, là vườn quốc gia đầu tiên của Việt Nam. Khu rừng rộng khoảng 22.000 ha, trải trên ba tỉnh Ninh Bình, Hòa Bình và Thanh Hóa (theo địa giới cũ).",
+   "linkLabel": "Xem điểm đến",
+   "linkTarget": "/diem-den",
+   "imageMediaId": null
+  },
+  {
+   "id": "primary-forest",
+   "enabled": true,
+   "icon": "mountain",
+   "title": "Rừng nguyên sinh và cây chò ngàn năm",
+   "text": "Những đường mòn dưới tán rừng nguyên sinh dẫn tới cây chò ngàn năm, một hình ảnh quen thuộc của Cúc Phương. Mình sẽ nhắc bạn chuẩn bị giày, nước uống và chọn giờ đi phù hợp.",
+   "linkLabel": "Xem điểm đến",
+   "linkTarget": "/diem-den",
+   "imageMediaId": null
+  },
+  {
+   "id": "cave-primates",
+   "enabled": true,
+   "icon": "map",
+   "title": "Động Người Xưa và Trung tâm cứu hộ linh trưởng",
+   "text": "Động Người Xưa lưu giữ dấu tích của người tiền sử. Trong vườn còn có Trung tâm Cứu hộ Linh trưởng Nguy cấp, nơi cứu hộ và chăm sóc các loài voọc, vượn quý hiếm.",
+   "linkLabel": "Xem điểm đến",
+   "linkTarget": "/diem-den",
+   "imageMediaId": null
+  },
+  {
+   "id": "stays",
+   "enabled": true,
+   "icon": "house",
+   "title": "Homestay và chỗ nghỉ quanh rừng",
+   "text": "Từ homestay, nhà nghỉ đến bungalow gần rừng, mình giúp bạn chọn chỗ lưu trú Cúc Phương hợp với lịch trình, số người và ngân sách.",
+   "linkLabel": "Xem chỗ nghỉ",
+   "linkTarget": "/phong-nghi",
+   "imageMediaId": null
+  }
+ ],
+ "showFaq": true,
+ "faqTitle": "Câu hỏi khách hay hỏi mình",
+ "faqs": [
+  {
+   "id": "season",
+   "enabled": true,
+   "question": "Đi Cúc Phương mùa nào đẹp nhất?",
+   "answer": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Mỗi mùa Cúc Phương có nét riêng. Khoảng tháng 4–5 là mùa bướm, rừng rất sinh động. Mùa khô, từ cuối thu sang xuân, đường mòn khô ráo và dễ đi bộ hơn. Mùa mưa giữa năm cây cối xanh tốt nhưng đường trơn, có thể có vắt, nên bạn cần chuẩn bị kỹ. Bạn cho mình biết thời gian dự kiến, mình sẽ tư vấn cụ thể hơn."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "from-hanoi",
+   "enabled": true,
+   "question": "Từ Hà Nội đi Cúc Phương bằng cách nào?",
+   "answer": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Bạn có thể tự lái xe, thuê xe riêng hoặc đi xe khách về Ninh Bình rồi nối chuyến vào Cúc Phương. Mình không ghi giờ xe cố định ở đây vì lịch có thể thay đổi; khi bạn liên hệ, mình sẽ gợi ý cách đi hợp với số người và lịch trình của bạn."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "packing",
+   "enabled": true,
+   "question": "Nên mang theo gì khi đến Cúc Phương?",
+   "answer": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Giày đi bộ bám đường, quần áo dài tay, áo mưa mỏng, kem chống côn trùng, nước uống và đèn pin nếu bạn muốn vào hang động. Mùa đông nên mang thêm áo ấm vì sáng sớm và buổi tối trong rừng khá lạnh. Mình sẽ dặn thêm theo lịch trình cụ thể của bạn."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "inquiry",
+   "enabled": true,
+   "question": "Gửi yêu cầu đặt phòng xong thì điều gì xảy ra?",
+   "answer": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Yêu cầu của bạn là một lời nhờ tư vấn, chưa phải đơn đặt chắc chắn. Mình kiểm tra phòng trống, chọn lựa chọn phù hợp rồi liên hệ lại qua điện thoại hoặc Zalo. Khi bạn đồng ý với thông tin đã được xác nhận, việc đặt chỗ mới hoàn tất."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "confirmed",
+   "enabled": true,
+   "question": "Giá và tình trạng phòng có được xác nhận trước khi thanh toán không?",
+   "answer": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Có. Trước khi bạn thanh toán, mình xác nhận rõ tình trạng phòng, giá và điều kiện đặt như quy định nhận, trả hay hủy phòng. Bạn chỉ thanh toán khi đã đồng ý với các thông tin đó."
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "itinerary",
+   "enabled": true,
+   "question": "Có thể nhờ tư vấn lịch trình tham quan không?",
+   "answer": {
+    "type": "doc",
+    "content": [
+     {
+      "type": "paragraph",
+      "content": [
+       {
+        "type": "text",
+        "text": "Có. Dựa trên số ngày, số người và sở thích của bạn, mình gợi ý lịch trình kết hợp Cúc Phương với các điểm khác quanh Ninh Bình, kèm lưu ý về đường đi và thời điểm tham quan phù hợp."
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "ctaTitle": "Sẵn sàng cho chuyến đi Cúc Phương?",
+ "ctaText": {
+  "type": "doc",
+  "content": [
+   {
+    "type": "paragraph",
+    "content": [
+     {
+      "type": "text",
+      "text": "Kể cho mình nghe bạn định đi khi nào, đi mấy người và thích kiểu chỗ nghỉ nào. Mình sẽ kiểm tra và gợi ý homestay, lịch trình Cúc Phương phù hợp với bạn."
+     }
+    ]
+   }
+  ]
+ },
+ "ctaStaysLabel": "Xem chỗ nghỉ",
+ "areaServed": "Cúc Phương, Ninh Bình",
+ "seoTitle": "Đặt phòng Cúc Phương cùng Đinh Vân",
+ "seoDescription": "Đinh Vân, người bản địa tư vấn đặt phòng Cúc Phương: tự kiểm tra homestay, gợi ý lịch trình lưu trú Cúc Phương Ninh Bình, xác nhận giá trước khi thanh toán.",
+ "ogDescription": "Người bản địa tự kiểm tra chỗ nghỉ, gợi ý lịch trình và hỗ trợ bạn đặt phòng Cúc Phương qua điện thoại, Zalo.",
+ "ogImageMediaId": null
+}

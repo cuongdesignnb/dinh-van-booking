@@ -1140,6 +1140,52 @@ textarea.ainput {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+/* Structured "Về mình" (about.page) form. */
+.about-form__nav {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+  background: var(--dvb-admin-surface, #fff);
+}
+.about-form__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 11px;
+  border: 1px solid var(--dvb-admin-border);
+  border-radius: 999px;
+  background: #fff;
+  color: #285b37;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.about-form__nav a:hover { background: #eef5ee; }
+.about-form__nav a:focus-visible { outline: 2px solid var(--dvb-admin-green-700); outline-offset: 2px; }
+.about-form__section { scroll-margin-top: 56px; display: grid; gap: 12px; }
+.about-form__section > legend { font-size: 13px; }
+.about-form__metered { display: grid; gap: 4px; min-width: 0; }
+.about-form__meter { color: var(--dvb-admin-muted); font-size: 11px; }
+.about-form__meter[data-state="ok"] { color: #2f6b3d; }
+.about-form__meter[data-state="warn"] { color: #9a5b00; }
+.about-form__meter[data-state="ok"]::before { content: "✓ "; }
+.about-form__meter[data-state="warn"]::before { content: "! "; }
+.about-form__list-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.about-form__list-head h4 { margin: 0; color: #33423a; font-size: 12px; font-weight: 700; }
+.about-form__item[data-dragging] { opacity: .55; }
+.about-form__item-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.about-form__item-title { flex: 1 1 auto; min-width: 0; overflow: hidden; color: #33423a; font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
+.about-form__item-actions { display: flex; flex: 0 0 auto; gap: 4px; }
+.about-form__badge { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; background: #f4ecdc; color: #7a5a17; font-size: 11px; font-weight: 600; }
+@media (max-width: 720px) {
+  .about-form__item-head { flex-wrap: wrap; }
+  .about-form__item-title { flex-basis: calc(100% - 70px); }
+}
+
 .settings-media-field {
   display: grid;
   gap: 8px;

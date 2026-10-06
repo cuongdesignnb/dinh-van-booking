@@ -381,7 +381,9 @@
    "ctaStaysLabel": null,
    "areaServed": null,
    "seoTitle": null,
-   "seoDescription": null
+   "seoDescription": null,
+   "ogDescription": null,
+   "ogImageMediaId": null
   }
  },
  {
