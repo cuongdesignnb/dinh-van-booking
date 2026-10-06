@@ -81,7 +81,7 @@ export function InquiryInbox() {
       <div className="settings-screen__head">
         <div>
           <h2>Yêu cầu tư vấn</h2>
-          <p className="ahint">Danh sách được đọc trực tiếp từ PostgreSQL qua API CRM; không có bản ghi khởi tạo trên trình duyệt.</p>
+          <p className="ahint">Yêu cầu tư vấn mới nhất từ website và các kênh liên hệ.</p>
         </div>
         <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || !!busy}>Tải lại</button>
       </div>

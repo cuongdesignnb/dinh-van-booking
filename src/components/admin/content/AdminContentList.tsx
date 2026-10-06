@@ -362,7 +362,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   return (
     <section className="crm content-manager">
       {!editorMode && <div className="settings-screen__head">
-        <div><h2>{title}</h2><p className="ahint">Dữ liệu thật từ API CMS và PostgreSQL. Có thể tạo, sửa, lưu revision, quản lý media và xuất bản từ màn này.</p></div>
+        <div><h2>{title}</h2><p className="ahint">Tạo, sửa, lưu bản nháp, chọn ảnh và xuất bản ngay tại đây.</p></div>
         <div className="content-manager__head-actions">
           <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || saving || !!busy}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
           <button type="button" className="abtn abtn--primary" onClick={openCreate} disabled={saving || !!busy}><Plus size={16} aria-hidden="true" /> Tạo mới</button>
@@ -494,7 +494,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
       )}
 
       {editorMode && !form && <div className="acard apending">{loading || busy ? 'Đang tải dữ liệu…' : 'Không tìm thấy nội dung cần chỉnh sửa.'}</div>}
-      {!editorMode && (loading ? <div className="acard apending">Đang tải dữ liệu thật…</div> : loadFailed ? <div className="acard apending content-manager__error-state">Không tải được nội dung từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending content-manager__empty"><FilePenLine size={22} aria-hidden="true" /><div><h3>Chưa có {KIND_LABEL[kind].toLowerCase()}</h3><p>Bấm “Tạo mới” để mở editor và tạo bản ghi đầu tiên trong PostgreSQL.</p></div></div> : <div className="settings-screen__list">
+      {!editorMode && (loading ? <div className="acard apending">Đang tải dữ liệu…</div> : loadFailed ? <div className="acard apending content-manager__error-state">Không tải được nội dung từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending content-manager__empty"><FilePenLine size={22} aria-hidden="true" /><div><h3>Chưa có {KIND_LABEL[kind].toLowerCase()}</h3><p>Bấm “Tạo mới” để viết bài đầu tiên.</p></div></div> : <div className="settings-screen__list">
         {items.map((item) => <article className="acard settings-item content-manager__item" key={item.id}>
           <div className="settings-item__head"><div><h3>{item.title}</h3><code>{item.path ?? item.slug ?? item.id}</code></div><span className="settings-item__meta">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} · v{item.version}</span></div>
           {item.excerpt && <p>{item.excerpt}</p>}<p className="ahint">Cập nhật {new Date(item.updatedAt).toLocaleString('vi-VN')} · {item.media.length} media</p>
