@@ -1,70 +1,68 @@
-import { ArrowRight, Star } from 'lucide-react';
+import { MapPin, Star, UsersRound } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import type { Stay } from '@/data/stays';
 import { fromPrice, hasContactOnlyRooms } from '@/lib/catalog/pricing';
 import { stayContactHref } from '@/lib/contact/stay-contact';
-import { formatVnd } from '@/lib/format';
+import { formatRating, formatVnd } from '@/lib/format';
 import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge';
 
-const PinCheck = () => (
-  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" className="stay__meta-icon">
-    <circle cx="8" cy="8" r="7" fill="currentColor" />
-    <path d="m4.8 8.2 2.2 2.2 4.2-4.4" stroke="#fff" strokeWidth="1.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+/** Guest range across published room types, e.g. "2 - 6 khách". */
+function guestRange(stay: Stay): string | null {
+  const capacities = stay.roomTypes.map((room) => room.capacity).filter((value) => Number.isFinite(value) && value > 0);
+  if (!capacities.length) return null;
+  const min = Math.min(...capacities);
+  const max = Math.max(...capacities);
+  return min === max ? `${max} khách` : `${min} - ${max} khách`;
+}
 
-const Sprig = () => (
-  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" className="stay__meta-icon">
-    <path d="M13.8 2.2C8 2 3.6 5 3.2 10.2c0 .8 0 1.6.2 2.4.7-2.4 2.4-4.4 4.9-5.6-2 1.5-3.3 3.5-3.8 5.9.8.3 1.7.4 2.5.4 4.8-.4 7-5 6.8-11.1Z" fill="currentColor" />
-    <path d="M2 14.5c.9-2.8 2.5-5 5-6.8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-  </svg>
-);
-
-export function StayCard({ stay, index }: { stay: Stay; index: number }) {
-  const home = stay.home ?? { image: stay.image, location: stay.location, tags: [stay.highlights[0], stay.highlights[1]] };
+/**
+ * One card for the homepage and /phong-nghi. Every line is optional and only
+ * rendered from real published fields; nothing is filled in when missing.
+ */
+export function StayCard({ stay, query = '', contactHref, headingLevel = 3, priority = false }: {
+  stay: Stay;
+  query?: string;
+  contactHref?: string;
+  headingLevel?: 2 | 3;
+  priority?: boolean;
+}) {
+  const image = stay.home?.image ?? stay.image;
+  const href = `/phong-nghi/${stay.slug}${query ? `?${query}` : ''}`;
   const price = fromPrice(stay);
-  const mixedPrices = price > 0 && hasContactOnlyRooms(stay);
+  const distinctPrices = new Set(stay.roomTypes.map((room) => room.pricePerNight).filter((value) => value > 0)).size;
+  const guests = guestRange(stay);
+  const summary = (stay.cardSummary || stay.tagline || '').trim();
+  const location = (stay.home?.location || stay.location || '').trim();
+  const Heading = headingLevel === 2 ? 'h2' : 'h3';
+  const rated = stay.reviewCount > 0 && stay.rating > 0;
   return (
-    <article
-      className="stay"
-      data-reveal="card"
-      data-tilt
-      style={{ '--d': `${1200 + index * 120}ms` } as React.CSSProperties}
-      aria-labelledby={`${stay.id}-name`}
-    >
-      <div className="stay__media">
-        <Image
-          src={home.image.src}
-          alt={home.image.alt}
-          fill
-          sizes="(max-width: 767px) 92vw, 255px"
-          className="stay__img"
-          style={home.image.position ? { objectPosition: home.image.position } : undefined}
-        />
-        {stay.badge && <span className="stay__badge">{stay.badge}</span>}
-        <AvailabilityBadge status={stay.availabilityStatus} />
-        <FavoriteButton id={stay.id} name={stay.name} />
+    <article className="sc" aria-labelledby={`${stay.id}-name`}>
+      <div className="sc__media">
+        <Image src={image.src} alt={image.alt} fill priority={priority} sizes="(max-width: 767px) 82vw, (max-width: 1199px) 45vw, 320px" className="sc__img" style={image.position ? { objectPosition: image.position } : undefined} />
+        <AvailabilityBadge status={stay.availabilityStatus} className="sc__status" />
+        <FavoriteButton id={stay.id} name={stay.name} className="sc__fav" />
+        {rated && <p className="sc__rating" aria-label={`Đánh giá ${formatRating(stay.rating)} trên 5 từ ${stay.reviewCount} lượt`}>
+          <Star size={14} aria-hidden="true" />
+          <span aria-hidden="true"><strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount})</span>
+        </p>}
       </div>
-      <div className="stay__body">
-        <h3 className="stay__name" id={`${stay.id}-name`}><Link href={`/phong-nghi/${stay.slug}`}>{stay.name}</Link></h3>
-        {stay.reviewCount > 0 && <p className="stay__rating"><Star size={14} className="star" aria-hidden="true" /><strong>{stay.rating.toFixed(1)}</strong><span>({stay.reviewCount} đánh giá)</span></p>}
-        <p className="stay__meta">
-          <PinCheck />
-          {home.location}
+      <div className="sc__body">
+        <Heading className="sc__name" id={`${stay.id}-name`}>
+          <Link href={price > 0 ? href : (contactHref ?? stayContactHref(stay.slug))} className="sc__link">{stay.name}</Link>
+        </Heading>
+        {summary && <p className="sc__summary">{summary}</p>}
+        {(guests || location) && <ul className="sc__facts">
+          {guests && <li><UsersRound size={16} aria-hidden="true" />{guests}</li>}
+          {location && <li><MapPin size={16} aria-hidden="true" />{location}</li>}
+        </ul>}
+        <p className="sc__price">
+          {price > 0
+            ? <>{distinctPrices > 1 && <span className="sc__from">Từ </span>}<strong>{formatVnd(price)}</strong> <span className="sc__unit">/ đêm</span></>
+            : <strong className="sc__contact">Liên hệ để nhận giá</strong>}
+          {price > 0 && hasContactOnlyRooms(stay) && <small>Một số hạng phòng cần liên hệ giá</small>}
         </p>
-        <p className="stay__meta stay__meta--tags">
-          {home.tags.length > 0 && <Sprig />}
-          {home.tags.map((tag, index) => <span key={`${tag}-${index}`}>{index > 0 && <i aria-hidden="true">•</i>}{tag}</span>)}
-        </p>
-        <div className="stay__foot">
-          <p className="stay__price">{price > 0 ? <>Từ <strong>{formatVnd(price)}</strong> <span>/ đêm</span></> : <strong>Liên hệ để nhận giá</strong>}{mixedPrices && <small className="stay__price-note">Hạng khác cần liên hệ giá</small>}</p>
-          <Link href={price > 0 ? `/phong-nghi/${stay.slug}` : stayContactHref(stay.slug)} className="btn btn--primary btn--sm btn-arrow">
-            {price > 0 ? 'Xem chi tiết' : 'Liên hệ'} <ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" />
-            <span className="sr-only"> {stay.name}</span>
-          </Link>
-        </div>
       </div>
     </article>
   );

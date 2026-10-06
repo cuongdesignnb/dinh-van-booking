@@ -259,6 +259,39 @@
   }
  },
  {
+  "key": "home.stats",
+  "group": "publicHome",
+  "label": "Những con số",
+  "description": "Chỉ nhập số liệu thật đã kiểm chứng; khối tự ẩn khi chưa có số liệu.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "title": null,
+   "note": null,
+   "items": []
+  }
+ },
+ {
+  "key": "home.partner",
+  "group": "publicHome",
+  "label": "Mời hợp tác đối tác",
+  "description": "Khối mời chủ cơ sở lưu trú đăng ký cổng đối tác.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "title": null,
+   "description": null,
+   "quote": null,
+   "primaryLabel": null,
+   "primaryTarget": null,
+   "secondaryLabel": null,
+   "secondaryTarget": null,
+   "imageMediaId": null
+  }
+ },
+ {
   "key": "home.faq",
   "group": "publicHome",
   "label": "FAQ trang chủ",

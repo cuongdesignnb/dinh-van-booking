@@ -5,7 +5,7 @@ import { parseSelection, selectionQuery } from '@/lib/selection';
 import './availability.css';
 
 export const metadata: Metadata = {
-  title: 'Tra cứu tình trạng phòng | Đinh Vân Booking',
+  title: 'Tra cứu tình trạng phòng | Cúc Phương Travel',
   description: 'Kiểm tra các cơ sở lưu trú tham gia theo ngày nhận, ngày trả và nhu cầu của bạn. Tình trạng phòng được đối chiếu theo từng đêm.',
   alternates: { canonical: '/lich-phong' },
 };

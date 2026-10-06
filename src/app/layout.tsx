@@ -5,10 +5,11 @@ import { richDocumentToText } from '@/lib/content/rich-document';
 import '@/styles/design-system/tokens.css';
 import './globals.css';
 import '@/styles/design-system/components.css';
+import '@/styles/site/base.css';
+import '@/styles/site/shell.css';
+import '@/styles/site/stay-card.css';
 import '@/styles/pages.css';
-import '@/styles/mobile-nav.css';
 import '@/styles/rich-content.css';
-import '@/styles/public-refresh.css';
 
 // SEO settings are editable at runtime. Keep metadata request-time so toggling
 // robotsIndex in admin takes effect without rebuilding or redeploying the site.
@@ -31,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#194526',
+  themeColor: '#1f4d3a',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -396,7 +396,7 @@ export function CustomerPanel({
           <textarea
             className="ainput"
             rows={4}
-            defaultValue={`Chào ${customer.name}, Đinh Vân Booking xin phép trao đổi thêm về nhu cầu ${customer.need.toLowerCase()} của mình nhé.`}
+            defaultValue={`Chào ${customer.name}, Cúc Phương Travel xin phép trao đổi thêm về nhu cầu ${customer.need.toLowerCase()} của mình nhé.`}
             aria-label="Nội dung tin nhắn"
           />
         )}

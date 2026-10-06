@@ -87,7 +87,7 @@ export function buildProperties(): Property[] {
       maxGuests: Math.max(...s.roomTypes.map((r) => r.capacity)),
       note: 'Nhận phòng sớm hoặc trả phòng muộn tùy tình trạng phòng.',
     },
-    seo: { title: `${s.name} | Đinh Vân Booking`, description: s.cardSummary },
+    seo: { title: `${s.name} | Cúc Phương Travel`, description: s.cardSummary },
   }));
 }
 
@@ -332,7 +332,7 @@ export function buildDestinations(): AdminDestination[] {
     updatedAt: addDays(DEMO_TODAY, -(i + 1) * 1 - (i > 3 ? 3 : 0)),
     views: 2400 - i * 230,
     seo: {
-      title: `${d.name} | Khám phá Ninh Bình | Đinh Vân Booking`,
+      title: `${d.name} | Khám phá Ninh Bình | Cúc Phương Travel`,
       description: i === 2 || i === 5 ? '' : d.summary,
       ogImage: i === 2 || i === 5 ? null : d.image.src,
     },

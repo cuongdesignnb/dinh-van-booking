@@ -26,7 +26,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
-import { DinhVanMark } from '@/components/ui/BrandLogo';
+import { CucPhuongMark } from '@/components/ui/BrandLogo';
 import { useAdminSession } from '@/components/admin/AdminAuthGate';
 import { apiRequest } from '@/lib/api/client';
 
@@ -103,9 +103,9 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
     <aside id="admin-sidebar" className={`asidebar${open ? ' asidebar--open' : ''}`} aria-label="Điều hướng quản trị">
       <div className="asidebar__inner">
         <div className="asidebar__brand">
-          <DinhVanMark className="asidebar__mark" />
+          <CucPhuongMark className="asidebar__mark" size={40} onDark />
           <span className="asidebar__brand-text">
-            <span className="asidebar__word brand-wordmark">Đinh Vân</span>
+            <span className="asidebar__word brand-wordmark">Cúc Phương Travel</span>
             <span className="asidebar__tagline">Bảng quản trị</span>
           </span>
           <button type="button" className="asidebar__close" onClick={onClose} aria-label="Đóng menu">

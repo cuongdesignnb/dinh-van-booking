@@ -5,7 +5,6 @@ import { DialogHost } from '@/components/ui/DialogHost';
 import { MotionController } from '@/components/ui/MotionController';
 import { SiteDataProvider } from '@/components/site/SiteDataProvider';
 import { getPublicNavigation, getPublicSite } from '@/lib/api/public';
-import { MobileBottomBar } from './MobileBottomBar';
 
 /** Header + footer + global dialogs shared by every page. */
 export async function PageShell({
@@ -23,7 +22,6 @@ export async function PageShell({
       <SiteHeader navigation={navigation} />
       <main className={className}>{children}</main>
       <SiteFooter variant={footer} navigation={navigation} />
-      <MobileBottomBar />
       <DialogHost />
       <MotionController />
     </SiteDataProvider>

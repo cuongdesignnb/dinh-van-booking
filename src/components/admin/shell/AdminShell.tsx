@@ -29,7 +29,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <AdminTopbar meta={meta} menuOpen={menuOpen} onMenu={() => setMenuOpen(true)} />
           <main className="ashell__content" id="admin-main" tabIndex={-1}>{children}</main>
           <footer className="afooter">
-            <span>Đinh Vân Booking · Bảng quản trị</span>
+            <span>Cúc Phương Travel · Bảng quản trị</span>
             <span>Dữ liệu hiển thị lấy trực tiếp từ hệ thống; không lưu bản ghi nghiệp vụ trong trình duyệt.</span>
           </footer>
         </div>

@@ -1,0 +1,442 @@
+/* ==========================================================================
+   Cúc Phương Travel — public visual language
+   Deep forest green for actions, cream page, white cards, soft shadows,
+   12–16 px radii, gold eyebrows. Shared by every public route.
+   ========================================================================== */
+
+:root {
+  --dvb-brand: #1f4d3a;
+  --dvb-brand-strong: #163a2b;
+  --dvb-brand-600: #2a6249;
+  --dvb-brand-soft: #e5eee7;
+  --dvb-brand-tint: #f1f6f1;
+  --dvb-gold: #c39a45;
+  --dvb-gold-strong: #9c7629;
+  --dvb-page: #f8f6ef;
+  --dvb-ink: #1d2a23;
+  --dvb-ink-soft: #56625b;
+  --dvb-ink-faint: #7c867f;
+  --dvb-hairline: #e7e6dd;
+  --dvb-sold: #c2412e;
+  --dvb-star: #e9a425;
+  --dvb-card-shadow: 0 1px 2px rgb(22 46 34 / 6%), 0 6px 22px rgb(22 46 34 / 8%);
+  --dvb-card-shadow-hover: 0 2px 4px rgb(22 46 34 / 6%), 0 14px 34px rgb(22 46 34 / 14%);
+  --dvb-float-shadow: 0 10px 40px rgb(18 40 29 / 16%), 0 2px 6px rgb(18 40 29 / 8%);
+  --shell: min(1320px, calc(100% - 2 * var(--dvb-gutter)));
+  --header-h: 84px;
+}
+
+body {
+  background: var(--dvb-page);
+  color: var(--dvb-ink);
+  font-size: 15px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-dvb-display), Georgia, serif;
+  color: var(--dvb-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--dvb-brand-600);
+  outline-offset: 2px;
+}
+
+.content-shell,
+.cp-shell {
+  width: var(--shell);
+  margin-inline: auto;
+}
+
+.script {
+  font-family: var(--font-dvb-script), cursive;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dvb-gold);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 22px;
+  border: 1px solid transparent;
+  border-radius: var(--dvb-r-pill);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color var(--dvb-dur-fast) ease,
+    border-color var(--dvb-dur-fast) ease,
+    color var(--dvb-dur-fast) ease,
+    box-shadow var(--dvb-dur-base) ease;
+}
+
+.btn--primary {
+  background: var(--dvb-brand);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--dvb-brand-strong);
+  box-shadow: 0 6px 18px rgb(22 58 43 / 24%);
+}
+
+.btn--light,
+.btn--outline {
+  background: #fff;
+  color: var(--dvb-brand);
+  border-color: var(--dvb-brand);
+}
+
+.btn--light:hover,
+.btn--outline:hover {
+  background: var(--dvb-brand-tint);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--dvb-brand);
+}
+
+.btn--ghost:hover {
+  background: var(--dvb-brand-tint);
+}
+
+.btn--sm {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.btn--lg {
+  min-height: 52px;
+  padding: 0 28px;
+  font-size: 16px;
+}
+
+.btn svg:last-child {
+  transition: transform var(--dvb-dur-base) var(--dvb-ease);
+}
+
+.btn:hover svg:last-child {
+  transform: translateX(2px);
+}
+
+.round-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--dvb-hairline);
+  background: #fff;
+  color: var(--dvb-ink);
+  display: inline-grid;
+  place-items: center;
+  transition: background-color var(--dvb-dur-fast) ease;
+}
+
+.round-btn:hover {
+  background: var(--dvb-brand-tint);
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--dvb-hairline);
+  background: #fff;
+  color: var(--dvb-ink);
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  transition: background-color var(--dvb-dur-fast) ease;
+}
+
+.icon-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--dvb-brand-tint);
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+}
+
+.icon-btn--sm {
+  width: 32px;
+  height: 32px;
+}
+
+.link-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--dvb-brand);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 5px;
+}
+
+.link-more:hover {
+  color: var(--dvb-brand-strong);
+}
+
+.link-more svg {
+  transition: transform var(--dvb-dur-base) var(--dvb-ease);
+}
+
+.link-more:hover svg {
+  transform: translateX(3px);
+}
+
+.text-btn {
+  background: none;
+  border: 0;
+  font-size: 14px;
+  color: var(--dvb-ink-soft);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.text-btn:hover {
+  background: var(--dvb-brand-tint);
+}
+
+.text-btn--strong {
+  color: #fff;
+  background: var(--dvb-brand);
+  font-weight: 600;
+  padding: 8px 16px;
+}
+
+.text-btn--strong:hover {
+  background: var(--dvb-brand-strong);
+}
+
+/* ---------- Section heads ---------- */
+
+.cp-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.cp-head__title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cp-head__icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--dvb-brand-600);
+}
+
+.section-title,
+.cp-head h2 {
+  font-size: clamp(26px, 2.3vw, 34px);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--dvb-ink);
+}
+
+.section-sub,
+.cp-head__sub {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--dvb-ink-soft);
+}
+
+.section-title__leaf {
+  display: none;
+}
+
+/* ---------- Status pill ---------- */
+
+.cp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: var(--dvb-r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cp-pill--available {
+  background: #2c6a4c;
+  color: #fff;
+}
+
+.cp-pill--sold_out {
+  background: var(--dvb-sold);
+  color: #fff;
+}
+
+.cp-pill--unknown {
+  background: rgb(255 255 255 / 92%);
+  color: var(--dvb-ink-soft);
+}
+
+/* ---------- Page hero (inner routes) ---------- */
+
+.cp-page-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 300px;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  background: var(--dvb-brand-strong);
+}
+
+.cp-page-hero__img {
+  object-fit: cover;
+  z-index: -2;
+}
+
+.cp-page-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(12 30 22 / 78%) 0%, rgb(12 30 22 / 45%) 55%, rgb(12 30 22 / 15%) 100%);
+}
+
+.cp-page-hero__inner {
+  width: var(--shell);
+  margin-inline: auto;
+  padding: 56px 0 48px;
+}
+
+.cp-page-hero__crumbs {
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: rgb(255 255 255 / 82%);
+}
+
+.cp-page-hero__crumbs a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.cp-page-hero .eyebrow {
+  margin-bottom: 10px;
+  color: #e3c27c;
+}
+
+.cp-page-hero h1 {
+  max-width: 760px;
+  font-size: clamp(32px, 3.6vw, 50px);
+  font-weight: 600;
+  line-height: 1.12;
+  color: #fff;
+}
+
+.cp-page-hero__lead {
+  max-width: 620px;
+  margin-top: 14px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 90%);
+}
+
+.cp-page-hero__lead p + p {
+  margin-top: 8px;
+}
+
+.cp-page-hero--plain {
+  min-height: 0;
+  color: var(--dvb-ink);
+  background: var(--dvb-brand-tint);
+}
+
+.cp-page-hero--plain::after {
+  display: none;
+}
+
+.cp-page-hero--plain h1 {
+  color: var(--dvb-ink);
+}
+
+.cp-page-hero--plain .cp-page-hero__lead,
+.cp-page-hero--plain .cp-page-hero__crumbs {
+  color: var(--dvb-ink-soft);
+}
+
+.cp-page-hero--plain .eyebrow {
+  color: var(--dvb-gold);
+}
+
+/* ---------- Generic card & section ---------- */
+
+.cp-section {
+  padding-block: 64px;
+}
+
+.cp-card {
+  background: #fff;
+  border-radius: var(--dvb-r-lg);
+  box-shadow: var(--dvb-card-shadow);
+}
+
+.rstrip {
+  overflow-x: clip;
+}
+
+@media (max-width: 767px) {
+  .cp-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cp-head__icon {
+    width: 36px;
+    height: 36px;
+  }
+  .cp-section {
+    padding-block: 44px;
+  }
+  .cp-page-hero {
+    min-height: 240px;
+  }
+  .cp-page-hero__inner {
+    padding: 40px 0 32px;
+  }
+  .cp-page-hero__lead {
+    font-size: 16px;
+  }
+}

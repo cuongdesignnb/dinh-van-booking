@@ -355,7 +355,8 @@ function publicPage(p) {
 // media library (re-uses images already shipped in public/)
 // ---------------------------------------------------------------------------
 const SITE_IMAGES = {
-  hero: img('hero-cuc-phuong.webp', 'Núi rừng Cúc Phương (ảnh minh hoạ)', 1448, 316),
+  hero: img('hero-cuc-phuong-balcony.webp', 'Hiên nhà gỗ nhìn ra núi rừng (ảnh minh hoạ)', 1672, 941),
+  partner: img('pages/partner-homestay.webp', 'Tranh màu nước homestay nhà sàn (ảnh minh hoạ)', 1200, 600),
   promo: img('experience-promo.webp', 'Du khách bên dòng nước (ảnh minh hoạ)', 275, 271),
   staysHero: img('pages/stays-hero.webp', 'Không gian lưu trú giữa núi rừng (ảnh minh hoạ)', 1448, 212),
   destinationsHero: img('pages/destinations-hero.webp', 'Phong cảnh Ninh Bình (ảnh minh hoạ)', 1448, 228),
@@ -401,32 +402,39 @@ const siteAssets = Object.fromEntries(MEDIA.map((m) => [m.id, { id: m.id, src: m
 // settings (registry defaults + demo overrides)
 // ---------------------------------------------------------------------------
 const settingOverrides = {
-  'brand.identity': { name: 'Đinh Vân Booking', shortName: 'Đinh Vân', tagline: 'Ở đây có những chuyến đi ý nghĩa', description: doc('Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.'), logoMediaId: null, faviconMediaId: null },
-  'brand.contact': { phone: '0900000000', hotline: '0900000000', zaloUrl: 'https://zalo.me/0900000000', email: 'demo@example.invalid', address: 'Địa chỉ minh hoạ, Nho Quan, Ninh Bình', mapUrl: null },
-  'brand.social': { facebook: 'https://facebook.com/', instagram: null, youtube: null, tiktok: null },
+  'brand.identity': { name: 'Cúc Phương Travel', shortName: 'Cúc Phương Travel', tagline: 'Lưu trú bản địa, trải nghiệm thật', description: doc('Bản demo giao diện với dữ liệu hư cấu về lưu trú và hành trình Cúc Phương – Ninh Bình.'), logoMediaId: null, faviconMediaId: null },
+  'brand.contact': { phone: '0900000000', hotline: '0900000000', zaloUrl: 'https://zalo.me/0900000000', email: 'demo@example.invalid', address: null, mapUrl: null },
+  'brand.social': { facebook: 'https://facebook.com/', instagram: 'https://instagram.com/', youtube: 'https://youtube.com/', tiktok: null },
   'brand.businessHours': { weekdays: '07:30 – 21:00', weekend: '07:30 – 22:00', note: doc('Giờ làm việc minh hoạ.') },
   'site.header': { mottoLine1: 'Du lịch bản địa', mottoLine2: 'Kết nối những giá trị thật', ctaLabel: 'Đặt ngay', ctaTarget: '/phong-nghi' },
-  'site.footer': { quote: 'Những chuyến đi không chỉ để đến, mà còn để lưu lại những trải nghiệm đáng nhớ.', quoteAuthor: 'Đinh Vân Booking', motto: 'Du lịch bản địa – Kết nối những giá trị thật', copyrightText: '© {year} Đinh Vân Booking · Bản demo dữ liệu minh hoạ' },
-  'home.sections': { order: ['hero', 'search', 'trust', 'featured', 'combos', 'why', 'destinations', 'reviews', 'promo', 'faq', 'contact'], hidden: [] },
-  'home.hero': { enabled: true, kicker: 'Về với thiên nhiên, trở về những điều bình yên', titleLine1: 'Đặt phòng Cúc Phương', titleLine2: 'Ninh Bình dễ dàng hơn', signature: 'cùng Đinh Vân Booking', description: doc('Tư vấn lưu trú và hành trình Cúc Phương – Ninh Bình theo nhu cầu của bạn.'), note: 'Cúc Phương luôn đẹp hơn khi có bạn ở đây!', imageMediaId: SITE_MEDIA.hero, mobileImageMediaId: null },
+  'site.footer': { quote: 'Những chuyến đi không chỉ để đến, mà còn để lưu lại những trải nghiệm đáng nhớ.', quoteAuthor: 'Cúc Phương Travel', motto: 'Du lịch gần hơn những giá trị bản địa', copyrightText: '© {year} Cúc Phương Travel · Bản demo dữ liệu minh hoạ' },
+  'home.sections': { order: ['hero', 'search', 'trust', 'featured', 'why', 'contact', 'stats', 'partner', 'reviews', 'combos', 'destinations', 'promo', 'faq'], hidden: ['combos', 'destinations', 'promo', 'faq'] },
+  'home.hero': { enabled: true, kicker: 'Khám phá Cúc Phương', titleLine1: 'Lưu trú giữa thiên nhiên,', titleLine2: 'trải nghiệm những điều thật', signature: 'Những chuyến đi đẹp hơn khi có người bản địa đồng hành', description: doc('Cúc Phương Travel giúp bạn tìm nơi lưu trú phù hợp và lên hành trình khám phá Cúc Phương – Ninh Bình, với sự tư vấn trực tiếp từ người địa phương.'), note: 'Cúc Phương đợi bạn...', imageMediaId: SITE_MEDIA.hero, mobileImageMediaId: null },
   'home.trust': { enabled: true, items: [
-    { id: 'local', icon: 'leaf', line1: 'Tư vấn địa phương', line2: 'Hiểu nhu cầu chuyến đi', enabled: true },
-    { id: 'stay', icon: 'heart', line1: 'Gợi ý lưu trú phù hợp', line2: 'Theo nhu cầu thực tế', enabled: true },
-    { id: 'support', icon: 'shield', line1: 'Hỗ trợ trực tiếp', line2: 'Qua điện thoại khi cần', enabled: true },
-    { id: 'journey', icon: 'users', line1: 'Đồng hành cùng chuyến đi', line2: 'Từ lúc tìm hiểu đến khi khởi hành', enabled: true },
+    { id: 'stay', icon: 'leaf', line1: 'Lưu trú chọn lọc', line2: null, enabled: true },
+    { id: 'support', icon: 'heart', line1: 'Hỗ trợ tận tâm', line2: null, enabled: true },
+    { id: 'local', icon: 'users', line1: 'Trải nghiệm bản địa', line2: null, enabled: true },
+    { id: 'confirm', icon: 'shield', line1: 'Xác nhận rõ ràng', line2: null, enabled: true },
   ] },
-  'home.why': { enabled: true, title: 'Vì sao chọn Đinh Vân Booking?', intro: doc('Tập trung vào tư vấn địa phương, gợi ý lưu trú và hành trình phù hợp khi khám phá Cúc Phương – Ninh Bình.'), reasons: [
-    { id: 'local', icon: 'user', title: 'Người địa phương', description: 'Tư vấn gần gũi, dễ trao đổi', enabled: true },
-    { id: 'stay', icon: 'house', title: 'Gợi ý lưu trú', description: 'Theo nhu cầu và lịch trình thực tế', enabled: true },
-    { id: 'support', icon: 'message', title: 'Hỗ trợ nhanh', description: 'Liên hệ trực tiếp qua điện thoại', enabled: true },
-    { id: 'journey', icon: 'map', title: 'Gợi ý hành trình', description: 'Kết hợp lưu trú và điểm đến phù hợp', enabled: true },
+  'home.why': { enabled: true, title: 'Vì sao chọn Cúc Phương Travel?', intro: doc('Một dịch vụ nhỏ, luôn đặt trải nghiệm của bạn lên hàng đầu.'), reasons: [
+    { id: 'support', icon: 'message', title: 'Tư vấn cá nhân, tận tâm', description: 'Trao đổi trực tiếp để gợi ý chỗ ở phù hợp với nhu cầu và lịch trình của bạn.', enabled: true },
+    { id: 'local', icon: 'leaf', title: 'Hiểu rõ địa phương', description: 'Người địa phương gợi ý điểm đến và trải nghiệm quanh Cúc Phương – Ninh Bình.', enabled: true },
+    { id: 'confirm', icon: 'bolt', title: 'Xác nhận rõ ràng, minh bạch', description: 'Tình trạng phòng và giá được xác nhận trước khi bạn hoàn tất đặt phòng.', enabled: true },
+    { id: 'stay', icon: 'house', title: 'Lưu trú được chọn lọc', description: 'Chỉ hiển thị những nơi lưu trú đã được cập nhật thông tin và xuất bản.', enabled: true },
   ] },
-  'home.featured': { enabled: true, title: 'Phòng nghỉ nổi bật', subtitle: 'Những nơi lưu trú đã được cập nhật trên hệ thống', ctaLabel: 'Xem tất cả', ctaTarget: '/phong-nghi', limit: 6, selectionMode: 'featured' },
+  'home.featured': { enabled: true, title: 'Lưu trú nổi bật', subtitle: 'Những chỗ ở được chọn lọc tại Cúc Phương – Ninh Bình', ctaLabel: 'Xem tất cả', ctaTarget: '/phong-nghi', limit: 4, selectionMode: 'featured' },
+  'home.stats': { enabled: true, title: 'Những con số biết nói', note: 'Số liệu minh hoạ trong bản demo', items: [
+    { id: 'bookings', icon: 'calendar', value: '120+', label: 'Lượt đặt (demo)', enabled: true },
+    { id: 'happy', icon: 'smile', value: '96%', label: 'Khách hài lòng (demo)', enabled: true },
+    { id: 'partners', icon: 'star', value: '12', label: 'Đối tác lưu trú (demo)', enabled: true },
+    { id: 'guests', icon: 'users', value: '480+', label: 'Lữ khách (demo)', enabled: true },
+  ] },
+  'home.partner': { enabled: true, title: 'Cùng nhau phát triển du lịch địa phương', description: doc('Bạn là chủ homestay, bungalow hoặc nhà nghỉ tại Cúc Phương – Ninh Bình? Đăng ký cổng đối tác để giới thiệu nơi lưu trú của bạn và cập nhật thông tin phòng cùng Cúc Phương Travel.'), quote: 'Lưu giữ những giá trị địa phương, cùng nhau', primaryLabel: 'Đăng ký hợp tác', primaryTarget: '/doi-tac?mode=register', secondaryLabel: 'Tìm hiểu thêm', secondaryTarget: '/lien-he', imageMediaId: SITE_MEDIA.partner },
   'home.combos': { enabled: true, title: 'Combo du lịch', subtitle: 'Gợi ý hành trình và dịch vụ được cập nhật trên hệ thống', ctaLabel: 'Xem combo', ctaTarget: '/combo-du-lich', limit: 3 },
   'home.destinations': { enabled: true, title: 'Khám phá Cúc Phương – Ninh Bình', subtitle: 'Những điểm đến được cập nhật trên hệ thống', ctaLabel: 'Xem tất cả', ctaTarget: '/diem-den', limit: 6, selectionMode: 'featured' },
-  'home.testimonials': { enabled: true, title: 'Khách hàng chia sẻ', ctaLabel: 'Xem thêm', limit: 3 },
+  'home.testimonials': { enabled: true, title: 'Khách hàng nói về chúng mình', ctaLabel: 'Xem thêm', limit: 2 },
   'home.promo': { enabled: true, titleLine1: 'Không chỉ là', titleLine2: 'một nơi để nghỉ...', body: doc('Cúc Phương còn có những trải nghiệm thiên nhiên và hành trình đáng để bạn dành thời gian khám phá.'), ctaLabel: 'Khám phá ngay', ctaTarget: '/diem-den', quote: 'Đi để gần thiên nhiên hơn.', imageMediaId: SITE_MEDIA.promo },
-  'home.contactPanel': { enabled: true, title: 'Bạn cần tư vấn riêng?', description: doc('Liên hệ để được gợi ý lưu trú và lịch trình phù hợp cho chuyến đi Cúc Phương – Ninh Bình.'), advisorName: 'Người tư vấn demo', advisorRole: 'Tư vấn địa phương', phoneCtaLabel: 'Gọi tư vấn', zaloCtaLabel: 'Nhắn Zalo', note: 'Hẹn gặp bạn ở Cúc Phương!', imageMediaId: SITE_MEDIA.advisor },
+  'home.contactPanel': { enabled: true, title: 'Bạn cần tư vấn riêng?', description: doc('Liên hệ để được gợi ý lưu trú và lịch trình phù hợp cho chuyến đi Cúc Phương – Ninh Bình.'), advisorName: 'Đinh Vân', advisorRole: 'Người tư vấn địa phương', phoneCtaLabel: 'Gọi cho Đinh Vân', zaloCtaLabel: 'Nhắn Zalo', note: 'Xin chào! Mình là người địa phương, cùng bạn khám phá Cúc Phương!', imageMediaId: null },
   'home.faq': { enabled: true, title: 'Câu hỏi thường gặp', items: [
     { id: 'preparation', enabled: true, question: 'Tôi cần cung cấp gì khi muốn được tư vấn?', answer: doc('Thời gian dự kiến, số người, nhu cầu lưu trú và những điểm bạn muốn trải nghiệm.') },
     { id: 'confirmation', enabled: true, question: 'Thông tin phòng và giá có được xác nhận trước khi đặt không?', answer: doc('Có. Tình trạng phòng, mức giá và điều kiện đặt sẽ được xác nhận trước khi hoàn tất yêu cầu.') },
@@ -434,10 +442,10 @@ const settingOverrides = {
   ] },
   'contact.page': { enabled: true, heroEyebrow: 'Liên hệ', title: 'Cùng lên kế hoạch cho chuyến đi Cúc Phương', intro: doc('Chia sẻ nhu cầu lưu trú, thời gian dự kiến và số người để được hỗ trợ dễ dàng hơn.'), heroImageMediaId: SITE_MEDIA.contactHero, promises: [],
     formTitle: 'Gửi yêu cầu tư vấn', formIntro: doc('Thông tin của bạn được dùng để liên hệ và hỗ trợ cho yêu cầu này.'), formMessageLabel: 'Bạn đang cần hỗ trợ điều gì?', formMessagePlaceholder: 'Ví dụ: cần phòng cho gia đình, dự kiến đi 2 ngày 1 đêm...', formPrivacyNote: null, formSubmitLabel: 'Gửi yêu cầu', formSuccessMessage: doc('Đã nhận yêu cầu (demo).'),
-    quickTitle: 'Liên hệ trực tiếp', quickIntro: doc('Bạn có thể gọi trực tiếp nếu cần trao đổi nhanh.'), hoursTitle: 'Giờ làm việc', advisorName: 'Người tư vấn demo', advisorRole: 'Tư vấn địa phương', advisorDescription: doc('Hỗ trợ gợi ý lưu trú và hành trình tại khu vực Cúc Phương – Ninh Bình.'), advisorImageMediaId: SITE_MEDIA.advisor, advisorHighlights: [], advisorNote: null,
+    quickTitle: 'Liên hệ trực tiếp', quickIntro: doc('Bạn có thể gọi trực tiếp nếu cần trao đổi nhanh.'), hoursTitle: 'Giờ làm việc', advisorName: 'Đinh Vân', advisorRole: 'Người tư vấn địa phương', advisorDescription: doc('Hỗ trợ gợi ý lưu trú và hành trình tại khu vực Cúc Phương – Ninh Bình.'), advisorImageMediaId: null, advisorHighlights: [], advisorNote: null,
     mapTitle: 'Khu vực hỗ trợ', mapDescription: doc('Cúc Phương – Tràng An – Tam Cốc (bản đồ minh hoạ).'), mapImageMediaId: SITE_MEDIA.mapContact, scenicImageMediaId: SITE_MEDIA.scenic, scriptNote: null, showFaq: false, faqTitle: null, faqs: [] },
   'catalog.staysPage': { heroTitle: 'Phòng nghỉ Cúc Phương', heroKicker: 'Gợi ý lưu trú cho hành trình gần thiên nhiên', heroDescription: doc('Khám phá các nơi lưu trú (dữ liệu minh hoạ) hoặc liên hệ để trao đổi nhu cầu của bạn.'), heroImageMediaId: SITE_MEDIA.staysHero, heroNote: null,
-    reviewsTitle: 'Khách hàng nói gì', reviewsSubtitle: doc('Đánh giá minh hoạ trong bản demo.'), advisorTitle: 'Cần gợi ý chỗ nghỉ?', advisorDescription: doc('Gọi để trao đổi về thời gian đi, số người và nhu cầu lưu trú.'), advisorCtaLabel: 'Liên hệ tư vấn', advisorImageMediaId: SITE_MEDIA.advisorStays, advisorBenefits: [],
+    reviewsTitle: 'Khách hàng nói gì', reviewsSubtitle: doc('Đánh giá minh hoạ trong bản demo.'), advisorTitle: 'Cần gợi ý chỗ nghỉ?', advisorDescription: doc('Gọi để trao đổi về thời gian đi, số người và nhu cầu lưu trú.'), advisorCtaLabel: 'Liên hệ tư vấn', advisorImageMediaId: null, advisorBenefits: [],
     faqTitle: 'Câu hỏi về lưu trú', faqs: [{ id: 'checkin', enabled: true, question: 'Giờ nhận phòng là mấy giờ?', answer: doc('Thường từ 14:00, tuỳ cơ sở (thông tin minh hoạ).') }, { id: 'kids', enabled: true, question: 'Có phù hợp với trẻ nhỏ không?', answer: doc('Nhiều cơ sở có phòng gia đình; hãy hỏi trước khi đặt.') }],
     mapTitle: 'Bản đồ nơi lưu trú', mapImageMediaId: SITE_MEDIA.mapStays, emptyResultTitle: 'Chỗ nghỉ đang được cập nhật', emptyResultDescription: doc('Nội dung đang được cập nhật.'), emptyResultCtaLabel: 'Liên hệ tư vấn', emptyHelpTitle: null, emptyHelpDescription: null, emptyHelpCtaLabel: null },
   'catalog.stayDetail': { introTitle: 'Giới thiệu', introQuote: null, introQuoteAuthor: 'Chủ nhà demo', roomsTitle: 'Hạng phòng', amenitiesTitle: 'Tiện ích', reviewsTitle: 'Đánh giá của khách', factsTitle: 'Thông tin nhanh', checkInLabel: 'Nhận phòng', checkOutLabel: 'Trả phòng', breakfastLabel: 'Bữa sáng', houseRulesTitle: 'Nội quy', notesTitle: 'Lưu ý', notesThanks: 'Cảm ơn bạn đã quan tâm!', bookingNote: 'Giá và tình trạng phòng là dữ liệu minh hoạ.' },
@@ -449,7 +457,7 @@ const settingOverrides = {
   'catalog.bookingPage': { heroTitle: 'Đặt phòng Cúc Phương', heroKicker: 'Bắt đầu từ nhu cầu của bạn', heroDescription: doc('Chọn nơi lưu trú hoặc liên hệ để được hỗ trợ.'), heroImageMediaId: SITE_MEDIA.bookingHero, helpTitle: 'Cần hỗ trợ đặt phòng?', helpDescription: doc('Gọi để trao đổi trực tiếp về nhu cầu lưu trú.') },
   'catalog.staticPages': { eyebrow: 'Thông tin hữu ích', title: 'Chuyên trang', description: doc('Những thông tin hữu ích để chuẩn bị chuyến đi thuận tiện hơn.') },
   'catalog.articlesPage': { eyebrow: 'Cẩm nang Cúc Phương', title: 'Bài viết', description: doc('Góc đọc dành cho những ai yêu hành trình khám phá Cúc Phương – Ninh Bình.') },
-  'seo.defaults': { titleTemplate: '%s | Đinh Vân Booking', defaultTitle: 'Đinh Vân Booking — Cúc Phương, Ninh Bình', defaultDescription: 'Bản demo giao diện với dữ liệu minh hoạ.', canonicalBase: null, ogMediaId: null, robotsIndex: false, verification: { google: null, bing: null } },
+  'seo.defaults': { titleTemplate: '%s | Cúc Phương Travel', defaultTitle: 'Cúc Phương Travel — Cúc Phương, Ninh Bình', defaultDescription: 'Bản demo giao diện với dữ liệu minh hoạ.', canonicalBase: null, ogMediaId: null, robotsIndex: false, verification: { google: null, bing: null } },
   'ops.dataMode': { usesDemoData: true, demoBanner: 'Dữ liệu minh hoạ cho ảnh chụp giao diện.' },
   'partnerPortal.enabled': true,
   'inventoryCalendar.enabled': true,
@@ -734,10 +742,12 @@ function availabilitySearch(query) {
 // navigation
 // ---------------------------------------------------------------------------
 const NAV = [
-  { label: 'Phòng nghỉ', href: '/phong-nghi' },
-  { label: 'Combo du lịch', href: '/combo-du-lich' },
-  { label: 'Điểm đến', href: '/diem-den' },
-  { label: 'Liên hệ', href: '/lien-he' },
+  { label: 'Trang chủ', href: '/' },
+  { label: 'Lưu trú', href: '/phong-nghi' },
+  { label: 'Trải nghiệm', href: '/combo-du-lich' },
+  { label: 'Cẩm nang', href: '/diem-den' },
+  { label: 'Về mình', href: '/lien-he' },
+  { label: 'Dành cho đối tác', href: '/doi-tac' },
 ];
 const menuPayload = () => ({ key: 'primary', name: 'Menu chính', isDefault: false, items: NAV.map((n, i) => ({ id: `0000000${i + 1}-demo-4000-8000-00000000000${i + 1}`, label: n.label, contentId: null, externalUrl: n.href, href: n.href, position: i, enabled: true, kind: 'external', publicationStatus: null })) });
 

@@ -119,11 +119,9 @@
 
 .partner-auth__mark,
 .partner-brand__mark {
-  width: 48px;
-  height: 34px;
-  padding: 4px 6px;
-  border-radius: 10px;
-  background: var(--dvb-cream-50);
+  width: 42px;
+  height: 42px;
+  flex: none;
 }
 
 .partner-auth__pitch {
@@ -286,9 +284,6 @@
   text-decoration: none;
 }
 
-.partner-brand__mark {
-  background: var(--dvb-sage-100);
-}
 
 .partner-topbar__actions {
   display: flex;

@@ -51,7 +51,7 @@ export function BookingDetailPanel({ booking, onEdit }: { booking: Booking | nul
   const pay = paymentsOf(data, booking.id);
   const total = bookingTotal(booking);
 
-  const messageText = `Xin chào ${customer?.name ?? 'quý khách'}, Đinh Vân Booking xác nhận yêu cầu ${booking.code}: ${
+  const messageText = `Xin chào ${customer?.name ?? 'quý khách'}, Cúc Phương Travel xác nhận yêu cầu ${booking.code}: ${
     property?.name ?? combo?.name
   }, nhận phòng ${formatDate(booking.checkIn)}, trả phòng ${formatDate(booking.checkOut)} (${nightsOf(booking)} đêm), ${
     booking.adults + booking.children

@@ -78,12 +78,9 @@
 }
 
 .asidebar__mark {
-  width: 48px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   flex: none;
-  padding: 5px 6px;
-  border-radius: 10px;
-  background: var(--dvb-cream-50);
 }
 
 .asidebar__brand-text {
@@ -94,7 +91,7 @@
 
 .asidebar__word {
   color: #fff;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 

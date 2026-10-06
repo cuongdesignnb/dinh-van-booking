@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useId, useMemo, useState, type React
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Bell, Building2, CalendarRange, ExternalLink, FileText, Images, Info, LogOut, Search, SlidersHorizontal, Users } from 'lucide-react';
-import { DinhVanMark } from '@/components/ui/BrandLogo';
+import { CucPhuongMark } from '@/components/ui/BrandLogo';
 import { Drawer, StateBlock, StatusPill, type Tone } from '@/components/ui/system';
 import { ApiError, apiPath, apiRequest } from '@/lib/api/client';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '@/components/admin/shared/RichTextEditor';
@@ -631,7 +631,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
 
   if (checking) return <div className="partner-center"><StateBlock kind="loading" title="Đang kiểm tra phiên đăng nhập…" /></div>;
   if (portalDisabled) return <div className="partner-center"><section className="ui-card ui-card--pad partner-disabled">
-    <span className="ui-eyebrow">Đinh Vân Booking</span>
+    <span className="ui-eyebrow">Cúc Phương Travel</span>
     <h1>Cổng đối tác đang tạm đóng</h1>
     <p>Quản trị viên chưa mở đăng ký và lịch phòng cho đối tác. Vui lòng quay lại sau.</p>
     <Link className="ui-btn ui-btn--primary" href="/">Quay về website</Link>
@@ -639,9 +639,9 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
 
   if (!user) return <section className="partner-auth">
     <div className="partner-auth__brand">
-      <Link className="partner-auth__logo" href="/"><DinhVanMark className="partner-auth__mark" /><span>Đinh Vân <small>Đối tác</small></span></Link>
+      <Link className="partner-auth__logo" href="/"><CucPhuongMark className="partner-auth__mark" size={42} /><span>Cúc Phương Travel <small>Đối tác</small></span></Link>
       <div className="partner-auth__pitch">
-        <span className="ui-eyebrow">Hợp tác cùng Đinh Vân Booking</span>
+        <span className="ui-eyebrow">Hợp tác cùng Cúc Phương Travel</span>
         <h1>Cổng dành cho đối tác lưu trú</h1>
         <p>Cập nhật phòng trống, gửi đề xuất hồ sơ và nhận thông báo — chỉ trong phạm vi cơ sở bạn được giao.</p>
         <ul className="partner-auth__points">
@@ -687,7 +687,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
   const orgProperties = activeOrg ? properties.filter((item) => item.organizationId === activeOrg.id) : [];
 
   const topbar = <header className="partner-topbar">
-    <Link className="partner-brand" href="/doi-tac"><DinhVanMark className="partner-brand__mark" /><span>Đinh Vân <small>Đối tác</small></span></Link>
+    <Link className="partner-brand" href="/doi-tac"><CucPhuongMark className="partner-brand__mark" size={40} /><span>Cúc Phương Travel <small>Đối tác</small></span></Link>
     <div className="partner-topbar__actions">
       {!editorRoute && <button type="button" className="ui-btn ui-btn--ghost partner-topbar__bell" onClick={() => setTab('notifications')} aria-label={unread ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}>
         <Bell size={18} aria-hidden="true" />{unread > 0 && <span className="partner-topbar__count" aria-hidden="true">{unread}</span>}

@@ -3,7 +3,7 @@ import './portal.css';
 import '@/styles/admin-editor.css';
 
 export const metadata: Metadata = {
-  title: 'Cổng đối tác — Đinh Vân Booking',
+  title: 'Cổng đối tác — Cúc Phương Travel',
   robots: { index: false, follow: false },
 };
 

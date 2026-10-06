@@ -1,27 +1,29 @@
 'use client';
 
-import { ArrowRight, Menu, Search, X } from 'lucide-react';
+import { Menu, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
-import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
 import { focusSearch } from '@/lib/events';
 import { useSiteData } from '@/components/site/SiteDataProvider';
 import type { PublicNavigationItem } from '@/lib/api/public';
-import { publicSetting, publicText } from '@/lib/public-content';
 
 const isActive = (path: string, href: string) =>
   href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
 
+/** Static VN flag; the language switch is not available yet. */
+function VnFlag() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false">
+      <circle cx="10" cy="10" r="10" fill="#da251d" />
+      <path d="m10 4.6 1.3 3.9h4.1l-3.3 2.4 1.2 3.9L10 12.4l-3.3 2.4 1.2-3.9-3.3-2.4h4.1Z" fill="#ffcd00" />
+    </svg>
+  );
+}
+
 export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] }) {
   const site = useSiteData();
-  const partnerEnabled = site.publicSite.features?.partnerPortal === true;
-  const header = publicSetting(site.publicSite, 'site.header');
-  const ctaLabel = publicText(header.ctaLabel);
-  const ctaTarget = publicText(header.ctaTarget);
-  const mottoLine1 = publicText(header.mottoLine1);
-  const mottoLine2 = publicText(header.mottoLine2);
   const pathname = usePathname() ?? '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -58,14 +60,15 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
     };
   }, [menuOpen]);
 
-  const renderItems = () =>
+  const close = () => setMenuOpen(false);
+  const renderItems = (className: string) =>
     navigation.map((item) => (
-      <li key={item.href}>
+      <li key={`${item.href}-${item.label}`}>
         <Link
           href={item.href}
-          className="nav__link"
+          className={className}
           aria-current={item.href.startsWith('/') && isActive(pathname, item.href) ? 'page' : undefined}
-          onClick={() => setMenuOpen(false)}
+          onClick={close}
         >
           {item.label}
         </Link>
@@ -73,41 +76,28 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
     ));
 
   return (
-    <header className={`site-header${partnerEnabled ? ' site-header--partners' : ''}`} id="top">
-      <LeafSprig className="site-header__decor" />
-      <div className="site-header__inner">
-        <Link href="/" className="site-header__brand" aria-label={site.name || undefined}>
+    <header className="sh" id="top">
+      <div className="sh__inner">
+        <Link href="/" className="sh__brand" aria-label={site.name ? `${site.name} — Trang chủ` : 'Trang chủ'}>
           <BrandLogo />
         </Link>
 
-        <nav className="nav" aria-label="Điều hướng chính">
-          <ul className="nav__list">{renderItems()}</ul>
-        </nav>
+        {navigation.length > 0 && <nav className="sh__nav" aria-label="Điều hướng chính">
+          <ul>{renderItems('sh__link')}</ul>
+        </nav>}
 
-        <div className="site-header__aside">
-          <SmallLeaf className="site-header__leaf" />
-          {(mottoLine1 || mottoLine2) && <p className="site-header__motto">{mottoLine1 && <span>{mottoLine1}</span>}{mottoLine2 && <span>{mottoLine2}</span>}</p>}
-        </div>
-
-        <div className="site-header__actions">
-          {partnerEnabled && <details className="header-partner" onKeyDown={(event) => {
-            if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
-          }}>
-            <summary>Đối tác</summary>
-            <div className="header-partner__links">
-              <Link href="/doi-tac?mode=login">Đăng nhập đối tác</Link>
-              <Link href="/doi-tac?mode=register">Đăng ký đối tác</Link>
-            </div>
-          </details>}
-          <button type="button" className="round-btn" aria-label="Tìm phòng" onClick={() => focusSearch()}>
-            <Search size={17} strokeWidth={2.1} aria-hidden="true" />
+        <div className="sh__actions">
+          <button type="button" className="sh__icon sh__search" aria-label="Tìm nơi lưu trú" onClick={() => focusSearch()}>
+            <Search size={21} strokeWidth={2} aria-hidden="true" />
           </button>
-          {ctaLabel && ctaTarget && <Link href={ctaTarget} className="btn btn--primary btn--header btn-shine" data-magnetic>
-            {ctaLabel} <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
-          </Link>}
+          <span className="sh__lang" title="Sắp có tiếng Anh" aria-label="Ngôn ngữ: Tiếng Việt. Sắp có tiếng Anh.">
+            <VnFlag /> <span aria-hidden="true">VN</span>
+          </span>
+          <Link href="/doi-tac?mode=login" className="sh__login">Đăng nhập</Link>
+          <Link href="/doi-tac?mode=register" className="sh__register">Đăng ký</Link>
           <button
             type="button"
-            className="round-btn menu-toggle"
+            className="sh__icon sh__menu"
             aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
             aria-expanded={menuOpen}
             aria-controls="mobile-drawer"
@@ -116,49 +106,33 @@ export function SiteHeader({ navigation }: { navigation: PublicNavigationItem[] 
               setMenuOpen((v) => !v);
             }}
           >
-            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            {menuOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
           </button>
         </div>
       </div>
 
-      <div
-        className="drawer"
-        data-open={menuOpen || undefined}
-        aria-hidden={!menuOpen}
-        onClick={(e) => e.target === e.currentTarget && setMenuOpen(false)}
-      >
-        <div
-          ref={drawerRef}
-          id="mobile-drawer"
-          className="drawer__panel"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu"
-          inert={!menuOpen}
-        >
-          <div className="drawer__head">
-            <BrandLogo />
+      <div className="sd" data-open={menuOpen || undefined} aria-hidden={!menuOpen} onClick={(e) => e.target === e.currentTarget && close()}>
+        <div ref={drawerRef} id="mobile-drawer" className="sd__panel" role="dialog" aria-modal="true" aria-label="Menu" inert={!menuOpen}>
+          <div className="sd__head">
+            <BrandLogo variant="drawer" />
             <button
               type="button"
-              className="round-btn"
+              className="sh__icon"
               aria-label="Đóng menu"
               onClick={() => {
-                setMenuOpen(false);
+                close();
                 toggleRef.current?.focus();
               }}
             >
-              <X size={20} aria-hidden="true" />
+              <X size={24} aria-hidden="true" />
             </button>
           </div>
-          <ul className="drawer__list">{renderItems()}</ul>
-          {partnerEnabled && <div className="drawer-partner">
-            <Link href="/doi-tac?mode=login" onClick={() => setMenuOpen(false)}>Đăng nhập đối tác</Link>
-            <Link href="/doi-tac?mode=register" onClick={() => setMenuOpen(false)}>Đăng ký đối tác</Link>
-          </div>}
-          {ctaLabel && ctaTarget && <Link href={ctaTarget} className="btn btn--primary drawer__cta" onClick={() => setMenuOpen(false)}>
-            {ctaLabel} <ArrowRight size={16} aria-hidden="true" />
-          </Link>}
-          {(mottoLine1 || mottoLine2) && <p className="drawer__motto handwritten">{[mottoLine1, mottoLine2].filter(Boolean).join(' — ')}</p>}
+          <ul className="sd__list">{renderItems('sd__link')}</ul>
+          <div className="sd__account">
+            <Link href="/doi-tac?mode=login" className="btn btn--outline" onClick={close}>Đăng nhập</Link>
+            <Link href="/doi-tac?mode=register" className="btn btn--primary" onClick={close}>Đăng ký</Link>
+          </div>
+          <p className="sd__lang"><VnFlag /> Tiếng Việt <span>· Sắp có tiếng Anh</span></p>
         </div>
       </div>
     </header>

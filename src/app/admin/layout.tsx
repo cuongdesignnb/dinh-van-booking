@@ -20,7 +20,7 @@ import '@/styles/admin-partners.css';
 import '@/styles/admin-refresh.css';
 
 export const metadata: Metadata = {
-  title: 'Quản trị — Đinh Vân Booking',
+  title: 'Quản trị — Cúc Phương Travel',
   // The admin is never indexed; this is not an access control.
   robots: { index: false, follow: false },
 };

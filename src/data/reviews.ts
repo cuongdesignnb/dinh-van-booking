@@ -99,7 +99,7 @@ export const comboReviews: Review[] = [
     author: 'Trần Minh Đức',
     context: 'TP. Hồ Chí Minh',
     rating: 5,
-    quote: 'Gia đình mình rất hài lòng. Các bé thích nhất là đi rừng và thăm các loài động vật. Cảm ơn Đinh Vân Booking!',
+    quote: 'Gia đình mình rất hài lòng. Các bé thích nhất là đi rừng và thăm các loài động vật. Cảm ơn Cúc Phương Travel!',
     avatar: av('review-combo-2.webp'),
     isDemo: true,
   },
