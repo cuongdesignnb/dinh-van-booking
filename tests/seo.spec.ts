@@ -38,9 +38,14 @@ test('robots and sitemap expose no draft or unapproved URL', async ({ request })
   expect(urlsResponse.status()).toBe(200);
   const siteResponse = await request.get('/api/v1/public/site');
   expect(siteResponse.status()).toBe(200);
-  const site = await siteResponse.json() as { settings: Record<string, { enabled?: boolean }> };
+  const site = await siteResponse.json() as { settings: Record<string, { enabled?: boolean; title?: string }> };
   const paths = ((await urlsResponse.json()) as { items: Array<{ path: string }> }).items.map((item) => item.path);
-  expect(paths).toEqual(site.settings['contact.page']?.enabled ? ['/lien-he'] : []);
+  // With no published content only the settings-driven pages are candidates (contact, and /ve-minh since v3).
+  const expected = [
+    ...(site.settings['contact.page']?.enabled ? ['/lien-he'] : []),
+    ...(site.settings['about.page']?.enabled && site.settings['about.page']?.title ? ['/ve-minh'] : []),
+  ];
+  expect(paths).toEqual(expected);
 });
 
 test('public API returns only the currently published database projection', async ({ request }) => {
