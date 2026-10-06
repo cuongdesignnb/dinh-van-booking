@@ -1216,28 +1216,40 @@
 .co-empty {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   max-width: 620px;
-  margin: 40px 0 80px;
-  padding: 28px;
-  border-radius: 12px;
+  margin: clamp(40px, 6vw, 72px) auto clamp(56px, 8vw, 96px);
+  padding: clamp(28px, 4vw, 44px);
+  border-radius: var(--dvb-r-lg);
   background: #fff;
-  border: 1px dashed #cfd9c6;
-  color: #3a443d;
+  box-shadow: var(--dvb-card-shadow);
+  color: var(--dvb-ink-soft);
+  text-align: center;
 }
 
-.co-empty svg {
-  color: var(--dvb-green-800);
+.co-empty > svg:first-child {
+  width: 64px;
+  height: 64px;
+  padding: 16px;
+  border-radius: 50%;
+  background: var(--dvb-brand-tint);
+  color: var(--dvb-brand);
 }
 
 .co-empty h2 {
-  font-size: 24px;
+  font-size: clamp(22px, 2vw, 28px);
+}
+
+.co-empty p {
+  max-width: 46ch;
+  font-size: 15.5px;
+  line-height: 1.6;
 }
 
 .co-empty .btn {
-  height: 44px;
-  padding: 0 18px;
+  height: 46px;
+  padding: 0 20px;
 }
 
 .co-loading {
@@ -1470,34 +1482,4 @@
     height: 46px;
     padding: 0 16px;
   }
-}
-
-/* ---------- Redesign layer (Phase C) ---------- */
-
-.co-empty {
-  align-items: center;
-  margin: clamp(40px, 6vw, 80px) auto clamp(56px, 8vw, 104px);
-  padding: clamp(28px, 4vw, 44px);
-  text-align: center;
-  border: 1px solid var(--dvb-line);
-  border-radius: var(--dvb-r-xl);
-  box-shadow: var(--dvb-shadow-sm);
-}
-
-.co-empty svg:first-child {
-  width: 64px;
-  height: 64px;
-  padding: 16px;
-  border-radius: 50%;
-  background: var(--dvb-sage-50);
-}
-
-.co-empty h2 {
-  font-size: clamp(22px, 2vw, 28px);
-}
-
-.co-empty p {
-  max-width: 46ch;
-  font-size: 15.5px;
-  line-height: 1.6;
 }

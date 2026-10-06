@@ -1,0 +1,280 @@
+/* ==========================================================================
+   Combo & destination detail — photo hero + content cards + sticky offer card
+   ========================================================================== */
+
+.page-detail {
+  padding-bottom: 72px;
+}
+
+.cp-detail__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.cp-detail__facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: var(--dvb-r-pill);
+  background: rgb(255 255 255 / 12%);
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+.cp-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: 28px;
+  margin-top: -36px;
+  position: relative;
+}
+
+.cp-detail__main {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+
+.cp-detail__card {
+  padding: 30px 32px;
+  border-radius: var(--dvb-r-lg);
+  background: #fff;
+  box-shadow: var(--dvb-card-shadow);
+}
+
+.cp-detail__card > h2,
+.cp-detail__split h2 {
+  margin-bottom: 16px;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cp-detail__body {
+  color: var(--dvb-ink-soft);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.cp-detail__body p + p {
+  margin-top: 12px;
+}
+
+.cp-detail__gallery {
+  padding: 16px;
+}
+
+.cp-detail__split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
+}
+
+/* Itinerary timeline */
+
+.cp-timeline {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cp-timeline__day {
+  position: relative;
+  padding: 0 0 24px 28px;
+  border-left: 2px dashed var(--dvb-brand-soft);
+  margin-left: 8px;
+}
+
+.cp-timeline__day:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+
+.cp-timeline__day::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: -9px;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--dvb-brand);
+  box-shadow: 0 0 0 2px var(--dvb-brand-soft);
+}
+
+.cp-timeline__badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: var(--dvb-gold-strong);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cp-timeline h3 {
+  margin-bottom: 8px;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.cp-timeline ul {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+  color: var(--dvb-ink-soft);
+  list-style: disc;
+}
+
+/* Check lists */
+
+.cp-checklist {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.cp-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--dvb-ink);
+  line-height: 1.5;
+}
+
+.cp-checklist svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--dvb-brand-600);
+}
+
+.cp-checklist--muted li {
+  color: var(--dvb-ink-soft);
+}
+
+.cp-checklist--muted svg {
+  color: var(--dvb-ink-faint);
+}
+
+.cp-checklist--grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 24px;
+}
+
+/* Offer / plan card */
+
+.cp-detail__aside {
+  position: sticky;
+  top: calc(var(--header-h) + 20px);
+}
+
+.cp-offer {
+  display: grid;
+  gap: 14px;
+  padding: 26px;
+  border-radius: var(--dvb-r-lg);
+  background: #fff;
+  box-shadow: var(--dvb-float-shadow);
+}
+
+.cp-offer__title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.cp-offer__price {
+  color: var(--dvb-ink-soft);
+  font-size: 15px;
+}
+
+.cp-offer__price strong {
+  color: var(--dvb-ink);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.cp-offer__note {
+  padding: 8px 12px;
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-brand-tint);
+  color: var(--dvb-ink-soft);
+  font-size: 13px;
+}
+
+.cp-offer__facts,
+.cp-offer__loc {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+  color: var(--dvb-ink);
+}
+
+.cp-offer__facts li,
+.cp-offer__loc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-offer__facts svg,
+.cp-offer__loc svg {
+  color: var(--dvb-brand-600);
+}
+
+.cp-offer__notes {
+  padding-top: 12px;
+  border-top: 1px solid var(--dvb-hairline);
+}
+
+.cp-offer__notes h3 {
+  margin-bottom: 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.cp-offer__cta {
+  justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .cp-detail {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: -28px;
+  }
+  .cp-detail__aside {
+    position: static;
+  }
+}
+
+@media (max-width: 767px) {
+  .cp-detail__card {
+    padding: 22px 18px;
+  }
+  .cp-detail__card > h2,
+  .cp-detail__split h2 {
+    font-size: 22px;
+  }
+  .cp-offer {
+    padding: 20px;
+  }
+}
+
+.page-detail .cp-page-hero {
+  min-height: 380px;
+}
+
+.page-detail .cp-page-hero__inner {
+  padding-bottom: 78px;
+}

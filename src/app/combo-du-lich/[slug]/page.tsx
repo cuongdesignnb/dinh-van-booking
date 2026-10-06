@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import Image from '@/components/ui/ManagedImage';
+import { ArrowRight, CalendarDays, Check, Route, X } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { PageShell } from '@/components/layout/PageShell';
-import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import { PageHero } from '@/components/site/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { getPublicCombo, getPublicSite } from '@/lib/api/public';
 import { isSubstantivePublicContent } from '@/lib/seo/content';
@@ -13,7 +13,7 @@ import { isSeoSchemaAllowed } from '@/lib/seo/policy';
 import { buildComboGraph } from '@/lib/seo/schema';
 import { comboPriceUnitLabel } from '@/lib/catalog/combo-pricing';
 import { formatVnd } from '@/lib/format';
-import '@/styles/static-pages.css';
+import '@/styles/site/detail.css';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -43,38 +43,63 @@ export default async function ComboDetailPage({ params, searchParams }: Props) {
   if (combo.publicPath !== canonicalPath) permanentRedirect(combo.publicPath);
   const site = await getPublicSite();
 
+  const hasPrice = combo.fromPriceVnd !== null && combo.fromPriceVnd > 0;
+  const contactHref = `/lien-he?intent=combo&item=${encodeURIComponent(combo.slug)}`;
+
   return (
-    <PageShell className="page-static-content">
-      <section className="static-page">
-        <Breadcrumb items={[{ label: 'Trang chủ', href: '/' }, { label: 'Combo du lịch', href: '/combo-du-lich' }, { label: combo.title }]} />
-        <article className="static-page__article">
-          <header className="static-page__header">
-            <p className="static-page__eyebrow">Hành trình địa phương</p>
-            <h1>{combo.title}</h1>
-            <p className="static-page__excerpt">{combo.subtitle}</p>
-            <p className="static-page__fact">{combo.durationDays} ngày · {combo.durationNights} đêm</p>
-          </header>
-          {combo.image && <figure className="static-page__cover"><Image src={combo.image.src} alt={combo.image.alt} width={combo.image.width} height={combo.image.height} unoptimized priority /></figure>}
-          <div className="static-page__offer">
-            <p>{combo.fromPriceVnd !== null && combo.fromPriceVnd > 0
-              ? <>Từ <strong>{formatVnd(combo.fromPriceVnd)}</strong> / {comboPriceUnitLabel(combo.priceUnit)} <span>Giá tham khảo; chưa tạo đơn đặt.</span></>
-              : <><strong>Liên hệ để nhận giá</strong><span>Chưa có giá công khai; không đặt hoặc thanh toán trực tuyến.</span></>}</p>
-            <Link className="btn btn--primary" href={`/lien-he?intent=combo&item=${encodeURIComponent(combo.slug)}`}>Liên hệ tư vấn</Link>
+    <PageShell className="page-detail">
+      <PageHero id="combo-detail-h1" title={combo.title} eyebrow="Hành trình địa phương" lead={combo.subtitle} image={combo.image}
+        crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Trải nghiệm', href: '/combo-du-lich' }, { label: combo.title }]}>
+        <ul className="cp-detail__facts">
+          <li><CalendarDays size={17} aria-hidden="true" /> {combo.durationDays} ngày · {combo.durationNights} đêm</li>
+          {combo.itinerary.length > 0 && <li><Route size={17} aria-hidden="true" /> {combo.itinerary.length} chặng lịch trình</li>}
+        </ul>
+      </PageHero>
+
+      <div className="cp-detail cp-shell">
+        <div className="cp-detail__main">
+          {combo.body && <section className="cp-detail__card" aria-labelledby="combo-intro">
+            <h2 id="combo-intro">Giới thiệu</h2>
+            <RichContentRenderer document={combo.body} className="cp-detail__body" />
+          </section>}
+
+          {combo.itinerary.length > 0 && <section className="cp-detail__card" aria-labelledby="combo-itinerary">
+            <h2 id="combo-itinerary">Lịch trình</h2>
+            <ol className="cp-timeline">
+              {combo.itinerary.map((day) => <li key={day.day} className="cp-timeline__day">
+                <span className="cp-timeline__badge">Ngày {day.day}</span>
+                <h3>{day.title}</h3>
+                <ul>{day.items.map((item, index) => <li key={`${day.day}-${index}`}>{item}</li>)}</ul>
+              </li>)}
+            </ol>
+          </section>}
+
+          {(combo.included.length > 0 || combo.excluded.length > 0) && <section className="cp-detail__card cp-detail__split" aria-label="Dịch vụ">
+            {combo.included.length > 0 && <div>
+              <h2>Đã bao gồm</h2>
+              <ul className="cp-checklist">{combo.included.map((item) => <li key={item}><Check size={17} aria-hidden="true" />{item}</li>)}</ul>
+            </div>}
+            {combo.excluded.length > 0 && <div>
+              <h2>Chưa bao gồm</h2>
+              <ul className="cp-checklist cp-checklist--muted">{combo.excluded.map((item) => <li key={item}><X size={17} aria-hidden="true" />{item}</li>)}</ul>
+            </div>}
+          </section>}
+        </div>
+
+        <aside className="cp-detail__aside">
+          <div className="cp-offer">
+            {hasPrice
+              ? <p className="cp-offer__price"><span>Từ</span> <strong>{formatVnd(combo.fromPriceVnd as number)}</strong> <span>/ {comboPriceUnitLabel(combo.priceUnit)}</span></p>
+              : <p className="cp-offer__price"><strong>Liên hệ để nhận giá</strong></p>}
+            <p className="cp-offer__note">{hasPrice ? 'Giá tham khảo; chưa tạo đơn đặt.' : 'Chưa có giá công khai; không đặt hoặc thanh toán trực tuyến.'}</p>
+            <ul className="cp-offer__facts">
+              <li><CalendarDays size={17} aria-hidden="true" /> {combo.durationDays} ngày · {combo.durationNights} đêm</li>
+            </ul>
+            <Link className="btn btn--primary btn--lg cp-offer__cta" href={contactHref}>Liên hệ tư vấn <ArrowRight size={18} aria-hidden="true" /></Link>
+            <Link className="btn btn--outline cp-offer__cta" href="/combo-du-lich">Xem trải nghiệm khác</Link>
           </div>
-          {combo.body && <RichContentRenderer document={combo.body} className="static-page__body" />}
-          {combo.itinerary.length > 0 && <section className="static-page__section">
-            <h2>Lịch trình</h2>
-            {combo.itinerary.map((day) => <article className="static-page__day" key={day.day}>
-              <h3>Ngày {day.day}: {day.title}</h3>
-              <ul>{day.items.map((item, index) => <li key={`${day.day}-${index}`}>{item}</li>)}</ul>
-            </article>)}
-          </section>}
-          {(combo.included.length > 0 || combo.excluded.length > 0) && <section className="static-page__section static-page__columns">
-            {combo.included.length > 0 && <div><h2>Đã bao gồm</h2><ul>{combo.included.map((item) => <li key={item}>{item}</li>)}</ul></div>}
-            {combo.excluded.length > 0 && <div><h2>Chưa bao gồm</h2><ul>{combo.excluded.map((item) => <li key={item}>{item}</li>)}</ul></div>}
-          </section>}
-        </article>
-      </section>
+        </aside>
+      </div>
       <JsonLd data={isSeoSchemaAllowed(site, combo.publicPath, {
         eligible: !!combo.image && isSubstantivePublicContent(combo.body),
         noindex: combo.noindex,
