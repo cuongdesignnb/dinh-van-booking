@@ -14,7 +14,9 @@ START_SHA (real) = a049e88 (the spec expected 89ddafe; main had moved on, so per
   - `npm run seo:test` (19 unit tests).
 - `seo.structuredData.localBusiness` toggle (default false); demo API approved mode; `scripts/seo/seo-qa.mjs`.
 
+- b4061a9: sitemap body-only eligibility; approved-mode QA 280/280. Docker rebuilt (api, worker, web; no pending migrations).
+- a972393 / b1f51eb: real-stack slug E2E 32/32 (QA content cleaned up), gated QA 108/108, tests/seo.spec 6/6.
+- 2fa8c19: §67 docs. Final report `docs/seo/final-report.md`.
+
 ## Next
-- Backend tests again; local `next build` + approved-mode QA (demo API); fix findings.
-- Docker rebuild; real-stack QA with QA content (Admin E2E Generate + 308) and cleanup.
-- Docs (§67), final report (§77), BA review.
+- BA review `docs/ba-review/BA-REVIEW-2026-10-06.md`, then STOP.
