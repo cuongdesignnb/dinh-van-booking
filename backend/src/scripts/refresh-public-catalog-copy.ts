@@ -32,6 +32,7 @@ const noMedia: Record<BootstrapMediaKey, null> = {
   destinationsHero: null,
   combosHero: null,
   bookingHero: null,
+  partner: null,
 };
 
 /** Only exact old bootstrap fields are eligible; every other Admin edit survives. */
