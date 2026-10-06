@@ -1941,3 +1941,32 @@
     z-index: 2;
   }
 }
+
+.detail-head__hl li,
+.amen__chip,
+.facts__list li,
+.rules__list li,
+.notes__list li,
+.dreview__quote {
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.dreview__name {
+  font-size: 15px;
+}
+
+.dreview__date,
+.dreview__meta {
+  font-size: 13px;
+}
+
+.amen__chip {
+  height: auto;
+  min-height: 44px;
+}
+
+.dreview {
+  padding: 14px 16px;
+  border-radius: var(--dvb-r-lg);
+}
