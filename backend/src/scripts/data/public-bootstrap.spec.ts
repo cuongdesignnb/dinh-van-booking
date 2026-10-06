@@ -14,6 +14,9 @@ test('bootstrap is a separate, dry-run-first command with explicit replace', () 
   assert.throws(() => parseBootstrapArgs(['--replace-existing']));
   assert.throws(() => parseBootstrapArgs(['--apply', '--dry-run']));
   assert.throws(() => parseBootstrapArgs(['--unknown']));
+  assert.deepEqual(parseBootstrapArgs(['--apply', '--replace-existing', '--only', 'brand.,home.']), { apply: true, replaceExisting: true, only: ['brand.', 'home.'] });
+  assert.throws(() => parseBootstrapArgs(['--only']));
+  assert.throws(() => parseBootstrapArgs(['--only', '--apply']));
 });
 
 test('manifest uses only presentation settings/media and approved navigation', () => {
@@ -54,4 +57,7 @@ test('existing Admin content is skipped unless replace mode is explicit', () => 
   assert.equal(hero?.version, 5);
   assert.equal((hero?.before as { titleLine1: string }).titleLine1, 'ABCXYZ Admin đã sửa');
   assert.equal((hero?.after as { titleLine1: string }).titleLine1, 'Lưu trú giữa thiên nhiên,');
+  const scoped = planBootstrapSettings(values, existing, true, ['brand.']);
+  assert.equal(scoped.find((item) => item.key === 'home.hero')?.action, 'skip');
+  assert.ok(scoped.filter((item) => item.action !== 'skip').every((item) => item.key.startsWith('brand.')));
 });

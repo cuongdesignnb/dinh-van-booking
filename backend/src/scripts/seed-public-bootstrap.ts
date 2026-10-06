@@ -13,7 +13,7 @@ import { SETTINGS_BY_KEY } from '../settings/settings.registry';
 import { SettingsService, mergeWithDefault } from '../settings/settings.service';
 import { PUBLIC_BOOTSTRAP_MEDIA, PUBLIC_BOOTSTRAP_MENU, publicBootstrapSettings, type BootstrapMediaKey } from './data/public-bootstrap';
 
-type Options = { apply: boolean; replaceExisting: boolean; actorEmail?: string };
+type Options = { apply: boolean; replaceExisting: boolean; actorEmail?: string; only?: string[] };
 type MediaPlan = { key: BootstrapMediaKey; source: string; filename: string; buffer: Buffer; alt: string; caption: string; sha: string; existing: MediaAsset | null };
 type SettingPlan = { key: string; action: 'create' | 'skip' | 'replace'; differs: boolean; before: unknown; after: unknown; version: number | null };
 
@@ -31,6 +31,12 @@ export function parseBootstrapArgs(args: string[]): Options {
       const email = args[++index];
       if (!email || email.startsWith('--')) throw new Error('Thiếu email cho --actor-email');
       options.actorEmail = email.trim().toLowerCase();
+    } else if (arg === '--only') {
+      // Comma-separated key prefixes, e.g. `brand.,site.,home.`; every other key is skipped.
+      const value = args[++index];
+      const prefixes = (value ?? '').split(',').map((item) => item.trim()).filter(Boolean);
+      if (!value || value.startsWith('--') || !prefixes.length) throw new Error('Thiếu danh sách key cho --only');
+      options.only = prefixes;
     } else throw new Error(`Tham số không hợp lệ: ${arg}`);
   }
   if (seen.has('--apply') && seen.has('--dry-run')) throw new Error('Chỉ chọn --dry-run hoặc --apply');
@@ -42,6 +48,7 @@ export function planBootstrapSettings(
   values: Record<string, Record<string, unknown>>,
   existing: Map<string, { value: unknown; version: number }>,
   replaceExisting: boolean,
+  only?: string[],
 ): SettingPlan[] {
   return Object.entries(values).map(([key, value]) => {
     const definition = SETTINGS_BY_KEY.get(key);
@@ -49,9 +56,10 @@ export function planBootstrapSettings(
     const current = existing.get(key);
     const after = mergeWithDefault(definition.defaultValue, value);
     const same = current && isDeepStrictEqual(current.value, after);
+    const selected = !only || only.some((prefix) => key.startsWith(prefix));
     return {
       key,
-      action: current ? (replaceExisting && !same ? 'replace' : 'skip') : 'create',
+      action: !selected ? 'skip' : current ? (replaceExisting && !same ? 'replace' : 'skip') : 'create',
       differs: !!current && !same,
       before: current?.value ?? null,
       after,
@@ -121,7 +129,7 @@ async function run(): Promise<void> {
     const previewValues = publicBootstrapSettings(existingIds);
     const existingRows = await prisma.setting.findMany({ where: { key: { in: Object.keys(previewValues) } }, select: { key: true, value: true, version: true } });
     const existing = new Map(existingRows.map((row) => [row.key, { value: row.value, version: row.version }]));
-    const plan = planBootstrapSettings(previewValues, existing, options.replaceExisting);
+    const plan = planBootstrapSettings(previewValues, existing, options.replaceExisting, options.only);
     const navigation = await prisma.navigationMenu.findUnique({ where: { key: 'primary' }, select: { id: true } });
 
     console.log('DVB_PUBLIC_BOOTSTRAP_PREVIEW');
@@ -141,7 +149,8 @@ async function run(): Promise<void> {
     printCount('SKIP_EXISTING', plan.filter((item) => item.action === 'skip').length + Number(!!navigation));
     printCount('REPLACE_REQUIRED', plan.filter((item) => item.action === 'skip' && item.differs).length);
     console.log(`NAVIGATION=${navigation ? 'SKIP_EXISTING' : 'CREATE'}`);
-    for (const item of plan) console.log(`SETTING_${item.action.toUpperCase()} ${item.key}`);
+    if (options.only) console.log(`ONLY=${options.only.join(',')}`);
+    for (const item of plan) console.log(`SETTING_${item.action.toUpperCase()} ${item.key}${item.differs ? ' DIFFERS' : ''}`);
     for (const item of media) console.log(`MEDIA_${item.existing ? 'REUSE' : 'IMPORT'} ${item.source} sha256=${item.sha}`);
     for (const item of plan.filter((entry) => entry.action === 'replace')) {
       console.log(`REPLACE ${item.key} BEFORE=${JSON.stringify(item.before)} AFTER=${JSON.stringify(item.after)}`);
@@ -159,7 +168,7 @@ async function run(): Promise<void> {
       mediaIds[item.key] = asset.id;
     }
     const actualValues = publicBootstrapSettings(mediaIds);
-    const finalPlan = planBootstrapSettings(actualValues, existing, options.replaceExisting);
+    const finalPlan = planBootstrapSettings(actualValues, existing, options.replaceExisting, options.only);
     await prisma.$transaction(async (tx) => {
       for (const item of finalPlan) {
         const current = await tx.setting.findUnique({ where: { key: item.key } });
