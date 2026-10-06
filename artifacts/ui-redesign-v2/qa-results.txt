@@ -1,0 +1,56 @@
+OK   public-home@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-home@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-home@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-home@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-home reduced-motion running-animations=0
+OK   public-stays@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stays@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stays@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stays@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stays reduced-motion running-animations=0
+OK   public-stay-detail@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stay-detail@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stay-detail@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stay-detail@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-stay-detail reduced-motion running-animations=0
+OK   public-combos@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combos@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combos@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combos@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combos reduced-motion running-animations=0
+OK   public-combo-detail@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combo-detail@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combo-detail@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combo-detail@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-combo-detail reduced-motion running-animations=0
+OK   public-destinations@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destinations@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destinations@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destinations@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destinations reduced-motion running-animations=0
+OK   public-destination-detail@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destination-detail@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destination-detail@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destination-detail@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-destination-detail reduced-motion running-animations=0
+OK   public-contact@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-contact@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-contact@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-contact@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-contact reduced-motion running-animations=0
+OK   public-booking@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking reduced-motion running-animations=0
+OK   public-booking-form@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking-form@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking-form@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking-form@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-booking-form reduced-motion running-animations=0
+OK   public-availability@1440 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-availability@1024 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-availability@768 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-availability@390 status=200 console=0 page=0 hydration=0 overflow=0 focus=ok
+OK   public-availability reduced-motion running-animations=0
+All checks passed
