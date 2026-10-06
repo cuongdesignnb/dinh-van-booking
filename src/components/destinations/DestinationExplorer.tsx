@@ -25,7 +25,6 @@ import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';
-import { SmallLeaf } from '@/components/ui/Decor';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import { Modal } from '@/components/ui/Modal';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
@@ -197,7 +196,7 @@ export function DestinationExplorer({ destinations, config }: { destinations: De
       <section className={`dest-list content-shell${hasCatalog ? '' : ' dest-list--empty'}`} aria-labelledby={listTitle ? 'dest-title' : undefined}>
         <div className="dest-list__head">
           <div>
-            {listTitle && <h2 className="section-title" id="dest-title">{listTitle} <SmallLeaf className="section-title__leaf" /></h2>}
+            {listTitle && <h2 className="section-title" id="dest-title">{listTitle}</h2>}
             {richDocumentHasContent(config.listSubtitle) && <div className="section-sub"><RichContentRenderer document={config.listSubtitle as RichDocument} /></div>}
           </div>
           {hasCatalog && <button type="button" className="link-more dest-list__all" aria-haspopup="dialog" onClick={() => setAll(true)}>

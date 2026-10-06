@@ -182,17 +182,6 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
     <>
       <div className={`combo-filters${hasCatalog ? '' : ' combo-filters--empty'}`}>
         <div className="combo-filters__inner content-shell">
-          <nav className="crumbs crumbs--plain combo-crumbs" aria-label="Đường dẫn">
-            <ol>
-              <li>
-                <Link href="/">Trang chủ</Link>
-              </li>
-              <li>
-                <span aria-hidden="true">&gt;</span>
-                <span aria-current="page">Combo du lịch</span>
-              </li>
-            </ol>
-          </nav>
           {hasCatalog && <div className="combo-chips" role="group" aria-label="Lọc combo theo loại">
             {COMBO_CATEGORIES.map((c) => (
               <button
@@ -212,7 +201,7 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
 
       <section className={`combo-list content-shell${hasCatalog ? '' : ' combo-list--empty'}`} aria-labelledby={listTitle ? 'combo-title' : undefined}>
         <div className="combo-list__head">
-          {listTitle && <h2 className="section-title" id="combo-title">{listTitle} <Leaf className="section-title__leaf" fill="currentColor" strokeWidth={1} aria-hidden="true" /></h2>}
+          {listTitle && <h2 className="section-title" id="combo-title">{listTitle}</h2>}
           {richDocumentHasContent(config.listSubtitle) && <div className="combo-list__sub"><RichContentRenderer document={config.listSubtitle as RichDocument} /></div>}
           {list.length > 1 && <label className="combo-sort">
             <span>Sắp xếp theo</span>

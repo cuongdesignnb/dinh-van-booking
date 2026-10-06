@@ -6,27 +6,18 @@
 
 .dest-filters {
   position: relative;
-  height: 57px;
-  background: linear-gradient(180deg, #f5f4ec, #f7f6f0);
-  overflow: hidden;
-}
-
-.dest-filters::before {
-  content: '';
-  position: absolute;
-  left: -20px;
-  top: -10px;
-  width: 60px;
-  height: 80px;
-  background: radial-gradient(ellipse at 40% 40%, rgb(111 154 92 / 45%) 0 30%, transparent 31%);
+  z-index: 2;
+  margin-top: -30px;
 }
 
 .dest-filters__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
-  padding-left: 4px;
+  padding: 10px 14px;
+  border-radius: var(--dvb-r-lg);
+  background: #fff;
+  box-shadow: var(--dvb-float-shadow);
 }
 
 .dest-chips {
@@ -475,10 +466,6 @@
 }
 
 @media (max-width: 1023px) {
-  .dest-filters {
-    height: auto;
-    padding: 10px 0;
-  }
   .dest-chips {
     flex-wrap: wrap;
   }
@@ -648,14 +635,13 @@
   border-radius: var(--dvb-r-md);
 }
 
-.dest-filters {
-  height: auto;
-  min-height: 64px;
-  padding-block: 10px;
-}
-
 .dest-chip {
   height: auto;
   min-height: 44px;
   font-size: 14.5px;
+}
+
+/* Room for the floating filter bar that overlaps the hero edge. */
+.page-destinations .cp-page-hero__inner {
+  padding-bottom: 72px;
 }

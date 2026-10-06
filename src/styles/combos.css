@@ -2,65 +2,29 @@
    /combo-du-lich — tuned against docs/reference/03-combo-du-lich.png
    ========================================================================== */
 
-/* ---------- Filter strip ---------- */
+/* ---------- Filter strip: floating white bar over the hero edge ---------- */
 
 .combo-filters {
   position: relative;
-  height: 78px;
-  background: linear-gradient(180deg, #f5f4ec, #f7f6f0);
-  overflow: hidden;
-}
-
-.combo-filters::before,
-.combo-filters::after {
-  content: '';
-  position: absolute;
-  top: -14px;
-  width: 90px;
-  height: 110px;
-  background: radial-gradient(ellipse at 30% 40%, rgb(111 154 92 / 55%) 0 30%, transparent 31%),
-    radial-gradient(ellipse at 60% 75%, rgb(111 154 92 / 40%) 0 22%, transparent 23%);
-  pointer-events: none;
-}
-
-.combo-filters::before {
-  left: -30px;
-}
-
-.combo-filters::after {
-  right: -24px;
-  opacity: 0.6;
+  z-index: 2;
+  margin-top: -30px;
 }
 
 .combo-filters__inner {
-  position: relative;
-  padding: 7px 0 0 30px;
-}
-
-.combo-filters.combo-filters--empty {
-  height: auto;
-  min-height: 40px;
-  padding: 0;
+  padding: 10px 14px;
+  border-radius: var(--dvb-r-lg);
+  background: #fff;
+  box-shadow: var(--dvb-float-shadow);
 }
 
 .combo-filters--empty .combo-filters__inner {
-  padding-top: 11px;
-  padding-bottom: 11px;
-}
-
-.combo-crumbs {
-  font-size: 13px;
-  color: #4b554e;
-}
-
-.combo-crumbs li {
-  gap: 6px;
+  display: none;
 }
 
 .combo-chips {
   display: flex;
-  gap: 16px;
-  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .combo-filters__note {
@@ -745,10 +709,6 @@
 }
 
 @media (max-width: 1279px) {
-  .combo-filters {
-    height: auto;
-    padding-bottom: 14px;
-  }
   .combo-chips {
     flex-wrap: wrap;
   }
@@ -812,13 +772,6 @@
 }
 
 @media (max-width: 767px) {
-  .combo-filters::before,
-  .combo-filters::after {
-    display: none;
-  }
-  .combo-filters__inner {
-    padding-left: 0;
-  }
   .combo-chips {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -1017,12 +970,11 @@
   line-height: 1.55;
 }
 
-.combo-filters {
-  height: auto;
-  min-height: 78px;
-  padding-block: 10px;
-}
-
 .combo-bottom:has(> :only-child) {
   grid-template-columns: minmax(0, 1fr);
+}
+
+/* Room for the floating filter bar that overlaps the hero edge. */
+.page-combos .cp-page-hero__inner {
+  padding-bottom: 72px;
 }

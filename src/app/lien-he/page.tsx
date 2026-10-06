@@ -1,8 +1,11 @@
+import { CheckCircle2, Clock3, Headset, Mail, Map as MapIcon, MapPin, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from '@/components/ui/ManagedImage';
 import { ConsultationForm } from '@/components/contact/ConsultationForm';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHero } from '@/components/site/PageHero';
+import { SectionHead } from '@/components/site/SectionHead';
+import { BrandIcon } from '@/components/ui/BrandIcons';
 import { FaqList } from '@/components/shared/FaqList';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { getPublicCombo, getPublicDestination, getPublicSeoUrls, getPublicSite, getPublicStay } from '@/lib/api/public';
@@ -53,6 +56,11 @@ async function resolveContactContext(query: ContactQuery): Promise<{ context: Co
     : { context: null, warning: 'Điểm đến không còn công khai. Bạn vẫn có thể gửi yêu cầu tư vấn chung.' };
 }
 
+/** Initials for the advisor placeholder when no portrait is set, e.g. "Đinh Vân" → "ĐV". */
+function monogram(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('');
+}
+
 export default async function ContactPage({ searchParams }: { searchParams: Promise<ContactQuery> }) {
   const query = await searchParams;
   const [site, { context, warning }] = await Promise.all([getPublicSite(), resolveContactContext(query)]);
@@ -87,7 +95,6 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const address = publicText(site.contact.address);
   const mapUrl = publicText(site.contact.mapUrl);
   const zaloUrl = publicText(site.contact.zaloUrl);
-  const social = publicRecord(site.social);
   const title = publicText(page.title);
   const quickTitle = publicText(page.quickTitle);
   const advisorName = publicText(page.advisorName);
@@ -110,7 +117,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
       {title && <>
         <PageHero id="contact-h1" title={title} eyebrow={publicText(page.heroEyebrow)} lead={page.intro} image={heroImage} crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Liên hệ' }]} />
 
-        {promises.length > 0 && <ul className="contact-promises content-shell">{promises.map((item) => <li key={item.id}><strong>{item.title}</strong>{item.description && <span>{item.description}</span>}</li>)}</ul>}
+        {promises.length > 0 && <ul className="contact-promises content-shell">{promises.map((item) => <li key={item.id}><span className="contact-promises__icon" aria-hidden="true"><CheckCircle2 size={20} /></span><div><strong>{item.title}</strong>{item.description && <span>{item.description}</span>}</div></li>)}</ul>}
       </>}
 
       <div className={`contact-layout content-shell${showAside ? '' : ' contact-layout--form-only'}`}>
@@ -119,19 +126,19 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
         </div>
         {showAside && <aside className="contact-layout__aside">
           {showQuick && <section className="contact-quick">
-            {quickTitle && <h2>{quickTitle}</h2>}
+            {quickTitle && <h2><Headset size={22} aria-hidden="true" />{quickTitle}</h2>}
             {richDocumentHasContent(page.quickIntro) && <RichContentRenderer document={page.quickIntro as RichDocument} />}
-            <ul>
-              {phone && <li><a href={`tel:${phone}`}>{phone}</a></li>}
-              {hotline && hotline !== phone && <li><a href={`tel:${hotline}`}>{hotline}</a></li>}
-              {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
-              {address && <li>{mapUrl ? <a href={mapUrl} target="_blank" rel="noopener noreferrer">{address}</a> : address}</li>}
-              {zaloUrl && <li><a href={zaloUrl} target="_blank" rel="noopener noreferrer">Zalo</a></li>}
+            <ul className="contact-quick__list">
+              {phone && <li><span aria-hidden="true"><Phone size={18} /></span><a href={`tel:${phone}`}>{phone}</a></li>}
+              {hotline && hotline !== phone && <li><span aria-hidden="true"><Phone size={18} /></span><a href={`tel:${hotline}`}>{hotline}</a></li>}
+              {email && <li><span aria-hidden="true"><Mail size={18} /></span><a href={`mailto:${email}`}>{email}</a></li>}
+              {address && <li><span aria-hidden="true"><MapPin size={18} /></span>{mapUrl ? <a href={mapUrl} target="_blank" rel="noopener noreferrer">{address}</a> : address}</li>}
+              {zaloUrl && <li><span aria-hidden="true"><BrandIcon name="zalo" size={18} /></span><a href={zaloUrl} target="_blank" rel="noopener noreferrer">Nhắn Zalo</a></li>}
             </ul>
           </section>}
 
           {showHours && <section className="contact-hours">
-            {hoursTitle && <h2>{hoursTitle}</h2>}
+            {hoursTitle && <h2><Clock3 size={22} aria-hidden="true" />{hoursTitle}</h2>}
             {(weekdays || weekend) && <dl>
               {weekdays && <div><dt>Ngày thường</dt><dd>{weekdays}</dd></div>}
               {weekend && <div><dt>Cuối tuần</dt><dd>{weekend}</dd></div>}
@@ -140,27 +147,33 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
           </section>}
 
           {showAdvisor && <section className="contact-advisor">
-            {advisorImage?.src && <Image src={advisorImage.src} alt={advisorImage.alt ?? ''} width={advisorImage.width ?? 600} height={advisorImage.height ?? 400} className="contact-advisor__image" unoptimized />}
-            {(advisorName || advisorRole) && <h2>{[advisorName, advisorRole].filter(Boolean).join(' — ')}</h2>}
+            <div className="contact-advisor__head">
+              {advisorImage?.src
+                ? <Image src={advisorImage.src} alt={advisorImage.alt ?? ''} width={112} height={112} className="contact-advisor__image" unoptimized />
+                : advisorName && <span className="contact-advisor__mono" aria-hidden="true">{monogram(advisorName)}</span>}
+              <div>
+                {advisorName && <h2>{advisorName}</h2>}
+                {advisorRole && <p className="contact-advisor__role">{advisorRole}</p>}
+              </div>
+            </div>
             {richDocumentHasContent(page.advisorDescription) && <RichContentRenderer document={page.advisorDescription as RichDocument} />}
-            {highlights.length > 0 && <ul>{highlights.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul>}
+            {highlights.length > 0 && <ul className="contact-advisor__list">{highlights.map((item, index) => <li key={`${item}-${index}`}><CheckCircle2 size={17} aria-hidden="true" />{item}</li>)}</ul>}
             {richDocumentHasContent(page.advisorNote) && <RichContentRenderer document={page.advisorNote as RichDocument} />}
           </section>}
 
           {showMap && <section className="contact-map">
-            {mapTitle && <h2>{mapTitle}</h2>}
+            {mapTitle && <h2><MapIcon size={22} aria-hidden="true" />{mapTitle}</h2>}
             {richDocumentHasContent(page.mapDescription) && <RichContentRenderer document={page.mapDescription as RichDocument} />}
             {mapImage?.src && <figure><Image src={mapImage.src} alt={mapImage.alt ?? ''} width={mapImage.width ?? 1200} height={mapImage.height ?? 800} unoptimized /><figcaption>Ảnh minh họa</figcaption></figure>}
             {address && <p>{address}</p>}
-            {mapUrl && <a href={mapUrl} target="_blank" rel="noopener noreferrer">Mở bản đồ</a>}
+            {mapUrl && <a className="btn btn--outline btn--sm" href={mapUrl} target="_blank" rel="noopener noreferrer">Mở bản đồ</a>}
           </section>}
         </aside>}
       </div>
 
       {scenicImage?.src && <figure className="contact-scenic content-shell"><Image src={scenicImage.src} alt={scenicImage.alt ?? ''} width={scenicImage.width ?? 1200} height={scenicImage.height ?? 800} unoptimized /></figure>}
-      {page.showFaq === true && faqTitle && faqs.length > 0 && <section className="contact-faq content-shell"><h2 className="section-title">{faqTitle}</h2><FaqList items={faqs} variant="boxed" /></section>}
+      {page.showFaq === true && faqTitle && faqs.length > 0 && <section className="contact-faq content-shell"><SectionHead title={faqTitle} /><FaqList items={faqs} variant="boxed" /></section>}
       {richDocumentHasContent(page.scriptNote) && <div className="contact-script content-shell"><RichContentRenderer document={page.scriptNote as RichDocument} /></div>}
-      {Object.values(social).some((value) => typeof value === 'string' && value.trim()) && <nav className="contact-social content-shell" aria-label="Mạng xã hội">{Object.entries(social).filter(([, value]) => typeof value === 'string' && value.trim()).map(([key, value]) => <a key={key} href={value as string} target="_blank" rel="noopener noreferrer">{key}</a>)}</nav>}
     </PageShell>
   );
 }
