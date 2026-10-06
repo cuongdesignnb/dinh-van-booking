@@ -740,3 +740,8 @@
     animation: none;
   }
 }
+
+/* Odd number of facts: the last one spans the row instead of leaving an empty cell. */
+.inventory-panel__facts > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}

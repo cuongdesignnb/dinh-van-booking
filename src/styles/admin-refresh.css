@@ -477,3 +477,46 @@
 .settings-item > .field {
   max-width: 320px;
 }
+
+/* ---------- Long editors: save actions stay in reach ---------- */
+
+.property-form__actions,
+.content-editor__actions,
+.ct__editor-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-inline: -4px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--dvb-line);
+  background: color-mix(in srgb, var(--dvb-bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+@media (max-width: 767px) {
+  .property-form__actions,
+  .content-editor__actions {
+    flex-wrap: wrap;
+  }
+
+  .property-form__actions > *,
+  .content-editor__actions > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* `.dvb-admin button { color: inherit; font: inherit }` outranks the design-system
+   button; restore the primitive's own colour and type inside the admin. */
+.dvb-admin .ui-btn {
+  color: var(--ui-btn-fg);
+  font-size: var(--dvb-fs-md);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Five or more filters: keep them on one row on desktop. */
+@media (min-width: 768px) {
+  .admin-operations__filters:has(> :nth-child(5)) .admin-operations__search {
+    grid-column: auto;
+  }
+}
