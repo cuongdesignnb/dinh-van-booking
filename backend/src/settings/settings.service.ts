@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../generated/prisma/client';
 import { SETTINGS_BY_KEY, SETTING_DEFINITIONS, type SettingDefinition } from './settings.registry';
+import { normalizeAboutPage } from './about-page.validation';
 
 export interface SettingView {
   key: string;
@@ -101,7 +102,7 @@ export class SettingsService {
     if (!definition) throw new NotFoundException(`Không có cấu hình ${key}`);
     if (value === undefined) throw new BadRequestException('Thiếu giá trị');
 
-    const merged = mergeWithDefault(definition.defaultValue, value);
+    const merged = mergeWithDefault(definition.defaultValue, await this.normalize(key, value));
     const mediaIds = [...referencedMediaIds(merged)];
     if (mediaIds.length) {
       const assets = await this.prisma.mediaAsset.findMany({
@@ -170,6 +171,16 @@ export class SettingsService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Keys with a structured Admin form get a server-side shape check. Rich text
+   * uses the same TipTap whitelist as articles (`content.editor` blocks).
+   */
+  private async normalize(key: string, value: unknown): Promise<unknown> {
+    if (key !== 'about.page') return value;
+    const editor = await this.get<{ allowedBlocks: string[] }>('content.editor');
+    return normalizeAboutPage(value, { allowedBlocks: editor.allowedBlocks });
   }
 
   /** Puts a key back to the shipped default. */

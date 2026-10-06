@@ -68,3 +68,36 @@ test('existing Admin content is skipped unless replace mode is explicit', () => 
   assert.equal(scoped.find((item) => item.key === 'home.hero')?.action, 'skip');
   assert.ok(scoped.filter((item) => item.action !== 'skip').every((item) => item.key.startsWith('brand.')));
 });
+
+test('about.page copy has the agreed SEO structure and stays truthful', () => {
+  const about = publicBootstrapSettings(media)['about.page'] as Record<string, unknown>;
+  const words = (value: string) => value.split(/\s+/).filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
+  const docText = (doc: unknown) => ((doc as { content: Array<{ content?: Array<{ text: string }> }> }).content)
+    .map((block) => (block.content ?? []).map((node) => node.text).join(''));
+  const json = JSON.stringify(about).toLocaleLowerCase('vi');
+  for (const keyword of ['đặt phòng cúc phương', 'homestay cúc phương', 'lưu trú cúc phương ninh bình', 'tư vấn du lịch cúc phương', 'người bản địa cúc phương']) {
+    assert.ok(json.includes(keyword), keyword);
+  }
+  assert.match(String(about.title), /Đặt phòng Cúc Phương/);
+  const intro = words(docText(about.intro).join(' '));
+  assert.ok(intro >= 60 && intro <= 90, `intro ${intro}`);
+  const story = docText(about.story);
+  assert.ok(story.length >= 2 && story.length <= 4);
+  const storyWords = words(story.join(' '));
+  assert.ok(storyWords >= 250 && storyWords <= 400, `story ${storyWords}`);
+  const values = about.values as Array<{ text: string }>;
+  assert.equal(values.length, 4);
+  for (const value of values) assert.ok(words(value.text) >= 25 && words(value.text) <= 40, value.text);
+  assert.equal((about.steps as unknown[]).length, 4);
+  assert.equal(about.areasTitle, 'Hiểu Cúc Phương như người nhà');
+  const areas = about.areas as Array<{ linkTarget: string }>;
+  assert.ok(areas.length >= 3 && areas.length <= 4);
+  assert.ok(areas.every((area) => ['/diem-den', '/phong-nghi'].includes(area.linkTarget)));
+  const faqs = about.faqs as Array<{ question: string }>;
+  assert.ok(faqs.length >= 5 && faqs.length <= 6);
+  assert.ok(String(about.seoTitle).length + ' | Cúc Phương Travel'.length <= 60);
+  assert.ok(String(about.seoDescription).length >= 150 && String(about.seoDescription).length <= 160);
+  assert.ok(String(about.ogDescription).length > 0 && String(about.ogDescription).length <= 120);
+  // No prices, timetables or distances.
+  assert.doesNotMatch(json, /\d[\d.]*\s*(đ|vnđ|vnd|k|km|giờ|phút|tiếng)\b|\d{1,2}[:h]\d{2}/i);
+});
