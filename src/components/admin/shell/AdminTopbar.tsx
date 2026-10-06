@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronDown, LogOut, Menu } from 'lucide-react';
+import { ChevronDown, ChevronRight, LogOut, Menu } from 'lucide-react';
+import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { Popover } from '@/components/ui/Popover';
 import { useAdminSession } from '../AdminAuthGate';
@@ -14,7 +15,7 @@ const ROLE_LABELS: Record<string, string> = {
   viewer: 'Chỉ xem',
 };
 
-export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () => void }) {
+export function AdminTopbar({ meta, onMenu, menuOpen }: { meta: AdminPageMeta; onMenu: () => void; menuOpen?: boolean }) {
   const { user, logout } = useAdminSession();
   const userRef = useRef<HTMLButtonElement>(null);
   const [userOpen, setUserOpen] = useState(false);
@@ -43,18 +44,14 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
 
   return (
     <header className="atop">
-      <div className="atop__row">
-        <button type="button" className="atop__menu icon-btn" onClick={onMenu} aria-label="Mở menu quản trị">
+      <div className="atop__bar">
+        <button type="button" className="atop__menu" onClick={onMenu} aria-label="Mở menu quản trị" aria-controls="admin-sidebar" aria-expanded={!!menuOpen}>
           <Menu size={20} aria-hidden="true" />
         </button>
-        <div className="atop__titles">
-          <h1 className="atop__title">
-            <LeafGlyph />
-            {meta.title}
-          </h1>
-          <p className="atop__subtitle">{meta.subtitle}</p>
-        </div>
-
+        <nav className="atop__crumbs" aria-label="Vị trí">
+          <Link href="/admin">Quản trị</Link>
+          {meta.section && <><ChevronRight size={14} aria-hidden="true" /><span>{meta.section}</span></>}
+        </nav>
         <button
           type="button"
           className="atop__user"
@@ -72,12 +69,9 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
         </button>
       </div>
 
-      <div className="atop__row atop__row--second">
-        <p className="atop__script handwritten">
-          {meta.script.split('\n').map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </p>
+      <div className="atop__titles">
+        <h1 className="atop__title">{meta.title}</h1>
+        <p className="atop__subtitle">{meta.subtitle}</p>
       </div>
 
       <Popover anchorRef={userRef} open={userOpen} onClose={() => setUserOpen(false)} label="Tài khoản" id="admin-user" align="end">
@@ -86,23 +80,14 @@ export function AdminTopbar({ meta, onMenu }: { meta: AdminPageMeta; onMenu: () 
             <strong>{user.fullName}</strong>
           </div>
           <p className="apop__muted">{user.email}</p>
-          <p className="apop__note">{roles}. Quyền thao tác được backend kiểm tra cho từng yêu cầu.</p>
+          <p className="apop__note">{roles}. Mỗi thao tác đều được hệ thống kiểm tra quyền.</p>
           {logoutError && <p className="field__error" role="alert">{logoutError}</p>}
-          <button type="button" className="abtn abtn--ghost apop__reset" onClick={() => void handleLogout()} disabled={busy}>
+          <button type="button" className="ui-btn ui-btn--block apop__reset" onClick={() => void handleLogout()} disabled={busy}>
             <LogOut size={16} aria-hidden="true" />
             {busy ? 'Đang đăng xuất…' : 'Đăng xuất'}
           </button>
         </div>
       </Popover>
     </header>
-  );
-}
-
-function LeafGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" className="atop__leaf">
-      <path d="M21 3c-8 0-14 3.6-14 10a7 7 0 0 0 2 5l-3 3 1.4 1.4 3-3a7 7 0 0 0 5 2c6.4 0 10-6 10-14 0-2 0-4-.4-4z" fill="#7ba05b" opacity=".85" />
-      <path d="M19 6C13 9 9.5 13 7.5 19" stroke="#2e6d3b" strokeWidth="1.3" fill="none" />
-    </svg>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
 import '@/styles/admin.css';
+import '@/styles/admin-shell.css';
 import '@/styles/admin-ui.css';
 import '@/styles/admin-overview.css';
 import '@/styles/admin-bookings.css';

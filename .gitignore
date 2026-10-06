@@ -64,3 +64,6 @@ next-env.d.ts
 backend/node_modules/
 backend/dist/
 backend/src/generated/
+
+# local build variants / redesign QA
+/.next-*/

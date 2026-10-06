@@ -1,103 +1,105 @@
-/** Title, subtitle, and hand-written note per admin route. */
+/** Title, subtitle and breadcrumb section per admin route. */
 export interface AdminPageMeta {
   title: string;
   subtitle: string;
-  script: string;
+  section?: string;
 }
 
 const META: Record<string, AdminPageMeta> = {
   '/admin': {
     title: 'Tổng quan',
-    subtitle: 'Tình hình đặt phòng, tư vấn, quỹ phòng, thu tiền và hoạt động gần đây từ dữ liệu hệ thống.',
-    script: 'Làm du lịch\nbằng cả trái tim ♡',
+    subtitle: 'Tình hình đặt phòng, tư vấn, quỹ phòng và hoạt động gần đây.',
   },
   '/admin/dat-phong': {
-    title: 'Quản lý đặt phòng',
+    section: 'Vận hành',
+    title: 'Đặt phòng',
     subtitle: 'Tra cứu đơn, tạo yêu cầu giữ chỗ, xác nhận hoặc huỷ và xem lịch sử xử lý.',
-    script: 'Làm du lịch\nbằng cả trái tim ♡',
   },
   '/admin/phong-nghi': {
-    title: 'Quản lý nơi lưu trú',
-    subtitle: 'Mỗi khu nghỉ, khách sạn hay homestay có hồ sơ riêng; các hạng phòng được quản lý bên trong từng cơ sở.',
-    script: 'Làm du lịch\nbằng cả trái tim ♡',
+    section: 'Sản phẩm',
+    title: 'Nơi lưu trú',
+    subtitle: 'Mỗi khu nghỉ, khách sạn hay homestay có hồ sơ riêng; hạng phòng được quản lý bên trong từng cơ sở.',
   },
   '/admin/hang-phong': {
-    title: 'Quản lý hạng phòng',
-    subtitle: 'Danh sách hạng phòng theo nơi lưu trú, giá, sức chứa, số phòng và album ảnh.',
-    script: 'Chăm chút từng phòng\ntrọn vẹn trải nghiệm ♡',
+    section: 'Sản phẩm',
+    title: 'Hạng phòng',
+    subtitle: 'Hạng phòng theo nơi lưu trú: giá, sức chứa, số phòng và album ảnh.',
   },
   '/admin/ton-phong': {
+    section: 'Vận hành',
     title: 'Quỹ phòng',
-    subtitle: 'Theo dõi và cập nhật số phòng còn bán theo từng hạng phòng và từng ngày.',
-    script: 'Quản lý chủ động\nhành trình an tâm ♡',
+    subtitle: 'Xem và cập nhật số phòng còn bán theo từng hạng phòng, từng ngày.',
   },
   '/admin/combo-du-lich': {
-    title: 'Quản lý combo du lịch',
-    subtitle: 'Quản lý nội dung, lịch trình và trạng thái xuất bản của combo.',
-    script: 'Làm du lịch\nbằng cả trái tim ♡',
+    section: 'Sản phẩm',
+    title: 'Combo du lịch',
+    subtitle: 'Nội dung, lịch trình và trạng thái xuất bản của combo.',
   },
   '/admin/diem-den': {
-    title: 'Quản lý điểm đến',
-    subtitle:
-      'Quản lý hồ sơ điểm đến, hình ảnh và trạng thái xuất bản trên website.',
-    script: 'Lan tỏa vẻ đẹp\nNinh Bình đến muôn nơi! ♡',
+    section: 'Sản phẩm',
+    title: 'Điểm đến',
+    subtitle: 'Hồ sơ điểm đến, hình ảnh và trạng thái xuất bản trên website.',
   },
   '/admin/noi-dung': {
+    section: 'Website',
     title: 'Nội dung website',
-    subtitle: 'Soạn, sửa, lưu revision và xuất bản bài viết từ CMS.',
-    script: 'Làm du lịch\nbằng cả trái tim ♡',
+    subtitle: 'Soạn, sửa, lưu phiên bản và xuất bản bài viết.',
   },
   '/admin/khach-hang': {
+    section: 'Khách hàng',
     title: 'Khách hàng',
-    subtitle: 'Cập nhật hồ sơ, theo dõi lịch sử trao đổi và lên lịch chăm sóc tiếp theo.',
-    script: 'Làm du lịch\nbằng cả trái tim ♡',
+    subtitle: 'Hồ sơ khách, lịch sử trao đổi và lịch chăm sóc tiếp theo.',
   },
   '/admin/khuyen-mai': {
+    section: 'Khách hàng',
     title: 'Khuyến mãi',
-    subtitle: 'Tạo, chỉnh sửa và bật/tắt mã giảm giá; lượt giữ và sử dụng được kiểm soát ở máy chủ.',
-    script: 'Ưu đãi đúng lúc\nhành trình trọn vẹn ♡',
+    subtitle: 'Tạo, chỉnh sửa và bật/tắt mã giảm giá; lượt dùng được kiểm soát ở máy chủ.',
   },
   '/admin/thanh-toan': {
+    section: 'Khách hàng',
     title: 'Thanh toán',
-    subtitle: 'Ghi nhận thanh toán và xử lý hoàn tiền thủ công; không kết nối hay gọi cổng thanh toán.',
-    script: 'Rõ ràng từng khoản\nan tâm mỗi chuyến đi ♡',
+    subtitle: 'Ghi nhận thanh toán và hoàn tiền thủ công; không kết nối cổng thanh toán.',
   },
   '/admin/bao-cao': {
+    section: 'Hệ thống',
     title: 'Báo cáo',
-    subtitle: 'Đối soát booking, tiền đã ghi nhận, hoàn tiền, yêu cầu tư vấn và quỹ phòng theo kỳ.',
-    script: 'Số liệu thật\nquyết định vững vàng ♡',
+    subtitle: 'Đối soát đặt phòng, tiền đã ghi nhận, hoàn tiền, yêu cầu tư vấn và quỹ phòng theo kỳ.',
   },
-};
-
-META['/admin/chuyen-trang'] = {
-  title: 'Chuyên trang',
-  subtitle: 'Tạo trang chính sách, FAQ và nội dung tĩnh với URL riêng, SEO và trạng thái xuất bản.',
-  script: 'Nội dung rõ ràng\nniềm tin bền lâu ♡',
-};
-META['/admin/menu'] = {
-  title: 'Quản lý menu website',
-  subtitle: 'Sắp xếp liên kết đầu trang và thêm chuyên trang đã xuất bản vào menu chính.',
-  script: 'Đường đi rõ ràng\ntrải nghiệm an yên ♡',
-};
-META['/admin/yeu-cau-tu-van'] = {
-  title: 'Khách hàng & yêu cầu tư vấn',
-  subtitle: 'Yêu cầu tư vấn được tải từ API CRM; thay đổi trạng thái được ghi lại ở backend.',
-  script: 'Làm du lịch\nbằng cả trái tim ♡',
-};
-META['/admin/thu-vien-anh'] = {
-  title: 'Thư viện ảnh',
-  subtitle: 'Tải lên một lần, tái sử dụng ảnh ở mọi nội dung và nơi lưu trú trong hệ thống.',
-  script: 'Một hình ảnh đẹp\nđi cùng nhiều hành trình ♡',
-};
-META['/admin/doi-tac'] = {
-  title: 'Đối tác & đồng bộ',
-  subtitle: 'Duyệt hồ sơ, quản lý quyền theo cơ sở và theo dõi kết nối Google Sheets.',
-  script: 'Phối hợp minh bạch\nvận hành an tâm ♡',
-};
-META['/admin/cai-dat'] = {
-  title: 'Cài đặt hệ thống',
-  subtitle: 'Cấu hình bằng biểu mẫu trực quan; thay đổi được lưu qua API vào PostgreSQL.',
-  script: 'Cấu hình rõ ràng\nvận hành an tâm ♡',
+  '/admin/chuyen-trang': {
+    section: 'Website',
+    title: 'Chuyên trang',
+    subtitle: 'Trang chính sách, FAQ và nội dung tĩnh với đường dẫn riêng, SEO và trạng thái xuất bản.',
+  },
+  '/admin/menu': {
+    section: 'Website',
+    title: 'Menu website',
+    subtitle: 'Sắp xếp liên kết đầu trang và thêm chuyên trang đã xuất bản vào menu chính.',
+  },
+  '/admin/yeu-cau-tu-van': {
+    section: 'Khách hàng',
+    title: 'Yêu cầu tư vấn',
+    subtitle: 'Yêu cầu khách gửi từ website; mọi thay đổi trạng thái đều được ghi lại.',
+  },
+  '/admin/thu-vien-anh': {
+    section: 'Website',
+    title: 'Thư viện ảnh',
+    subtitle: 'Tải lên một lần, dùng lại ảnh ở mọi nội dung và nơi lưu trú.',
+  },
+  '/admin/doi-tac': {
+    section: 'Vận hành',
+    title: 'Đối tác & đồng bộ',
+    subtitle: 'Duyệt hồ sơ đối tác, phân quyền theo cơ sở và theo dõi đồng bộ bảng tính.',
+  },
+  '/admin/doi-tac/cap-quyen': {
+    section: 'Đối tác & đồng bộ',
+    title: 'Phân quyền cho đối tác',
+    subtitle: 'Chọn người, cơ sở, phạm vi và mức quyền. Không tạo tài khoản mới, không nhân bản cơ sở.',
+  },
+  '/admin/cai-dat': {
+    section: 'Hệ thống',
+    title: 'Cài đặt',
+    subtitle: 'Thông tin thương hiệu, liên hệ, SEO và nội dung trang; lưu trực tiếp vào hệ thống.',
+  },
 };
 
 export function pageMeta(pathname: string): AdminPageMeta {

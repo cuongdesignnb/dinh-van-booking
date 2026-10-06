@@ -1,0 +1,820 @@
+[
+ {
+  "key": "brand.identity",
+  "group": "brand",
+  "label": "Thương hiệu",
+  "description": "Tên, khẩu hiệu và mô tả chung hiển thị trên toàn site.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "name": null,
+   "shortName": null,
+   "tagline": null,
+   "description": null,
+   "logoMediaId": null,
+   "faviconMediaId": null
+  }
+ },
+ {
+  "key": "brand.contact",
+  "group": "brand",
+  "label": "Liên hệ",
+  "description": "Để trống nếu kênh đó chưa sẵn sàng — site sẽ ẩn thay vì hiện link hỏng.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "phone": null,
+   "hotline": null,
+   "zaloUrl": null,
+   "email": null,
+   "address": null,
+   "mapUrl": null
+  }
+ },
+ {
+  "key": "brand.social",
+  "group": "brand",
+  "label": "Mạng xã hội",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "facebook": null,
+   "instagram": null,
+   "youtube": null,
+   "tiktok": null
+  }
+ },
+ {
+  "key": "brand.businessHours",
+  "group": "brand",
+  "label": "Giờ làm việc",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "weekdays": null,
+   "weekend": null,
+   "note": null
+  }
+ },
+ {
+  "key": "booking.rules",
+  "group": "booking",
+  "label": "Quy tắc đặt phòng",
+  "description": "Áp dụng khi hạng phòng không có quy tắc riêng.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "minNights": 1,
+   "maxNights": 30,
+   "maxAdults": 10,
+   "maxChildren": 6,
+   "maxRoomsPerBooking": 5,
+   "advanceBookingDays": 365,
+   "sameDayCutoffHour": null,
+   "defaultCheckInTime": null,
+   "defaultCheckOutTime": null,
+   "depositPercent": null,
+   "holdMinutes": null,
+   "quoteMinutes": null,
+   "requirePhone": true,
+   "requireEmail": false,
+   "allowOnlinePayment": false
+  }
+ },
+ {
+  "key": "booking.cancellation",
+  "group": "booking",
+  "label": "Chính sách huỷ mặc định",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "freeCancelHours": null,
+   "tiers": [],
+   "note": null
+  }
+ },
+ {
+  "key": "site.header",
+  "group": "publicHeader",
+  "label": "Header website",
+  "description": "Khẩu hiệu và nút hành động đầu trang. Logo lấy từ mục Thương hiệu và Media Library.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "mottoLine1": null,
+   "mottoLine2": null,
+   "ctaLabel": null,
+   "ctaTarget": null
+  }
+ },
+ {
+  "key": "site.footer",
+  "group": "publicHeader",
+  "label": "Chân trang website",
+  "description": "Trích dẫn, khẩu hiệu và thông tin bản quyền hiển thị cuối trang.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "quote": null,
+   "quoteAuthor": null,
+   "motto": null,
+   "copyrightText": null
+  }
+ },
+ {
+  "key": "home.hero",
+  "group": "publicHome",
+  "label": "Hero trang chủ",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "kicker": null,
+   "titleLine1": null,
+   "titleLine2": null,
+   "signature": null,
+   "description": null,
+   "note": null,
+   "imageMediaId": null,
+   "mobileImageMediaId": null
+  }
+ },
+ {
+  "key": "home.trust",
+  "group": "publicHome",
+  "label": "Dải cam kết",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "items": []
+  }
+ },
+ {
+  "key": "home.why",
+  "group": "publicHome",
+  "label": "Vì sao chọn chúng tôi",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "title": null,
+   "intro": null,
+   "reasons": []
+  }
+ },
+ {
+  "key": "home.featured",
+  "group": "publicHome",
+  "label": "Nơi lưu trú nổi bật",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": true,
+   "title": null,
+   "subtitle": null,
+   "ctaLabel": null,
+   "ctaTarget": null,
+   "limit": 6,
+   "selectionMode": "featured"
+  }
+ },
+ {
+  "key": "home.combos",
+  "group": "publicHome",
+  "label": "Combo nổi bật",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "title": null,
+   "subtitle": null,
+   "ctaLabel": null,
+   "ctaTarget": null,
+   "limit": 3
+  }
+ },
+ {
+  "key": "home.promo",
+  "group": "publicHome",
+  "label": "Khối giới thiệu trải nghiệm",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "titleLine1": null,
+   "titleLine2": null,
+   "body": null,
+   "ctaLabel": null,
+   "ctaTarget": null,
+   "quote": null,
+   "imageMediaId": null
+  }
+ },
+ {
+  "key": "home.destinations",
+  "group": "publicHome",
+  "label": "Điểm đến nổi bật",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": true,
+   "title": null,
+   "subtitle": null,
+   "ctaLabel": null,
+   "ctaTarget": null,
+   "limit": 6,
+   "selectionMode": "featured"
+  }
+ },
+ {
+  "key": "home.testimonials",
+  "group": "publicHome",
+  "label": "Trình bày đánh giá",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": true,
+   "title": null,
+   "ctaLabel": null,
+   "limit": 3
+  }
+ },
+ {
+  "key": "home.contactPanel",
+  "group": "publicHome",
+  "label": "Khối tư vấn trang chủ",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "title": null,
+   "description": null,
+   "advisorName": null,
+   "advisorRole": null,
+   "zaloCtaLabel": null,
+   "phoneCtaLabel": null,
+   "note": null,
+   "imageMediaId": null
+  }
+ },
+ {
+  "key": "home.faq",
+  "group": "publicHome",
+  "label": "FAQ trang chủ",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "title": null,
+   "items": []
+  }
+ },
+ {
+  "key": "contact.page",
+  "group": "publicPages",
+  "label": "Trang liên hệ",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "heroEyebrow": null,
+   "title": null,
+   "intro": null,
+   "heroImageMediaId": null,
+   "promises": [],
+   "formTitle": null,
+   "formIntro": null,
+   "formMessageLabel": null,
+   "formMessagePlaceholder": null,
+   "formPrivacyNote": null,
+   "formSubmitLabel": null,
+   "formSuccessMessage": null,
+   "quickTitle": null,
+   "quickIntro": null,
+   "hoursTitle": null,
+   "advisorName": null,
+   "advisorRole": null,
+   "advisorDescription": null,
+   "advisorImageMediaId": null,
+   "advisorHighlights": [],
+   "advisorNote": null,
+   "mapTitle": null,
+   "mapDescription": null,
+   "mapImageMediaId": null,
+   "scenicImageMediaId": null,
+   "scriptNote": null,
+   "showFaq": false,
+   "faqTitle": null,
+   "faqs": []
+  }
+ },
+ {
+  "key": "catalog.staysPage",
+  "group": "publicPages",
+  "label": "Trang danh sách phòng nghỉ",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "heroTitle": null,
+   "heroKicker": null,
+   "heroDescription": null,
+   "heroImageMediaId": null,
+   "heroNote": null,
+   "reviewsTitle": null,
+   "reviewsSubtitle": null,
+   "advisorTitle": null,
+   "advisorDescription": null,
+   "advisorCtaLabel": null,
+   "advisorImageMediaId": null,
+   "advisorBenefits": [],
+   "faqTitle": null,
+   "faqs": [],
+   "mapTitle": null,
+   "mapImageMediaId": null,
+   "emptyResultTitle": null,
+   "emptyResultDescription": null,
+   "emptyResultCtaLabel": null,
+   "emptyHelpTitle": null,
+   "emptyHelpDescription": null,
+   "emptyHelpCtaLabel": null
+  }
+ },
+ {
+  "key": "catalog.stayDetail",
+  "group": "publicPages",
+  "label": "Trang chi tiết nơi lưu trú",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "introTitle": null,
+   "introQuote": null,
+   "introQuoteAuthor": null,
+   "roomsTitle": null,
+   "amenitiesTitle": null,
+   "reviewsTitle": null,
+   "factsTitle": null,
+   "checkInLabel": null,
+   "checkOutLabel": null,
+   "breakfastLabel": null,
+   "houseRulesTitle": null,
+   "notesTitle": null,
+   "notesThanks": null,
+   "bookingNote": null
+  }
+ },
+ {
+  "key": "catalog.destinationDetail",
+  "group": "publicPages",
+  "label": "Trang chi tiết điểm đến",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "eyebrow": null,
+   "activitiesTitle": null,
+   "notesTitle": null
+  }
+ },
+ {
+  "key": "catalog.destinationsPage",
+  "group": "publicPages",
+  "label": "Trang điểm đến",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "heroKicker": null,
+   "heroTitle": null,
+   "heroDescription": null,
+   "heroQuote": null,
+   "heroImageMediaId": null,
+   "listTitle": null,
+   "listSubtitle": null,
+   "advisorCtaLabel": null,
+   "emptyTitle": null,
+   "emptyDescription": null,
+   "noteTitle": null,
+   "noteBody": null,
+   "noteAuthor": null,
+   "noteImageMediaId": null,
+   "mapImageMediaId": null,
+   "itineraryImageMediaId": null,
+   "itineraryTitle": null,
+   "itinerarySubtitle": null,
+   "itineraries": [],
+   "seasonsTitle": null,
+   "seasonsSubtitle": null,
+   "seasons": []
+  }
+ },
+ {
+  "key": "catalog.combosPage",
+  "group": "publicPages",
+  "label": "Trang combo du lịch",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "heroTitle": null,
+   "heroKicker": null,
+   "heroDescription": null,
+   "heroImageMediaId": null,
+   "listTitle": null,
+   "listSubtitle": null,
+   "advisorCtaLabel": null,
+   "emptyTitle": null,
+   "emptyDescription": null,
+   "emptyCtaLabel": null,
+   "quoteLeft": null,
+   "quoteRight": null,
+   "benefitsTitle": null,
+   "benefits": [],
+   "stepsTitle": null,
+   "stepsSubtitle": null,
+   "steps": [],
+   "reviewsTitle": null,
+   "faqTitle": null,
+   "faqs": []
+  }
+ },
+ {
+  "key": "catalog.bookingPage",
+  "group": "publicPages",
+  "label": "Trang đặt phòng",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "heroTitle": null,
+   "heroDescription": null,
+   "heroKicker": null,
+   "heroImageMediaId": null,
+   "securityNote": null,
+   "helpTitle": null,
+   "helpDescription": null,
+   "confirmationNote": null
+  }
+ },
+ {
+  "key": "catalog.staticPages",
+  "group": "publicPages",
+  "label": "Danh sách chuyên trang",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "eyebrow": null,
+   "title": null,
+   "description": null
+  }
+ },
+ {
+  "key": "catalog.articlesPage",
+  "group": "publicPages",
+  "label": "Danh sách bài viết",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "eyebrow": null,
+   "title": null,
+   "description": null
+  }
+ },
+ {
+  "key": "booking.payment",
+  "group": "booking",
+  "label": "Hướng dẫn thanh toán",
+  "description": "Hiển thị ở bước đặt phòng. Không bật kênh nào chưa cấu hình thật.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "methods": [],
+   "bankAccount": {
+    "bankName": null,
+    "accountNumber": null,
+    "accountHolder": null,
+    "branch": null,
+    "qrMediaId": null
+   }
+  }
+ },
+ {
+  "key": "locale.formats",
+  "group": "locale",
+  "label": "Ngôn ngữ và định dạng",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "locale": "vi-VN",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "currency": "VND",
+   "currencySuffix": "đ",
+   "dateFormat": "dd/MM/yyyy"
+  }
+ },
+ {
+  "key": "seo.defaults",
+  "group": "seo",
+  "label": "SEO mặc định",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "titleTemplate": null,
+   "defaultTitle": null,
+   "defaultDescription": null,
+   "canonicalBase": null,
+   "ogMediaId": null,
+   "robotsIndex": false,
+   "verification": {
+    "google": null,
+    "bing": null
+   }
+  }
+ },
+ {
+  "key": "seo.pages",
+  "group": "seo",
+  "label": "SEO theo từng trang",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "home": {
+    "title": null,
+    "description": null
+   },
+   "stays": {
+    "title": null,
+    "description": null
+   },
+   "destinations": {
+    "title": null,
+    "description": null
+   },
+   "combos": {
+    "title": null,
+    "description": null
+   },
+   "contact": {
+    "title": null,
+    "description": null
+   },
+   "booking": {
+    "title": null,
+    "description": null
+   },
+   "articles": {
+    "title": null,
+    "description": null
+   },
+   "staticPages": {
+    "title": null,
+    "description": null
+   }
+  }
+ },
+ {
+  "key": "seo.structuredData",
+  "group": "seo",
+  "label": "Dữ liệu có cấu trúc",
+  "description": "Chọn các loại Schema được phép dựng từ dữ liệu đã công khai. Tính năng thương mại bị chặn cho tới khi có nguồn dữ liệu và phê duyệt phù hợp.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "core": true,
+   "offers": false,
+   "reviews": false,
+   "vacationRental": false
+  }
+ },
+ {
+  "key": "analytics.providers",
+  "group": "seo",
+  "label": "Thống kê",
+  "description": "Chỉ nạp script khi có mã thật; không gửi thông tin cá nhân.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "googleAnalyticsId": null,
+   "metaPixelId": null,
+   "enabled": false
+  }
+ },
+ {
+  "key": "home.sections",
+  "group": "content",
+  "label": "Bố cục trang chủ",
+  "description": "Bật/tắt và sắp xếp từng khối trên trang chủ.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "order": [],
+   "hidden": []
+  }
+ },
+ {
+  "key": "content.editor",
+  "group": "content",
+  "label": "Trình soạn thảo",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "allowedBlocks": [
+    "paragraph",
+    "heading",
+    "bulletList",
+    "orderedList",
+    "blockquote",
+    "image",
+    "table",
+    "callout"
+   ],
+   "maxImageWidth": 1600,
+   "autosaveSeconds": 20
+  }
+ },
+ {
+  "key": "media.processing",
+  "group": "media",
+  "label": "Xử lý ảnh",
+  "description": "Ảnh tải lên được chuyển sang WebP và xoá file gốc.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "convertToWebp": true,
+   "deleteOriginal": true,
+   "quality": 82,
+   "maxWidth": 2560,
+   "maxBytes": 10485760,
+   "allowedMimeTypes": [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+    "image/gif"
+   ],
+   "renditions": [
+    {
+     "name": "thumb",
+     "width": 320
+    },
+    {
+     "name": "card",
+     "width": 720
+    },
+    {
+     "name": "wide",
+     "width": 1440
+    }
+   ],
+   "stripMetadata": true
+  }
+ },
+ {
+  "key": "crm.pipeline",
+  "group": "crm",
+  "label": "Quy trình tư vấn",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "stages": [
+    {
+     "code": "new",
+     "label": "Mới"
+    },
+    {
+     "code": "contacted",
+     "label": "Đã liên hệ"
+    },
+    {
+     "code": "quoted",
+     "label": "Đã báo giá"
+    },
+    {
+     "code": "won",
+     "label": "Chốt"
+    },
+    {
+     "code": "lost",
+     "label": "Không thành"
+    }
+   ],
+   "sources": [
+    "website",
+    "zalo",
+    "facebook",
+    "phone",
+    "walk_in",
+    "referral"
+   ],
+   "followUpDefaultHours": 24,
+   "slaFirstResponseHours": 4
+  }
+ },
+ {
+  "key": "notifications.channels",
+  "group": "ops",
+  "label": "Thông báo",
+  "description": "Chưa cấu hình thì hệ thống ghi nhận nhưng không giả vờ đã gửi.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "email": {
+    "enabled": false,
+    "fromName": null,
+    "fromAddress": null,
+    "replyTo": null
+   },
+   "zalo": {
+    "enabled": false
+   },
+   "internalRecipients": []
+  }
+ },
+ {
+  "key": "ops.maintenance",
+  "group": "ops",
+  "label": "Chế độ bảo trì",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "enabled": false,
+   "message": null,
+   "allowAdmin": true
+  }
+ },
+ {
+  "key": "ops.dataMode",
+  "group": "ops",
+  "label": "Kiểm duyệt nội dung",
+  "description": "Đánh dấu nội dung cần xác minh trước khi cho phép công cụ tìm kiếm lập chỉ mục.",
+  "isPublic": true,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "usesDemoData": false,
+   "demoBanner": null
+  }
+ },
+ {
+  "key": "partnerPortal.enabled",
+  "group": "ops",
+  "label": "Cổng đối tác",
+  "description": "Cho phép đối tác đăng ký và sử dụng các chức năng đã được duyệt. Mặc định tắt.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": false
+ },
+ {
+  "key": "inventoryCalendar.enabled",
+  "group": "ops",
+  "label": "Lịch quỹ phòng",
+  "description": "Bật lịch tồn theo hạng phòng; không bật lịch gán phòng vật lý.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": false
+ },
+ {
+  "key": "sheetsSync.enabled",
+  "group": "ops",
+  "label": "Đồng bộ Google Sheets",
+  "description": "Chỉ chạy khi đã cấp đúng workbook sandbox và xác nhận quyền.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": false
+ },
+ {
+  "key": "sheetsSync.importEnabled",
+  "group": "ops",
+  "label": "Nhận lệnh từ Sheets",
+  "description": "Cho phép nhập lệnh tồn từ vùng input đã được liên kết.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": false
+ },
+ {
+  "key": "publicAvailability.enabled",
+  "group": "ops",
+  "label": "Tra cứu tồn công khai",
+  "description": "Chỉ hiển thị tồn khi từng đêm đủ điều kiện công khai và còn mới.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": false
+ },
+ {
+  "key": "unitCalendar.enabled",
+  "group": "ops",
+  "label": "Lịch gán phòng vật lý",
+  "description": "Chưa triển khai; để tắt cho tới khi có nghiệp vụ gán RoomUnit đầy đủ.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": false
+ },
+ {
+  "key": "inventory.freshness",
+  "group": "ops",
+  "label": "Ngưỡng xác nhận tồn",
+  "description": "Dữ liệu quá ngưỡng được đánh dấu cũ và không được chào bán như tồn chắc chắn.",
+  "isPublic": false,
+  "schemaVersion": 1,
+  "defaultValue": {
+   "nearTermDays": 7,
+   "nearTermFreshHours": 24,
+   "fartherFreshDays": 7
+  }
+ }
+]

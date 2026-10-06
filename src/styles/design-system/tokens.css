@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Đinh Vân Booking — design tokens
+   One palette for public, admin and partner surfaces: forest green, cream and
+   earth tones. Legacy token names (--dvb-green-*, --dvb-admin-*) are mapped
+   onto this scale so older module styles inherit the same visual language.
+   ========================================================================== */
+
+:root {
+  /* Forest (brand) */
+  --dvb-forest-990: #0b2116;
+  --dvb-forest-950: #10301f;
+  --dvb-forest-900: #173d29;
+  --dvb-forest-800: #1e4c33;
+  --dvb-forest-700: #265d3f;
+  --dvb-forest-600: #2f6f4b;
+  --dvb-forest-500: #3d845b;
+  --dvb-moss-400: #7d9c68;
+  --dvb-sage-300: #b4c7a3;
+  --dvb-sage-200: #d3e0c6;
+  --dvb-sage-100: #e7efdd;
+  --dvb-sage-50: #f2f6ec;
+
+  /* Cream & earth */
+  --dvb-cream-25: #fdfcf8;
+  --dvb-cream-50: #faf8f1;
+  --dvb-cream-100: #f5f1e6;
+  --dvb-cream-200: #ece5d3;
+  --dvb-sand-300: #dcc9a4;
+  --dvb-clay-500: #a5683f;
+  --dvb-clay-600: #8b5332;
+  --dvb-bark-700: #5a4532;
+
+  /* Ink & lines */
+  --dvb-ink-900: #17211b;
+  --dvb-ink-800: #26312a;
+  --dvb-ink-700: #3a463e;
+  --dvb-ink-600: #4f5b53;
+  --dvb-ink-500: #636e66;
+  --dvb-ink-400: #8a948c;
+  --dvb-line: #e3e6dc;
+  --dvb-line-soft: #edefe7;
+  --dvb-line-strong: #cfd6c7;
+
+  /* Status (text / background / border). Never rely on colour alone: every
+     status surface also carries a label or icon. */
+  --dvb-success: #1d6f40;
+  --dvb-success-bg: #e4f2e7;
+  --dvb-success-line: #b9dbc3;
+  --dvb-warning: #8a5300;
+  --dvb-warning-bg: #fcf0d7;
+  --dvb-warning-line: #ecd29c;
+  --dvb-danger: #a8322c;
+  --dvb-danger-bg: #fbeae8;
+  --dvb-danger-line: #efc4bf;
+  --dvb-info: #275f8f;
+  --dvb-info-bg: #e8f1f8;
+  --dvb-info-line: #bfd6ea;
+  --dvb-neutral: #56615a;
+  --dvb-neutral-bg: #eff1ea;
+  --dvb-neutral-line: #d9ded3;
+
+  /* Surfaces */
+  --dvb-bg: var(--dvb-cream-25);
+  --dvb-bg-muted: var(--dvb-cream-50);
+  --dvb-surface-1: #ffffff;
+  --dvb-surface-2: var(--dvb-cream-50);
+  --dvb-surface-3: var(--dvb-cream-100);
+
+  /* Radius */
+  --dvb-r-xs: 6px;
+  --dvb-r-sm: 8px;
+  --dvb-r-md: 12px;
+  --dvb-r-lg: 16px;
+  --dvb-r-xl: 24px;
+  --dvb-r-pill: 999px;
+
+  /* Elevation */
+  --dvb-shadow-xs: 0 1px 2px rgb(16 48 31 / 6%);
+  --dvb-shadow-sm: 0 1px 2px rgb(16 48 31 / 5%), 0 2px 8px rgb(16 48 31 / 5%);
+  --dvb-shadow-md: 0 2px 4px rgb(16 48 31 / 4%), 0 8px 24px rgb(16 48 31 / 8%);
+  --dvb-shadow-lg: 0 4px 10px rgb(16 48 31 / 6%), 0 18px 48px rgb(16 48 31 / 14%);
+  --dvb-shadow-focus: 0 0 0 3px rgb(61 132 91 / 32%);
+
+  /* Spacing */
+  --dvb-s-1: 4px;
+  --dvb-s-2: 8px;
+  --dvb-s-3: 12px;
+  --dvb-s-4: 16px;
+  --dvb-s-5: 20px;
+  --dvb-s-6: 24px;
+  --dvb-s-8: 32px;
+  --dvb-s-10: 40px;
+  --dvb-s-12: 48px;
+  --dvb-s-16: 64px;
+  --dvb-s-20: 80px;
+
+  /* Type scale */
+  --dvb-fs-xs: 12px;
+  --dvb-fs-sm: 13px;
+  --dvb-fs-md: 14px;
+  --dvb-fs-base: 15px;
+  --dvb-fs-lg: 17px;
+  --dvb-fs-xl: 20px;
+  --dvb-fs-2xl: 24px;
+  --dvb-fs-3xl: clamp(26px, 2.4vw, 32px);
+  --dvb-fs-4xl: clamp(30px, 3.4vw, 42px);
+  --dvb-fs-5xl: clamp(36px, 4.8vw, 60px);
+
+  /* Controls */
+  --dvb-control-sm: 36px;
+  --dvb-control-md: 44px;
+  --dvb-control-lg: 52px;
+
+  /* Motion */
+  --dvb-dur-fast: 140ms;
+  --dvb-dur-base: 220ms;
+  --dvb-dur-slow: 420ms;
+  --dvb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dvb-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Layout */
+  --dvb-page-max: 1320px;
+  --dvb-gutter: clamp(16px, 4vw, 40px);
+
+  /* Legacy names → new scale (kept so module styles stay consistent). */
+  --dvb-green-950: var(--dvb-forest-950);
+  --dvb-green-900: var(--dvb-forest-900);
+  --dvb-green-800: var(--dvb-forest-700);
+  --dvb-green-700: var(--dvb-forest-600);
+  --dvb-sage: var(--dvb-moss-400);
+  --dvb-cream: var(--dvb-cream-100);
+  --dvb-cream-2: var(--dvb-cream-200);
+  --dvb-paper: var(--dvb-cream-25);
+  --dvb-surface: var(--dvb-surface-1);
+  --dvb-text: var(--dvb-ink-900);
+  --dvb-muted: var(--dvb-ink-500);
+  --dvb-border: var(--dvb-line);
+  --dvb-rating: #e39a1b;
+  --dvb-radius-card: var(--dvb-r-lg);
+  --dvb-radius-button: var(--dvb-r-md);
+  --dvb-radius-search: var(--dvb-r-xl);
+  --dvb-shadow-card: var(--dvb-shadow-sm);
+  --dvb-shadow-search: var(--dvb-shadow-lg);
+  --dvb-grad-cta: linear-gradient(180deg, var(--dvb-forest-600) 0%, var(--dvb-forest-800) 100%);
+}
+
+/* Reduced motion is honoured everywhere: no parallax, no reveal choreography,
+   no shimmering skeletons. State changes still happen, just instantly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

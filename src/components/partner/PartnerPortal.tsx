@@ -1,8 +1,11 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ArrowLeft, Bell, Building2, CalendarRange, ExternalLink, FileText, Images, Info, LogOut, Search, SlidersHorizontal, Users } from 'lucide-react';
+import { DinhVanMark } from '@/components/ui/BrandLogo';
+import { Drawer, StateBlock, StatusPill, type Tone } from '@/components/ui/system';
 import { ApiError, apiPath, apiRequest } from '@/lib/api/client';
 import { EMPTY_DOCUMENT, RichTextEditor, type RichDocument } from '@/components/admin/shared/RichTextEditor';
 import { InventoryCalendarMatrix } from '@/components/inventory/InventoryCalendarMatrix';
@@ -56,8 +59,33 @@ const statusText: Record<string, string> = {
   approved: 'Đã duyệt tài khoản', rejected: 'Chưa được duyệt', active: 'Đang hoạt động', pending_review: 'Đang chờ duyệt',
   needs_changes: 'Cần chỉnh sửa', conflict: 'Có xung đột phiên bản',
   draft: 'Bản nháp', published: 'Đang công khai', fresh: 'Vừa xác nhận', stale: 'Cần xác nhận lại', missing: 'Chưa mở quỹ',
-  open: 'Đang bán', stop_sell: 'Đang dừng bán', not_on_sale: 'Chưa mở bán',
+  open: 'Đang bán', stop_sell: 'Đang dừng bán', not_on_sale: 'Chưa mở bán', revoked: 'Đã thu hồi',
 };
+const statusTone: Record<string, Tone> = {
+  pending: 'warning', needs_info: 'warning', needs_information: 'warning', pending_review: 'warning', needs_changes: 'warning', stale: 'warning',
+  approved: 'success', active: 'success', published: 'success', fresh: 'success', open: 'success',
+  rejected: 'danger', conflict: 'danger', stop_sell: 'danger', revoked: 'danger',
+  draft: 'neutral', missing: 'neutral', not_on_sale: 'neutral',
+};
+type PortalTab = 'calendar' | 'profile' | 'search' | 'notifications' | 'organization';
+
+/** Plain-language summary of what a partner may do on one property. */
+function accessSummary(capabilities: Grant['capabilities']) {
+  if (capabilities.canWriteInventory && capabilities.canEditProfile && capabilities.canEditRates) return { label: 'Quản lý đầy đủ', tone: 'brand' as Tone };
+  if (capabilities.canWriteInventory) return { label: 'Quản lý phòng', tone: 'success' as Tone };
+  if (capabilities.canReadInventory) return { label: 'Chỉ xem', tone: 'info' as Tone };
+  if (capabilities.canEditProfile || capabilities.canEditRates || capabilities.canUploadMedia) return { label: 'Cập nhật hồ sơ', tone: 'neutral' as Tone };
+  return { label: 'Chưa được giao việc', tone: 'neutral' as Tone };
+}
+
+function accessList(capabilities: Grant['capabilities']) {
+  return [
+    capabilities.canWriteInventory ? 'Xem và cập nhật số phòng' : capabilities.canReadInventory ? 'Xem lịch phòng' : null,
+    capabilities.canEditProfile ? 'Đề xuất sửa hồ sơ và hạng phòng' : null,
+    capabilities.canEditRates ? 'Đề xuất giá' : null,
+    capabilities.canUploadMedia ? 'Tải ảnh lên thư viện' : null,
+  ].filter((item): item is string => !!item);
+}
 
 function todayInBusinessTimezone() {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
@@ -125,6 +153,8 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
   const [availabilityEnabled, setAvailabilityEnabled] = useState(true);
   const [availabilitySearched, setAvailabilitySearched] = useState(false);
   const [availabilityBusy, setAvailabilityBusy] = useState(false);
+  const [tab, setTab] = useState<PortalTab>('calendar');
+  const advancedTitle = useId();
   const today = useMemo(todayInBusinessTimezone, []);
   const dates = useMemo(() => calendarView === 'week'
     ? Array.from({ length: 7 }, (_, index) => shiftDay(calendarAnchor, index))
@@ -172,6 +202,13 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
 
   const selectedProperty = properties.find((property) => property.propertyId === selectedPropertyId) ?? null;
   const activeOrg = context?.organizations.find((item) => item.status === 'active' && item.membershipStatus === 'active');
+
+  // Open the first assigned property so the calendar is one click away.
+  useEffect(() => {
+    if (selectedPropertyId || editorRoute || initialPropertyId || !activeOrg) return;
+    const first = properties.find((item) => item.organizationId === activeOrg.id);
+    if (first) setSelectedPropertyId(first.propertyId);
+  }, [activeOrg, editorRoute, initialPropertyId, properties, selectedPropertyId]);
 
   const loadRevisions = useCallback(async (organizationId: string) => {
     try {
@@ -337,7 +374,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
     }
     const items = datesInRange.map((day) => inventoryByKey.get(`${roomTypeId}:${day}`));
     if (items.some((item) => !item || item.version === null)) {
-      setError('Lô chỉ áp dụng cho ngày đã mở quỹ. Một ngày còn thiếu; hãy thu hẹp khoảng hoặc nhờ quản trị viên mở quỹ trước.');
+      setError('Chỉ cập nhật được những ngày đã mở quỹ. Có ngày chưa mở; hãy thu hẹp khoảng ngày hoặc nhờ quản trị viên mở quỹ trước.');
       return;
     }
     const changes: PartnerInventoryChange[] = items.map((item, index) => {
@@ -360,7 +397,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
       const preview = await apiRequest<InventoryBulkPreview>('/partners/inventory/bulk/preview', { method: 'POST', body: JSON.stringify(payload) });
       setBulkPayload(payload); setBulkPreview(preview);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không xem trước được lô cập nhật.');
+      setError(reason instanceof Error ? reason.message : 'Chưa xem trước được thay đổi.');
     } finally { setBulkBusy(false); }
   };
 
@@ -371,11 +408,11 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
       const result = await apiRequest<{ syncStatus?: string }>('/partners/inventory/bulk', {
         method: 'PUT', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(bulkPayload),
       });
-      setMessage(result.syncStatus === 'queued' ? 'Đã lưu lô trên hệ thống; các bảng đồng bộ đang chờ xử lý.' : 'Đã lưu lô cập nhật.');
+      setMessage(result.syncStatus === 'queued' ? 'Đã lưu thay đổi; bảng tính đồng bộ sẽ được cập nhật sau ít phút.' : 'Đã lưu thay đổi cho các ngày đã chọn.');
       setBulkOpen(false); setBulkPreview(null); setBulkPayload(null);
       await loadInventory();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Lô chưa được lưu. Nội dung vẫn được giữ để đối chiếu.');
+      setError(reason instanceof Error ? reason.message : 'Chưa lưu được. Nội dung vẫn được giữ để bạn kiểm tra lại.');
       await loadInventory();
     } finally { setBulkBusy(false); }
   };
@@ -507,7 +544,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
       const result = await apiRequest<{ status: string }>('/partners/property-access-claims', { method: 'POST', body: JSON.stringify({
         organizationId: activeOrg.id, propertyId: claimPropertyId, reason: form.get('reason'),
       }) });
-      setMessage(result.status === 'pending' ? 'Đã gửi yêu cầu. Cơ sở gốc và quỹ phòng không bị nhân bản.' : 'Yêu cầu đã được ghi nhận.');
+      setMessage(result.status === 'pending' ? 'Đã gửi yêu cầu. Quản trị viên sẽ xem xét và phản hồi trong mục Thông báo.' : 'Yêu cầu đã được ghi nhận.');
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Không gửi được yêu cầu.'); }
     finally { setClaimBusy(false); }
   };
@@ -522,7 +559,7 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
       await apiRequest(`/partners/members?${params}`, { method: 'POST', body: JSON.stringify({ email: form.get('email'), role: memberRole }) });
       event.currentTarget.reset();
       await loadMembers(activeOrg.id);
-      setMessage('Đã thêm tài khoản vào tổ chức. Quyền trên từng cơ sở vẫn do quản trị viên cấp riêng.');
+      setMessage('Đã thêm tài khoản vào tổ chức. Quyền trên từng cơ sở vẫn do quản trị viên giao riêng.');
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Không thêm được thành viên.'); }
     finally { setMemberBusy(false); }
   };
@@ -587,154 +624,340 @@ export function PartnerPortal({ editorRoute, initialPropertyId, initialMode = 'l
     finally { setUploading(false); }
   };
 
-  if (checking) return <section className="partner-card partner-loading">Đang kiểm tra phiên đăng nhập…</section>;
-  if (portalDisabled) return <section className="partner-card partner-disabled"><span className="partner-eyebrow">Đinh Vân Booking</span><h1>Cổng đối tác đang đóng</h1><p>Quản trị viên chưa bật đăng ký và lịch quỹ phòng. Dữ liệu đối tác hiện chưa được mở sử dụng.</p><Link href="/">Quay về website</Link></section>;
+  const flash = <>
+    {error && <p className="ui-alert ui-tone-danger" role="alert"><Info size={16} aria-hidden="true" />{error}</p>}
+    {message && <p className="ui-alert ui-tone-success" role="status"><Info size={16} aria-hidden="true" />{message}</p>}
+  </>;
 
-  if (!user) return <section className="partner-auth-wrap">
-    <div className="partner-auth-brand"><span className="partner-eyebrow">Hợp tác cùng Đinh Vân Booking</span><h1>Cổng dành cho đối tác</h1><p>Quản lý hồ sơ cơ sở và lịch quỹ phòng trong phạm vi đã được duyệt.</p></div>
-    <div className="partner-card partner-auth-card">
-      <div className="partner-tabs" role="tablist" aria-label="Tài khoản đối tác">
-        <button type="button" className={formMode === 'login' ? 'is-active' : ''} onClick={() => { setFormMode('login'); setError(''); }}>Đăng nhập</button>
-        <button type="button" className={formMode === 'register' ? 'is-active' : ''} onClick={() => { setFormMode('register'); setError(''); }}>Đăng ký</button>
+  if (checking) return <div className="partner-center"><StateBlock kind="loading" title="Đang kiểm tra phiên đăng nhập…" /></div>;
+  if (portalDisabled) return <div className="partner-center"><section className="ui-card ui-card--pad partner-disabled">
+    <span className="ui-eyebrow">Đinh Vân Booking</span>
+    <h1>Cổng đối tác đang tạm đóng</h1>
+    <p>Quản trị viên chưa mở đăng ký và lịch phòng cho đối tác. Vui lòng quay lại sau.</p>
+    <Link className="ui-btn ui-btn--primary" href="/">Quay về website</Link>
+  </section></div>;
+
+  if (!user) return <section className="partner-auth">
+    <div className="partner-auth__brand">
+      <Link className="partner-auth__logo" href="/"><DinhVanMark className="partner-auth__mark" /><span>Đinh Vân <small>Đối tác</small></span></Link>
+      <div className="partner-auth__pitch">
+        <span className="ui-eyebrow">Hợp tác cùng Đinh Vân Booking</span>
+        <h1>Cổng dành cho đối tác lưu trú</h1>
+        <p>Cập nhật phòng trống, gửi đề xuất hồ sơ và nhận thông báo — chỉ trong phạm vi cơ sở bạn được giao.</p>
+        <ul className="partner-auth__points">
+          <li><CalendarRange size={18} aria-hidden="true" /> Lịch phòng trực quan theo tuần</li>
+          <li><FileText size={18} aria-hidden="true" /> Mọi thay đổi hồ sơ đều qua bước duyệt</li>
+          <li><Bell size={18} aria-hidden="true" /> Thông báo khi có kết quả duyệt</li>
+        </ul>
       </div>
-      <form className="partner-form" onSubmit={submitAuth}>
-        {formMode === 'register' && <>
-          <label>Họ và tên<input name="fullName" autoComplete="name" required minLength={2} /></label>
-          <label>Tên tổ chức/cơ sở<input name="organizationName" required minLength={2} /></label>
-          <label>Loại đối tác<select name="organizationType"><option value="property_owner">Chủ cơ sở</option><option value="agency">Đại lý</option></select></label>
-          <label>Số điện thoại<input name="phone" autoComplete="tel" required /></label>
-          <label>Địa chỉ đơn vị<input name="address" autoComplete="street-address" /></label>
-        </>}
-        <label>Email<input name="email" type="email" autoComplete="username" required /></label>
-        <label>Mật khẩu<input name="password" type="password" autoComplete={formMode === 'login' ? 'current-password' : 'new-password'} minLength={12} required /></label>
-        {message && <p className="partner-message" role="status">{message}</p>}
-        {error && <p className="partner-error" role="alert">{error}</p>}
-        <button className="partner-primary" type="submit" disabled={formBusy}>{formBusy ? 'Đang xử lý…' : formMode === 'login' ? 'Đăng nhập' : 'Gửi hồ sơ đăng ký'}</button>
-        {formMode === 'register' && <small>Gửi đăng ký không tạo quyền quản lý ngay. Quản trị viên cần xác minh riêng tài khoản và cơ sở.</small>}
-      </form>
+    </div>
+    <div className="partner-auth__panel">
+      <div className="ui-card ui-card--pad partner-auth__card">
+        <div className="ui-tabs partner-auth__tabs" role="tablist" aria-label="Tài khoản đối tác">
+          <button type="button" role="tab" id="partner-tab-login" aria-controls="partner-auth-form" aria-selected={formMode === 'login'} className="ui-tab" onClick={() => { setFormMode('login'); setError(''); }}>Đăng nhập</button>
+          <button type="button" role="tab" id="partner-tab-register" aria-controls="partner-auth-form" aria-selected={formMode === 'register'} className="ui-tab" onClick={() => { setFormMode('register'); setError(''); }}>Đăng ký hợp tác</button>
+        </div>
+        <div className="partner-auth__intro">
+          <h2>{formMode === 'login' ? 'Chào mừng trở lại' : 'Gửi hồ sơ hợp tác'}</h2>
+          <p>{formMode === 'login' ? 'Đăng nhập bằng email đối tác đã được duyệt.' : 'Điền thông tin cơ bản. Quản trị viên sẽ xác minh trước khi giao quyền quản lý cơ sở.'}</p>
+        </div>
+        <form id="partner-auth-form" role="tabpanel" aria-labelledby={formMode === 'login' ? 'partner-tab-login' : 'partner-tab-register'} className="partner-form" onSubmit={submitAuth}>
+          {formMode === 'register' && <div className="partner-form__grid">
+            <label className="ui-field"><span>Họ và tên</span><input className="ui-input" name="fullName" autoComplete="name" required minLength={2} /></label>
+            <label className="ui-field"><span>Số điện thoại</span><input className="ui-input" name="phone" autoComplete="tel" inputMode="tel" required /></label>
+            <label className="ui-field"><span>Tên cơ sở / doanh nghiệp</span><input className="ui-input" name="organizationName" required minLength={2} /></label>
+            <label className="ui-field"><span>Bạn là</span><select className="ui-select" name="organizationType"><option value="property_owner">Chủ cơ sở lưu trú</option><option value="agency">Đại lý du lịch</option></select></label>
+            <label className="ui-field partner-form__wide"><span>Địa chỉ (không bắt buộc)</span><input className="ui-input" name="address" autoComplete="street-address" /></label>
+          </div>}
+          <label className="ui-field"><span>Email</span><input className="ui-input" name="email" type="email" autoComplete="username" required /></label>
+          <label className="ui-field"><span>Mật khẩu</span><input className="ui-input" name="password" type="password" autoComplete={formMode === 'login' ? 'current-password' : 'new-password'} minLength={12} required /><small className="ui-hint">Tối thiểu 12 ký tự.</small></label>
+          {flash}
+          <button className="ui-btn ui-btn--primary ui-btn--lg ui-btn--block" type="submit" disabled={formBusy}>{formBusy ? 'Đang xử lý…' : formMode === 'login' ? 'Đăng nhập' : 'Gửi hồ sơ đăng ký'}</button>
+          {formMode === 'register' && <p className="ui-hint">Gửi hồ sơ chưa tạo quyền quản lý ngay. Bạn sẽ nhận thông báo khi được duyệt.</p>}
+        </form>
+      </div>
+      <Link className="partner-auth__back" href="/"><ArrowLeft size={16} aria-hidden="true" /> Về trang chủ Đinh Vân</Link>
     </div>
   </section>;
 
   const applications = context?.applications ?? [];
   const rooms = selectedProperty?.roomTypes ?? [];
   const inventoryByKey = new Map(inventory.map((item) => [`${item.roomTypeId}:${item.stayDate}`, item]));
+  const unread = notifications.filter((item) => !item.read).length;
+  const orgProperties = activeOrg ? properties.filter((item) => item.organizationId === activeOrg.id) : [];
+
+  const topbar = <header className="partner-topbar">
+    <Link className="partner-brand" href="/doi-tac"><DinhVanMark className="partner-brand__mark" /><span>Đinh Vân <small>Đối tác</small></span></Link>
+    <div className="partner-topbar__actions">
+      {!editorRoute && <button type="button" className="ui-btn ui-btn--ghost partner-topbar__bell" onClick={() => setTab('notifications')} aria-label={unread ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}>
+        <Bell size={18} aria-hidden="true" />{unread > 0 && <span className="partner-topbar__count" aria-hidden="true">{unread}</span>}
+      </button>}
+      <span className="partner-topbar__user"><span className="partner-topbar__avatar" aria-hidden="true">{user.fullName.trim().split(/\s+/).slice(-1)[0]?.[0]?.toLocaleUpperCase('vi-VN')}</span><span className="partner-topbar__name">{user.fullName}</span></span>
+      <button type="button" className="ui-btn ui-btn--sm" onClick={() => void logout()}><LogOut size={16} aria-hidden="true" /> Đăng xuất</button>
+    </div>
+  </header>;
 
   if (editorRoute) {
     const editorRoom = rooms.find((room) => room.id === editorRoute.roomTypeId);
     const editorRate = editorRoom?.ratePlans.find((rate) => rate.id === editorRoute.ratePlanId);
     const editorPropertyAllowed = Boolean(selectedProperty?.capabilities.canEditProfile);
     const editorRateAllowed = Boolean(selectedProperty?.capabilities.canEditRates);
+    const blocked = (title: string, text: string) => <StateBlock kind="error" title={title} text={text} action={<Link className="ui-btn" href="/doi-tac">Quay lại cổng đối tác</Link>} />;
     return <div className="partner-shell">
-      <header className="partner-topbar"><Link className="partner-brand" href="/doi-tac">Đinh Vân <span>Đối tác</span></Link><div><span>{user.fullName}</span><button type="button" onClick={() => void logout()}>Đăng xuất</button></div></header>
-      <div className="partner-content">
-        <Link className="partner-editor-back" href={selectedProperty ? `/doi-tac?property=${selectedProperty.propertyId}` : '/doi-tac'}>← Quay lại cổng đối tác</Link>
-        <section className="partner-heading"><div><span className="partner-eyebrow">Trang chỉnh sửa riêng</span><h1>{editorRoute.mode === 'property-create' ? 'Tạo hồ sơ cơ sở nháp' : editorRoute.mode === 'room-create' ? 'Khai báo hạng phòng' : editorRoute.mode === 'profile' ? 'Đề xuất chỉnh sửa hồ sơ' : editorRoute.mode === 'room' ? 'Đề xuất chỉnh sửa hạng phòng' : 'Đề xuất chỉnh sửa giá'}</h1><p>Thay đổi gửi đi sẽ qua bước duyệt; dữ liệu công khai không đổi trước khi được chấp thuận.</p></div></section>
-        {error && <p className="partner-error" role="alert">{error}</p>}{message && <p className="partner-message" role="status">{message}</p>}
-        {editorRoute.mode === 'property-create' && activeOrg && <section className="partner-card"><h2>Thông tin cơ sở cần bổ sung</h2><p>Chỉ nhập dữ kiện đã xác nhận. Giá, số phòng và tình trạng tồn không tự tạo.</p><form className="partner-form partner-form-grid" onSubmit={createProperty}>
-          <label>Tên cơ sở<input name="title" required minLength={3} /></label><label>Loại hình<select name="kind"><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option><option value="resort">Khu nghỉ dưỡng</option><option value="villa">Villa</option><option value="guesthouse">Nhà nghỉ</option><option value="bungalow">Bungalow</option></select></label>
-          <label>Khu vực<input name="area" required /></label><label className="partner-form-wide">Địa chỉ<input name="address" required /></label><label className="partner-form-wide">Trích yếu<input name="excerpt" /></label>
-          <div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={formBusy}>{formBusy ? 'Đang lưu…' : 'Tạo bản nháp'}</button></div>
+      {topbar}
+      <div className="partner-content partner-content--narrow">
+        <Link className="partner-back" href={selectedProperty ? `/doi-tac?property=${selectedProperty.propertyId}` : '/doi-tac'}><ArrowLeft size={16} aria-hidden="true" /> Quay lại cổng đối tác</Link>
+        <header className="ui-page-header">
+          <div className="ui-page-header__titles">
+            <span className="ui-eyebrow">{selectedProperty?.name ?? 'Đối tác'}</span>
+            <h1>{editorRoute.mode === 'property-create' ? 'Tạo hồ sơ cơ sở mới' : editorRoute.mode === 'room-create' ? 'Thêm hạng phòng' : editorRoute.mode === 'profile' ? 'Đề xuất sửa hồ sơ cơ sở' : editorRoute.mode === 'room' ? 'Đề xuất sửa hạng phòng' : 'Đề xuất sửa giá'}</h1>
+            <p>Thay đổi sẽ được quản trị viên duyệt trước khi hiển thị trên website.</p>
+          </div>
+        </header>
+        {flash}
+        {editorRoute.mode === 'property-create' && activeOrg && <section className="ui-card ui-card--pad"><div className="ui-card__head"><div><h2 className="ui-card__title">Thông tin cơ sở</h2><p className="ui-card__lead">Chỉ nhập thông tin đã xác nhận. Giá và số phòng sẽ được khai báo sau.</p></div></div><form className="partner-form partner-form__grid" onSubmit={createProperty}>
+          <label className="ui-field"><span>Tên cơ sở</span><input className="ui-input" name="title" required minLength={3} /></label>
+          <label className="ui-field"><span>Loại hình</span><select className="ui-select" name="kind"><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option><option value="resort">Khu nghỉ dưỡng</option><option value="villa">Villa</option><option value="guesthouse">Nhà nghỉ</option><option value="bungalow">Bungalow</option></select></label>
+          <label className="ui-field"><span>Khu vực</span><input className="ui-input" name="area" required /></label>
+          <label className="ui-field partner-form__wide"><span>Địa chỉ</span><input className="ui-input" name="address" required /></label>
+          <label className="ui-field partner-form__wide"><span>Giới thiệu ngắn</span><input className="ui-input" name="excerpt" /></label>
+          <div className="ui-sticky-actions partner-form__wide"><button className="ui-btn ui-btn--primary" disabled={formBusy}>{formBusy ? 'Đang lưu…' : 'Tạo bản nháp'}</button></div>
         </form></section>}
-        {editorRoute.mode === 'property-create' && !activeOrg && <section className="partner-card"><h2>Tổ chức chưa được duyệt</h2><p>Chỉ tổ chức đang hoạt động mới có thể tạo hồ sơ cơ sở nháp.</p></section>}
-        {editorRoute.mode !== 'property-create' && !selectedProperty && <section className="partner-card"><h2>Không tìm thấy cơ sở</h2><p>Cơ sở không thuộc phạm vi được cấp quyền hoặc quyền đã thay đổi.</p></section>}
-        {editorRoute.mode === 'room-create' && selectedProperty && editorPropertyAllowed && <section className="partner-card"><h2>{selectedProperty.name}</h2><p>Khai báo đúng hạng phòng của cơ sở này. Số lượng, giá và chính sách không được tự suy đoán.</p><form className="partner-form partner-form-grid" onSubmit={createRoom}>
-          <label>Tên hạng phòng<input name="name" required /></label><label>Mã hạng (không bắt buộc)<input name="code" /></label><label>Mô tả<input name="description" /></label><label>Giường<input name="bedSummary" /></label>
-          <div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={formBusy}>{formBusy ? 'Đang lưu…' : 'Tạo hạng phòng nháp'}</button></div>
+        {editorRoute.mode === 'property-create' && !activeOrg && blocked('Tổ chức chưa được duyệt', 'Chỉ tổ chức đã được duyệt mới có thể tạo hồ sơ cơ sở.')}
+        {editorRoute.mode !== 'property-create' && !selectedProperty && blocked('Không tìm thấy cơ sở', 'Cơ sở này không nằm trong danh sách bạn được giao, hoặc quyền đã thay đổi.')}
+        {editorRoute.mode === 'room-create' && selectedProperty && editorPropertyAllowed && <section className="ui-card ui-card--pad"><div className="ui-card__head"><div><h2 className="ui-card__title">{selectedProperty.name}</h2><p className="ui-card__lead">Khai báo đúng hạng phòng của cơ sở. Số lượng, giá và chính sách sẽ được bổ sung sau.</p></div></div><form className="partner-form partner-form__grid" onSubmit={createRoom}>
+          <label className="ui-field"><span>Tên hạng phòng</span><input className="ui-input" name="name" required /></label>
+          <label className="ui-field"><span>Mã hạng (không bắt buộc)</span><input className="ui-input" name="code" /></label>
+          <label className="ui-field"><span>Mô tả</span><input className="ui-input" name="description" /></label>
+          <label className="ui-field"><span>Giường</span><input className="ui-input" name="bedSummary" placeholder="Ví dụ: 1 giường đôi" /></label>
+          <div className="ui-sticky-actions partner-form__wide"><button className="ui-btn ui-btn--primary" disabled={formBusy}>{formBusy ? 'Đang lưu…' : 'Tạo hạng phòng nháp'}</button></div>
         </form></section>}
-        {editorRoute.mode === 'profile' && selectedProperty && editorPropertyAllowed && <section className="partner-card partner-editor-card"><div className="partner-card-head"><div><h2>{selectedProperty.name}</h2><p>Phiên bản hồ sơ {selectedProperty.version} · nội dung {selectedProperty.contentVersion}</p></div></div>
-          <form className="partner-form partner-form-grid" onSubmit={(event) => void savePropertyRevision(event)}>
-            <label>Tên cơ sở<input name="title" defaultValue={selectedProperty.name} required minLength={3} /></label><label>Khu vực<input name="area" defaultValue={selectedProperty.area} required /></label>
-            <label className="partner-form-wide">Địa chỉ<input name="address" defaultValue={selectedProperty.address} required /></label><label>Giờ nhận phòng<input name="checkInTime" defaultValue={selectedProperty.checkInTime} required /></label><label>Giờ trả phòng<input name="checkOutTime" defaultValue={selectedProperty.checkOutTime} required /></label>
-            <label className="partner-form-wide">Trích yếu<input name="excerpt" defaultValue={selectedProperty.excerpt ?? ''} maxLength={500} /></label>
-            <div className="partner-form-wide partner-rich-editor"><RichTextEditor value={descriptionDocument} onChange={(document) => setDescriptionDocument(document)} label="Mô tả chi tiết" hint="Nội dung sẽ qua bước duyệt trước khi thay đổi trang công khai." /></div>
-            <label>Nội quy — mỗi dòng một nội quy<textarea name="houseRules" rows={4} defaultValue={selectedProperty.houseRules.join('\n')} maxLength={7200} /></label><label>Ghi chú cho khách — mỗi dòng một ghi chú<textarea name="notes" rows={4} defaultValue={selectedProperty.notes.join('\n')} maxLength={10000} /></label>
-            <div className="partner-form-wide"><span className="partner-field-label">Album ảnh (ảnh đầu là ảnh bìa)</span>{media.length ? <div className="partner-media-grid">{media.map((item) => <button key={item.id} type="button" className={selectedMediaIds.includes(item.id) ? 'is-selected' : ''} onClick={() => setSelectedMediaIds((ids) => ids.includes(item.id) ? ids.filter((id) => id !== item.id) : [...ids, item.id])}><Image src={item.url} alt={item.altText ?? ''} width={item.width ?? 320} height={item.height ?? 220} unoptimized /><span>{item.altText || 'Chưa có ALT'}{selectedMediaIds.includes(item.id) ? ` · vị trí ${selectedMediaIds.indexOf(item.id) + 1}` : ''}</span></button>)}</div> : <p className="partner-muted">Chưa có ảnh trong thư viện của tổ chức.</p>}</div>
-            <div className="partner-form-actions partner-form-wide"><button className="partner-primary" type="submit" disabled={revisionBusy}>{revisionBusy ? 'Đang gửi…' : 'Gửi quản trị viên duyệt'}</button></div>
-          </form>
-        </section>}
-        {editorRoute.mode === 'room' && selectedProperty && editorPropertyAllowed && editorRoom && <section className="partner-card"><h2>{editorRoom.name} · {editorRoom.code}</h2><p>Phiên bản {editorRoom.version}; đề xuất cần quản trị viên duyệt.</p><form className="partner-form partner-form-grid" onSubmit={(event) => void saveRoomRevision(event, editorRoom)}>
-          <label>Tên hạng phòng<input name="name" defaultValue={editorRoom.name} required /></label><label>Loại đơn vị<input name="unitKind" defaultValue={editorRoom.unitKind ?? ''} /></label><label className="partner-form-wide">Mô tả<input name="description" defaultValue={editorRoom.description ?? ''} /></label><label>Giường<input name="bedSummary" defaultValue={editorRoom.bedSummary ?? ''} /></label><label>Diện tích m²<input name="areaSqm" type="number" min="0" defaultValue={editorRoom.areaSqm ?? ''} /></label>
-          <label>Số phòng ngủ<input name="bedroomCount" type="number" min="0" defaultValue={editorRoom.bedroomCount ?? ''} /></label><label>Số phòng tắm<input name="bathroomCount" type="number" min="0" defaultValue={editorRoom.bathroomCount ?? ''} /></label><label>Người lớn tối đa<input name="maxAdults" type="number" min="1" defaultValue={editorRoom.maxAdults} /></label><label>Trẻ em tối đa<input name="maxChildren" type="number" min="0" defaultValue={editorRoom.maxChildren} /></label>
-          <div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={revisionBusy}>{revisionBusy ? 'Đang gửi…' : 'Gửi đề xuất hạng phòng'}</button></div>
+        {editorRoute.mode === 'profile' && selectedProperty && editorPropertyAllowed && <form className="partner-form partner-editor" onSubmit={(event) => void savePropertyRevision(event)}>
+          <section className="ui-card ui-card--pad"><h2 className="ui-card__title">Thông tin cơ bản</h2><div className="partner-form__grid">
+            <label className="ui-field"><span>Tên cơ sở</span><input className="ui-input" name="title" defaultValue={selectedProperty.name} required minLength={3} /></label>
+            <label className="ui-field"><span>Khu vực</span><input className="ui-input" name="area" defaultValue={selectedProperty.area} required /></label>
+            <label className="ui-field partner-form__wide"><span>Địa chỉ</span><input className="ui-input" name="address" defaultValue={selectedProperty.address} required /></label>
+            <label className="ui-field"><span>Giờ nhận phòng</span><input className="ui-input" name="checkInTime" defaultValue={selectedProperty.checkInTime} required /></label>
+            <label className="ui-field"><span>Giờ trả phòng</span><input className="ui-input" name="checkOutTime" defaultValue={selectedProperty.checkOutTime} required /></label>
+            <label className="ui-field partner-form__wide"><span>Giới thiệu ngắn</span><input className="ui-input" name="excerpt" defaultValue={selectedProperty.excerpt ?? ''} maxLength={500} /></label>
+          </div></section>
+          <section className="ui-card ui-card--pad"><h2 className="ui-card__title">Mô tả chi tiết</h2><div className="partner-rich-editor"><RichTextEditor value={descriptionDocument} onChange={(document) => setDescriptionDocument(document)} label="Mô tả chi tiết" hint="Nội dung sẽ được duyệt trước khi thay đổi trên website." /></div></section>
+          <section className="ui-card ui-card--pad"><h2 className="ui-card__title">Nội quy & lưu ý</h2><div className="partner-form__grid">
+            <label className="ui-field"><span>Nội quy — mỗi dòng một ý</span><textarea className="ui-textarea" name="houseRules" rows={5} defaultValue={selectedProperty.houseRules.join('\n')} maxLength={7200} /></label>
+            <label className="ui-field"><span>Lưu ý cho khách — mỗi dòng một ý</span><textarea className="ui-textarea" name="notes" rows={5} defaultValue={selectedProperty.notes.join('\n')} maxLength={10000} /></label>
+          </div></section>
+          <section className="ui-card ui-card--pad"><h2 className="ui-card__title">Album ảnh</h2><p className="ui-card__lead">Chọn ảnh theo thứ tự hiển thị; ảnh đầu tiên là ảnh bìa.</p>
+            {media.length ? <div className="partner-media-grid">{media.map((item) => <button key={item.id} type="button" aria-pressed={selectedMediaIds.includes(item.id)} className={selectedMediaIds.includes(item.id) ? 'is-selected' : ''} onClick={() => setSelectedMediaIds((ids) => ids.includes(item.id) ? ids.filter((id) => id !== item.id) : [...ids, item.id])}><Image src={item.url} alt={item.altText ?? ''} width={item.width ?? 320} height={item.height ?? 220} unoptimized /><span>{selectedMediaIds.includes(item.id) ? `#${selectedMediaIds.indexOf(item.id) + 1} · ` : ''}{item.altText || 'Chưa có mô tả ảnh'}</span></button>)}</div> : <StateBlock title="Thư viện ảnh còn trống" text="Tải ảnh lên trong mục Hồ sơ cơ sở của cổng đối tác." />}
+          </section>
+          <div className="ui-sticky-actions"><span className="ui-sticky-actions__note">Website chỉ thay đổi sau khi đề xuất được duyệt.</span><Link className="ui-btn" href={`/doi-tac?property=${selectedProperty.propertyId}`}>Huỷ</Link><button className="ui-btn ui-btn--primary" type="submit" disabled={revisionBusy}>{revisionBusy ? 'Đang gửi…' : 'Gửi đề xuất'}</button></div>
+        </form>}
+        {editorRoute.mode === 'room' && selectedProperty && editorPropertyAllowed && editorRoom && <section className="ui-card ui-card--pad"><div className="ui-card__head"><div><h2 className="ui-card__title">{editorRoom.name} <small className="partner-muted">{editorRoom.code}</small></h2><p className="ui-card__lead">Đề xuất sẽ được quản trị viên duyệt.</p></div></div><form className="partner-form partner-form__grid" onSubmit={(event) => void saveRoomRevision(event, editorRoom)}>
+          <label className="ui-field"><span>Tên hạng phòng</span><input className="ui-input" name="name" defaultValue={editorRoom.name} required /></label>
+          <label className="ui-field"><span>Loại đơn vị</span><input className="ui-input" name="unitKind" defaultValue={editorRoom.unitKind ?? ''} /></label>
+          <label className="ui-field partner-form__wide"><span>Mô tả</span><input className="ui-input" name="description" defaultValue={editorRoom.description ?? ''} /></label>
+          <label className="ui-field"><span>Giường</span><input className="ui-input" name="bedSummary" defaultValue={editorRoom.bedSummary ?? ''} /></label>
+          <label className="ui-field"><span>Diện tích (m²)</span><input className="ui-input" name="areaSqm" type="number" min="0" defaultValue={editorRoom.areaSqm ?? ''} /></label>
+          <label className="ui-field"><span>Số phòng ngủ</span><input className="ui-input" name="bedroomCount" type="number" min="0" defaultValue={editorRoom.bedroomCount ?? ''} /></label>
+          <label className="ui-field"><span>Số phòng tắm</span><input className="ui-input" name="bathroomCount" type="number" min="0" defaultValue={editorRoom.bathroomCount ?? ''} /></label>
+          <label className="ui-field"><span>Người lớn tối đa</span><input className="ui-input" name="maxAdults" type="number" min="1" defaultValue={editorRoom.maxAdults} /></label>
+          <label className="ui-field"><span>Trẻ em tối đa</span><input className="ui-input" name="maxChildren" type="number" min="0" defaultValue={editorRoom.maxChildren} /></label>
+          <div className="ui-sticky-actions partner-form__wide"><button className="ui-btn ui-btn--primary" disabled={revisionBusy}>{revisionBusy ? 'Đang gửi…' : 'Gửi đề xuất hạng phòng'}</button></div>
         </form></section>}
-        {editorRoute.mode === 'rate' && selectedProperty && editorRateAllowed && editorRoom && editorRate && <section className="partner-card"><h2>{editorRoom.name} · {editorRate.name}</h2><p>Giá hiện tại {editorRate.baseRateVnd === '0' ? 'cần được xác nhận' : `${Number(editorRate.baseRateVnd).toLocaleString('vi-VN')}₫/đêm`} · phiên bản {editorRate.version}</p><form className="partner-form partner-form-grid" onSubmit={(event) => void saveRateRevision(event, editorRoom, editorRate)}>
-          <label>Giá ngày thường (VND)<input name="baseRateVnd" inputMode="numeric" pattern="[0-9]{1,15}" defaultValue={editorRate.baseRateVnd} required /></label><label>Giá cuối tuần (để trống nếu không có giá riêng)<input name="weekendRateVnd" inputMode="numeric" pattern="[0-9]{0,15}" defaultValue={editorRate.weekendRateVnd ?? ''} /></label><label>Số đêm tối thiểu<input name="minStayNights" type="number" min="1" max="30" defaultValue={editorRate.minStayNights} required /></label><label>Số đêm tối đa<input name="maxStayNights" type="number" min="1" max="365" defaultValue={editorRate.maxStayNights ?? ''} /></label>
-          <label className="partner-check"><input name="breakfastIncluded" type="checkbox" defaultChecked={editorRate.breakfastIncluded} /> Đã bao gồm bữa sáng</label><label>Quyền lợi — mỗi dòng một mục<textarea name="inclusions" rows={3} defaultValue={editorRate.inclusions.filter((value): value is string => typeof value === 'string').join('\n')} /></label>
-          <div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={revisionBusy}>{revisionBusy ? 'Đang gửi…' : 'Gửi đề xuất giá'}</button></div>
+        {editorRoute.mode === 'rate' && selectedProperty && editorRateAllowed && editorRoom && editorRate && <section className="ui-card ui-card--pad"><div className="ui-card__head"><div><h2 className="ui-card__title">{editorRoom.name} · {editorRate.name}</h2><p className="ui-card__lead">Giá hiện tại: {editorRate.baseRateVnd === '0' ? 'cần được xác nhận' : `${Number(editorRate.baseRateVnd).toLocaleString('vi-VN')}₫/đêm`}</p></div></div><form className="partner-form partner-form__grid" onSubmit={(event) => void saveRateRevision(event, editorRoom, editorRate)}>
+          <label className="ui-field"><span>Giá ngày thường (VND)</span><input className="ui-input" name="baseRateVnd" inputMode="numeric" pattern="[0-9]{1,15}" defaultValue={editorRate.baseRateVnd} required /></label>
+          <label className="ui-field"><span>Giá cuối tuần (để trống nếu như ngày thường)</span><input className="ui-input" name="weekendRateVnd" inputMode="numeric" pattern="[0-9]{0,15}" defaultValue={editorRate.weekendRateVnd ?? ''} /></label>
+          <label className="ui-field"><span>Số đêm tối thiểu</span><input className="ui-input" name="minStayNights" type="number" min="1" max="30" defaultValue={editorRate.minStayNights} required /></label>
+          <label className="ui-field"><span>Số đêm tối đa</span><input className="ui-input" name="maxStayNights" type="number" min="1" max="365" defaultValue={editorRate.maxStayNights ?? ''} /></label>
+          <label className="ui-check partner-form__wide"><input name="breakfastIncluded" type="checkbox" defaultChecked={editorRate.breakfastIncluded} /> Đã bao gồm bữa sáng</label>
+          <label className="ui-field partner-form__wide"><span>Quyền lợi kèm theo — mỗi dòng một mục</span><textarea className="ui-textarea" name="inclusions" rows={3} defaultValue={editorRate.inclusions.filter((value): value is string => typeof value === 'string').join('\n')} /></label>
+          <div className="ui-sticky-actions partner-form__wide"><button className="ui-btn ui-btn--primary" disabled={revisionBusy}>{revisionBusy ? 'Đang gửi…' : 'Gửi đề xuất giá'}</button></div>
         </form></section>}
-        {editorRoute.mode === 'profile' && selectedProperty && !editorPropertyAllowed && <section className="partner-card"><h2>Chưa có quyền sửa hồ sơ</h2><p>Quản trị viên cấp riêng quyền hồ sơ cho từng cơ sở.</p></section>}
-        {editorRoute.mode === 'room-create' && selectedProperty && !editorPropertyAllowed && <section className="partner-card"><h2>Chưa có quyền khai báo hạng phòng</h2><p>Quản trị viên cấp riêng quyền hồ sơ cho từng cơ sở.</p></section>}
-        {editorRoute.mode === 'room' && selectedProperty && !editorPropertyAllowed && <section className="partner-card"><h2>Chưa có quyền sửa hạng phòng</h2><p>Quản trị viên cấp riêng quyền hồ sơ cho từng cơ sở.</p></section>}
-        {editorRoute.mode === 'room' && selectedProperty && editorPropertyAllowed && !editorRoom && <section className="partner-card"><h2>Không tìm thấy hạng phòng</h2><p>Hạng phòng không thuộc cơ sở được cấp quyền.</p></section>}
-        {editorRoute.mode === 'rate' && selectedProperty && (!editorRateAllowed || !editorRoom || !editorRate) && <section className="partner-card"><h2>Không có quyền sửa giá</h2><p>Kiểm tra grant còn hiệu lực và hạng phòng thuộc đúng cơ sở.</p></section>}
+        {editorRoute.mode === 'profile' && selectedProperty && !editorPropertyAllowed && blocked('Bạn chưa được giao quyền sửa hồ sơ', 'Quản trị viên giao quyền sửa hồ sơ riêng cho từng cơ sở.')}
+        {editorRoute.mode === 'room-create' && selectedProperty && !editorPropertyAllowed && blocked('Bạn chưa được giao quyền thêm hạng phòng', 'Quản trị viên giao quyền sửa hồ sơ riêng cho từng cơ sở.')}
+        {editorRoute.mode === 'room' && selectedProperty && !editorPropertyAllowed && blocked('Bạn chưa được giao quyền sửa hạng phòng', 'Quản trị viên giao quyền sửa hồ sơ riêng cho từng cơ sở.')}
+        {editorRoute.mode === 'room' && selectedProperty && editorPropertyAllowed && !editorRoom && blocked('Không tìm thấy hạng phòng', 'Hạng phòng này không thuộc cơ sở bạn được giao.')}
+        {editorRoute.mode === 'rate' && selectedProperty && (!editorRateAllowed || !editorRoom || !editorRate) && blocked('Bạn chưa được giao quyền sửa giá', 'Kiểm tra lại với quản trị viên: quyền có thể đã hết hạn hoặc hạng phòng không thuộc phạm vi được giao.')}
       </div>
     </div>;
   }
 
+  const tabs: Array<{ id: PortalTab; label: string; icon: typeof Bell; count?: number; hidden?: boolean }> = [
+    { id: 'calendar', label: 'Lịch phòng', icon: CalendarRange, hidden: !activeOrg },
+    { id: 'profile', label: 'Hồ sơ cơ sở', icon: Building2, hidden: !activeOrg },
+    { id: 'search', label: 'Tra cứu phòng', icon: Search, hidden: !activeOrg },
+    { id: 'notifications', label: 'Thông báo', icon: Bell, count: unread },
+    { id: 'organization', label: 'Tổ chức', icon: Users, hidden: !activeOrg },
+  ];
+  const visibleTabs = tabs.filter((item) => !item.hidden);
+  const currentTab = visibleTabs.some((item) => item.id === tab) ? tab : visibleTabs[0].id;
+  const access = selectedProperty ? accessSummary(selectedProperty.capabilities) : null;
+  const propertyRevisions = selectedProperty ? revisions.filter((item) => item.propertyId === selectedProperty.propertyId) : [];
+  const needProperty = (content: ReactNode) => selectedProperty ? content : <StateBlock title="Chọn một cơ sở" text={orgProperties.length ? 'Chọn cơ sở ở phía trên để xem thông tin.' : 'Bạn chưa được giao cơ sở nào. Có thể tạo hồ sơ mới hoặc xin quản lý cơ sở có sẵn trong mục Tổ chức.'} />;
+
   return <div className="partner-shell">
-    <header className="partner-topbar"><Link className="partner-brand" href="/doi-tac">Đinh Vân <span>Đối tác</span></Link><div><span>{user.fullName}</span><button type="button" onClick={() => void logout()}>Đăng xuất</button></div></header>
+    {topbar}
     <div className="partner-content">
-      <section className="partner-heading"><div><span className="partner-eyebrow">Không gian vận hành</span><h1>Xin chào, {user.fullName}</h1><p>Thông tin chỉ hiển thị theo tổ chức và quyền đã được quản trị viên cấp.</p></div><Link href="/">Xem website</Link></section>
-      {error && <p className="partner-error" role="alert">{error}</p>}
-      {message && <p className="partner-message" role="status">{message}</p>}
-      <section className="partner-card partner-notifications"><div className="partner-card-head"><div><h2>Thông báo</h2><p>{notifications.filter((item) => !item.read).length ? `${notifications.filter((item) => !item.read).length} thông báo chưa đọc` : 'Không có thông báo mới'}</p></div><button type="button" onClick={() => void loadNotifications()}>Tải lại</button></div>
-        {notifications.length === 0 ? <p className="partner-muted">Kết quả duyệt, quyền cơ sở và nhắc xác nhận tồn sẽ hiển thị tại đây.</p> : <div className="partner-notification-list">{notifications.map((notification) => <article className={notification.read ? '' : 'is-unread'} key={notification.id}><div><strong>{notification.title}</strong><p>{notification.body}</p><small>{new Date(notification.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</small></div>{!notification.read && <button type="button" onClick={() => void markNotificationRead(notification)}>Đánh dấu đã đọc</button>}</article>)}</div>}
+      <section className="partner-welcome">
+        <div>
+          <span className="ui-eyebrow">{activeOrg?.name ?? 'Cổng đối tác'}</span>
+          <h1>Xin chào, {user.fullName}</h1>
+          <p>{activeOrg ? (orgProperties.length ? `Bạn đang quản lý ${orgProperties.length} cơ sở. Chỉ những cơ sở được giao mới hiển thị ở đây.` : 'Tổ chức đã được duyệt. Cơ sở sẽ hiển thị khi quản trị viên giao quyền.') : 'Hồ sơ của bạn đang chờ duyệt.'}</p>
+        </div>
+        <Link className="ui-btn" href="/" target="_blank"><ExternalLink size={16} aria-hidden="true" /> Xem website</Link>
       </section>
-      {applications.some((item) => item.status !== 'approved') && <section className="partner-card partner-review-status"><h2>Hồ sơ đăng ký</h2>{applications.filter((item) => item.status !== 'approved').map((item) => <div key={item.id}><p><strong>{statusText[item.status] ?? item.status}</strong>{item.reviewNote && <span> — {item.reviewNote}</span>}</p>{item.status === 'needs_info' && <form className="partner-form partner-form-grid" onSubmit={(event) => void resubmitApplication(event, item)}><label>Họ và tên<input name="fullName" defaultValue={item.submittedName} required minLength={2} /></label><label>Số điện thoại<input name="phone" defaultValue={item.submittedPhone} required /></label><label>Tên tổ chức/cơ sở<input name="organizationName" defaultValue={item.organization.name} required minLength={2} /></label><label>Địa chỉ đơn vị<input name="address" defaultValue={item.organization.address ?? ''} /></label><div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={formBusy}>{formBusy ? 'Đang gửi…' : 'Gửi lại hồ sơ'}</button></div></form>}</div>)}<small>Tài khoản được duyệt chưa đồng nghĩa đã có quyền sửa từng cơ sở.</small></section>}
-      {!activeOrg && <section className="partner-empty"><h2>Chưa có tổ chức được duyệt</h2><p>Khi quản trị viên duyệt hồ sơ, tổ chức sẽ xuất hiện tại đây. Quyền theo từng cơ sở được cấp riêng sau đó.</p></section>}
-      {activeOrg && <section className="partner-card partner-availability-search"><div className="partner-card-head"><div><h2>Tra cứu phòng đã được công khai</h2><p>Kết quả chỉ đọc dữ liệu công khai đã duyệt; trước khi nhận khách vẫn cần xác nhận lại trên hệ thống.</p></div></div>
-        <form className="partner-search-form" onSubmit={(event) => void searchAvailability(event)}>
-          <label>Ngày nhận<input type="date" value={searchCheckIn} min={today} onChange={(event) => { setSearchCheckIn(event.target.value); if (event.target.value >= searchCheckOut) setSearchCheckOut(shiftDay(event.target.value, 1)); }} required /></label>
-          <label>Ngày trả<input type="date" value={searchCheckOut} min={shiftDay(searchCheckIn, 1)} onChange={(event) => setSearchCheckOut(event.target.value)} required /></label>
-          <label>Số phòng<input name="rooms" type="number" min="1" max="5" defaultValue="1" required /></label>
-          <label>Người lớn<input name="adults" type="number" min="1" max="20" defaultValue="2" required /></label>
-          <label>Trẻ em<input name="children" type="number" min="0" max="12" defaultValue="0" required /></label>
-          <label>Khu vực<input name="area" maxLength={80} placeholder="Ví dụ: Cúc Phương" /></label>
-          <label>Loại cơ sở<select name="kind" defaultValue=""><option value="">Tất cả</option><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option><option value="resort">Khu nghỉ dưỡng</option><option value="villa">Villa</option></select></label>
-          <button className="partner-primary" type="submit" disabled={availabilityBusy}>{availabilityBusy ? 'Đang kiểm tra…' : 'Tra cứu'}</button>
-        </form>
-        {!availabilityEnabled && <p className="partner-muted">Tra cứu tồn công khai đang tạm tắt.</p>}
-        {availabilityEnabled && availability.length > 0 && <div className="partner-search-results">{availability.map((item) => <article className="partner-search-result" key={`${item.propertyId}:${item.roomTypeId}`}>
-          {item.cover && <Image src={item.cover.url} alt={item.cover.alt ?? ''} width={480} height={320} unoptimized />}
-          <div><span className={`partner-search-status is-${item.status}`}>{item.status === 'available' ? 'Có quỹ theo lần xác nhận gần nhất' : item.status === 'stale' ? 'Cần xác nhận lại' : item.status === 'needs_check' ? 'Đang được rà soát' : 'Không còn quỹ phù hợp'}</span><h3>{item.name}</h3><p>{item.roomTypeName} · {item.area}</p><small>{item.priceMode === 'contact' ? 'Giá cần xác nhận trực tiếp' : 'Giá công khai cần kiểm tra lại trước khi nhận khách'}{item.lastConfirmedAt ? ` · Xác nhận gần nhất ${new Date(item.lastConfirmedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}` : ''}</small></div>
-          {item.path && <Link href={item.path}>Xem cơ sở</Link>}
-        </article>)}</div>}
-        {availabilityEnabled && availabilitySearched && availability.length === 0 && <p className="partner-muted">Chưa có kết quả cho khoảng ngày và bộ lọc này.</p>}
+      {flash}
+
+      {applications.some((item) => item.status !== 'approved') && <section className="ui-card ui-card--pad partner-review-status">
+        <div className="ui-card__head"><div><h2 className="ui-card__title">Hồ sơ đăng ký</h2><p className="ui-card__lead">Tài khoản được duyệt rồi mới được giao quyền quản lý từng cơ sở.</p></div></div>
+        {applications.filter((item) => item.status !== 'approved').map((item) => <div key={item.id} className="partner-review-status__item">
+          <p><StatusPill tone={statusTone[item.status] ?? 'neutral'}>{statusText[item.status] ?? item.status}</StatusPill>{item.reviewNote && <span className="partner-muted"> {item.reviewNote}</span>}</p>
+          {item.status === 'needs_info' && <form className="partner-form partner-form__grid" onSubmit={(event) => void resubmitApplication(event, item)}>
+            <label className="ui-field"><span>Họ và tên</span><input className="ui-input" name="fullName" defaultValue={item.submittedName} required minLength={2} /></label>
+            <label className="ui-field"><span>Số điện thoại</span><input className="ui-input" name="phone" defaultValue={item.submittedPhone} required /></label>
+            <label className="ui-field"><span>Tên cơ sở / doanh nghiệp</span><input className="ui-input" name="organizationName" defaultValue={item.organization.name} required minLength={2} /></label>
+            <label className="ui-field"><span>Địa chỉ</span><input className="ui-input" name="address" defaultValue={item.organization.address ?? ''} /></label>
+            <div className="partner-form__wide"><button className="ui-btn ui-btn--primary" disabled={formBusy}>{formBusy ? 'Đang gửi…' : 'Gửi lại hồ sơ'}</button></div>
+          </form>}
+        </div>)}
       </section>}
-      {activeOrg && <div className="partner-layout-grid">
-        <aside className="partner-card partner-property-list"><div className="partner-card-head"><div><h2>Cơ sở được cấp quyền</h2><p>{activeOrg.name}</p></div><Link href="/doi-tac/chinh-sua?mode=property-create">Tạo bản nháp</Link></div>
-          {properties.filter((item) => item.organizationId === activeOrg.id).length === 0 ? <p className="partner-muted">Chưa được cấp quyền cơ sở. Bạn có thể tạo bản nháp hoặc gửi yêu cầu quản lý cơ sở có sẵn.</p> : properties.filter((item) => item.organizationId === activeOrg.id).map((property) => <button key={property.propertyId} type="button" className={`partner-property-option${selectedPropertyId === property.propertyId ? ' is-selected' : ''}`} onClick={() => setSelectedPropertyId(property.propertyId)}><strong>{property.name}</strong><span>{property.area} · {statusText[property.publicationStatus] ?? property.publicationStatus}</span><small>{property.capabilities.canWriteInventory ? 'Có quyền cập nhật quỹ' : property.capabilities.canEditProfile ? 'Có quyền khai báo hồ sơ' : 'Chỉ xem theo phạm vi được cấp'}</small></button>)}
-        </aside>
-        <section className="partner-main-column">
-          {selectedProperty && <>
-            <section className="partner-card partner-property-summary"><div><span className="partner-eyebrow">{selectedProperty.code}</span><h2>{selectedProperty.name}</h2><p>{selectedProperty.area} · <span className="partner-status-pill">{statusText[selectedProperty.publicationStatus] ?? selectedProperty.publicationStatus}</span></p></div><div className="partner-summary-actions">{selectedProperty.capabilities.canEditProfile && <><Link href={`/doi-tac/chinh-sua?mode=profile&property=${selectedProperty.propertyId}`}>Đề xuất sửa hồ sơ</Link><Link href={`/doi-tac/chinh-sua?mode=room-create&property=${selectedProperty.propertyId}`}>Thêm hạng phòng</Link></>}{selectedProperty.publicPath && <a href={selectedProperty.publicPath} target="_blank" rel="noreferrer">Xem trang công khai</a>}</div></section>
-            {(selectedProperty.capabilities.canEditProfile || selectedProperty.capabilities.canEditRates) && rooms.map((room) => <section className="partner-card partner-room-edit-card" key={`edit:${room.id}`}><div className="partner-card-head"><div><h3>{room.name} <small>{room.code}</small></h3><p>{room.status === 'draft' ? 'Hạng phòng nháp' : room.capacityVerified ? 'Sức chứa đã xác minh' : 'Sức chứa chưa xác minh'} · phiên bản {room.version}</p></div><div className="partner-summary-actions">{selectedProperty.capabilities.canEditProfile && <Link href={`/doi-tac/chinh-sua?mode=room&property=${selectedProperty.propertyId}&room=${room.id}`}>Sửa hạng phòng</Link>}{selectedProperty.capabilities.canEditRates && room.ratePlans.map((rate) => <Link key={rate.id} href={`/doi-tac/chinh-sua?mode=rate&property=${selectedProperty.propertyId}&room=${room.id}&rate=${rate.id}`}>Sửa giá · {rate.name}</Link>)}</div></div></section>)}
-            {selectedProperty.capabilities.canUploadMedia && <section className="partner-card"><h3>Media Library của tổ chức</h3><p>Ảnh tải lên được chuyển thành WebP, lưu riêng tư; ALT bắt buộc. Ảnh chỉ công khai sau khi được duyệt và gắn vào hồ sơ.</p><form className="partner-upload-form" onSubmit={uploadMedia}><label>Mô tả ALT<input value={mediaAlt} onChange={(event) => setMediaAlt(event.target.value)} required /></label><label>Chọn ảnh<input name="file" type="file" accept="image/jpeg,image/png,image/webp" required /></label><button className="partner-primary" disabled={uploading}>{uploading ? 'Đang tải…' : 'Tải vào thư viện'}</button></form><div className="partner-media-grid">{media.map((item) => <button key={item.id} type="button" className={selectedMediaIds.includes(item.id) ? 'is-selected' : ''} onClick={() => setSelectedMediaIds((ids) => ids.includes(item.id) ? ids.filter((id) => id !== item.id) : [...ids, item.id])}><Image src={item.url} alt={item.altText ?? ''} width={item.width ?? 320} height={item.height ?? 220} unoptimized /><span>{item.altText || 'Chưa có ALT'} · {item.visibility === 'private' ? 'Riêng tư' : 'Công khai'}</span></button>)}</div></section>}
-            {selectedProperty.capabilities.canReadInventory ? <section className="partner-card partner-inventory-card">
-              <InventoryCalendarMatrix mode="partner" propertyName={selectedProperty.name} rooms={rooms} items={inventory} dates={dates} view={calendarView} anchor={calendarAnchor} onView={setCalendarView} onAnchor={setCalendarAnchor} canWrite={selectedProperty.capabilities.canWriteInventory} loading={inventoryLoading} onRefresh={loadInventory}
-                onSave={(change, key) => apiRequest('/partners/inventory/available', { method: 'POST', headers: { 'idempotency-key': key }, body: JSON.stringify({ ...change, organizationId: selectedProperty.organizationId }) })}
-                onConfirm={selectedProperty.capabilities.canWriteInventory ? confirmRoomRange : undefined} />
-              {selectedProperty.capabilities.canWriteInventory && <details className="partner-bulk-edit" open={bulkOpen} onToggle={(event) => { if (!event.currentTarget.open) { setBulkOpen(false); setBulkPreview(null); setBulkPayload(null); } }}><summary onClick={(event) => { event.preventDefault(); setBulkOpen((open) => !open); setBulkPreview(null); setBulkPayload(null); }}>Chi tiết nâng cao: khoá/bán ngoài quỹ</summary><p>Chọn một hạng phòng và khoảng đêm đã mở quỹ. Xem trước thay đổi trước khi lưu; một ngày xung đột sẽ làm cả lô bị từ chối.</p>
-                <form className="partner-form partner-form-grid" onSubmit={(event) => void previewBulkInventory(event)}>
-                  <label>Hạng phòng<select name="roomTypeId" required><option value="">Chọn hạng phòng</option>{rooms.filter((room) => room.status === 'active').map((room) => <option key={room.id} value={room.id}>{room.name} · {room.code}</option>)}</select></label>
-                  <label>Từ ngày<input name="from" type="date" defaultValue={dates[0]} required /></label><label>Đến trước ngày<input name="toExclusive" type="date" defaultValue={shiftDay(dates[dates.length - 1], 1)} required /></label>
-                  <label>Số bán ngoài quỹ<input name="externalSoldCount" type="number" min="0" max="5000" placeholder="Không đổi" /></label><label>Số bảo trì/khóa riêng<input name="maintenanceCount" type="number" min="0" max="5000" placeholder="Không đổi" /></label><label>Quỹ chủ cơ sở giữ lại<input name="ownerWithheldCount" type="number" min="0" max="5000" placeholder="Không đổi" /></label><label>Trạng thái bán<select name="stopSell" defaultValue=""><option value="">Không đổi</option><option value="false">Mở bán</option><option value="true">Dừng bán</option></select></label>
-                  <div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={bulkBusy}>{bulkBusy ? 'Đang kiểm tra…' : 'Xem trước lô'}</button></div>
-                </form>
-                {bulkPreview && <div className="partner-bulk-preview" role="status"><strong>Xem trước · {bulkPreview.items.length} đêm · cập nhật nguyên lô</strong><ul>{bulkPreview.items.map((item) => { const beforeAvailable = item.before.stopSell ? 0 : item.before.capacity - item.before.blockedCount - item.before.heldCount - item.before.reservedCount; return <li key={`${item.roomTypeId}:${item.stayDate}`}>{labelDate(item.stayDate)}: {beforeAvailable} → {item.after.available} phòng{item.after.stopSell ? ' · Dừng bán' : ''}</li>; })}</ul><div className="partner-form-actions"><button type="button" className="partner-primary" disabled={bulkBusy} onClick={() => void applyBulkInventory()}>{bulkBusy ? 'Đang lưu…' : 'Xác nhận và lưu lô'}</button><button type="button" onClick={() => { setBulkPreview(null); setBulkPayload(null); }}>Sửa đề xuất</button></div></div>}
-              </details>}
-            </section> : <section className="partner-card"><h2>Lịch quỹ phòng</h2><p>Chưa có quyền xem hoặc cập nhật tồn cho cơ sở này. Quyền này do quản trị viên cấp riêng.</p></section>}
-          </>}
-          {selectedProperty && <section className="partner-card partner-revision-list"><div className="partner-card-head"><div><h2>Lịch sử đề xuất</h2><p>Đề xuất chờ duyệt chưa làm thay đổi dữ liệu công khai.</p></div><button type="button" onClick={() => activeOrg && void loadRevisions(activeOrg.id)}>Tải lại</button></div>
-            {revisions.filter((item) => item.propertyId === selectedProperty.propertyId).length === 0 ? <p className="partner-muted">Chưa gửi đề xuất chỉnh sửa.</p> : revisions.filter((item) => item.propertyId === selectedProperty.propertyId).map((item) => <article key={item.id}><div><strong>Đề xuất #{item.revision}</strong><span className={`partner-status-pill is-${item.status}`}>{statusText[item.status] ?? item.status}</span><small>{new Date(item.submittedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</small></div>{item.reviewNote && <p>{item.reviewNote}</p>}</article>)}
-          </section>}
+
+      {!activeOrg && <StateBlock title="Chưa có tổ chức được duyệt" text="Khi quản trị viên duyệt hồ sơ, tổ chức và các cơ sở được giao sẽ xuất hiện tại đây." />}
+
+      {activeOrg && <section className="partner-properties" aria-label="Cơ sở được giao">
+        {orgProperties.map((property) => { const summary = accessSummary(property.capabilities); return <button key={property.propertyId} type="button" aria-pressed={selectedPropertyId === property.propertyId} className={`partner-property${selectedPropertyId === property.propertyId ? ' is-selected' : ''}`} onClick={() => setSelectedPropertyId(property.propertyId)}>
+          <span className="partner-property__icon" aria-hidden="true"><Building2 size={20} /></span>
+          <span className="partner-property__text"><strong>{property.name}</strong><small>{property.area} · {statusText[property.publicationStatus] ?? property.publicationStatus}</small></span>
+          <StatusPill tone={summary.tone}>{summary.label}</StatusPill>
+        </button>; })}
+        <Link className="partner-property partner-property--add" href="/doi-tac/chinh-sua?mode=property-create"><span className="partner-property__icon" aria-hidden="true">+</span><span className="partner-property__text"><strong>Tạo hồ sơ cơ sở mới</strong><small>Gửi quản trị viên duyệt</small></span></Link>
+      </section>}
+
+      <nav className="ui-tabs partner-tabs" aria-label="Khu vực làm việc">
+        {visibleTabs.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" className="ui-tab" aria-current={currentTab === item.id ? 'page' : undefined} onClick={() => setTab(item.id)}><Icon size={17} aria-hidden="true" />{item.label}{!!item.count && <span className="ui-tab__count">{item.count}</span>}</button>; })}
+      </nav>
+
+      {currentTab === 'calendar' && activeOrg && needProperty(selectedProperty && (selectedProperty.capabilities.canReadInventory ? <InventoryCalendarMatrix mode="partner" propertyName={selectedProperty.name} rooms={rooms} items={inventory} dates={dates} view={calendarView} anchor={calendarAnchor} onView={setCalendarView} onAnchor={setCalendarAnchor} canWrite={selectedProperty.capabilities.canWriteInventory} loading={inventoryLoading} onRefresh={loadInventory}
+          toolbarExtra={selectedProperty.capabilities.canWriteInventory ? <button type="button" className="ui-btn" onClick={() => { setBulkOpen(true); setBulkPreview(null); setBulkPayload(null); setError(''); }}><SlidersHorizontal size={16} aria-hidden="true" /> Cập nhật nâng cao</button> : undefined}
+          onSave={(change, key) => apiRequest('/partners/inventory/available', { method: 'POST', headers: { 'idempotency-key': key }, body: JSON.stringify({ ...change, organizationId: selectedProperty.organizationId }) })}
+          onConfirm={selectedProperty.capabilities.canWriteInventory ? confirmRoomRange : undefined} />
+        : <StateBlock icon={<CalendarRange size={24} />} title="Bạn chưa được giao quyền xem lịch phòng" text="Quản trị viên giao quyền xem hoặc cập nhật lịch phòng riêng cho từng cơ sở." />))}
+
+      {currentTab === 'profile' && activeOrg && needProperty(selectedProperty && access && <div className="partner-grid">
+        <section className="ui-card ui-card--pad partner-summary">
+          <div className="ui-card__head"><div><span className="ui-eyebrow">{selectedProperty.code}</span><h2 className="ui-card__title">{selectedProperty.name}</h2><p className="ui-card__lead">{selectedProperty.area}</p></div><StatusPill tone={statusTone[selectedProperty.publicationStatus] ?? 'neutral'}>{statusText[selectedProperty.publicationStatus] ?? selectedProperty.publicationStatus}</StatusPill></div>
+          <h3 className="partner-subtitle">Bạn có thể</h3>
+          <ul className="partner-checklist">{accessList(selectedProperty.capabilities).map((item) => <li key={item}>{item}</li>)}{!accessList(selectedProperty.capabilities).length && <li className="is-off">Chưa có việc nào được giao cho cơ sở này</li>}</ul>
+          <div className="ui-actions">
+            {selectedProperty.capabilities.canEditProfile && <><Link className="ui-btn ui-btn--primary" href={`/doi-tac/chinh-sua?mode=profile&property=${selectedProperty.propertyId}`}>Đề xuất sửa hồ sơ</Link><Link className="ui-btn" href={`/doi-tac/chinh-sua?mode=room-create&property=${selectedProperty.propertyId}`}>Thêm hạng phòng</Link></>}
+            {selectedProperty.publicPath && <a className="ui-btn ui-btn--ghost" href={selectedProperty.publicPath} target="_blank" rel="noreferrer"><ExternalLink size={16} aria-hidden="true" /> Xem trên website</a>}
+          </div>
+        </section>
+        <section className="ui-card ui-card--pad">
+          <div className="ui-card__head"><div><h2 className="ui-card__title">Hạng phòng</h2><p className="ui-card__lead">{rooms.length} hạng phòng trong cơ sở này</p></div></div>
+          {rooms.length ? <ul className="partner-rooms">{rooms.map((room) => <li key={room.id}>
+            <div><strong>{room.name}</strong><small>{room.code} · {room.status === 'draft' ? 'Bản nháp' : room.capacityVerified ? 'Đã xác minh sức chứa' : 'Chưa xác minh sức chứa'}</small></div>
+            {(selectedProperty.capabilities.canEditProfile || selectedProperty.capabilities.canEditRates) && <div className="ui-actions">
+              {selectedProperty.capabilities.canEditProfile && <Link className="ui-btn ui-btn--sm" href={`/doi-tac/chinh-sua?mode=room&property=${selectedProperty.propertyId}&room=${room.id}`}>Sửa thông tin</Link>}
+              {selectedProperty.capabilities.canEditRates && room.ratePlans.map((rate) => <Link key={rate.id} className="ui-btn ui-btn--sm" href={`/doi-tac/chinh-sua?mode=rate&property=${selectedProperty.propertyId}&room=${room.id}&rate=${rate.id}`}>Sửa giá · {rate.name}</Link>)}
+            </div>}
+          </li>)}</ul> : <p className="partner-muted">Chưa có hạng phòng.</p>}
+        </section>
+        {selectedProperty.capabilities.canUploadMedia && <section className="ui-card ui-card--pad partner-grid__wide">
+          <div className="ui-card__head"><div><h2 className="ui-card__title"><Images size={20} aria-hidden="true" /> Thư viện ảnh</h2><p className="ui-card__lead">Ảnh tải lên được giữ riêng tư cho tới khi được duyệt và gắn vào hồ sơ.</p></div></div>
+          <form className="partner-upload" onSubmit={uploadMedia}>
+            <label className="ui-field"><span>Mô tả ảnh (bắt buộc)</span><input className="ui-input" value={mediaAlt} onChange={(event) => setMediaAlt(event.target.value)} placeholder="Ví dụ: Phòng đôi nhìn ra rừng" required /></label>
+            <label className="ui-field"><span>Chọn ảnh</span><input className="ui-input" name="file" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
+            <button className="ui-btn ui-btn--primary" disabled={uploading}>{uploading ? 'Đang tải…' : 'Tải lên'}</button>
+          </form>
+          {media.length ? <div className="partner-media-grid">{media.map((item) => <button key={item.id} type="button" aria-pressed={selectedMediaIds.includes(item.id)} className={selectedMediaIds.includes(item.id) ? 'is-selected' : ''} onClick={() => setSelectedMediaIds((ids) => ids.includes(item.id) ? ids.filter((id) => id !== item.id) : [...ids, item.id])}><Image src={item.url} alt={item.altText ?? ''} width={item.width ?? 320} height={item.height ?? 220} unoptimized /><span>{item.altText || 'Chưa có mô tả ảnh'} · {item.visibility === 'private' ? 'Riêng tư' : 'Công khai'}</span></button>)}</div> : <p className="partner-muted">Chưa có ảnh trong thư viện.</p>}
+        </section>}
+        <section className="ui-card ui-card--pad partner-grid__wide">
+          <div className="ui-card__head"><div><h2 className="ui-card__title">Đề xuất đã gửi</h2><p className="ui-card__lead">Đề xuất đang chờ duyệt chưa làm thay đổi website.</p></div><button type="button" className="ui-btn ui-btn--sm" onClick={() => activeOrg && void loadRevisions(activeOrg.id)}>Tải lại</button></div>
+          {propertyRevisions.length === 0 ? <p className="partner-muted">Bạn chưa gửi đề xuất nào cho cơ sở này.</p> : <ul className="partner-list">{propertyRevisions.map((item) => <li key={item.id}><div><strong>Đề xuất #{item.revision}</strong><small>{new Date(item.submittedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</small>{item.reviewNote && <p>{item.reviewNote}</p>}</div><StatusPill tone={statusTone[item.status] ?? 'neutral'}>{statusText[item.status] ?? item.status}</StatusPill></li>)}</ul>}
+        </section>
+      </div>)}
+
+      {currentTab === 'search' && activeOrg && <section className="ui-card ui-card--pad">
+        <div className="ui-card__head"><div><h2 className="ui-card__title">Tra cứu phòng trống</h2><p className="ui-card__lead">Kết quả lấy từ dữ liệu đã công khai. Hãy xác nhận lại trước khi nhận khách.</p></div></div>
+        <form className="partner-search" onSubmit={(event) => void searchAvailability(event)}>
+          <label className="ui-field"><span>Ngày nhận</span><input className="ui-input" type="date" value={searchCheckIn} min={today} onChange={(event) => { setSearchCheckIn(event.target.value); if (event.target.value >= searchCheckOut) setSearchCheckOut(shiftDay(event.target.value, 1)); }} required /></label>
+          <label className="ui-field"><span>Ngày trả</span><input className="ui-input" type="date" value={searchCheckOut} min={shiftDay(searchCheckIn, 1)} onChange={(event) => setSearchCheckOut(event.target.value)} required /></label>
+          <label className="ui-field"><span>Số phòng</span><input className="ui-input" name="rooms" type="number" min="1" max="5" defaultValue="1" required /></label>
+          <label className="ui-field"><span>Người lớn</span><input className="ui-input" name="adults" type="number" min="1" max="20" defaultValue="2" required /></label>
+          <label className="ui-field"><span>Trẻ em</span><input className="ui-input" name="children" type="number" min="0" max="12" defaultValue="0" required /></label>
+          <label className="ui-field"><span>Khu vực</span><input className="ui-input" name="area" maxLength={80} placeholder="Ví dụ: Cúc Phương" /></label>
+          <label className="ui-field"><span>Loại cơ sở</span><select className="ui-select" name="kind" defaultValue=""><option value="">Tất cả</option><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option><option value="resort">Khu nghỉ dưỡng</option><option value="villa">Villa</option></select></label>
+          <button className="ui-btn ui-btn--primary" type="submit" disabled={availabilityBusy}><Search size={16} aria-hidden="true" /> {availabilityBusy ? 'Đang kiểm tra…' : 'Tra cứu'}</button>
+        </form>
+        {!availabilityEnabled && <p className="ui-alert ui-tone-warning"><Info size={16} aria-hidden="true" /> Tra cứu phòng trống đang tạm tắt.</p>}
+        {availabilityEnabled && availability.length > 0 && <div className="partner-results">{availability.map((item) => <article className="partner-result" key={`${item.propertyId}:${item.roomTypeId}`}>
+          {item.cover ? <Image src={item.cover.url} alt={item.cover.alt ?? ''} width={480} height={320} unoptimized /> : <span className="partner-result__placeholder" aria-hidden="true"><Building2 size={24} /></span>}
+          <div className="partner-result__body">
+            <StatusPill tone={item.status === 'available' ? 'success' : item.status === 'sold_out' ? 'danger' : 'warning'}>{item.status === 'available' ? 'Còn phòng' : item.status === 'stale' ? 'Cần xác nhận lại' : item.status === 'needs_check' ? 'Đang được rà soát' : 'Hết phòng phù hợp'}</StatusPill>
+            <h3>{item.name}</h3>
+            <p>{item.roomTypeName} · {item.area}</p>
+            <small>{item.priceMode === 'contact' ? 'Giá: liên hệ để xác nhận' : 'Giá công khai — kiểm tra lại trước khi nhận khách'}{item.lastConfirmedAt ? ` · Cập nhật ${new Date(item.lastConfirmedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}` : ''}</small>
+          </div>
+          {item.path && <Link className="ui-btn ui-btn--sm" href={item.path}>Xem cơ sở</Link>}
+        </article>)}</div>}
+        {availabilityEnabled && availabilitySearched && availability.length === 0 && <StateBlock title="Chưa có kết quả" text="Thử đổi ngày, số khách hoặc khu vực." />}
+      </section>}
+
+      {currentTab === 'notifications' && <section className="ui-card ui-card--pad">
+        <div className="ui-card__head"><div><h2 className="ui-card__title">Thông báo</h2><p className="ui-card__lead">{unread ? `${unread} thông báo chưa đọc` : 'Không có thông báo mới'}</p></div><button type="button" className="ui-btn ui-btn--sm" onClick={() => void loadNotifications()}>Tải lại</button></div>
+        {notifications.length === 0 ? <StateBlock icon={<Bell size={24} />} title="Chưa có thông báo" text="Kết quả duyệt, thay đổi quyền và nhắc cập nhật lịch phòng sẽ hiển thị tại đây." /> : <ul className="partner-list">{notifications.map((notification) => <li className={notification.read ? '' : 'is-unread'} key={notification.id}><div><strong>{notification.title}</strong><p>{notification.body}</p><small>{new Date(notification.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</small></div>{!notification.read && <button type="button" className="ui-btn ui-btn--sm" onClick={() => void markNotificationRead(notification)}>Đánh dấu đã đọc</button>}</li>)}</ul>}
+      </section>}
+
+      {currentTab === 'organization' && activeOrg && <div className="partner-grid">
+        {activeOrg.membershipRole === 'owner' && <section className="ui-card ui-card--pad partner-grid__wide">
+          <div className="ui-card__head"><div><h2 className="ui-card__title">Thành viên tổ chức</h2><p className="ui-card__lead">Chỉ chủ tổ chức thêm hoặc thu hồi thành viên. Quyền trên từng cơ sở vẫn do quản trị viên giao.</p></div><button type="button" className="ui-btn ui-btn--sm" onClick={() => void loadMembers(activeOrg.id)} disabled={membersLoading}>Tải lại</button></div>
+          <form className="partner-member-form" onSubmit={addMember}>
+            <label className="ui-field"><span>Email tài khoản đã đăng ký</span><input className="ui-input" type="email" name="email" required maxLength={254} placeholder="ten@vidu.vn" /></label>
+            <label className="ui-field"><span>Vai trò</span><select className="ui-select" value={memberRole} onChange={(event) => setMemberRole(event.target.value as 'manager' | 'viewer')}><option value="manager">Quản lý</option><option value="viewer">Chỉ xem</option></select></label>
+            <button className="ui-btn ui-btn--primary" type="submit" disabled={memberBusy}>{memberBusy ? 'Đang lưu…' : 'Thêm thành viên'}</button>
+          </form>
+          {membersLoading && members.length === 0 ? <p className="partner-muted">Đang tải danh sách…</p> : members.length === 0 ? <p className="partner-muted">Chưa có thành viên.</p> : <ul className="partner-list">{members.map((member) => <li key={member.userId}><div><strong>{member.name}</strong><small>{member.email} · {member.role === 'owner' ? 'Chủ tổ chức' : member.role === 'manager' ? 'Quản lý' : 'Chỉ xem'}{member.disabled ? ' · Tài khoản đã khoá' : ''}</small></div><span className="ui-actions"><StatusPill tone={statusTone[member.status] ?? 'neutral'}>{statusText[member.status] ?? member.status}</StatusPill>{member.userId !== user.id && member.status !== 'pending' && <button type="button" className={`ui-btn ui-btn--sm${member.status === 'active' ? ' ui-btn--danger' : ''}`} disabled={memberBusy || member.disabled} onClick={() => void changeMemberStatus(member)}>{member.status === 'active' ? 'Thu hồi' : 'Khôi phục'}</button>}</span></li>)}</ul>}
+        </section>}
+        <section className="ui-card ui-card--pad partner-grid__wide">
+          <div className="ui-card__head"><div><h2 className="ui-card__title">Xin quản lý một cơ sở có sẵn</h2><p className="ui-card__lead">Chọn cơ sở đã có trên website và gửi lý do để quản trị viên xem xét.</p></div></div>
+          <form className="partner-form partner-form__grid" onSubmit={submitClaim}>
+            <label className="ui-field"><span>Tìm theo tên, khu vực hoặc mã</span><input className="ui-input" value={claimSearch} onChange={(event) => setClaimSearch(event.target.value)} /></label>
+            <label className="ui-field"><span>Cơ sở</span><select className="ui-select" value={claimPropertyId} onChange={(event) => setClaimPropertyId(event.target.value)} required><option value="">Chọn cơ sở</option>{claimCandidates.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.area} · {item.code}</option>)}</select></label>
+            <label className="ui-field partner-form__wide"><span>Lý do / giấy tờ chứng minh</span><input className="ui-input" name="reason" /></label>
+            <div className="partner-form__wide"><button className="ui-btn ui-btn--primary" disabled={claimBusy || !claimPropertyId}>{claimBusy ? 'Đang gửi…' : 'Gửi yêu cầu'}</button></div>
+          </form>
+          {claimCandidates.length === 0 && <p className="partner-muted">Không tìm thấy cơ sở phù hợp với từ khoá này.</p>}
         </section>
       </div>}
-      {activeOrg?.membershipRole === 'owner' && <section className="partner-card partner-members-card"><div className="partner-card-head"><div><h2>Thành viên tổ chức</h2><p>Chỉ chủ tổ chức quản lý thành viên. Mỗi cơ sở vẫn cần grant riêng từ quản trị viên.</p></div><button type="button" onClick={() => void loadMembers(activeOrg.id)} disabled={membersLoading}>Tải lại</button></div>
-        <form className="partner-member-form" onSubmit={addMember}><label>Email tài khoản đã đăng ký<input type="email" name="email" required maxLength={254} placeholder="ten@vidu.vn" /></label><label>Vai trò<select value={memberRole} onChange={(event) => setMemberRole(event.target.value as 'manager' | 'viewer')}><option value="manager">Quản lý tổ chức</option><option value="viewer">Chỉ xem</option></select></label><button className="partner-primary" type="submit" disabled={memberBusy}>{memberBusy ? 'Đang lưu…' : 'Thêm thành viên'}</button><small>Không gửi lời mời hoặc tạo tài khoản thay người khác. Quyền xem/sửa tồn được quản trị viên cấp riêng theo cơ sở.</small></form>
-        {membersLoading && members.length === 0 ? <p className="partner-muted">Đang tải danh sách…</p> : members.length === 0 ? <p className="partner-muted">Chưa có thành viên.</p> : <div className="partner-member-list">{members.map((member) => <div className="partner-member-row" key={member.userId}><span><strong>{member.name}</strong><small>{member.email} · {member.role === 'owner' ? 'Chủ tổ chức' : member.role === 'manager' ? 'Quản lý' : 'Chỉ xem'} · {statusText[member.status] ?? member.status}{member.disabled ? ' · Tài khoản đã khóa' : ''}</small></span>{member.userId !== user.id && member.status !== 'pending' && <button type="button" disabled={memberBusy || member.disabled} onClick={() => void changeMemberStatus(member)}>{member.status === 'active' ? 'Thu hồi' : 'Khôi phục'}</button>}</div>)}</div>}
-      </section>}
-      {activeOrg && <section className="partner-card partner-claim-help"><h2>Xin quản lý một cơ sở có sẵn</h2><p>Chọn hồ sơ gốc để quản trị viên xem xét. Yêu cầu không tạo bản sao cơ sở hoặc quỹ phòng.</p><form className="partner-form partner-form-grid" onSubmit={submitClaim}><label>Tìm theo tên, khu vực hoặc mã<input value={claimSearch} onChange={(event) => setClaimSearch(event.target.value)} /></label><label>Cơ sở<select value={claimPropertyId} onChange={(event) => setClaimPropertyId(event.target.value)} required><option value="">Chọn cơ sở</option>{claimCandidates.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.area} · {item.code}</option>)}</select></label><label className="partner-form-wide">Lý do/giấy tờ bổ sung<input name="reason" /></label><div className="partner-form-actions partner-form-wide"><button className="partner-primary" disabled={claimBusy || !claimPropertyId}>{claimBusy ? 'Đang gửi…' : 'Gửi yêu cầu quản lý'}</button></div></form>{claimCandidates.length === 0 && <p className="partner-muted">Không có cơ sở công khai phù hợp với từ khoá này. Quản trị viên có thể tìm hồ sơ khác bằng mã.</p>}</section>}
     </div>
+
+    {selectedProperty?.capabilities.canWriteInventory && <Drawer open={bulkOpen} onClose={() => { if (!bulkBusy) { setBulkOpen(false); setBulkPreview(null); setBulkPayload(null); } }} labelId={advancedTitle} busy={bulkBusy}
+      eyebrow={selectedProperty.name} title="Cập nhật nâng cao"
+      description="Ghi nhận phòng bán ngoài, phòng bảo trì hoặc phòng giữ lại cho nhiều đêm. Bạn sẽ xem trước trước khi lưu."
+      footer={bulkPreview ? <>
+        <button type="button" className="ui-btn" disabled={bulkBusy} onClick={() => { setBulkPreview(null); setBulkPayload(null); }}>Quay lại sửa</button>
+        <button type="button" className="ui-btn ui-btn--primary" disabled={bulkBusy} onClick={() => void applyBulkInventory()}>{bulkBusy ? 'Đang lưu…' : 'Xác nhận và lưu'}</button>
+      </> : <>
+        <button type="button" className="ui-btn" disabled={bulkBusy} onClick={() => setBulkOpen(false)}>Huỷ</button>
+        <button type="submit" form={advancedTitle + '-form'} className="ui-btn ui-btn--primary" disabled={bulkBusy}>{bulkBusy ? 'Đang kiểm tra…' : 'Xem trước thay đổi'}</button>
+      </>}>
+      {error && <p className="ui-alert ui-tone-danger" role="alert">{error}</p>}
+      {bulkPreview ? <div className="partner-advanced-preview" role="status">
+        <span className="ui-badge ui-tone-brand">{bulkPreview.items.length} đêm sẽ được cập nhật cùng lúc</span>
+        <ul className="inventory-panel__preview-days">{bulkPreview.items.map((item) => { const beforeAvailable = item.before.stopSell ? 0 : item.before.capacity - item.before.blockedCount - item.before.heldCount - item.before.reservedCount; return <li key={`${item.roomTypeId}:${item.stayDate}`}><span>{labelDate(item.stayDate)}</span><strong>{beforeAvailable} → {item.after.available} phòng{item.after.stopSell ? ' · Dừng bán' : ''}</strong></li>; })}</ul>
+        <p className="ui-hint">Nếu một ngày bị thay đổi bởi người khác trong lúc này, toàn bộ cập nhật sẽ không được lưu để tránh sai lệch.</p>
+      </div> : <form id={advancedTitle + '-form'} className="partner-form" onSubmit={(event) => void previewBulkInventory(event)}>
+        <label className="ui-field"><span>Hạng phòng</span><select className="ui-select" name="roomTypeId" required data-autofocus><option value="">Chọn hạng phòng</option>{rooms.filter((room) => room.status === 'active').map((room) => <option key={room.id} value={room.id}>{room.name} · {room.code}</option>)}</select></label>
+        <div className="partner-form__grid">
+          <label className="ui-field"><span>Từ đêm</span><input className="ui-input" name="from" type="date" defaultValue={dates[0]} required /></label>
+          <label className="ui-field"><span>Đến trước ngày</span><input className="ui-input" name="toExclusive" type="date" defaultValue={shiftDay(dates[dates.length - 1], 1)} required /></label>
+          <label className="ui-field"><span>Phòng đã bán ngoài</span><input className="ui-input" name="externalSoldCount" type="number" min="0" max="5000" placeholder="Giữ nguyên" /></label>
+          <label className="ui-field"><span>Phòng bảo trì / khoá</span><input className="ui-input" name="maintenanceCount" type="number" min="0" max="5000" placeholder="Giữ nguyên" /></label>
+          <label className="ui-field"><span>Phòng chủ cơ sở giữ lại</span><input className="ui-input" name="ownerWithheldCount" type="number" min="0" max="5000" placeholder="Giữ nguyên" /></label>
+          <label className="ui-field"><span>Trạng thái bán</span><select className="ui-select" name="stopSell" defaultValue=""><option value="">Giữ nguyên</option><option value="false">Mở bán</option><option value="true">Dừng bán</option></select></label>
+        </div>
+        <p className="ui-hint">Để trống ô nào thì giữ nguyên giá trị đó. Ngày trả phòng không nằm trong khoảng cập nhật.</p>
+      </form>}
+    </Drawer>}
   </div>;
 }
