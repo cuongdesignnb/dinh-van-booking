@@ -14,3 +14,17 @@ Rule for successors: build on what is committed; never reset / force-push. Commi
 
 ## Done
 - ae2d273 reference mockup committed
+- 1a5d7bd / 2e502f9 shell (logo, header, drawer, footer), home rewrite, backend settings `home.stats`/`home.partner`, bootstrap brand copy, globals.css legacy home/header retired, `public-refresh.css` deleted
+- c335350 `PageHero` + `SectionHead` on /phong-nghi, /combo-du-lich, /diem-den, /lien-he, /dat-phong
+- 6541add combo + destination detail rebuilt (photo hero, content cards, sticky offer card, `site/detail.css`)
+- 3baf1b2 /phong-nghi uses shared `StayCard` (grid + `sc--row`), `ListingCard` deleted; dead CSS pruned with `scripts/ui-demo/prune-css.mjs`
+- 7244dd7 contact page cards/icons/monogram; floating filter bars on combos/destinations
+
+## Next
+- stay detail: drop leaf sprig / floating script decor, SectionHead headings
+- /lich-phong polish; 1024/768/390 pass on all routes
+- lint + build, screenshots in artifacts/ui-redesign-v2 (+ composite), Docker web+api rebuild, DB brand update, final-report-v2.md
+
+## Dev notes
+- Demo: `DEMO_API_PORT=4100 node scripts/ui-demo/server.mjs`; `NEXT_DIST_DIR=.next-dev INTERNAL_API_BASE_URL=http://127.0.0.1:4100/api/v1 npx next dev -p 3199`
+- Shots: `node scripts/ui-demo/shots-batch.mjs /tmp/s 1440 name=/route ...`; split tall shots with `scripts/ui-demo/split.mjs`

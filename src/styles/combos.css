@@ -303,16 +303,6 @@
   transform: rotate(-6deg);
 }
 
-.combo-quote__leaf {
-  position: absolute;
-  left: -36px;
-  top: -12px;
-  width: 48px;
-  height: 110px;
-  color: #7ea46a;
-  opacity: 0.7;
-  animation: leaf-sway 7s ease-in-out infinite;
-}
 
 .combo-quote--right {
   padding: 16px 12px 0 30px;

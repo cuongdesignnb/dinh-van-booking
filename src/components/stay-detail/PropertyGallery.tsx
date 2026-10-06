@@ -28,25 +28,7 @@ export function PropertyGallery({ images, note, name }: { images: ImageAsset[]; 
       <button type="button" className="gallery__main" onClick={() => setIndex(0)} aria-label={failed[main.src] ? `Ảnh chưa tải được: ${main.alt}. Xem album` : `Xem ảnh lớn: ${main.alt}`}>
         {failed[main.src] ? <span className="gallery__image-fallback"><ImageOff size={30} aria-hidden="true" /> Ảnh tạm thời không hiển thị</span>
           : <Image src={main.src} alt={main.alt} fill priority sizes="(max-width: 767px) 100vw, 530px" className="gallery__img" onError={() => setFailed((current) => ({ ...current, [main.src]: true }))} />}
-        {note && !failed[main.src] && (
-          <span className="gallery__note handwritten" aria-hidden="true">
-            {note.split('\n').map((line, i, all) => (
-              <span key={line}>
-                {i === 0 ? '“' : ''}
-                {line}
-                {i === all.length - 1 ? '”' : ''}
-              </span>
-            ))}
-            <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
-              <path
-                d="M12 20.5s-7.5-4.6-8.9-9.4C2 7.4 4.6 4.5 7.6 4.9c1.9.2 3.4 1.6 4.4 3.3 1-1.7 2.5-3.1 4.4-3.3 3-.4 5.6 2.5 4.5 6.2-1.4 4.8-8.9 9.4-8.9 9.4Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              />
-            </svg>
-          </span>
-        )}
+        {note && !failed[main.src] && <span className="gallery__note" aria-hidden="true">{note.replace(/\n+/g, ' ')}</span>}
       </button>
       {thumbs.map((t, i) => {
         const last = i === thumbs.length - 1 && hidden > 0;

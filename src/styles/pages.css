@@ -719,11 +719,6 @@
   outline: none;
 }
 
-.dsec-title .section-title__leaf {
-  width: 17px;
-  height: 17px;
-}
-
 .dsec-head {
   display: flex;
   align-items: center;

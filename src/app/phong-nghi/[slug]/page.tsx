@@ -20,7 +20,6 @@ import { Amenities, HostCard, ReviewCards, ShareSave, SupportCard } from '@/comp
 import { HouseRules, NotesPaper } from '@/components/stay-detail/InfoBlocks';
 import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
 import { RoomTypes } from '@/components/stay-detail/RoomTypes';
-import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
 import { getPublicReviews, getPublicSite, getPublicStay } from '@/lib/api/public';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { isSubstantivePublicContent } from '@/lib/seo/content';
@@ -99,7 +98,6 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
               <span className="detail-head__pill">
                 <Leaf size={12} aria-hidden="true" fill="currentColor" /> {stay.badge}
               </span>
-              <SmallLeaf className="detail-head__leaf" />
             </p>
           )}
           <h1 className="detail-head__title">{stay.name}</h1>
@@ -127,7 +125,6 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
             })}
           </ul>
           <ShareSave id={stay.id} name={stay.name} />
-          <LeafSprig className="detail-head__sprig" />
         </header>
 
         <div className="detail-top__gallery">
@@ -142,7 +139,7 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
 
         <div className="detail-top__info">
           <section className="intro" aria-labelledby="intro-t">
-            {introTitle && <h2 className="dsec-title" id="intro-t">{introTitle} <SmallLeaf className="section-title__leaf" /></h2>}
+            {introTitle && <h2 className="dsec-title" id="intro-t">{introTitle}</h2>}
             {stay.descriptionDocument ? <RichContentRenderer document={stay.descriptionDocument} className="intro__text" /> : <p className="intro__text">{stay.description}</p>}
             {richDocumentHasContent(detail.introQuote) && <figure className="intro__quote"><blockquote><RichContentRenderer document={detail.introQuote as RichDocument} /></blockquote>{quoteAuthor && <figcaption>{quoteAuthor}</figcaption>}</figure>}
           </section>
@@ -158,7 +155,7 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
         <div className="detail-lower__right">
           <div className="facts-row">
             {(factsTitle || checkInLabel || checkOutLabel || breakfastLabel) && <section className="facts" aria-labelledby={factsTitle ? 'facts-t' : undefined} aria-label={factsTitle ? undefined : 'Thông tin lưu trú'}>
-              {factsTitle && <h2 className="dsec-title" id="facts-t">{factsTitle} <SmallLeaf className="section-title__leaf" /></h2>}
+              {factsTitle && <h2 className="dsec-title" id="facts-t">{factsTitle}</h2>}
               <ul className="facts__list">
                 {checkInLabel && stay.checkInTime && <li><span className="facts__ic" aria-hidden="true"><Clock3 size={18} /></span><span><b>{checkInLabel}:</b> {stay.checkInTime}</span></li>}
                 {checkOutLabel && stay.checkOutTime && <li><span className="facts__ic" aria-hidden="true"><CalendarCheck size={17} /></span><span><b>{checkOutLabel}:</b> {stay.checkOutTime}</span></li>}

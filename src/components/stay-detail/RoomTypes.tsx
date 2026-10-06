@@ -4,7 +4,6 @@ import { Bath, BedDouble, Check, DoorOpen, House, ImageOff, Images, Scaling, Use
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
 import { useState } from 'react';
-import { SmallLeaf } from '@/components/ui/Decor';
 import type { ImageAsset } from '@/data/types';
 import { formatVnd } from '@/lib/format';
 import { stayContactHref } from '@/lib/contact/stay-contact';
@@ -31,7 +30,7 @@ export function RoomTypes({ title }: { title?: string }) {
   return (
     <section className="rooms" id={ROOMS_ANCHOR} aria-labelledby="rooms-title">
       <h2 className="dsec-title" id="rooms-title" tabIndex={-1}>
-        {title || 'Hạng phòng'} <SmallLeaf className="section-title__leaf" />
+        {title || 'Hạng phòng'}
       </h2>
       {issue?.kind === 'room' && (
         <p className="rooms__hint" role="status">

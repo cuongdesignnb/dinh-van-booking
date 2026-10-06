@@ -268,10 +268,6 @@ h3 {
   color: var(--dvb-ink-soft);
 }
 
-.section-title__leaf {
-  display: none;
-}
-
 /* ---------- Status pill ---------- */
 
 .cp-pill {

@@ -1,5 +1,4 @@
-import { CigaretteOff, Hammer, LockKeyhole, PartyPopper, PawPrint, Volume1 } from 'lucide-react';
-import { LeafSprig, SmallLeaf } from '@/components/ui/Decor';
+import { CigaretteOff, Hammer, Info, LockKeyhole, PartyPopper, PawPrint, Volume1 } from 'lucide-react';
 
 const RULE_ICONS = {
   smoke: CigaretteOff,
@@ -15,7 +14,7 @@ export function HouseRules({ rules, title }: { rules: { icon: string; text: stri
   return (
     <section className="rules" aria-labelledby="rules-t">
       <h2 className="dsec-title" id="rules-t">
-        {title || 'Nội quy'} <SmallLeaf className="section-title__leaf" />
+        {title || 'Nội quy'}
       </h2>
       <ul className="rules__list">
         {rules.map((r) => {
@@ -37,31 +36,11 @@ export function NotesPaper({ notes, title, thanks }: { notes: string[]; title?: 
   if (!notes.length) return null;
   return (
     <section className="notes" aria-labelledby="notes-t">
-      <LeafSprig className="notes__leaf" />
-      <h2 className="notes__title handwritten" id="notes-t">
-        {title || 'Lưu ý'}
-      </h2>
+      <h2 className="notes__title" id="notes-t">{title || 'Lưu ý'}</h2>
       <ul className="notes__list">
-        {notes.map((n) => (
-          <li key={n}>
-            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
-              <rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-            {n}
-          </li>
-        ))}
+        {notes.map((n) => <li key={n}><Info size={16} aria-hidden="true" />{n}</li>)}
       </ul>
-      {thanks && <p className="notes__thanks handwritten">
-        {thanks}
-        <svg viewBox="0 0 24 24" width="16" height="16" focusable="false">
-          <path
-            d="M12 20.5s-7.5-4.6-8.9-9.4C2 7.4 4.6 4.5 7.6 4.9c1.9.2 3.4 1.6 4.4 3.3 1-1.7 2.5-3.1 4.4-3.3 3-.4 5.6 2.5 4.5 6.2-1.4 4.8-8.9 9.4-8.9 9.4Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          />
-        </svg>
-      </p>}
+      {thanks && <p className="notes__thanks script">{thanks}</p>}
     </section>
   );
 }

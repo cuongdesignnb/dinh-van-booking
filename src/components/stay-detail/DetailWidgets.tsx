@@ -16,7 +16,6 @@ import {
 import Image from '@/components/ui/ManagedImage';
 import { useId, useState, type ElementType } from 'react';
 import { BrandIcon } from '@/components/ui/BrandIcons';
-import { SmallLeaf } from '@/components/ui/Decor';
 import { Modal } from '@/components/ui/Modal';
 import { useSiteData } from '@/components/site/SiteDataProvider';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
@@ -134,7 +133,7 @@ export function Amenities({ amenities, labels, title }: { amenities: string[]; l
     <section className="amen" aria-labelledby={`${id}-t`}>
       <div className="dsec-head">
         <h2 className="dsec-title" id={`${id}-t`}>
-          {title || 'Tiện nghi'} <SmallLeaf className="section-title__leaf" />
+          {title || 'Tiện nghi'}
         </h2>
         <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => setOpen(true)}>
           Xem tất cả <ArrowRight size={14} aria-hidden="true" />
@@ -203,7 +202,7 @@ export function ReviewCards({ reviews, total, title }: { reviews: Review[]; tota
     <section className="dreviews" aria-labelledby={`${id}-t`}>
       <div className="dsec-head">
         <h2 className="dsec-title" id={`${id}-t`}>
-          {title || 'Đánh giá'} <SmallLeaf className="section-title__leaf" />
+          {title || 'Đánh giá'}
         </h2>
         <button type="button" className="link-more" aria-haspopup="dialog" onClick={() => setOpen(true)}>
           Xem tất cả {total} đánh giá <ArrowRight size={14} aria-hidden="true" />
@@ -247,8 +246,8 @@ export function SupportCard() {
           {title}
         </h2>
         {richDocumentHasContent(config.description) && <div className="support__text"><RichContentRenderer document={config.description as RichDocument} /></div>}
-        {(name || role) && <p className="support__script handwritten">{[name, role].filter(Boolean).join(' — ')}</p>}
-        {note && <p className="support__script handwritten">{note}</p>}
+        {(name || role) && <p className="support__who"><strong>{name}</strong>{name && role ? ' · ' : ''}{role}</p>}
+        {note && <p className="support__script script">{note}</p>}
         <div className="support__actions">
           {site.contact.zaloUrl && zaloLabel && <a className="btn btn--light support__btn" href={site.contact.zaloUrl} target="_blank" rel="noopener noreferrer"><BrandIcon name="zalo" size={14} /> {zaloLabel}</a>}
           {site.contact.phone && phoneLabel && <a className="btn btn--primary support__btn" href={`tel:${site.contact.phone}`}>{phoneLabel}</a>}
