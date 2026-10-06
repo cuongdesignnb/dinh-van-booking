@@ -110,15 +110,6 @@ h3 {
   background: var(--dvb-brand-tint);
 }
 
-.btn--ghost {
-  background: transparent;
-  color: var(--dvb-brand);
-}
-
-.btn--ghost:hover {
-  background: var(--dvb-brand-tint);
-}
-
 .btn--sm {
   min-height: 36px;
   padding: 0 16px;
@@ -411,16 +402,6 @@ h3 {
 
 /* ---------- Generic card & section ---------- */
 
-.cp-section {
-  padding-block: 64px;
-}
-
-.cp-card {
-  background: #fff;
-  border-radius: var(--dvb-r-lg);
-  box-shadow: var(--dvb-card-shadow);
-}
-
 .rstrip {
   overflow-x: clip;
 }
@@ -434,9 +415,6 @@ h3 {
   .cp-head__icon {
     width: 36px;
     height: 36px;
-  }
-  .cp-section {
-    padding-block: 44px;
   }
   .cp-page-hero {
     min-height: 240px;

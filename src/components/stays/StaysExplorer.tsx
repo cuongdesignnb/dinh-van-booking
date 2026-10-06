@@ -22,7 +22,8 @@ import {
   writeFilters,
   type StayFilters,
 } from '@/lib/stay-filters';
-import { ListingCard } from './ListingCard';
+import { StayCard } from '@/components/home/StayCard';
+import { stayContactHref } from '@/lib/contact/stay-contact';
 import { StayFilterPanel } from './StayFilterPanel';
 import { StayMapCard } from './StayMap';
 import type { PublicMediaAsset } from '@/lib/api/public';
@@ -131,7 +132,7 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
       <ul className={`stays-results stays-results--${filters.view}`}>
         {pageItems.map((s, i) => (
           <li key={s.id}>
-            <ListingCard stay={s} query={query} variant={filters.view} index={i} />
+            <StayCard stay={s} query={query} variant={filters.view === 'list' ? 'row' : 'grid'} priority={i < 3} contactHref={stayContactHref(s.slug, query ? parseSelection(new URLSearchParams(query)) : undefined)} />
           </li>
         ))}
       </ul>
@@ -284,9 +285,9 @@ export function ResultsSkeleton() {
     <ul className="stays-results stays-results--grid" aria-hidden="true">
       {Array.from({ length: 8 }, (_, i) => (
         <li key={i}>
-          <div className="lcard lcard--skeleton">
-            <div className="lcard__media skeleton" />
-            <div className="lcard__body">
+          <div className="sc sc--skeleton">
+            <div className="sc__media skeleton" />
+            <div className="sc__body">
               <span className="skeleton skeleton--line" />
               <span className="skeleton skeleton--line skeleton--short" />
               <span className="skeleton skeleton--line" />

@@ -63,38 +63,12 @@
   background: #eef1e9;
 }
 
-.static-page__gallery { min-width: 0; margin: 28px 0; }
-.static-page__gallery .gallery { width: 100%; min-width: 0; height: clamp(320px, 42vw, 470px); }
-.static-page__gallery .gallery--1 { grid-template-columns: minmax(0, 1fr); }
-@media (max-width: 767px) {
-  .static-page__gallery .gallery { height: auto; }
-  .static-page__gallery .gallery__main { width: 100%; min-width: 0; min-height: 230px; aspect-ratio: auto; }
-}
-
 .static-page__cover img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
-.static-page__offer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px 24px;
-  margin: 24px 0 0;
-  padding: 16px 20px;
-  border: 1px solid rgba(30, 70, 42, 0.14);
-  border-radius: 14px;
-  background: #f4f7ef;
-}
-
-.static-page__offer p { display: grid; gap: 3px; margin: 0; color: #425e49; }
-.static-page__offer p strong { color: #183b25; font-size: 1.2rem; }
-.static-page__offer p span { font-size: 0.82rem; }
-.static-page__offer .btn { flex-shrink: 0; min-height: 44px; padding: 0 18px; font-size: 0.9rem; font-weight: 700; }
 
 .static-page__body {
   padding-top: 25px;
@@ -198,8 +172,7 @@
 }
 
 .static-page__card-copy time,
-.static-page__byline,
-.static-page__fact {
+.static-page__byline {
   color: #737e75;
   font-size: 0.85rem;
 }
@@ -208,50 +181,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px 20px;
-}
-
-.static-page__lead {
-  margin: 10px 0 0;
-  color: #425e49;
-  font-size: 1.05rem;
-  line-height: 1.7;
-}
-
-.static-page__section {
-  margin-top: 34px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(30, 70, 42, 0.14);
-  color: #28352d;
-  line-height: 1.75;
-}
-
-.static-page__section h2 {
-  margin: 0 0 14px;
-  color: #183b25;
-  font-family: var(--font-dvb-display, Georgia, serif);
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 500;
-}
-
-.static-page__section h3 {
-  margin: 0 0 8px;
-  color: #315d3b;
-  font-size: 1.05rem;
-}
-
-.static-page__section ul {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding-left: 1.25rem;
-}
-
-.static-page__day + .static-page__day { margin-top: 20px; }
-
-.static-page__columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
 }
 
 .static-page__index-card h2 {
@@ -273,8 +202,7 @@
   text-underline-offset: 4px;
 }
 
-.static-page__index-card p,
-.static-page__empty {
+.static-page__index-card p {
   margin: 10px 0 0;
   color: #737e75;
   font-size: 0.87rem;
@@ -284,6 +212,4 @@
   .static-page { width: min(100% - 28px, 1040px); }
   .static-page__index-list { grid-template-columns: 1fr; }
   .static-page__article { margin-top: 28px; }
-  .static-page__columns { grid-template-columns: 1fr; }
-  .static-page__offer .btn { width: 100%; }
 }

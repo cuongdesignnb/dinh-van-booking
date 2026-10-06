@@ -6,7 +6,7 @@ import { AdvisorCard } from '@/components/stays/AdvisorCard';
 import { NotFoundCard } from '@/components/stays/NotFoundCard';
 import { StaysExplorer } from '@/components/stays/StaysExplorer';
 import { StaysHero } from '@/components/stays/StaysHero';
-import { SmallLeaf } from '@/components/ui/Decor';
+import { SectionHead } from '@/components/site/SectionHead';
 import { getPublicReviews, getPublicSeoUrls, getPublicSite, getPublicStays } from '@/lib/api/public';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { isSubstantivePublicContent } from '@/lib/seo/content';
@@ -36,12 +36,8 @@ function Reviews({ reviews, config }: { reviews: Awaited<ReturnType<typeof getPu
   if (!title || !reviews.length) return null;
   return (
     <section className="stays-reviews" aria-labelledby="stays-reviews-t">
-      <div className="stays-reviews__head">
-        <h2 id="stays-reviews-t" className="stays-reviews__title">
-          {title} <SmallLeaf className="section-title__leaf" />
-        </h2>
-        {richDocumentHasContent(subtitle) ? <div className="stays-reviews__sub"><RichContentRenderer document={subtitle as RichDocument} /></div> : publicText(subtitle) && <p className="stays-reviews__sub">{publicText(subtitle)}</p>}
-      </div>
+      <SectionHead id="stays-reviews-t" title={title}
+        sub={richDocumentHasContent(subtitle) ? <RichContentRenderer document={subtitle as RichDocument} /> : publicText(subtitle) || null} />
       <ReviewsStrip reviews={reviews} />
     </section>
   );
@@ -83,7 +79,7 @@ export default async function StaysPage({
           notFound={<NotFoundCard config={pageContent} />}
           reviews={<Reviews reviews={reviews} config={pageContent} />}
           faq={
-            pageContent.faqTitle && faqItems.length > 0 ? <section className="stays-faq"><h2 className="section-title">{String(pageContent.faqTitle)} <SmallLeaf className="section-title__leaf" /></h2><FaqList items={faqItems} variant="boxed" /></section> : null
+            pageContent.faqTitle && faqItems.length > 0 ? <section className="stays-faq"><SectionHead title={String(pageContent.faqTitle)} /><FaqList items={faqItems} variant="boxed" /></section> : null
           }
         />
       <JsonLd data={structuredData} />

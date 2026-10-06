@@ -21,8 +21,10 @@ function guestRange(stay: Stay): string | null {
  * One card for the homepage and /phong-nghi. Every line is optional and only
  * rendered from real published fields; nothing is filled in when missing.
  */
-export function StayCard({ stay, query = '', contactHref, headingLevel = 3, priority = false }: {
+export function StayCard({ stay, query = '', contactHref, headingLevel = 3, priority = false, variant = 'grid' }: {
   stay: Stay;
+  /** `row` = horizontal card for the /phong-nghi list view. */
+  variant?: 'grid' | 'row';
   query?: string;
   contactHref?: string;
   headingLevel?: 2 | 3;
@@ -38,7 +40,7 @@ export function StayCard({ stay, query = '', contactHref, headingLevel = 3, prio
   const Heading = headingLevel === 2 ? 'h2' : 'h3';
   const rated = stay.reviewCount > 0 && stay.rating > 0;
   return (
-    <article className="sc" aria-labelledby={`${stay.id}-name`}>
+    <article className={`sc${variant === 'row' ? ' sc--row' : ''}`} aria-labelledby={`${stay.id}-name`}>
       <div className="sc__media">
         <Image src={image.src} alt={image.alt} fill priority={priority} sizes="(max-width: 767px) 82vw, (max-width: 1199px) 45vw, 320px" className="sc__img" style={image.position ? { objectPosition: image.position } : undefined} />
         <AvailabilityBadge status={stay.availabilityStatus} className="sc__status" />

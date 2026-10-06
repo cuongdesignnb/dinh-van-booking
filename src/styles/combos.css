@@ -2,49 +2,6 @@
    /combo-du-lich — tuned against docs/reference/03-combo-du-lich.png
    ========================================================================== */
 
-.phero--combo {
-  height: 172px;
-}
-
-.phero--combo .phero__inner {
-  padding: 34px 0 0 29px;
-}
-
-.phero--combo .phero__title {
-  font-size: 34.2px;
-  line-height: 40px;
-}
-
-.phero--combo .phero__script {
-  margin-top: 2px;
-  font-size: 32px;
-  line-height: 36px;
-  padding-left: 1px;
-}
-
-.phero--combo .phero__text {
-  margin-top: 4px;
-  font-size: 14.5px;
-  line-height: 19px;
-}
-
-.phero__quote {
-  position: absolute;
-  left: 884px;
-  top: 62px;
-  font-size: 18.5px;
-  line-height: 23px;
-  color: #fff;
-  transform: rotate(-12deg);
-  transform-origin: left top;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 35%);
-}
-
-.phero__quote svg {
-  margin-left: 4px;
-  vertical-align: -4px;
-}
-
 /* ---------- Filter strip ---------- */
 
 .combo-filters {
@@ -334,10 +291,6 @@
   font-size: 13px;
   border-radius: 5px;
   gap: 9px;
-}
-
-.ccard--skeleton .ccard__media {
-  height: 126px;
 }
 
 /* ---------- Why / quotes ---------- */
@@ -779,10 +732,6 @@
   .combo-quote__edge {
     display: none;
   }
-  .phero__quote {
-    left: auto;
-    right: 26%;
-  }
   .combo-chips {
     gap: 10px;
   }
@@ -840,16 +789,9 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
   }
-  .phero__quote {
-    display: none;
-  }
 }
 
 @media (max-width: 1023px) {
-  .phero--combo {
-    height: auto;
-    padding-bottom: 24px;
-  }
   .combo-list__head {
     height: auto;
     flex-wrap: wrap;
@@ -872,24 +814,6 @@
 @media (max-width: 767px) {
   .combo-filters::before,
   .combo-filters::after {
-    display: none;
-  }
-  .phero--combo .phero__inner {
-    padding: 22px 0 0;
-  }
-  .phero--combo .phero__title {
-    font-size: 28px;
-    line-height: 34px;
-  }
-  .phero--combo .phero__script {
-    font-size: 23px;
-    line-height: 28px;
-  }
-  .phero--combo .phero__text {
-    font-size: 14px;
-    line-height: 20px;
-  }
-  .phero--combo .phero__text br {
     display: none;
   }
   .combo-filters__inner {

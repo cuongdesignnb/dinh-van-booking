@@ -506,23 +506,6 @@ svg {
   color: var(--dvb-muted);
 }
 
-.dialog__meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  color: var(--dvb-muted);
-  font-size: 13.5px;
-}
-
-.dialog__meta .dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: currentColor;
-  margin-inline: 4px;
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;
