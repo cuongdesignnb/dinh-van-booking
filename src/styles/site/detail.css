@@ -255,6 +255,7 @@
   }
   .cp-detail__aside {
     position: static;
+    order: -1;
   }
 }
 

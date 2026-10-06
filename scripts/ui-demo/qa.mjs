@@ -13,7 +13,7 @@ const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.spli
 const only = arg('only');
 const filter = arg('filter');
 const widths = (arg('widths') || '1440,1024,768,390').split(',').map(Number);
-const artifactDir = 'artifacts/ui-redesign';
+const artifactDir = process.env.QA_ARTIFACT_DIR || 'artifacts/ui-redesign';
 const tmpDir = '/tmp/ui-qa-shots';
 mkdirSync(artifactDir, { recursive: true });
 mkdirSync(tmpDir, { recursive: true });
@@ -23,9 +23,12 @@ const ROUTES = [
   { persona: 'anon', path: '/phong-nghi', key: 'public-stays', shots: [1440, 390] },
   { persona: 'anon', path: '/phong-nghi/demo-nha-rung-cuc-phuong', key: 'public-stay-detail', shots: [1440] },
   { persona: 'anon', path: '/combo-du-lich', key: 'public-combos' },
+  { persona: 'anon', path: '/combo-du-lich/demo-kham-pha-rung-cuc-phuong-2n1d', key: 'public-combo-detail' },
   { persona: 'anon', path: '/diem-den', key: 'public-destinations' },
+  { persona: 'anon', path: '/diem-den/demo-rung-quoc-gia-cuc-phuong', key: 'public-destination-detail' },
   { persona: 'anon', path: '/lien-he', key: 'public-contact' },
   { persona: 'anon', path: '/dat-phong', key: 'public-booking' },
+  { persona: 'anon', path: '/dat-phong?stay=demo-nha-rung-cuc-phuong&room=demo-rt-rung-std&checkIn=2026-10-20&checkOut=2026-10-22&adults=2&children=0&rooms=1', key: 'public-booking-form' },
   { persona: 'anon', path: '/lich-phong', key: 'public-availability', shots: [1440], search: true },
   { persona: 'anon', path: '/doi-tac', key: 'partner-login', shots: [1440] },
   { persona: 'partner', path: '/doi-tac?property=demo-prop-rung', key: 'partner-dashboard', shots: [1440] },

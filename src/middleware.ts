@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 const ROOT_RESERVED = new Set([
-  'admin', 'api', 'media', '_next', 'static', 'robots.txt', 'sitemap.xml', 'favicon.ico',
+  'admin', 'api', 'media', '_next', 'static', 'robots.txt', 'sitemap.xml', 'favicon.ico', 'icon.svg', 'apple-icon.png',
   'phong-nghi', 'combo-du-lich', 'diem-den', 'bai-viet', 'chuyen-trang', 'dat-phong', 'lien-he',
 ]);
 const CONTENT_SECTIONS = new Set(['/phong-nghi', '/combo-du-lich', '/diem-den', '/bai-viet', '/chuyen-trang']);
@@ -64,5 +64,5 @@ function serviceUnavailable() {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|media/|api/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|media/|api/).*)'],
 };

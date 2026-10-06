@@ -146,9 +146,9 @@
 
 .gallery__note {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  max-width: calc(100% - 24px);
+  right: 12px;
+  bottom: 12px;
+  max-width: calc(60% - 24px);
   padding: 5px 12px;
   border-radius: var(--dvb-r-pill);
   background: rgb(18 30 24 / 66%);
