@@ -15,6 +15,7 @@
     "test": "node scripts/test.mjs",
     "create-owner": "node scripts/run-with-db-url.mjs node dist/scripts/create-owner.js",
     "import:business:cuc-phuong": "node scripts/run-with-db-url.mjs node dist/scripts/import-cuc-phuong.js",
+    "import:business:cuc-phuong:update": "node scripts/run-with-db-url.mjs node dist/scripts/import-cuc-phuong-update.js",
     "seed:public-bootstrap": "node scripts/run-with-db-url.mjs node dist/scripts/seed-public-bootstrap.js",
     "refresh:public-catalog-copy": "node scripts/run-with-db-url.mjs node dist/scripts/refresh-public-catalog-copy.js"
   },
