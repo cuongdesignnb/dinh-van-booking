@@ -265,9 +265,11 @@
   text-align: left;
 }
 
+/* The whole field shows the focus ring (`.hs__field:focus-within`). */
 .hs__trigger:focus-visible,
 .hs__select:focus-visible {
   outline: none;
+  box-shadow: none;
 }
 
 .hs__trigger::before {
