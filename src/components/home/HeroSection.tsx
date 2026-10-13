@@ -6,6 +6,7 @@ import type { PublicRecord } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { publicText, richDocumentHasContent } from '@/lib/public-content';
 import { ScriptHeart } from './HomeArt';
+import { NatureBreeze } from './NatureMotion';
 
 const TRUST_ICONS = { leaf: Leaf, heart: Heart, users: Users, shield: ShieldCheck } as const;
 type TrustIcon = keyof typeof TRUST_ICONS;
@@ -42,6 +43,7 @@ export function HeroSection({ config, trust, image, mobileImage }: {
         {image?.src && <Image src={image.src} alt="" fill priority sizes="100vw" className={`hh__img${mobileImage?.src ? ' hh__img--desktop' : ''}`} unoptimized />}
         {mobileImage?.src && <Image src={mobileImage.src} alt="" fill sizes="100vw" className="hh__img hh__img--mobile" unoptimized />}
       </div>
+      <NatureBreeze />
       <div className="hh__inner">
         <div className="hh__copy">
           {kicker && <p className="eyebrow hh__eyebrow">{kicker}</p>}

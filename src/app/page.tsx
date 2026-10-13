@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '@/styles/site/home.css';
+import '@/styles/site/nature.css';
 import { DestinationGrid } from '@/components/home/DestinationGrid';
 import { FeaturedStays } from '@/components/home/FeaturedStays';
 import { HeroSection, trustItems } from '@/components/home/HeroSection';
@@ -12,6 +13,7 @@ import { HomeFaq } from '@/components/home/HomeFaq';
 import { BookingSearch, type SearchOption } from '@/components/home/BookingSearch';
 import { StatsBand, statItems } from '@/components/home/StatsBand';
 import { PartnerBand } from '@/components/home/PartnerBand';
+import { NatureSprig } from '@/components/home/NatureMotion';
 import { STAY_TYPES } from '@/lib/catalog/constants';
 import { PageShell } from '@/components/layout/PageShell';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -167,7 +169,17 @@ export default async function HomePage({ searchParams }: Props) {
     <PageShell className="page-home">
       <JsonLd data={structuredData} />
       <div className="home">
-        {groups.map((group, index) => <div className="home__group" data-home-group={group.key} data-home-sections={group.sections.join(',')} key={`${group.key}-${index}`}>{group.node}</div>)}
+        {groups.map((group, index) => {
+          // Sections grow a flowering sprig on their top edge, alternating sides. The
+          // one right below the hero is skipped: the search card hangs into that gap.
+          const sprig = group.key !== 'hero' && groups[index - 1]?.key !== 'hero';
+          return (
+            <div className={`home__group${sprig ? ' home__group--nature' : ''}`} data-home-group={group.key} data-home-sections={group.sections.join(',')} key={`${group.key}-${index}`}>
+              {sprig && <NatureSprig side={index % 2 ? 'right' : 'left'} />}
+              {group.node}
+            </div>
+          );
+        })}
       </div>
     </PageShell>
   );
