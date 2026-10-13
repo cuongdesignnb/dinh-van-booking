@@ -1,0 +1,394 @@
+/* ==========================================================================
+   Homepage nature motion: flowering sprigs that grow at section corners,
+   wind gusts and drifting leaves/petals. Decorative only (aria-hidden).
+   - Sprigs use the shared `[data-reveal]` observer (`.is-in` on enter).
+   - Without motion (reduced motion / before hydration) sprigs render in
+     their final static state and the breeze is not shown.
+   - Only `translate`/`scale`/`rotate`/`opacity`/stroke offsets animate.
+   ========================================================================== */
+
+/* ---------- Section sprigs ---------- */
+
+.home__group--nature {
+  position: relative;
+}
+
+/* The vine grows in from the screen edge inside the empty gap above a section
+   (64px desktop / 48px phone), so it never covers copy or cards. */
+.nm {
+  --nm-w: clamp(150px, 15vw, 210px);
+  position: absolute;
+  bottom: calc(100% + 1px);
+  z-index: 2;
+  width: var(--nm-w);
+  aspect-ratio: 270 / 80;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.nm--left {
+  left: 0;
+}
+
+.nm--right {
+  right: 0;
+}
+
+/* Sections that butt together (no gap) or sit 24px apart get no vine. */
+.home__group[data-home-group='why'] > .nm,
+.home__group[data-home-group='stats'] > .nm {
+  display: none;
+}
+
+.nm__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.nm--right .nm__svg {
+  scale: -1 1;
+}
+
+.nm__stem {
+  fill: none;
+  stroke: #5d7d61;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.nm__stem--twig {
+  stroke-width: 1.8;
+}
+
+.nm__leaf,
+.nm__flower,
+.nm__flyer {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+.nm__leaf path:first-child {
+  fill: #3f7356;
+}
+
+.nm__leaf--alt path:first-child {
+  fill: #7ea684;
+}
+
+.nm__rib {
+  fill: none;
+  stroke: rgb(255 255 255 / 45%);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+.nm__petal {
+  fill: #f7e8dd;
+  stroke: #e0bba2;
+  stroke-width: 0.8;
+}
+
+.nm__pistil {
+  fill: var(--dvb-gold);
+}
+
+.nm__plant {
+  transform-box: view-box;
+  transform-origin: 0 54px;
+}
+
+.nm__wind path {
+  fill: none;
+  stroke: #9db9a2;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 0.28 1;
+  stroke-dashoffset: 0.28;
+  opacity: 0;
+}
+
+.nm__flyer {
+  opacity: 0;
+}
+
+.nm__flyer path {
+  fill: #6f9a76;
+}
+
+/* Keep the container itself visible: its parts carry the choreography. */
+html.motion-ready .nm[data-reveal='nature']:not(.is-in) {
+  opacity: 0.92;
+}
+
+html.motion-ready .nm[data-reveal='nature'].is-in {
+  animation: none;
+}
+
+html.motion-ready .nm:not(.is-in) .nm__stem {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+html.motion-ready .nm:not(.is-in) :is(.nm__leaf, .nm__flower) {
+  scale: 0;
+}
+
+html.motion-ready .nm.is-in .nm__stem {
+  stroke-dasharray: 1;
+  animation: nm-draw 1.4s var(--ease-out) both;
+}
+
+html.motion-ready .nm.is-in .nm__stem--twig {
+  animation-delay: 0.6s;
+}
+
+html.motion-ready .nm.is-in .nm__leaf {
+  animation: nm-grow 0.75s var(--ease-spring) calc(0.25s + var(--i) * 0.14s) both;
+}
+
+html.motion-ready .nm.is-in .nm__flower {
+  animation: nm-bloom 0.95s var(--ease-spring) calc(1.15s + var(--i) * 0.26s) both;
+}
+
+html.motion-ready .nm.is-in .nm__plant {
+  animation: nm-sway 7s ease-in-out 2.2s infinite alternate;
+}
+
+html.motion-ready .nm.is-in .nm__wind path {
+  animation: nm-gust 8s ease-in-out infinite;
+}
+
+html.motion-ready .nm.is-in .nm__wind path:nth-child(2) {
+  animation-delay: 1.3s;
+}
+
+html.motion-ready .nm.is-in .nm__wind path:nth-child(3) {
+  animation-delay: 2.5s;
+}
+
+html.motion-ready .nm.is-in .nm__flyer {
+  animation: nm-fly 8s ease-in-out calc(2.4s + var(--i) * 0.45s) infinite;
+}
+
+@keyframes nm-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes nm-grow {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes nm-bloom {
+  from {
+    scale: 0;
+    rotate: -50deg;
+  }
+  to {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@keyframes nm-sway {
+  from {
+    rotate: -1.8deg;
+  }
+  to {
+    rotate: 1.6deg;
+  }
+}
+
+@keyframes nm-gust {
+  0% {
+    stroke-dashoffset: 0.28;
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  45% {
+    opacity: 0.7;
+  }
+  60%,
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 0;
+  }
+}
+
+@keyframes nm-fly {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  8% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+    translate: 34px -12px;
+    rotate: 150deg;
+  }
+  58% {
+    opacity: 0;
+    translate: 56px -4px;
+    rotate: 250deg;
+  }
+  100% {
+    opacity: 0;
+    translate: 56px -4px;
+    rotate: 250deg;
+  }
+}
+
+@media (max-width: 767px) {
+  .nm {
+    --nm-w: 148px;
+  }
+}
+
+/* ---------- Hero breeze ---------- */
+
+.nb {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+html.motion-live .nb {
+  display: block;
+}
+
+.nb__gusts {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.nb__gusts path {
+  fill: none;
+  stroke: rgb(255 255 255 / 55%);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 0.22 1;
+  stroke-dashoffset: 0.22;
+  opacity: 0;
+  animation: nb-gust 9s ease-in-out infinite;
+}
+
+.nb__gusts path:nth-child(2) {
+  animation-delay: 3s;
+}
+
+.nb__gusts path:nth-child(3) {
+  animation-delay: 6s;
+}
+
+.nb__item {
+  position: absolute;
+  top: var(--top);
+  left: -40px;
+  width: var(--size);
+  height: calc(var(--size) * 1.6);
+  opacity: 0;
+  animation: nb-drift var(--dur) linear calc(var(--delay) * -1) infinite;
+}
+
+.nb__item svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: nb-flutter 1.7s ease-in-out infinite alternate;
+}
+
+.nb__item--leaf path:first-child {
+  fill: rgb(203 226 178 / 92%);
+}
+
+.nb__rib {
+  fill: none;
+  stroke: rgb(31 77 58 / 45%);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.nb__item--petal ellipse {
+  fill: rgb(250 232 222 / 95%);
+}
+
+@keyframes nb-gust {
+  0% {
+    stroke-dashoffset: 0.22;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  65%,
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 0;
+  }
+}
+
+@keyframes nb-drift {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  30% {
+    translate: 32vw 5vh;
+  }
+  60% {
+    translate: 64vw -2vh;
+  }
+  88% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(100vw + 80px) 6vh;
+    rotate: var(--spin);
+  }
+}
+
+@keyframes nb-flutter {
+  from {
+    scale: 1 1;
+  }
+  to {
+    scale: 0.55 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .nb__item:nth-child(n + 6) {
+    display: none;
+  }
+}

@@ -21,15 +21,18 @@ export function BrandLogo({ variant = 'header' }: { variant?: 'header' | 'footer
   const site = useSiteData();
   const logo = site.publicSite.media?.logo;
   if (!logo?.src && !site.name && !site.tagline) return null;
+  // An uploaded logo already carries the wordmark, so the header and drawer show
+  // it alone; the dark footer keeps the text beside it for contrast.
+  const imageOnly = !!logo?.src && variant !== 'footer';
   return (
-    <span className={`brand brand--${variant}`}>
+    <span className={`brand brand--${variant}${imageOnly ? ' brand--image-only' : ''}`}>
       {logo?.src
-        ? <Image className="brand__mark brand__mark--img" src={logo.src} alt={logo.alt ?? site.name} width={logo.width ?? 600} height={logo.height ?? 200} unoptimized />
+        ? <Image className="brand__mark brand__mark--img" src={logo.src} alt={logo.alt || site.name} width={logo.width ?? 600} height={logo.height ?? 200} unoptimized />
         : <CucPhuongMark className="brand__mark" onDark={variant === 'footer'} />}
-      <span className="brand__text">
+      {!imageOnly && <span className="brand__text">
         {site.name && <span className="brand__name">{site.name}</span>}
         {site.tagline && <span className="brand__tagline">{site.tagline}</span>}
-      </span>
+      </span>}
     </span>
   );
 }
