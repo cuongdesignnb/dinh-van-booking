@@ -40,3 +40,16 @@ export function onFocusSearch(handler: () => void) {
     window.removeEventListener(FOCUS_SEARCH_EVENT, handler);
   };
 }
+
+const OPEN_CHAT_EVENT = 'dvb:open-chat';
+
+/** Opens the website chat panel (if the chat is enabled), optionally with a first message prefilled. */
+export function openChat(draft?: string) {
+  window.dispatchEvent(new CustomEvent<{ draft?: string }>(OPEN_CHAT_EVENT, { detail: { draft } }));
+}
+
+export function onOpenChat(handler: (draft?: string) => void) {
+  const listener = (event: Event) => handler((event as CustomEvent<{ draft?: string }>).detail?.draft);
+  window.addEventListener(OPEN_CHAT_EVENT, listener);
+  return () => window.removeEventListener(OPEN_CHAT_EVENT, listener);
+}

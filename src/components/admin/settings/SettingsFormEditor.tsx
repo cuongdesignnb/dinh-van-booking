@@ -80,6 +80,30 @@ const PAYMENT_METHODS: Option[] = [
 const CANCELLATION_TIER = { beforeHours: 24, refundPercent: 100 };
 
 const FIELD_META: Record<string, FieldMeta> = {
+  'chat.widget.enabled': { label: 'Bật khung chat trên website', kind: 'boolean', help: 'Bong bóng chat hiện ở góc phải mọi trang (trừ trang thanh toán).' },
+  'chat.widget.launcherLabel': { label: 'Chữ trên bong bóng chat', placeholder: 'Chat tư vấn', maxLength: 30 },
+  'chat.widget.title': { label: 'Tiêu đề khung chat', placeholder: 'Mặc định: Tư vấn cùng {tên người tư vấn}', maxLength: 60 },
+  'chat.widget.subtitle': { label: 'Dòng mô tả dưới tiêu đề', placeholder: 'Trợ lý AI trả lời ngay · nhân viên có thể tham gia', maxLength: 90 },
+  'chat.widget.greeting': { label: 'Lời chào đầu tiên', kind: 'textarea', maxLength: 400, help: 'Nên nói rõ khách đang chat với trợ lý AI và nhân viên có thể tham gia.' },
+  'chat.widget.quickReplies': { label: 'Câu hỏi gợi ý', help: 'Tối đa 5 câu; khách bấm để gửi nhanh.' },
+  'chat.widget.quickReplies[].enabled': { label: 'Đang hiển thị', kind: 'boolean' },
+  'chat.widget.quickReplies[].label': { label: 'Câu hỏi', maxLength: 60 },
+  'chat.widget.inputPlaceholder': { label: 'Chữ gợi ý trong ô nhập', placeholder: 'Nhập câu hỏi của bạn…', maxLength: 60 },
+  'chat.widget.privacyNote': { label: 'Ghi chú quyền riêng tư', kind: 'textarea', maxLength: 240, help: 'Hiện nhỏ dưới ô nhập. Để trống thì ẩn.' },
+  'chat.widget.offlineNote': { label: 'Ghi chú ngoài giờ', kind: 'textarea', maxLength: 240 },
+  'chat.assistant.enabled': { label: 'Trợ lý AI tự trả lời', kind: 'boolean', help: 'Tắt thì mọi tin nhắn chuyển thẳng cho nhân viên.' },
+  'chat.assistant.model': { label: 'Model AI cho chat', placeholder: 'Để trống: dùng model của AI viết nội dung', maxLength: 120, help: 'Chat dùng cùng cổng API và API key với AI viết nội dung (Cài đặt › AI). Nên chọn model nhanh, rẻ.' },
+  'chat.assistant.responseFormat': { label: 'Định dạng đầu ra', kind: 'select', options: [
+    { value: 'json_schema', label: 'JSON schema (khuyến nghị)' },
+    { value: 'json_object', label: 'JSON object (cổng không hỗ trợ schema)' },
+    { value: 'text', label: 'Văn bản thuần (cổng không hỗ trợ JSON)' },
+  ], help: 'Hệ thống tự lùi về định dạng đơn giản hơn nếu cổng API từ chối.' },
+  'chat.assistant.temperature': { label: 'Độ sáng tạo', kind: 'number', min: 0, max: 1.5, step: 0.1, help: '0.2–0.5 cho câu trả lời ổn định, bám dữ liệu.' },
+  'chat.assistant.maxOutputTokens': { label: 'Độ dài tối đa mỗi câu trả lời', kind: 'number', min: 128, max: 4000, step: 50, suffix: 'token' },
+  'chat.assistant.dailyReplyLimit': { label: 'Số câu trả lời AI tối đa mỗi ngày', kind: 'number', min: 0, step: 10, suffix: 'câu', help: 'Giới hạn chi phí. Hết lượt thì chat chuyển cho nhân viên.' },
+  'chat.assistant.perConversationLimit': { label: 'Số câu trả lời AI tối đa mỗi cuộc chat', kind: 'number', min: 0, step: 1, suffix: 'câu' },
+  'chat.assistant.knowledge': { label: 'Kiến thức bổ sung cho AI', kind: 'textarea', maxLength: 4000, help: 'Giờ làm việc, cách di chuyển, lưu ý mùa vụ… Chỉ ghi thông tin đã kiểm chứng; AI dùng đúng nội dung này.' },
+  'chat.assistant.handoffMessage': { label: 'Câu báo khi chuyển cho nhân viên', kind: 'textarea', maxLength: 500, placeholder: 'Trợ lý AI tạm thời chưa trả lời được. Nhân viên tư vấn sẽ phản hồi bạn sớm nhất có thể.' },
   'brand.identity.name': { label: 'Tên thương hiệu', required: true, placeholder: 'Ví dụ: Cúc Phương Travel' },
   'brand.identity.shortName': { label: 'Tên viết gọn', placeholder: 'Tên ngắn dùng trên menu' },
   'brand.identity.tagline': { label: 'Khẩu hiệu', placeholder: 'Thông điệp ngắn của thương hiệu' },
@@ -520,6 +544,7 @@ const OBJECT_TEMPLATES: Record<string, Record<string, unknown>> = {
   'home.why.reasons': { enabled: true, icon: 'user', title: '', description: '' },
   'home.stats.items': { enabled: true, icon: 'star', value: '', label: '' },
   'home.faq.items': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
+  'chat.widget.quickReplies': { enabled: true, label: '' },
   'contact.page.promises': { enabled: true, title: '', description: '' },
   'contact.page.advisorHighlights': { enabled: true, text: '' },
   'contact.page.faqs': { enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } },
@@ -545,6 +570,7 @@ const GROUP_LABELS: Record<string, string> = {
   publicLegal: 'FAQ & chính sách',
   media: 'Thư viện ảnh',
   crm: 'Khách hàng & tư vấn',
+  chat: 'Chat với khách',
   ops: 'Vận hành',
 };
 

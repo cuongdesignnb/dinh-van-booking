@@ -198,7 +198,7 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function textFromDocument(value: unknown): string {
+export function textFromDocument(value: unknown): string {
   if (typeof value === 'string') return value;
   if (Array.isArray(value)) return value.map(textFromDocument).filter(Boolean).join(' ');
   if (!value || typeof value !== 'object') return '';

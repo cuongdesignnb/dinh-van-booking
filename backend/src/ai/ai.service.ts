@@ -12,13 +12,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { loadConfig, readSecret } from '../common/config/env';
 import type { AuthenticatedUser } from '../common/types';
 import { assertPublicHost, validatePublicHttpsUrl } from './safe-network';
+import { endpoint, extractResponseText, isRecord, MAX_PROVIDER_RESPONSE_BYTES, postProviderJson, readLimitedBody, type WireFormat } from './ai-provider.client';
 import type { GenerateContentDto, SaveAiSettingsDto } from './ai.dto';
 
 const SETTINGS_KEY = 'ai.providers.v1';
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
 const MAX_REQUESTS_PER_WINDOW = 5;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
-const MAX_PROVIDER_RESPONSE_BYTES = 2 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 const CONTENT_KINDS = new Set(['article', 'page', 'stay', 'combo', 'destination']);
 const SAFE_TAGS = new Set([
@@ -27,7 +27,6 @@ const SAFE_TAGS = new Set([
 ]);
 const VOID_TAGS = new Set(['br', 'hr']);
 
-type WireFormat = 'responses' | 'chat_completions';
 type ProviderName = 'content' | 'image';
 interface ProviderConfig {
   baseUrl: string;
@@ -95,10 +94,6 @@ const DRAFT_SCHEMA = {
   },
   required: ['title', 'excerpt', 'bodyHtml', 'metaTitle', 'metaDescription', 'tags', 'images'],
 } as const;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
 
 function cleanString(value: unknown, name: string, max: number, required = false): string {
   if (value === undefined || value === null) {
@@ -282,32 +277,6 @@ function providerDefaults(kind: ProviderName): ProviderConfig {
   };
 }
 
-function extractResponseText(data: Record<string, unknown>, wire: WireFormat): string {
-  if (wire === 'responses') {
-    if (typeof data.output_text === 'string') return data.output_text;
-    if (Array.isArray(data.output)) {
-      const texts: string[] = [];
-      for (const item of data.output) {
-        if (!isRecord(item) || !Array.isArray(item.content)) continue;
-        for (const part of item.content) if (isRecord(part) && typeof part.text === 'string') texts.push(part.text);
-      }
-      if (texts.length) return texts.join('\n');
-    }
-  }
-  const choices = data.choices;
-  if (Array.isArray(choices) && isRecord(choices[0])) {
-    const message = choices[0].message;
-    if (isRecord(message) && typeof message.content === 'string') return message.content;
-    if (typeof choices[0].text === 'string') return choices[0].text;
-  }
-  throw new BadGatewayException('Nhà cung cấp AI trả về cấu trúc nội dung không nhận diện được');
-}
-
-function endpoint(base: string, path: string): string {
-  const clean = base.replace(/\/+$/, '');
-  return clean.endsWith(`/${path}`) ? clean : `${clean}/${path}`;
-}
-
 function publicCandidatesAnchor(candidate: { title: string }): string {
   return anchorFromTitle(candidate.title);
 }
@@ -350,6 +319,13 @@ export class AiService {
       },
       encryption: process.env.AI_SETTINGS_ENCRYPTION_KEY || process.env.AI_SETTINGS_ENCRYPTION_KEY_FILE ? 'dedicated_key' : 'session_secret',
     };
+  }
+
+  /** The live chat reuses the content provider gateway (base URL, key, wire); only the model may differ. */
+  async contentProvider(): Promise<{ baseUrl: string; apiKey: string; model: string; wire: WireFormat }> {
+    const stored = await this.readStoredSettings();
+    const provider = this.resolveProvider('content', stored.content);
+    return { baseUrl: provider.baseUrl, apiKey: provider.apiKey, model: provider.model, wire: provider.wire ?? 'responses' };
   }
 
   async saveSettings(dto: SaveAiSettingsDto, userId: string): Promise<Record<string, unknown>> {
@@ -517,7 +493,7 @@ export class AiService {
           max_tokens: maxOutputTokens,
           response_format: { type: 'json_schema', json_schema: { name: 'cms_content_draft', strict: true, schema: DRAFT_SCHEMA } },
         };
-    const response = await this.fetchJson(endpointUrl, provider.apiKey, body, 90_000);
+    const response = await postProviderJson(endpointUrl, provider.apiKey, body, 90_000);
     let text = extractResponseText(response, wire).trim();
     text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
     let parsed: unknown;
@@ -560,7 +536,7 @@ export class AiService {
     }
     const base = validatePublicHttpsUrl(provider.baseUrl, 'Base URL AI tạo ảnh');
     await assertPublicHost(base);
-    const response = await this.fetchJson(endpoint(base.toString(), 'images/generations'), provider.apiKey, {
+    const response = await postProviderJson(endpoint(base.toString(), 'images/generations'), provider.apiKey, {
       model: provider.model,
       prompt,
       n: 1,
@@ -585,7 +561,7 @@ export class AiService {
       const declaredSize = Number(imageResponse.headers.get('content-length') ?? 0);
       if (declaredSize > MAX_IMAGE_BYTES) throw new BadGatewayException('Ảnh AI vượt quá dung lượng cho phép');
       mimeType = (imageResponse.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
-      bytes = await this.readLimitedBody(imageResponse, MAX_IMAGE_BYTES);
+      bytes = await readLimitedBody(imageResponse, MAX_IMAGE_BYTES);
     } else {
       throw new BadGatewayException('AI tạo ảnh không trả về URL hoặc dữ liệu ảnh');
     }
@@ -670,63 +646,6 @@ export class AiService {
       path: candidate.path,
       anchor: candidate.anchor,
     }));
-  }
-
-  private async fetchJson(url: string, apiKey: string, body: unknown, timeoutMs: number, maxBytes = MAX_PROVIDER_RESPONSE_BYTES): Promise<Record<string, unknown>> {
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        redirect: 'error',
-        headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-    } catch (error) {
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-        throw new HttpException('Nhà cung cấp AI phản hồi quá thời gian cho phép', 504);
-      }
-      throw new BadGatewayException('Không kết nối được nhà cung cấp AI. Kiểm tra địa chỉ máy chủ và kết nối mạng.');
-    }
-    const declaredSize = Number(response.headers.get('content-length') ?? 0);
-    if (declaredSize > maxBytes) throw new BadGatewayException('Phản hồi AI vượt quá giới hạn cho phép');
-    let responseBuffer: Buffer;
-    try {
-      responseBuffer = await this.readLimitedBody(response, maxBytes);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-        throw new HttpException('Nhà cung cấp AI phản hồi quá thời gian cho phép', 504);
-      }
-      throw new BadGatewayException('Không đọc được phản hồi từ nhà cung cấp AI');
-    }
-    const text = responseBuffer.toString('utf8');
-    if (!response.ok) throw new BadGatewayException(`Nhà cung cấp AI trả về HTTP ${response.status}. Hãy kiểm tra API key, model và cấu hình endpoint.`);
-    try {
-      const json: unknown = JSON.parse(text);
-      if (!isRecord(json)) throw new Error('not an object');
-      return json;
-    } catch {
-      throw new BadGatewayException('Nhà cung cấp AI trả về JSON không hợp lệ');
-    }
-  }
-
-  private async readLimitedBody(response: Response, limit: number): Promise<Buffer> {
-    if (!response.body) return Buffer.alloc(0);
-    const reader = response.body.getReader();
-    const parts: Uint8Array[] = [];
-    let length = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      length += value.byteLength;
-      if (length > limit) {
-        await reader.cancel();
-        throw new BadGatewayException('Phản hồi từ nhà cung cấp vượt quá giới hạn cho phép');
-      }
-      parts.push(value);
-    }
-    return Buffer.concat(parts.map((part) => Buffer.from(part)));
   }
 
   private enforceRateLimit(userId: string): void {

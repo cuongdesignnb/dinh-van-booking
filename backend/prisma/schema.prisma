@@ -35,6 +35,8 @@ model User {
   revisions     ContentRevision[]
   pins          UserPin[]
   inquiryReads  InquiryRead[]
+  chatConversations ChatConversation[] @relation("ChatAssignee")
+  chatMessages      ChatMessage[]      @relation("ChatAuthor")
   bookingEvents BookingEvent[]
   payments      Payment[]     @relation("PaymentVerifier")
   refunds       Refund[]      @relation("RefundApprover")
@@ -1109,6 +1111,7 @@ model Customer {
   quotes       BookingQuote[]
   tags         CustomerTag[]
   reviews      Review[]
+  chats        ChatConversation[]
 
   @@index([phoneNormalized])
   @@index([emailNormalized])
@@ -1166,6 +1169,7 @@ model Inquiry {
   stages       InquiryStageHistory[]
   bookings     Booking[]
   reads        InquiryRead[]
+  chats        ChatConversation[]
 
   @@index([stage, createdAt])
   @@index([relatedRoomTypeId])
@@ -1665,4 +1669,68 @@ model JobRun {
 
   @@index([jobKind, startedAt])
   @@map("job_runs")
+}
+
+/* ------------------------------------------------------------------ live chat */
+
+/// One website visitor thread. `status`: ai | waiting_human | human | closed.
+model ChatConversation {
+  id                   String    @id @default(uuid()) @db.Uuid
+  visitorTokenHash     String    @map("visitor_token_hash")
+  status               String    @default("ai")
+  handoffReason        String?   @map("handoff_reason")
+  isSpam               Boolean   @default(false) @map("is_spam")
+  assignedUserId       String?   @map("assigned_user_id") @db.Uuid
+  visitorName          String?   @map("visitor_name")
+  visitorPhone         String?   @map("visitor_phone")
+  customerId           String?   @map("customer_id") @db.Uuid
+  inquiryId            String?   @map("inquiry_id") @db.Uuid
+  entryPath            String?   @map("entry_path")
+  lastPath             String?   @map("last_path")
+  pageKind             String?   @map("page_kind")
+  relatedContentId     String?   @map("related_content_id") @db.Uuid
+  lastMessageAt        DateTime  @default(now()) @map("last_message_at") @db.Timestamptz(3)
+  lastMessagePreview   String?   @map("last_message_preview")
+  lastVisitorMessageAt DateTime? @map("last_visitor_message_at") @db.Timestamptz(3)
+  staffLastReadSeq     BigInt    @default(0) @map("staff_last_read_seq")
+  lastVisitorSeq       BigInt    @default(0) @map("last_visitor_seq")
+  aiReplyCount         Int       @default(0) @map("ai_reply_count")
+  ipHash               String?   @map("ip_hash")
+  userAgent            String?   @map("user_agent")
+  version              Int       @default(1)
+  closedAt             DateTime? @map("closed_at") @db.Timestamptz(3)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assignedUser User?         @relation("ChatAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  inquiry      Inquiry?      @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  messages     ChatMessage[]
+
+  @@index([visitorTokenHash, createdAt])
+  @@index([status, lastMessageAt])
+  @@index([assignedUserId, status])
+  @@index([lastMessageAt])
+  @@map("chat_conversations")
+}
+
+/// `role`: visitor | ai | staff | system. `seq` is a global, monotonically increasing cursor.
+model ChatMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  seq            BigInt   @default(autoincrement())
+  conversationId String   @map("conversation_id") @db.Uuid
+  role           String
+  authorUserId   String?  @map("author_user_id") @db.Uuid
+  body           String
+  clientId       String?  @map("client_id")
+  meta           Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User?            @relation("ChatAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@unique([seq])
+  @@unique([conversationId, clientId])
+  @@index([conversationId, seq])
+  @@map("chat_messages")
 }

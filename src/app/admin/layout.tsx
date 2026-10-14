@@ -11,6 +11,7 @@ import '@/styles/admin-properties.css';
 import '@/styles/admin-combos.css';
 import '@/styles/admin-content.css';
 import '@/styles/admin-crm.css';
+import '@/styles/admin-chat.css';
 import '@/styles/admin-editor.css';
 import '@/styles/admin-ai.css';
 import '@/styles/admin-media.css';

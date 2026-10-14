@@ -75,6 +75,11 @@ const META: Record<string, AdminPageMeta> = {
     title: 'Menu website',
     subtitle: 'Sắp xếp liên kết đầu trang và thêm chuyên trang đã xuất bản vào menu chính.',
   },
+  '/admin/tin-nhan': {
+    section: 'Khách hàng',
+    title: 'Tin nhắn',
+    subtitle: 'Chat với khách trên website: trợ lý AI trả lời, nhân viên tham gia khi cần.',
+  },
   '/admin/yeu-cau-tu-van': {
     section: 'Khách hàng',
     title: 'Yêu cầu tư vấn',

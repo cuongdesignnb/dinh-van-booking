@@ -36,6 +36,8 @@ async function main(): Promise<void> {
     'media.delete': 'Xoá ảnh khỏi thư viện',
     'crm.read': 'Xem khách hàng và yêu cầu tư vấn',
     'crm.write': 'Sửa khách hàng, ghi nhận trao đổi',
+    'chat.read': 'Xem hộp thư chat với khách',
+    'chat.write': 'Tham gia, trả lời và xử lý phiên chat',
     'coupon.read': 'Xem mã khuyến mãi và lịch sử sử dụng',
     'coupon.write': 'Tạo, sửa và tắt mã khuyến mãi',
     'finance.read': 'Xem thanh toán, hoàn tiền, báo cáo',

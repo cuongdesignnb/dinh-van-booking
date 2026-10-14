@@ -114,6 +114,16 @@ export class AdminOperationsService {
       this.prisma.refund.groupBy({ by: ['status'], where: { payment: { booking: { isDemo: false } } }, _count: { _all: true } }),
       this.prisma.payment.aggregate({ where: { status: 'posted', booking: { isDemo: false } }, _sum: { amountVnd: true } }),
     ]);
+    // Same definition as the chat inbox's "Cần xử lý" tab: waiting for staff, or a staff chat with unread visitor messages.
+    const waitingChats = await this.prisma.chatConversation.count({
+      where: {
+        isSpam: false,
+        OR: [
+          { status: 'waiting_human' },
+          { status: 'human', lastVisitorSeq: { gt: this.prisma.chatConversation.fields.staffLastReadSeq } },
+        ],
+      },
+    });
     const byStatus = (rows: Array<{ bookingStatus: string; _count: { _all: number } }>) => Object.fromEntries(rows.map((row) => [row.bookingStatus, row._count._all]));
     const contentByStatus = Object.fromEntries(contentStates.map((row) => [row.publicationStatus, row._count._all]));
     return {
@@ -121,6 +131,7 @@ export class AdminOperationsService {
       sources: { bookings: 'PostgreSQL bookings', inquiries: 'PostgreSQL inquiries', customers: 'PostgreSQL customers', inventory: 'PostgreSQL inventory_days', finance: 'PostgreSQL payments/refunds', content: 'PostgreSQL content_nodes' },
       bookings: { total: Object.values(byStatus(bookings)).reduce((sum, count) => sum + count, 0), byStatus: byStatus(bookings) },
       newInquiries: inquiries,
+      waitingChats,
       customers,
       published: { stays: publishedStays, combos: publishedCombos, destinations: publishedDestinations },
       content: { draft: contentByStatus.draft ?? 0, review: contentByStatus.review ?? 0, published: contentByStatus.published ?? 0 },

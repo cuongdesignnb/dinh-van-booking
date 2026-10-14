@@ -10,6 +10,7 @@ import '@/styles/site/shell.css';
 import '@/styles/site/stay-card.css';
 import '@/styles/pages.css';
 import '@/styles/rich-content.css';
+import '@/styles/chat-widget.css';
 
 // SEO settings are editable at runtime. Keep metadata request-time so toggling
 // robotsIndex in admin takes effect without rebuilding or redeploying the site.
