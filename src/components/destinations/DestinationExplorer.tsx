@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
+import { chatDraft } from '@/lib/chat/draft';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
@@ -291,9 +293,9 @@ export function DestinationDialog({ destination, onClose, advisorCtaLabel }: { d
             {d.slug && <Link className="btn btn--light" href={d.publicPath ?? `/diem-den/${d.slug}`}>
               Xem trang điểm đến <ArrowRight size={16} aria-hidden="true" />
             </Link>}
-            {advisorCtaLabel && <Link className="btn btn--primary" href={d.slug ? `/lien-he?intent=destination&item=${encodeURIComponent(d.slug)}` : '/lien-he?intent=destination'} data-autofocus>
+            {advisorCtaLabel && <ChatCta className="btn btn--primary" href={d.slug ? `/lien-he?intent=destination&item=${encodeURIComponent(d.slug)}` : '/lien-he?intent=destination'} data-autofocus draft={chatDraft({ subject: `điểm đến ${d.name}` })} onOpen={onClose}>
               {advisorCtaLabel} <ArrowRight size={16} aria-hidden="true" />
-            </Link>}
+            </ChatCta>}
             <Link className="btn btn--light" href="/phong-nghi">
               Tìm phòng nghỉ
             </Link>

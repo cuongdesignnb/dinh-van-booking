@@ -1,6 +1,7 @@
 import { ArrowRight, BadgeCheck, Heart, House, Leaf, Map as MapIcon, MessageSquareText, Mountain, Phone, Send, ShieldCheck, Trees, Waves } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
 import { notFound } from 'next/navigation';
 import Image from '@/components/ui/ManagedImage';
 import { AdvisorMonogram } from '@/components/home/HomeArt';
@@ -196,7 +197,7 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
           {phoneCta && <a className="btn btn--lg ab-btn--gold" href={phoneCta.href}><Phone size={19} aria-hidden="true" />{phoneCta.label}</a>}
           {zaloCta
             ? <a className="btn btn--lg ab-btn--glass" href={zaloCta.href} target="_blank" rel="noopener noreferrer"><BrandIcon name="zalo" size={19} />{zaloCta.label}</a>
-            : contactLabel && <Link className="btn btn--lg ab-btn--glass" href="/lien-he"><Send size={18} aria-hidden="true" />{contactLabel}</Link>}
+            : contactLabel && <ChatCta className="btn btn--lg ab-btn--glass" href="/lien-he"><Send size={18} aria-hidden="true" />{contactLabel}</ChatCta>}
         </div>}
       </PageHero>
 
@@ -293,7 +294,7 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
           <div className="ab-cta__actions">
             {phoneCta && <a className="btn btn--lg ab-btn--gold" href={phoneCta.href}><Phone size={19} aria-hidden="true" />{phoneCta.label}</a>}
             {zaloCta && <a className="btn btn--lg ab-btn--glass" href={zaloCta.href} target="_blank" rel="noopener noreferrer"><BrandIcon name="zalo" size={19} />{zaloCta.label}</a>}
-            {contactLabel && <Link className="btn btn--lg ab-btn--glass" href="/lien-he"><Send size={18} aria-hidden="true" />{contactLabel}</Link>}
+            {contactLabel && <ChatCta className="btn btn--lg ab-btn--glass" href="/lien-he"><Send size={18} aria-hidden="true" />{contactLabel}</ChatCta>}
             {staysLabel && <Link className="ab-cta__link" href="/phong-nghi">{staysLabel}<ArrowRight size={17} strokeWidth={2.2} aria-hidden="true" /></Link>}
           </div>
         </div>

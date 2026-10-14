@@ -276,6 +276,8 @@ export const SETTING_DEFINITIONS: SettingDefinition[] = [
     defaultValue: {
       enabled: false,
       launcherLabel: null,
+      avatarMediaId: null,
+      assistantName: null,
       title: null,
       subtitle: null,
       greeting: null,

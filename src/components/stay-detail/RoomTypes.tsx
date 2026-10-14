@@ -2,10 +2,11 @@
 
 import { ArrowRight, Bath, BedDouble, Check, DoorOpen, House, ImageOff, Images, Scaling, Users } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
-import Link from 'next/link';
 import { useState } from 'react';
 import type { ImageAsset } from '@/data/types';
 import { formatVnd } from '@/lib/format';
+import { ChatCta } from '@/components/chat/ChatCta';
+import { chatDraft } from '@/lib/chat/draft';
 import { stayContactHref } from '@/lib/contact/stay-contact';
 import { roomUnitKindLabel } from '@/lib/room-unit-kind';
 import { ROOMS_ANCHOR } from './BookingCard';
@@ -86,7 +87,7 @@ export function RoomTypes({ title, subtitle }: { title?: string; subtitle?: stri
                   {r.pricePerNight > 0 ? <><strong>{formatVnd(r.pricePerNight)}</strong> <span>/ đêm</span></> : <strong>Liên hệ báo giá</strong>}
                 </p>
                 {r.pricePerNight === 0
-                  ? <Link href={stayContactHref(stay.slug, selection, r.id)} className="btn btn--primary stp-room__btn" aria-label={`Chọn ${r.name}, liên hệ nhận giá`}>Chọn phòng <ArrowRight size={16} aria-hidden="true" /></Link>
+                  ? <ChatCta href={stayContactHref(stay.slug, selection, r.id)} draft={chatDraft({ subject: stay.name, room: r.name, ...selection, note: 'Cho mình xin báo giá hạng phòng này nhé.' })} className="btn btn--primary stp-room__btn" aria-label={`Chọn ${r.name}, liên hệ nhận giá`}>Chọn phòng <ArrowRight size={16} aria-hidden="true" /></ChatCta>
                   : <button
                       type="button"
                       className="btn btn--primary stp-room__btn"

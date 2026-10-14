@@ -23,6 +23,7 @@ import { HostCard, ReviewCards, ShareSave } from '@/components/stay-detail/Detai
 import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
 import { RoomTypes } from '@/components/stay-detail/RoomTypes';
 import { AdvisorBand, SectionTabs } from '@/components/stay-detail/StayPageParts';
+import { chatDraft } from '@/lib/chat/draft';
 import { amenityIcon, highlightIcon } from '@/components/stay-detail/amenityIcons';
 import { getPublicReviews, getPublicSite, getPublicStay } from '@/lib/api/public';
 import { STAY_TYPES } from '@/lib/catalog/constants';
@@ -261,7 +262,7 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
         )}
 
         <div className="stp-section stp-band-wrap">
-          <AdvisorBand contactHref={stayContactHref(stay.slug)} />
+          <AdvisorBand contactHref={stayContactHref(stay.slug)} draft={chatDraft({ subject: stay.name })} />
         </div>
       </div>
       <MobileBookingBar />

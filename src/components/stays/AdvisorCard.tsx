@@ -1,6 +1,6 @@
 import { ArrowRight, Headset, Heart, Route } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
-import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import type { RichDocument } from '@/lib/content/rich-document';
 import type { PublicMediaAsset } from '@/lib/api/public';
@@ -29,7 +29,7 @@ export function AdvisorCard({ config, image }: { config: PublicRecord; image: Pu
           {title}
         </h2>
         {richDocumentHasContent(config.advisorDescription) && <div className="advisor-card__text"><RichContentRenderer document={config.advisorDescription as RichDocument} /></div>}
-        {ctaLabel && <Link href="/lien-he" className="btn btn--primary advisor-card__cta btn-shine">{ctaLabel}<ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" /></Link>}
+        {ctaLabel && <ChatCta href="/lien-he" draft="Mình cần tư vấn chọn chỗ nghỉ phù hợp ở Cúc Phương." className="btn btn--primary advisor-card__cta btn-shine">{ctaLabel}<ArrowRight size={14} strokeWidth={2.3} aria-hidden="true" /></ChatCta>}
       </div>
       {benefits.length > 0 && <ul className="advisor-card__list">{benefits.map(({ text, Icon }, index) => <li key={`${text}-${index}`}><span className="advisor-card__ic" aria-hidden="true"><Icon size={14} /></span>{text}</li>)}</ul>}
     </section>

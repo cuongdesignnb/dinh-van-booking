@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { ArrowRight, CalendarDays, Check, Route, X } from 'lucide-react';
 import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
+import { chatDraft, comboSubject } from '@/lib/chat/draft';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { PageShell } from '@/components/layout/PageShell';
@@ -95,7 +97,7 @@ export default async function ComboDetailPage({ params, searchParams }: Props) {
             <ul className="cp-offer__facts">
               <li><CalendarDays size={17} aria-hidden="true" /> {combo.durationDays} ngày · {combo.durationNights} đêm</li>
             </ul>
-            <Link className="btn btn--primary btn--lg cp-offer__cta" href={contactHref}>Liên hệ tư vấn <ArrowRight size={18} aria-hidden="true" /></Link>
+            <ChatCta className="btn btn--primary btn--lg cp-offer__cta" href={contactHref} draft={chatDraft({ subject: comboSubject(combo.title) })}>Liên hệ tư vấn <ArrowRight size={18} aria-hidden="true" /></ChatCta>
             <Link className="btn btn--outline cp-offer__cta" href="/combo-du-lich">Xem trải nghiệm khác</Link>
           </div>
         </aside>

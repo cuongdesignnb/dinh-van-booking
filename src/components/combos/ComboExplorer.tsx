@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import Image from '@/components/ui/ManagedImage';
 import Link from 'next/link';
+import { ChatCta, useChatEnabled } from '@/components/chat/ChatCta';
+import { chatDraft, comboSubject } from '@/lib/chat/draft';
+import { openChat } from '@/lib/events';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
@@ -133,7 +136,7 @@ export function ComboExplorer({ combos, config }: { combos: Combo[]; config: Pub
         {!hasCatalog && richDocumentHasContent(config.emptyDescription) && <div><RichContentRenderer document={config.emptyDescription as RichDocument} /></div>}
         <div className="state-box__actions">
           {category !== 'all' && <button type="button" className="btn btn--light" onClick={() => setQuery({ loai: null })}>Xem tất cả combo</button>}
-          {emptyCtaLabel && <Link className="btn btn--primary" href="/lien-he?intent=combo">{emptyCtaLabel}</Link>}
+          {emptyCtaLabel && <ChatCta className="btn btn--primary" href="/lien-he?intent=combo" draft="Mình cần tư vấn combo du lịch Cúc Phương.">{emptyCtaLabel}</ChatCta>}
         </div>
       </div>
     );
@@ -232,12 +235,13 @@ function ComboDetailDialog({ combo, onClose, advisorCtaLabel }: { combo: Combo |
   const id = useId();
   return (
     <Modal open={!!combo} onClose={onClose} labelledBy={id} size="lg" className="dialog--combo">
-      {combo && <ComboDetail key={combo.id} combo={combo} titleId={id} advisorCtaLabel={advisorCtaLabel} />}
+      {combo && <ComboDetail key={combo.id} combo={combo} titleId={id} advisorCtaLabel={advisorCtaLabel} onClose={onClose} />}
     </Modal>
   );
 }
 
-function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleId: string; advisorCtaLabel: string }) {
+function ComboDetail({ combo, titleId, advisorCtaLabel, onClose }: { combo: Combo; titleId: string; advisorCtaLabel: string; onClose: () => void }) {
+  const chat = useChatEnabled();
   const router = useRouter();
   const [date, setDate] = useState<string | null>(null);
   const [guests, setGuests] = useState(2);
@@ -366,6 +370,12 @@ function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleI
           className="btn btn--primary"
           data-autofocus
           onClick={() => {
+            if (chat) {
+              // The live chat replaces the contact form; close the dialog so the chat panel is not hidden behind it.
+              onClose();
+              openChat(chatDraft({ subject: comboSubject(combo.title), checkIn: date, adults: guests, note: note.trim() || null }));
+              return;
+            }
             setPendingNote(note);
             const p = new URLSearchParams({ intent: 'combo', item: combo.slug, adults: String(guests) });
             if (date) p.set('checkIn', date);
@@ -375,7 +385,7 @@ function ComboDetail({ combo, titleId, advisorCtaLabel }: { combo: Combo; titleI
           {advisorCtaLabel || 'Liên hệ'} <ArrowRight size={16} aria-hidden="true" />
         </button>}
         <p className="combo-d__hint">
-          <Info size={14} aria-hidden="true" /> Chưa đặt chỗ hay thanh toán — chỉ gửi nhu cầu sang trang tư vấn.
+          <Info size={14} aria-hidden="true" /> {chat ? 'Chưa đặt chỗ hay thanh toán — mở khung chat để trao đổi với người tư vấn.' : 'Chưa đặt chỗ hay thanh toán — chỉ gửi nhu cầu sang trang tư vấn.'}
         </p>
       </div>
     </>

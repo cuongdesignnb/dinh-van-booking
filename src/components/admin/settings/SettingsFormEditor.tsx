@@ -81,6 +81,8 @@ const CANCELLATION_TIER = { beforeHours: 24, refundPercent: 100 };
 
 const FIELD_META: Record<string, FieldMeta> = {
   'chat.widget.enabled': { label: 'Bật khung chat trên website', kind: 'boolean', help: 'Bong bóng chat hiện ở góc phải mọi trang (trừ trang thanh toán).' },
+  'chat.widget.avatarMediaId': { label: 'Ảnh đại diện trợ lý AI', kind: 'media', recommendedWidth: 256, recommendedHeight: 256, recommendedRatio: 1, help: 'Ảnh vuông, hiện ở đầu khung chat và cạnh câu trả lời của trợ lý. Để trống thì dùng ảnh người tư vấn.' },
+  'chat.widget.assistantName': { label: 'Tên hiển thị của trợ lý', placeholder: 'Trợ lý AI', maxLength: 40, help: 'Hiện trên mỗi câu trả lời của AI. Nên giữ chữ “AI” để khách biết đang chat với trợ lý tự động.' },
   'chat.widget.launcherLabel': { label: 'Chữ trên bong bóng chat', placeholder: 'Chat tư vấn', maxLength: 30 },
   'chat.widget.title': { label: 'Tiêu đề khung chat', placeholder: 'Mặc định: Tư vấn cùng {tên người tư vấn}', maxLength: 60 },
   'chat.widget.subtitle': { label: 'Dòng mô tả dưới tiêu đề', placeholder: 'Trợ lý AI trả lời ngay · nhân viên có thể tham gia', maxLength: 90 },

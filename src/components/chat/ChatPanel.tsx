@@ -66,6 +66,9 @@ export function ChatPanel({ open, draft, onDraftUsed, onClose, onUnread }: {
   const panel = publicSetting(site.publicSite, 'home.contactPanel');
   const advisorName = publicText(panel.advisorName);
   const portrait = publicAsset(site.publicSite, panel.advisorImageMediaId);
+  // The assistant's own picture when the Owner set one; otherwise the advisor's portrait.
+  const avatar = publicAsset(site.publicSite, config.avatarMediaId) ?? portrait;
+  const assistantName = publicText(config.assistantName) || 'Trợ lý AI';
   const title = publicText(config.title) || (advisorName ? `Tư vấn cùng ${advisorName}` : 'Tư vấn chuyến đi');
   const subtitle = publicText(config.subtitle) || 'Trợ lý AI trả lời ngay · nhân viên có thể tham gia';
   const greeting = publicText(config.greeting) || DEFAULT_GREETING;
@@ -243,8 +246,8 @@ export function ChatPanel({ open, draft, onDraftUsed, onClose, onUnread }: {
     >
       <header className="chatp__head">
         <span className="chatp__avatar">
-          {portrait?.src
-            ? <Image src={portrait.src} alt="" width={36} height={36} unoptimized />
+          {avatar?.src
+            ? <Image src={avatar.src} alt="" width={36} height={36} unoptimized />
             : <AdvisorMonogram name={advisorName || 'Tư vấn'} idPrefix="chat-adv" />}
           <span className="chatp__dot" data-status={status ?? 'ai'} aria-hidden="true" />
         </span>
@@ -259,7 +262,7 @@ export function ChatPanel({ open, draft, onDraftUsed, onClose, onUnread }: {
 
       <div className="chatp__list" ref={listRef} aria-live="polite" aria-relevant="additions">
         <div className="chatm chatm--ai">
-          <span className="chatm__who">Trợ lý AI</span>
+          <span className="chatm__who">{avatar?.src && <Image className="chatm__avatar" src={avatar.src} alt="" width={20} height={20} unoptimized />}{assistantName}</span>
           <p className="chatm__bubble">{greeting}</p>
         </div>
         {loading && <p className="chatp__loading"><LoaderCircle size={16} className="chatp__spin" aria-hidden="true" /> Đang mở cuộc trò chuyện…</p>}
@@ -268,7 +271,10 @@ export function ChatPanel({ open, draft, onDraftUsed, onClose, onUnread }: {
           : (
             <div key={message.id} className={`chatm chatm--${message.role}`}>
               {message.role !== 'visitor' && (
-                <span className="chatm__who">{message.role === 'staff' ? message.authorName ?? 'Nhân viên tư vấn' : 'Trợ lý AI'}</span>
+                <span className="chatm__who">
+                  {message.role === 'ai' && avatar?.src && <Image className="chatm__avatar" src={avatar.src} alt="" width={20} height={20} unoptimized />}
+                  {message.role === 'staff' ? message.authorName ?? 'Nhân viên tư vấn' : assistantName}
+                </span>
               )}
               <p className="chatm__bubble">{message.body}</p>
               {message.links.length > 0 && (

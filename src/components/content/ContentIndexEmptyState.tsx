@@ -1,5 +1,6 @@
 import { ArrowRight, BookOpenText, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
 
 export function ContentIndexEmptyState({ kind }: { kind: 'article' | 'page' }) {
   const isArticle = kind === 'article';
@@ -12,7 +13,7 @@ export function ContentIndexEmptyState({ kind }: { kind: 'article' | 'page' }) {
     </div>
     <div className="static-page__empty-actions">
       <Link href="/">Về trang chủ <ArrowRight size={16} aria-hidden="true" /></Link>
-      <Link href="/lien-he">Liên hệ hỗ trợ</Link>
+      <ChatCta href="/lien-he">Liên hệ hỗ trợ</ChatCta>
     </div>
   </section>;
 }

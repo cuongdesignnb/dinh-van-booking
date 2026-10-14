@@ -1,6 +1,8 @@
 import { ArrowRight, Check, Info, MapPin } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
+import { chatDraft } from '@/lib/chat/draft';
 import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
@@ -82,7 +84,7 @@ export default async function DestinationDetailPage({ params, searchParams }: Pr
               <ul className="cp-checklist cp-checklist--muted">{destination.notes.map((item) => <li key={item}><Info size={16} aria-hidden="true" />{item}</li>)}</ul>
             </div>}
             <Link className="btn btn--primary btn--lg cp-offer__cta" href="/phong-nghi">Tìm lưu trú gần đây <ArrowRight size={18} aria-hidden="true" /></Link>
-            <Link className="btn btn--outline cp-offer__cta" href="/lien-he">Nhờ tư vấn lịch trình</Link>
+            <ChatCta className="btn btn--outline cp-offer__cta" href="/lien-he" draft={chatDraft({ subject: `lịch trình khám phá ${destination.name}` })}>Nhờ tư vấn lịch trình</ChatCta>
           </div>
         </aside>
       </div>
