@@ -244,7 +244,7 @@ export function ChatPanel({ open, draft, onDraftUsed, onClose, onUnread }: {
       <header className="chatp__head">
         <span className="chatp__avatar">
           {portrait?.src
-            ? <Image src={portrait.src} alt="" width={44} height={44} unoptimized />
+            ? <Image src={portrait.src} alt="" width={36} height={36} unoptimized />
             : <AdvisorMonogram name={advisorName || 'Tư vấn'} idPrefix="chat-adv" />}
           <span className="chatp__dot" data-status={status ?? 'ai'} aria-hidden="true" />
         </span>
