@@ -26,6 +26,11 @@ export function ChatLauncher() {
   const [unread, setUnread] = useState(0);
   const [draft, setDraft] = useState<string | undefined>();
 
+  // The mobile bottom bar shows this count on its "Tư vấn" button.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('dvb:chat-unread', { detail: { count: open ? 0 : unread } }));
+  }, [open, unread]);
+
   const show = useCallback((next: boolean) => {
     setOpen(next);
     if (next) { setMounted(true); setUnread(0); }

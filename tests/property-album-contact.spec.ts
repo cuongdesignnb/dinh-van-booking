@@ -353,7 +353,7 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
       if (width === 390) {
         const fixedBars = await publicPage.evaluate(() => {
           const booking = document.querySelector('.mbar')?.getBoundingClientRect();
-          const navigation = document.querySelector('.mobilebar')?.getBoundingClientRect();
+          const navigation = document.querySelector('.mnav')?.getBoundingClientRect();
           if (!booking || !navigation) throw new Error('Missing mobile booking or navigation bar');
           return { bookingBottom: booking.bottom, navigationTop: navigation.top };
         });

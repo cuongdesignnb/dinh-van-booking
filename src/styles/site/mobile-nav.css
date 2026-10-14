@@ -1,0 +1,207 @@
+/* ==========================================================================
+   Mobile bottom navigation (phones only).
+   A floating frosted bar with a raised "Tư vấn" button in the middle.
+   Stacking: above page bars (.mbar 30) and the chat launcher, below the
+   header (60), drawer (80) and the full-screen chat sheet (90).
+   ========================================================================== */
+
+:root {
+  --dvb-mobilebar-h: 0px;
+}
+
+.mnav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  :root:has(.mnav) {
+    /* Bar height + its gap from the screen edge; page bars sit on top of it. */
+    --dvb-mobilebar-h: 76px;
+  }
+
+  .mnav {
+    position: fixed;
+    right: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 50;
+    display: block;
+    height: 64px;
+    border: 1px solid rgb(23 61 41 / 8%);
+    border-radius: 24px;
+    background: rgb(255 255 255 / 88%);
+    box-shadow: 0 12px 32px rgb(16 48 31 / 16%), 0 2px 6px rgb(16 48 31 / 8%);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .mnav__list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    height: 100%;
+    margin: 0;
+    padding: 0 4px;
+    list-style: none;
+  }
+
+  .mnav__list > li {
+    display: flex;
+    min-width: 0;
+  }
+
+  .mnav__link,
+  .mnav__cta {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dvb-ink-500);
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mnav__icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 28px;
+    border-radius: 14px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+
+  .mnav__label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .mnav__link[aria-current='page'] {
+    color: var(--dvb-forest-800);
+  }
+
+  .mnav__link[aria-current='page'] .mnav__icon {
+    background: var(--dvb-sage-100);
+  }
+
+  .mnav__link[aria-current='page'] .mnav__label {
+    font-weight: 700;
+  }
+
+  .mnav__link:active .mnav__icon {
+    transform: scale(0.92);
+  }
+
+  /* Raised advisor button. */
+  .mnav__center {
+    justify-content: center;
+  }
+
+  .mnav__cta {
+    justify-content: flex-end;
+    padding-bottom: 9px;
+    color: var(--dvb-forest-800);
+  }
+
+  .mnav__cta-ring {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-top: -30px;
+    margin-bottom: 2px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--dvb-forest-600), var(--dvb-forest-900));
+    color: #fff;
+    box-shadow: 0 8px 18px rgb(23 61 41 / 32%);
+    transition: transform 0.2s ease;
+  }
+
+  .mnav__cta:active .mnav__cta-ring {
+    transform: scale(0.94);
+  }
+
+  .mnav__cta .mnav__label {
+    font-weight: 700;
+  }
+
+  .mnav__badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: var(--dvb-clay-500);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  /* Keyboard focus: a clean ring on the item itself. */
+  .mnav__link:focus-visible,
+  .mnav__cta:focus-visible {
+    outline: none;
+  }
+
+  .mnav__link:focus-visible .mnav__icon,
+  .mnav__cta:focus-visible .mnav__cta-ring {
+    outline: 2px solid var(--dvb-forest-600);
+    outline-offset: 2px;
+  }
+
+  /* While typing, the on-screen keyboard needs the room. */
+  body:has(:is(input, textarea, select):focus) .mnav {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(140%);
+  }
+
+  /* The bar's own button opens the chat; the floating bubble would duplicate it. */
+  body:has(.mnav) .chatl {
+    display: none;
+  }
+
+  /* Keep the end of the page reachable above the bar. */
+  body:has(.mnav) .sf {
+    padding-bottom: calc(var(--dvb-mobilebar-h) + env(safe-area-inset-bottom));
+  }
+
+  /* Stay pages also stack their booking bar (.mbar) on top of the nav. */
+  body:has(.mnav):has(.mbar) .sf {
+    padding-bottom: calc(var(--dvb-mobilebar-h) + 72px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .mnav,
+  .mnav__icon,
+  .mnav__cta-ring {
+    transition: none;
+  }
+}
+
+@media print {
+  .mnav {
+    display: none !important;
+  }
+}
