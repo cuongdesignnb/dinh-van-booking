@@ -13,7 +13,6 @@ import { maskPersonalData, pageKindFromPath, sanitizeAiReply, unwrapJsonFence } 
 type ResponseFormat = 'json_schema' | 'json_object' | 'text';
 const RESPONSE_FORMATS: readonly ResponseFormat[] = ['json_schema', 'json_object', 'text'];
 const HANDOFF_REASONS = new Set(['booking', 'price_quote', 'human_request', 'complaint', 'unknown', 'other']);
-const AI_TIMEOUT_MS = 25_000;
 const DEBOUNCE_MS = 1_500;
 const HISTORY_LIMIT = 12;
 const KNOWLEDGE_TTL_MS = 5 * 60_000;
@@ -29,6 +28,7 @@ export interface AssistantSettings {
   perConversationLimit: number;
   knowledge: string | null;
   handoffMessage: string | null;
+  timeoutMs: number;
 }
 
 interface AiReply {
@@ -81,6 +81,14 @@ function vnd(value: number): string {
   return `${new Intl.NumberFormat('vi-VN').format(value)}đ`;
 }
 
+/** True when the provider stopped because of the output token limit. */
+function outputCutShort(response: Record<string, unknown>): boolean {
+  const choice = Array.isArray(response.choices) && isRecord(response.choices[0]) ? response.choices[0] : null;
+  if (choice?.finish_reason === 'length') return true;
+  const incomplete = isRecord(response.incomplete_details) ? response.incomplete_details : null;
+  return response.status === 'incomplete' && incomplete?.reason === 'max_output_tokens';
+}
+
 function record(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
@@ -121,6 +129,7 @@ export class ChatAiService {
       perConversationLimit: Math.round(num(raw.perConversationLimit, 40, 0, 1000)),
       knowledge: text(raw.knowledge, 4000),
       handoffMessage: text(raw.handoffMessage, 500),
+      timeoutMs: Math.round(num(raw.timeoutSeconds, 60, 10, 120)) * 1000,
     };
   }
 
@@ -143,8 +152,9 @@ export class ChatAiService {
     try {
       await this.reply(conversationId);
     } catch (error) {
-      this.logger.warn(`Chat AI failed for ${conversationId}: ${error instanceof Error ? error.message : String(error)}`);
-      await this.handoff(conversationId, 'ai_error').catch(() => undefined);
+      const detail = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Chat AI failed for ${conversationId}: ${detail}`);
+      await this.handoff(conversationId, 'ai_error', detail).catch(() => undefined);
     } finally {
       this.running.delete(conversationId);
       if (this.rerun.delete(conversationId)) this.schedule(conversationId);
@@ -200,14 +210,23 @@ export class ChatAiService {
   }
 
   /** Moves the conversation to a person with a friendly note, once. */
-  private async handoff(conversationId: string, reason: string): Promise<void> {
+  private async handoff(conversationId: string, reason: string, detail?: string): Promise<void> {
     const settings = await this.assistantSettings();
     const changed = await this.prisma.$transaction(async (tx) => {
       const current = await tx.chatConversation.findUnique({ where: { id: conversationId }, select: { status: true, visitorPhone: true } });
       if (!current || current.status !== 'ai') return null;
+      // A retry that fails for the same reason should not repeat the notice to the visitor.
+      const previous = await tx.chatMessage.findFirst({
+        where: { conversationId, role: { not: 'visitor' } }, orderBy: { seq: 'desc' }, select: { role: true, meta: true },
+      });
+      const previousMeta = previous?.meta && typeof previous.meta === 'object' && !Array.isArray(previous.meta) ? previous.meta as Record<string, unknown> : {};
+      if (previous?.role === 'system' && previousMeta.handoffReason === reason) {
+        await tx.chatConversation.update({ where: { id: conversationId }, data: { status: 'waiting_human', handoffReason: reason, version: { increment: 1 } } });
+        return tx.chatConversation.findUnique({ where: { id: conversationId }, select: { visitorTokenHash: true } });
+      }
       await appendMessage(tx, {
         conversationId, role: 'system', body: settings.handoffMessage ?? DEFAULT_HANDOFF_MESSAGE,
-        meta: { handoff: true, handoffReason: reason, askContact: !current.visitorPhone },
+        meta: { handoff: true, handoffReason: reason, askContact: !current.visitorPhone, ...(detail ? { error: detail.slice(0, 300) } : {}) },
       }, {
         status: 'waiting_human', handoffReason: reason,
       });
@@ -312,8 +331,14 @@ export class ChatAiService {
           ...(format === 'json_object' ? { response_format: { type: 'json_object' } } : {}),
         };
     const url = endpoint(base, wire === 'responses' ? 'responses' : 'chat/completions');
-    const response = await postProviderJson(url, apiKey, body, AI_TIMEOUT_MS, 512 * 1024);
-    return extractResponseText(response, wire);
+    const response = await postProviderJson(url, apiKey, body, settings.timeoutMs, 512 * 1024);
+    let output = '';
+    try { output = extractResponseText(response, wire); } catch (error) { if (!outputCutShort(response)) throw error; }
+    if (!output.trim() && outputCutShort(response)) {
+      // Reasoning models can spend the whole token budget thinking and return nothing.
+      throw new Error(`Model ${model} dùng hết ${settings.maxOutputTokens} token trước khi trả lời. Tăng "Độ dài tối đa mỗi câu trả lời" hoặc chọn model không suy luận.`);
+    }
+    return output;
   }
 
   /** Validates every field; a malformed answer degrades to plain text, never to raw markup. */

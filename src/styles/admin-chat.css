@@ -356,6 +356,14 @@
 
 .cmsg--system time { margin-left: 4px; color: var(--dvb-ink-400); }
 
+.cmsg__note {
+  display: block;
+  margin-top: 4px;
+  color: var(--dvb-danger);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .chatthread__composer {
   display: grid;
   gap: 8px;

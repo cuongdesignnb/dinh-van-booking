@@ -27,7 +27,7 @@ type Pending = { clientId: string; body: string; failed: boolean };
 
 const DEFAULT_GREETING = 'Xin chào! Mình là trợ lý AI. Bạn cần tìm chỗ nghỉ, combo hay gợi ý lịch trình cho chuyến đi? Nhân viên tư vấn có thể tham gia bất cứ lúc nào.';
 const DEFAULT_QUICK = ['Tìm chỗ nghỉ phù hợp', 'Có combo nào đang mở?', 'Gợi ý lịch trình 2 ngày'];
-const TYPING_TIMEOUT_MS = 40_000;
+const TYPING_TIMEOUT_MS = 90_000;
 
 function errorText(error: unknown): string {
   if (error instanceof ApiError) {

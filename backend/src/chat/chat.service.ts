@@ -123,7 +123,7 @@ export class ChatService {
       id: conversation.id,
       status: conversation.status as ChatStatus,
       hasPhone: !!conversation.visitorPhone,
-      messages: rows.map(toMessageView),
+      messages: rows.map((row) => toMessageView(row)),
     };
   }
 
@@ -164,18 +164,23 @@ export class ChatService {
     const conversationId = conversation.id;
     const phone = extractPhone(body);
     const relatedContentId = path ? await this.contentIdForPath(path) : undefined;
+    // A failed AI turn is not a staff decision: while nobody has picked the chat up, the next message retries the AI.
+    const retryAi = conversation.status === 'waiting_human' && conversation.handoffReason === 'ai_error' && !conversation.assignedUserId;
+    const status = retryAi ? 'ai' : conversation.status;
 
     const message = await this.prisma.$transaction(async (tx) => appendMessage(tx, {
       conversationId, role: 'visitor', body, clientId,
     }, {
       ...(path ? { lastPath: path, pageKind: pageKindFromPath(path) } : {}),
       ...(relatedContentId !== undefined ? { relatedContentId } : {}),
+      ...(retryAi ? { status: 'ai', handoffReason: null } : {}),
     }));
-    this.events.emit({ type: 'message.created', conversationId, status: conversation.status, visitorKey });
+    this.events.emit({ type: 'message.created', conversationId, status, visitorKey });
+    if (retryAi) this.events.emit({ type: 'conversation.updated', conversationId, status, visitorKey });
 
     if (phone && !conversation.visitorPhone) {
       await this.attachContact(conversationId, { phone, name: null }, 'chat_message');
-    } else if (conversation.status === 'ai') {
+    } else if (status === 'ai') {
       this.ai.schedule(conversationId);
     }
     return { message: toMessageView(message), conversation: (await this.visitorView(token))! };
@@ -408,7 +413,7 @@ export class ChatService {
       aiReplyCount: row.aiReplyCount,
       closedAt: row.closedAt?.toISOString() ?? null,
       version: row.version,
-      messages: messages.map(toMessageView),
+      messages: messages.map((row) => toMessageView(row, true)),
     };
   }
 
