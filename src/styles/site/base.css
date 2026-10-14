@@ -51,12 +51,18 @@ html {
   box-shadow: none;
 }
 
-/* Text fields match :focus-visible on every mouse click, which stacked this
-   outline on top of their own focus style. Keep a single soft halo instead;
-   fields with their own focus border/ring still override it. */
+/* Text fields match :focus-visible on every mouse click, so a ring there turns
+   every click into a heavy "active box". Clicked or tapped fields show nothing
+   but the caret. Keyboard users (FocusSource sets data-focus-source on Tab)
+   get a thin border cue instead. Zero specificity: components can still style. */
+:where(input:not([type='checkbox'], [type='radio'], [type='range'], [type='button'], [type='submit'], [type='reset']), select, textarea):focus,
 :where(input:not([type='checkbox'], [type='radio'], [type='range'], [type='button'], [type='submit'], [type='reset']), select, textarea):focus-visible {
   outline: none;
-  box-shadow: var(--dvb-shadow-focus);
+  box-shadow: none;
+}
+
+:where(html[data-focus-source='keyboard']) :where(input:not([type='checkbox'], [type='radio'], [type='range'], [type='button'], [type='submit'], [type='reset']), select, textarea):focus {
+  border-color: var(--dvb-brand-600);
 }
 
 /* Programmatic focus targets (headings, skip-link targets) are not controls. */

@@ -199,8 +199,13 @@
 .ui-select:focus,
 .ui-textarea:focus {
   outline: none;
+  box-shadow: none;
+}
+
+html[data-focus-source='keyboard'] .ui-input:focus,
+html[data-focus-source='keyboard'] .ui-select:focus,
+html[data-focus-source='keyboard'] .ui-textarea:focus {
   border-color: var(--dvb-forest-600);
-  box-shadow: var(--dvb-shadow-focus);
 }
 
 .ui-input[aria-invalid='true'],
@@ -548,8 +553,11 @@
 
 .ui-search input:focus {
   outline: none;
+  box-shadow: none;
+}
+
+html[data-focus-source='keyboard'] .ui-search input:focus {
   border-color: var(--dvb-forest-600);
-  box-shadow: var(--dvb-shadow-focus);
 }
 
 /* -------------------------------------------------------- chips and tabs */

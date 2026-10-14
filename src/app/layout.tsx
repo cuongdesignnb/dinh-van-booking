@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { getPublicSite } from '@/lib/api/public';
 import { metadataForSite } from '@/lib/seo/metadata';
 import { richDocumentToText } from '@/lib/content/rich-document';
+import { FocusSource } from '@/components/ui/FocusSource';
 import '@/styles/design-system/tokens.css';
 import './globals.css';
 import '@/styles/design-system/components.css';
@@ -39,7 +40,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        {children}
+        <FocusSource />
+      </body>
     </html>
   );
 }

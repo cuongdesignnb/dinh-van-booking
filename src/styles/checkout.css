@@ -225,8 +225,11 @@
 
 .co-input:focus {
   outline: none;
+  box-shadow: none;
+}
+
+html[data-focus-source='keyboard'] .co-input:focus {
   border-color: var(--dvb-green-700);
-  box-shadow: 0 0 0 3px rgb(46 109 59 / 12%);
 }
 
 .co-input[aria-invalid='true'],

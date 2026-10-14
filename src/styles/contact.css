@@ -366,10 +366,9 @@
     box-shadow 0.2s;
 }
 
-.cfield__box:focus-within,
-.cfield__btn[aria-expanded='true'] {
+html[data-focus-source='keyboard'] .cfield__box:focus-within,
+html[data-focus-source='keyboard'] .cfield__btn:focus-visible {
   border-color: var(--dvb-green-700);
-  box-shadow: 0 0 0 3px rgb(46 109 59 / 12%);
 }
 
 .cfield__box[data-invalid] {
