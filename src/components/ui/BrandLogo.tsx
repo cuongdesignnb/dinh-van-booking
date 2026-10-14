@@ -21,9 +21,9 @@ export function BrandLogo({ variant = 'header' }: { variant?: 'header' | 'footer
   const site = useSiteData();
   const logo = site.publicSite.media?.logo;
   if (!logo?.src && !site.name && !site.tagline) return null;
-  // An uploaded logo already carries the wordmark, so the header and drawer show
-  // it alone; the dark footer keeps the text beside it for contrast.
-  const imageOnly = !!logo?.src && variant !== 'footer';
+  // An uploaded logo already carries the wordmark, so it is shown alone. On the
+  // dark footer it sits on a light plate (CSS) so the green wordmark stays legible.
+  const imageOnly = !!logo?.src;
   return (
     <span className={`brand brand--${variant}${imageOnly ? ' brand--image-only' : ''}`}>
       {logo?.src
