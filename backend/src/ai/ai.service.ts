@@ -359,8 +359,9 @@ export class AiService {
             actorId: userId,
             action: 'ai.settings.update',
             entityType: 'setting',
-            entityId: SETTINGS_KEY,
+            // audit_logs.entity_id is a UUID column; setting keys travel in the diff, as in SettingsService.
             diff: {
+              key: SETTINGS_KEY,
               from: this.safeAuditState(current),
               to: this.safeAuditState(next),
             } as Prisma.InputJsonObject,
