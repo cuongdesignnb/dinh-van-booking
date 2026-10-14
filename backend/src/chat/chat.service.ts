@@ -437,13 +437,15 @@ export class ChatService {
     const changed = await this.prisma.$transaction(async (tx) => {
       const row = await this.lockable(tx, id);
       if (row.status === 'ai') return null;
-      await appendMessage(tx, { conversationId: id, role: 'system', body: 'Trợ lý AI tiếp tục hỗ trợ bạn. Nhân viên vẫn theo dõi và có thể tham gia khi cần.' }, {
-        status: 'ai', handoffReason: null, assignedUser: { disconnect: true }, closedAt: null,
+      // Internal hand-back: the visitor simply keeps chatting, so no notice is posted to them.
+      await tx.chatConversation.update({
+        where: { id },
+        data: { status: 'ai', handoffReason: null, assignedUser: { disconnect: true }, closedAt: null, version: { increment: 1 } },
       });
       await this.audit(tx, user.id, 'chat.release', id, { from: row.status });
       return row.visitorTokenHash;
     });
-    if (changed) this.emitBoth(id, 'ai', changed);
+    if (changed) this.events.emit({ type: 'conversation.updated', conversationId: id, status: 'ai', visitorKey: changed });
     return this.detail(id);
   }
 

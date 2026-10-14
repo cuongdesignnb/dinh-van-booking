@@ -641,9 +641,9 @@
   border-color: #c9d6bf;
 }
 
-.bfield[aria-expanded='true'] {
+/* An open picker is shown by the popover itself; the field only gets a cue for keyboard focus. */
+html[data-focus-source='keyboard'] .bfield:focus-visible {
   border-color: var(--dvb-green-700);
-  box-shadow: 0 0 0 3px rgb(46 109 59 / 12%);
 }
 
 .bfield[data-invalid] {

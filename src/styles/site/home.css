@@ -236,9 +236,9 @@
   background: #fbfcf9;
 }
 
-.hs__field:focus-within {
+/* Focus cue for keyboard navigation only; a click or tap leaves the field as is. */
+html[data-focus-source='keyboard'] .hs__field:focus-within {
   border-color: var(--dvb-brand-600);
-  box-shadow: 0 0 0 3px rgb(42 98 73 / 16%);
 }
 
 .hs__icon {

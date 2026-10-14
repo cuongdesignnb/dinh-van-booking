@@ -21,7 +21,7 @@
   transform: translateY(-3px);
 }
 
-.sc:focus-within {
+html[data-focus-source='keyboard'] .sc:focus-within {
   box-shadow: var(--dvb-card-shadow-hover), 0 0 0 2px var(--dvb-brand-600);
 }
 
