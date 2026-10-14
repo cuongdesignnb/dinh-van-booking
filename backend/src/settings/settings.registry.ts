@@ -298,6 +298,7 @@ export const SETTING_DEFINITIONS: SettingDefinition[] = [
       responseFormat: 'json_schema',
       temperature: 0.4,
       maxOutputTokens: 600,
+      timeoutSeconds: 60,
       dailyReplyLimit: 500,
       perConversationLimit: 40,
       knowledge: null,

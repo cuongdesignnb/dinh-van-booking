@@ -100,6 +100,7 @@ const FIELD_META: Record<string, FieldMeta> = {
   ], help: 'Hệ thống tự lùi về định dạng đơn giản hơn nếu cổng API từ chối.' },
   'chat.assistant.temperature': { label: 'Độ sáng tạo', kind: 'number', min: 0, max: 1.5, step: 0.1, help: '0.2–0.5 cho câu trả lời ổn định, bám dữ liệu.' },
   'chat.assistant.maxOutputTokens': { label: 'Độ dài tối đa mỗi câu trả lời', kind: 'number', min: 128, max: 4000, step: 50, suffix: 'token' },
+  'chat.assistant.timeoutSeconds': { label: 'Thời gian chờ AI tối đa', kind: 'number', min: 10, max: 120, step: 5, suffix: 'giây', help: 'Quá thời gian này chat chuyển cho nhân viên; tin nhắn tiếp theo của khách sẽ cho AI thử lại.' },
   'chat.assistant.dailyReplyLimit': { label: 'Số câu trả lời AI tối đa mỗi ngày', kind: 'number', min: 0, step: 10, suffix: 'câu', help: 'Giới hạn chi phí. Hết lượt thì chat chuyển cho nhân viên.' },
   'chat.assistant.perConversationLimit': { label: 'Số câu trả lời AI tối đa mỗi cuộc chat', kind: 'number', min: 0, step: 1, suffix: 'câu' },
   'chat.assistant.knowledge': { label: 'Kiến thức bổ sung cho AI', kind: 'textarea', maxLength: 4000, help: 'Giờ làm việc, cách di chuyển, lưu ý mùa vụ… Chỉ ghi thông tin đã kiểm chứng; AI dùng đúng nội dung này.' },

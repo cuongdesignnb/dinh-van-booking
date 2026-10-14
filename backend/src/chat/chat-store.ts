@@ -15,6 +15,8 @@ export interface ChatMessageView {
   authorName: string | null;
   links: ChatLink[];
   askContact: boolean;
+  /** Staff-only technical note (e.g. why the AI handed over); never sent to visitors. */
+  internalNote?: string | null;
   createdAt: string;
 }
 
@@ -29,7 +31,7 @@ function metaRecord(meta: unknown): Record<string, unknown> {
   return meta && typeof meta === 'object' && !Array.isArray(meta) ? meta as Record<string, unknown> : {};
 }
 
-export function toMessageView(row: MessageRow): ChatMessageView {
+export function toMessageView(row: MessageRow, internal = false): ChatMessageView {
   const meta = metaRecord(row.meta);
   const links = Array.isArray(meta.links)
     ? meta.links.filter((link): link is ChatLink => !!link && typeof link === 'object' && typeof (link as ChatLink).path === 'string' && typeof (link as ChatLink).title === 'string')
@@ -42,6 +44,7 @@ export function toMessageView(row: MessageRow): ChatMessageView {
     authorName: row.role === 'staff' ? row.author?.fullName ?? null : null,
     links,
     askContact: meta.askContact === true,
+    ...(internal ? { internalNote: typeof meta.error === 'string' ? meta.error : null } : {}),
     createdAt: row.createdAt.toISOString(),
   };
 }

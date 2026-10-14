@@ -54,6 +54,7 @@ interface ChatMessage {
   authorName: string | null;
   links: Array<{ path: string; title: string }>;
   askContact: boolean;
+  internalNote?: string | null;
   createdAt: string;
 }
 
@@ -522,7 +523,12 @@ export function ChatInbox() {
               <div className="chatthread">
                 <div className="chatthread__messages" ref={threadRef} aria-live="polite">
                   {detail.messages.map((message) => message.role === 'system'
-                    ? <p key={message.id} className="cmsg cmsg--system">{message.body} <time dateTime={message.createdAt}>{clock(message.createdAt)}</time></p>
+                    ? (
+                      <p key={message.id} className="cmsg cmsg--system">
+                        {message.body} <time dateTime={message.createdAt}>{clock(message.createdAt)}</time>
+                        {message.internalNote && <span className="cmsg__note">Lý do kỹ thuật (chỉ nhân viên thấy): {message.internalNote}</span>}
+                      </p>
+                    )
                     : (
                       <div key={message.id} className={`cmsg cmsg--${message.role}`}>
                         <span className="cmsg__who">
