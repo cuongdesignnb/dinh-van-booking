@@ -1,10 +1,13 @@
 import {
-  CalendarCheck,
+  ArrowRight,
   Clock3,
   Coffee,
+  ExternalLink,
+  Info,
   Leaf,
   MapPin,
   Mountain,
+  ScrollText,
   Sprout,
   Star,
 } from 'lucide-react';
@@ -14,13 +17,16 @@ import { Suspense } from 'react';
 import { PageShell } from '@/components/layout/PageShell';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
-import { BookingCard, MobileBookingBar } from '@/components/stay-detail/BookingCard';
+import { BookingCard, MobileBookingBar, ROOMS_ANCHOR } from '@/components/stay-detail/BookingCard';
 import { BookingProvider } from '@/components/stay-detail/BookingContext';
-import { Amenities, HostCard, ReviewCards, ShareSave, SupportCard } from '@/components/stay-detail/DetailWidgets';
-import { HouseRules, NotesPaper } from '@/components/stay-detail/InfoBlocks';
+import { HostCard, ReviewCards, ShareSave } from '@/components/stay-detail/DetailWidgets';
 import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
 import { RoomTypes } from '@/components/stay-detail/RoomTypes';
+import { AdvisorBand, SectionTabs } from '@/components/stay-detail/StayPageParts';
+import { amenityIcon, highlightIcon } from '@/components/stay-detail/amenityIcons';
 import { getPublicReviews, getPublicSite, getPublicStay } from '@/lib/api/public';
+import { STAY_TYPES } from '@/lib/catalog/constants';
+import { stayContactHref } from '@/lib/contact/stay-contact';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { isSubstantivePublicContent } from '@/lib/seo/content';
 import { buildPageMetadata } from '@/lib/seo/metadata';
@@ -30,6 +36,7 @@ import { formatRating } from '@/lib/format';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import '@/styles/stay-detail.css';
+import '@/styles/stay-page.css';
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -52,6 +59,7 @@ export async function generateMetadata({ params, searchParams }: Params): Promis
 }
 
 const HIGHLIGHT_ICONS = [Mountain, Sprout, Coffee, Leaf];
+const AREA_LABELS: Record<string, string> = { 'cuc-phuong': 'Cúc Phương', 'trang-an': 'Tràng An' };
 
 export default async function StayDetailPage({ params, searchParams }: Params) {
   // Reading the query makes this route render per request, so the selection
@@ -81,6 +89,35 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
     ? 'Có'
     : stay.roomTypes.some((room) => room.breakfastIncluded) ? 'Tùy theo hạng phòng' : 'Không';
 
+  const typeLabel = STAY_TYPES.find((type) => type.id === stay.type)?.label;
+  const kicker = [typeLabel, AREA_LABELS[stay.area]].filter(Boolean).join(' · ');
+  const amenityItems = stay.amenities
+    .map((code) => ({ code, label: stay.amenityLabels?.[code] ?? code }))
+    .filter((item) => item.label);
+  // Owner highlights first; otherwise the first amenities give the overview its icon row.
+  const overviewIcons = stay.highlights.length
+    ? stay.highlights.slice(0, 4).map((label, i) => ({ key: label, label, Icon: highlightIcon(label) ?? HIGHLIGHT_ICONS[i % HIGHLIGHT_ICONS.length] }))
+    : amenityItems.slice(0, 4).map((item) => ({ key: item.code, label: item.label, Icon: amenityIcon(item.code) }));
+  // Times are system defaults until the Owner names them, so they only show with a label.
+  const timeLines = [
+    checkInLabel && stay.checkInTime ? `${checkInLabel}: từ ${stay.checkInTime}` : '',
+    checkOutLabel && stay.checkOutTime ? `${checkOutLabel}: trước ${stay.checkOutTime}` : '',
+  ].filter(Boolean);
+  const infoCards = [
+    timeLines.length ? { key: 'times', Icon: Clock3, title: [checkInLabel, checkOutLabel].filter(Boolean).join(' & '), lines: timeLines } : null,
+    breakfastLabel ? { key: 'breakfast', Icon: Coffee, title: breakfastLabel, lines: [breakfastValue] } : null,
+    stay.notes?.length ? { key: 'notes', Icon: Info, title: publicText(detail.notesTitle) || 'Lưu ý', lines: stay.notes } : null,
+    stay.houseRules?.length ? { key: 'rules', Icon: ScrollText, title: publicText(detail.houseRulesTitle) || 'Nội quy', lines: stay.houseRules.map((rule) => rule.text) } : null,
+  ].filter((card): card is NonNullable<typeof card> => !!card);
+  const mapQuery = encodeURIComponent(`${stay.name}, ${stay.address}`);
+  const tabs = [
+    { id: 'tong-quan', label: 'Tổng quan' },
+    stay.roomTypes.length ? { id: ROOMS_ANCHOR, label: 'Hạng phòng' } : null,
+    amenityItems.length ? { id: 'tien-nghi', label: 'Tiện nghi' } : null,
+    infoCards.length ? { id: 'chinh-sach', label: 'Chính sách' } : null,
+    stay.address ? { id: 'vi-tri', label: 'Vị trí' } : null,
+  ].filter((tab): tab is { id: string; label: string } => !!tab);
+
   const content = (
     <>
       <div className="detail-shell detail-crumbs">
@@ -95,87 +132,136 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
         />
       </div>
 
-      <div className="detail-shell stay-detail">
-        <header className="detail-head">
-          <div className="detail-head__main">
-            {stay.badge && (
-              <p className="detail-head__badge">
-                <span className="detail-head__pill">
-                  <Leaf size={12} aria-hidden="true" fill="currentColor" /> {stay.badge}
-                </span>
-              </p>
-            )}
-            <h1 className="detail-head__title">{stay.name}</h1>
-            <p className="detail-head__meta">
+      <div className="detail-shell stp">
+        <header className="detail-head stp-head">
+          <div className="stp-head__main">
+            {kicker && <p className="stp-kicker">{kicker}</p>}
+            <h1 className="stp-title">{stay.name}</h1>
+            <p className="stp-head__meta">
               <span>
-                <MapPin size={16} aria-hidden="true" /> {stay.address}
+                <MapPin size={16} aria-hidden="true" /> {stay.location || stay.address}
               </span>
-              {stay.reviewCount > 0 && <span className="detail-head__rating">
-                <Star size={17} className="star" aria-hidden="true" />
-                <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
-              </span>}
+              {stay.address && (
+                <a href="#vi-tri" className="stp-head__map">
+                  Xem bản đồ <ArrowRight size={14} aria-hidden="true" />
+                </a>
+              )}
+              {stay.reviewCount > 0 && (
+                <span className="stp-head__rating">
+                  <Star size={16} className="star" aria-hidden="true" />
+                  <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
+                </span>
+              )}
             </p>
           </div>
           <ShareSave id={stay.id} name={stay.name} />
         </header>
 
-        <div className="detail-top__gallery">
+        <div className="detail-top__gallery stp-gallery">
           <PropertyGallery images={stay.gallery} note={stay.galleryNote} name={stay.name} />
         </div>
 
-        <div className="sd-body">
-          <aside className="detail-top__book" aria-label="Đặt phòng">
+        <SectionTabs items={tabs} />
+
+        <div className="stp-grid">
+          <div className="detail-top__info stp-main">
+            <section className="stp-section" id="tong-quan" aria-labelledby="intro-t">
+              <h2 className="stp-h2" id="intro-t">{introTitle || 'Tổng quan'}</h2>
+              {stay.descriptionDocument
+                ? <RichContentRenderer document={stay.descriptionDocument} className="stp-lead stp-intro" />
+                : <p className="stp-lead stp-intro">{stay.description}</p>}
+              {richDocumentHasContent(detail.introQuote) && (
+                <figure className="intro__quote">
+                  <blockquote><RichContentRenderer document={detail.introQuote as RichDocument} /></blockquote>
+                  {quoteAuthor && <figcaption>{quoteAuthor}</figcaption>}
+                </figure>
+              )}
+              {overviewIcons.length > 0 && (
+                <ul className="stp-icons">
+                  {overviewIcons.map(({ key, label, Icon }) => (
+                    <li key={key}>
+                      <Icon size={30} strokeWidth={1.5} aria-hidden="true" />
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {stay.roomTypes.length > 0 && (
+              <RoomTypes title={publicText(detail.roomsTitle)} subtitle="Chọn ngày lưu trú để xem thông tin phòng phù hợp cho chuyến đi của bạn." />
+            )}
+          </div>
+
+          <aside className="detail-top__book stp-aside" aria-label="Đặt phòng">
             <BookingCard />
             {stay.host && <div className="detail-top__host"><HostCard host={stay.host} /></div>}
           </aside>
-
-          <div className="detail-top__info sd-main">
-            {(stay.tagline || stay.highlights.length > 0) && <div className="sd-summary">
-              {stay.tagline && <p className="detail-head__tagline">“{stay.tagline}”</p>}
-              {stay.highlights.length > 0 && <ul className="detail-head__hl">
-                {stay.highlights.map((h, i) => {
-                  const Icon = HIGHLIGHT_ICONS[i % HIGHLIGHT_ICONS.length];
-                  return (
-                    <li key={h}>
-                      <span aria-hidden="true">
-                        <Icon size={16} />
-                      </span>
-                      {h}
-                    </li>
-                  );
-                })}
-              </ul>}
-            </div>}
-
-            <section className="intro" aria-labelledby="intro-t">
-              <h2 className="dsec-title" id="intro-t">{introTitle || 'Giới thiệu'}</h2>
-              {stay.descriptionDocument ? <RichContentRenderer document={stay.descriptionDocument} className="intro__text" /> : <p className="intro__text">{stay.description}</p>}
-              {richDocumentHasContent(detail.introQuote) && <figure className="intro__quote"><blockquote><RichContentRenderer document={detail.introQuote as RichDocument} /></blockquote>{quoteAuthor && <figcaption>{quoteAuthor}</figcaption>}</figure>}
-            </section>
-
-            <Amenities amenities={stay.amenities} labels={stay.amenityLabels} title={publicText(detail.amenitiesTitle)} />
-
-            <RoomTypes title={publicText(detail.roomsTitle)} />
-
-            <div className="sd-info">
-              {(factsTitle || checkInLabel || checkOutLabel || breakfastLabel) && <section className="facts" aria-labelledby={factsTitle ? 'facts-t' : undefined} aria-label={factsTitle ? undefined : 'Thông tin lưu trú'}>
-                {factsTitle && <h2 className="dsec-title" id="facts-t">{factsTitle}</h2>}
-                <ul className="facts__list">
-                  {checkInLabel && stay.checkInTime && <li><span className="facts__ic" aria-hidden="true"><Clock3 size={18} /></span><span><b>{checkInLabel}:</b> {stay.checkInTime}</span></li>}
-                  {checkOutLabel && stay.checkOutTime && <li><span className="facts__ic" aria-hidden="true"><CalendarCheck size={17} /></span><span><b>{checkOutLabel}:</b> {stay.checkOutTime}</span></li>}
-                  {breakfastLabel && <li><span className="facts__ic" aria-hidden="true"><Coffee size={17} /></span><span><b>{breakfastLabel}:</b> {breakfastValue}</span></li>}
-                </ul>
-              </section>}
-              <NotesPaper notes={stay.notes ?? []} title={publicText(detail.notesTitle)} thanks={publicText(detail.notesThanks)} />
-              <HouseRules rules={stay.houseRules ?? []} title={publicText(detail.houseRulesTitle)} />
-            </div>
-
-            <ReviewCards reviews={reviews} total={stay.reviewCount} title={publicText(detail.reviewsTitle)} />
-          </div>
         </div>
 
-        <div className="sd-support">
-          <SupportCard />
+        {amenityItems.length > 0 && (
+          <section className="stp-section stp-panel" id="tien-nghi" aria-labelledby="amen-t">
+            <h2 className="stp-h2" id="amen-t">{publicText(detail.amenitiesTitle) || 'Tiện nghi & trải nghiệm'}</h2>
+            <ul className="stp-amen">
+              {amenityItems.map((item) => {
+                const Icon = amenityIcon(item.code);
+                return (
+                  <li key={item.code}>
+                    <Icon size={30} strokeWidth={1.5} aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+        {infoCards.length > 0 && (
+          <section className="stp-section" id="chinh-sach" aria-labelledby="facts-t">
+            <h2 className="stp-h2" id="facts-t">{factsTitle || 'Thông tin cần biết'}</h2>
+            <ul className="stp-info">
+              {infoCards.map(({ key, Icon, title, lines }) => (
+                <li key={key} className="stp-info__card">
+                  <span className="stp-info__ic" aria-hidden="true"><Icon size={26} strokeWidth={1.6} /></span>
+                  <div>
+                    <h3 className="stp-info__title">{title}</h3>
+                    {lines.length === 1
+                      ? <p className="stp-info__text">{lines[0]}</p>
+                      : <ul className="stp-info__list">{lines.map((line) => <li key={line}>{line}</li>)}</ul>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {stay.reviewCount > 0 && (
+          <div className="stp-section">
+            <ReviewCards reviews={reviews} total={stay.reviewCount} title={publicText(detail.reviewsTitle)} />
+          </div>
+        )}
+
+        {stay.address && (
+          <section className="stp-section" id="vi-tri" aria-labelledby="map-t">
+            <h2 className="stp-h2" id="map-t">Vị trí</h2>
+            <p className="stp-lead stp-address"><MapPin size={17} aria-hidden="true" /> {stay.address}</p>
+            {stay.nearby.length > 0 && <ul className="stp-nearby">{stay.nearby.map((place) => <li key={place}>{place}</li>)}</ul>}
+            <div className="stp-map">
+              <iframe
+                title={`Bản đồ khu vực ${stay.name}`}
+                src={`https://maps.google.com/maps?q=${mapQuery}&z=13&output=embed`}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              <a className="stp-map__open" href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`} target="_blank" rel="noopener noreferrer">
+                Mở Google Maps <ExternalLink size={15} aria-hidden="true" />
+              </a>
+            </div>
+          </section>
+        )}
+
+        <div className="stp-section stp-band-wrap">
+          <AdvisorBand contactHref={stayContactHref(stay.slug)} />
         </div>
       </div>
       <MobileBookingBar />

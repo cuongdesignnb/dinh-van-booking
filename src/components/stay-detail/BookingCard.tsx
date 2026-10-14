@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, CalendarDays, ChevronDown, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CalendarDays, ChevronDown, MessageCircle, ShieldCheck, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
@@ -16,6 +16,7 @@ import { nights } from '@/lib/selection';
 import { publicSetting, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { useBooking } from './BookingContext';
+import { AdvisorMini, useAdvisorAskLabel } from './StayPageParts';
 
 export const ROOMS_ANCHOR = 'cac-loai-phong';
 
@@ -46,40 +47,31 @@ export function BookingCard() {
 
   const errId = `${uid}-err`;
   const dateInvalid = issue?.kind === 'dates';
-  if ((room ? room.pricePerNight : fromPrice(stay)) <= 0) {
-    return <section className="bcard bcard--contact" id="dat-phong" aria-labelledby={`${uid}-t`}>
-      <h2 id={`${uid}-t`}>Liên hệ để nhận giá</h2>
-      <p>{room ? `Hạng phòng ${room.name}` : stay.name} chưa có giá đặt trực tuyến. Gửi yêu cầu để được tư vấn giá và tình trạng phòng.</p>
-      <Link className="btn btn--primary bcard__cta" href={stayContactHref(stay.slug, selection, room?.id)}>Liên hệ tư vấn <ArrowRight size={17} aria-hidden="true" /></Link>
-    </section>;
-  }
+  const bookable = fromPrice(stay) > 0;
+  const askLabel = useAdvisorAskLabel();
+  const contactHref = stayContactHref(stay.slug, selection, room?.id);
+  const guests = `${selection.adults} người lớn${selection.children ? ` · ${selection.children} trẻ em` : ''} · ${selection.rooms} phòng`;
   return (
-    <section className="bcard" id="dat-phong" aria-labelledby={`${uid}-t`}>
-      <h2 className="sr-only" id={`${uid}-t`}>
-        Đặt phòng {stay.name}
+    <section className="bcard stp-book" id="dat-phong" aria-labelledby={`${uid}-t`}>
+      <h2 className="stp-book__title" id={`${uid}-t`}>
+        Tìm phòng cho chuyến đi
       </h2>
-      <p className="bcard__price" aria-live="polite">
-        {room ? (
-          <>
-            <strong>{formatVnd(room.pricePerNight)}</strong> <span>/ đêm</span>
-            <em className="bcard__room">{room.name}</em>
-          </>
-        ) : (
-          <>
-            Từ <strong>{formatVnd(fromPrice(stay))}</strong> <span>/ đêm</span>
-          </>
-        )}
-      </p>
-      <p className="bcard__badge">
-        <ShieldCheck size={15} aria-hidden="true" /> Giá theo hạng phòng đã xuất bản
-      </p>
-      {!room && hasContactOnlyRooms(stay) && <p className="bcard__contact-note">Một số hạng khác cần liên hệ để nhận giá.</p>}
+      {room ? (
+        <p className="stp-book__room" aria-live="polite">
+          Đã chọn <b>{room.name}</b>
+          {room.pricePerNight > 0 ? <> · {formatVnd(room.pricePerNight)} / đêm</> : <> · Liên hệ báo giá</>}
+        </p>
+      ) : bookable && (
+        <p className="stp-book__room" aria-live="polite">
+          Từ <b>{formatVnd(fromPrice(stay))}</b> / đêm
+        </p>
+      )}
 
       <div className="bcard__dates">
         {(
           [
-            ['in', inRef, 'Ngày nhận phòng', selection.checkIn],
-            ['out', outRef, 'Ngày trả phòng', selection.checkOut],
+            ['in', inRef, 'Nhận phòng', selection.checkIn],
+            ['out', outRef, 'Trả phòng', selection.checkOut],
           ] as const
         ).map(([key, ref, label, value]) => (
           <button
@@ -104,16 +96,14 @@ export function BookingCard() {
       <button
         ref={guestRef}
         type="button"
-        className="bfield bfield--wide"
+        className="bfield bfield--wide stp-book__guests"
         aria-haspopup="dialog"
         aria-expanded={open === 'guests'}
+        aria-label={`Số khách: ${guests}`}
         onClick={() => setOpen(open === 'guests' ? null : 'guests')}
       >
-        <span className="bfield__label">Số khách</span>
-        <span className="bfield__value">
-          {selection.adults + selection.children} khách
-          {selection.rooms > 1 ? ` · ${selection.rooms} phòng` : ''}
-        </span>
+        <UserRound className="stp-book__guest-ic" size={18} aria-hidden="true" />
+        <span className="bfield__value">{guests}</span>
         <ChevronDown className="bfield__icon" size={18} aria-hidden="true" />
       </button>
 
@@ -122,18 +112,29 @@ export function BookingCard() {
           {issue.message}
         </p>
       )}
-      {room && n > 0 && !issue && (
+      {room && room.pricePerNight > 0 && n > 0 && !issue && (
         <p className="bcard__est">
           {formatVnd(room.pricePerNight)} × {n} đêm × {selection.rooms} phòng ≈{' '}
           <b>{formatVnd(room.pricePerNight * n * selection.rooms)}</b> (tham khảo)
         </p>
       )}
+      {!room && bookable && hasContactOnlyRooms(stay) && <p className="bcard__contact-note">Một số hạng khác cần liên hệ để nhận giá.</p>}
 
-      <button type="button" className="btn btn--primary bcard__cta btn-shine" data-magnetic onClick={go}>
-        Đặt phòng ngay <ArrowRight size={17} aria-hidden="true" />
-      </button>
+      {bookable
+        ? <button type="button" className="btn btn--primary bcard__cta" onClick={go}>
+            Kiểm tra phòng trống <ArrowRight size={17} aria-hidden="true" />
+          </button>
+        : <Link className="btn btn--primary bcard__cta" href={contactHref}>
+            Gửi yêu cầu nhận giá <ArrowRight size={17} aria-hidden="true" />
+          </Link>}
+      <Link className="btn stp-book__ask" href={contactHref}>
+        <MessageCircle size={18} aria-hidden="true" /> {askLabel}
+      </Link>
+      <p className="stp-book__note">Giá và phòng được xác nhận trước khi đặt.</p>
 
       {richDocumentHasContent(bookingNote) && <div className="bcard__info"><ShieldCheck size={24} className="bcard__info-ic" aria-hidden="true" /><div><RichContentRenderer document={bookingNote as RichDocument} /></div></div>}
+
+      <AdvisorMini />
 
       <Popover
         id={`${uid}-dates`}

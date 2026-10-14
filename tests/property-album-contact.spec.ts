@@ -320,15 +320,15 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     await expect(card).toBeVisible();
     await expect(card).toContainText('250.000đ');
     await publicPage.goto(`/phong-nghi/${property.slug}`);
-    await expect(publicPage.locator('.detail-head__title')).toHaveText(title);
-    await expect(publicPage.locator('.rtype')).toHaveCount(2);
-    await expect(publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ B' })).toContainText('Bungalow');
-    await expect(publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ B' })).toContainText('2 phòng ngủ');
-    await expect(publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ B' })).toContainText('1 phòng tắm');
-    await expect(publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ B' })).toContainText('Wi-Fi trong phòng');
-    await expect(publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ B' })).toContainText('Ban công');
-    await expect(publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ A' })).not.toContainText('Ban công');
-    expect(await publicPage.locator('.rtype').first().evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+    await expect(publicPage.locator('.stp-title')).toHaveText(title);
+    await expect(publicPage.locator('.stp-room')).toHaveCount(2);
+    await expect(publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ B' })).toContainText('Bungalow');
+    await expect(publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ B' })).toContainText('2 phòng ngủ');
+    await expect(publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ B' })).toContainText('1 phòng tắm');
+    await expect(publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ B' })).toContainText('Wi-Fi trong phòng');
+    await expect(publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ B' })).toContainText('Ban công');
+    await expect(publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ A' })).not.toContainText('Ban công');
+    expect(await publicPage.locator('.stp-room').first().evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
     for (const width of [390, 768, 1024, 1440, 1920]) {
       await publicPage.setViewportSize({ width, height: 900 });
       await publicPage.evaluate(() => document.fonts.ready);
@@ -388,8 +388,8 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     const arrival = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
     const departure = new Date(Date.now() + 9 * 86_400_000).toISOString().slice(0, 10);
     await publicPage.goto(`/phong-nghi/${property.slug}?checkIn=${arrival}&checkOut=${departure}&adults=2&children=0&rooms=2`);
-    const contactRoom = publicPage.locator('.rtype', { hasText: 'Hạng phòng liên hệ A' });
-    await expect(contactRoom).toContainText('Liên hệ để nhận giá');
+    const contactRoom = publicPage.locator('.stp-room', { hasText: 'Hạng phòng liên hệ A' });
+    await expect(contactRoom).toContainText('Liên hệ báo giá');
     await expect(contactRoom.getByRole('link', { name: 'Liên hệ' })).toHaveAttribute('href', new RegExp(`^/lien-he\\?.*intent=stay.*item=${property.slug}.*room=${property.roomTypes[0].id}$`));
     await expect(contactRoom.getByRole('button', { name: /Chọn/ })).toHaveCount(0);
     await contactRoom.getByRole('link', { name: 'Liên hệ' }).click();
@@ -453,7 +453,7 @@ test('admin room types and reusable albums publish gallery; 0đ is contact-only'
     const draftRoom = (withDraft.body as Property).roomTypes.find((room) => room.name === 'Hạng phòng chờ xác minh');
     expect(draftRoom).toMatchObject({ status: 'inactive', capacityVerified: false, unitCount: 0, rate: null });
     await publicPage.reload();
-    await expect(publicPage.locator('.rtype')).toHaveCount(2);
+    await expect(publicPage.locator('.stp-room')).toHaveCount(2);
 
     const body = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Điểm đến kiểm thử album ảnh của hệ thống. Nội dung chỉ phục vụ xác nhận ảnh bìa và ảnh album hiển thị đúng trên giao diện công khai rồi được xoá sau khi chạy xong.' }] }] };
     const destination = await browserApi(page, '/content', 'POST', {
