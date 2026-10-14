@@ -10,6 +10,8 @@ import { Modal } from '@/components/ui/Modal';
 import { AMENITIES, STAY_TYPES } from '@/lib/catalog/constants';
 import type { Stay } from '@/data/stays';
 import { parseSelection, selectionQuery, writeSelection, type Selection } from '@/lib/selection';
+import { ChatCta } from '@/components/chat/ChatCta';
+import { chatDraft } from '@/lib/chat/draft';
 import {
   activeFilterCount,
   applyFilters,
@@ -122,7 +124,7 @@ export function StaysExplorer({ stays, advisor, notFound, reviews, faq, mapImage
         {richDocumentHasContent(emptyDescription) && <div><RichContentRenderer document={emptyDescription as RichDocument} /></div>}
         <div className="state-box__actions">
           {hasCatalog && activeFilterCount(filters) > 0 && <button type="button" className="btn btn--light" onClick={reset}><RotateCcw size={15} aria-hidden="true" /> Đặt lại bộ lọc</button>}
-          {emptyCta && <a className="btn btn--primary" href={`/lien-he?intent=stay&${query}`}>{emptyCta}</a>}
+          {emptyCta && <ChatCta className="btn btn--primary" href={`/lien-he?intent=stay&${query}`} draft={chatDraft({ subject: 'chỗ nghỉ phù hợp', ...selection, note: 'Mình chưa tìm thấy kết quả trên website.' })}>{emptyCta}</ChatCta>}
         </div>
       </div>
     );

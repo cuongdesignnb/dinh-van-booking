@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowRight, CalendarDays, ChevronDown, MessageCircle, ShieldCheck, UserRound } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { useSiteData } from '@/components/site/SiteDataProvider';
@@ -16,6 +15,8 @@ import { nights } from '@/lib/selection';
 import { publicSetting, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { useBooking } from './BookingContext';
+import { ChatCta } from '@/components/chat/ChatCta';
+import { chatDraft } from '@/lib/chat/draft';
 import { AdvisorMini, useAdvisorAskLabel } from './StayPageParts';
 
 export const ROOMS_ANCHOR = 'cac-loai-phong';
@@ -50,6 +51,7 @@ export function BookingCard() {
   const bookable = fromPrice(stay) > 0;
   const askLabel = useAdvisorAskLabel();
   const contactHref = stayContactHref(stay.slug, selection, room?.id);
+  const draft = chatDraft({ subject: stay.name, room: room?.name, ...selection });
   const guests = `${selection.adults} người lớn${selection.children ? ` · ${selection.children} trẻ em` : ''} · ${selection.rooms} phòng`;
   return (
     <section className="bcard stp-book" id="dat-phong" aria-labelledby={`${uid}-t`}>
@@ -124,12 +126,12 @@ export function BookingCard() {
         ? <button type="button" className="btn btn--primary bcard__cta" onClick={go}>
             Kiểm tra phòng trống <ArrowRight size={17} aria-hidden="true" />
           </button>
-        : <Link className="btn btn--primary bcard__cta" href={contactHref}>
+        : <ChatCta className="btn btn--primary bcard__cta" href={contactHref} draft={draft}>
             Gửi yêu cầu nhận giá <ArrowRight size={17} aria-hidden="true" />
-          </Link>}
-      <Link className="btn stp-book__ask" href={contactHref}>
+          </ChatCta>}
+      <ChatCta className="btn stp-book__ask" href={contactHref} draft={draft}>
         <MessageCircle size={18} aria-hidden="true" /> {askLabel}
-      </Link>
+      </ChatCta>
       <p className="stp-book__note">Giá và phòng được xác nhận trước khi đặt.</p>
 
       {richDocumentHasContent(bookingNote) && <div className="bcard__info"><ShieldCheck size={24} className="bcard__info-ic" aria-hidden="true" /><div><RichContentRenderer document={bookingNote as RichDocument} /></div></div>}
@@ -189,7 +191,7 @@ export function BookingCard() {
 export function MobileBookingBar() {
   const { stay, room, selection } = useBooking();
   const price = room ? room.pricePerNight : fromPrice(stay);
-  if (price <= 0) return <div className="mbar"><div className="mbar__price"><strong>Liên hệ để nhận giá</strong></div><Link className="btn btn--primary mbar__cta" href={stayContactHref(stay.slug, selection, room?.id)}>Liên hệ <ArrowRight size={16} aria-hidden="true" /></Link></div>;
+  if (price <= 0) return <div className="mbar"><div className="mbar__price"><strong>Liên hệ để nhận giá</strong></div><ChatCta className="btn btn--primary mbar__cta" href={stayContactHref(stay.slug, selection, room?.id)} draft={chatDraft({ subject: stay.name, room: room?.name, ...selection })}>Liên hệ <ArrowRight size={16} aria-hidden="true" /></ChatCta></div>;
   return (
     <div className="mbar">
       <div className="mbar__price">

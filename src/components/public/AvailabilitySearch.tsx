@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { ChatCta } from '@/components/chat/ChatCta';
 import { ArrowRight, BedDouble, CalendarDays, MapPin, Search, Users } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { StateBlock, StatusPill, type Tone } from '@/components/ui/system';
@@ -184,7 +185,7 @@ export function AvailabilitySearch({ initialSelection }: { initialSelection?: Se
         </button>)}
       </div>}
       {items.length === 0
-        ? <StateBlock title="Chưa tìm thấy nơi nghỉ phù hợp" text="Thử đổi ngày hoặc khu vực, hoặc gửi yêu cầu để chúng tôi kiểm tra giúp bạn." action={<Link className="ui-btn ui-btn--primary" href="/lien-he">Nhờ tư vấn</Link>} />
+        ? <StateBlock title="Chưa tìm thấy nơi nghỉ phù hợp" text="Thử đổi ngày hoặc khu vực, hoặc gửi yêu cầu để chúng tôi kiểm tra giúp bạn." action={<ChatCta className="ui-btn ui-btn--primary" href="/lien-he" draft="Mình chưa tìm thấy phòng trống phù hợp, nhờ bạn kiểm tra giúp.">Nhờ tư vấn</ChatCta>} />
         : <div className="availability-list">{visible.map((item) => {
           const status = STATUS[item.status];
           const bookable = item.status === 'available';
@@ -204,7 +205,9 @@ export function AvailabilitySearch({ initialSelection }: { initialSelection?: Se
               {item.lastConfirmedAt && <small>Cập nhật {updatedLabel(item.lastConfirmedAt)}</small>}
               {bookable
                 ? <Link className="ui-btn ui-btn--primary" href={item.path}>Xem phòng <ArrowRight size={16} aria-hidden="true" /></Link>
-                : <Link className="ui-btn" href={item.status === 'sold_out' ? '/lien-he' : item.path}>{item.status === 'sold_out' ? 'Nhờ tìm phòng khác' : 'Xem chi tiết'}</Link>}
+                : item.status === 'sold_out'
+                  ? <ChatCta className="ui-btn" href="/lien-he" draft={`Mình cần tìm phòng khác thay cho ${item.name} (${item.roomTypeName}) vì đã hết phòng.`}>Nhờ tìm phòng khác</ChatCta>
+                  : <Link className="ui-btn" href={item.path}>Xem chi tiết</Link>}
             </div>
           </article>;
         })}</div>}

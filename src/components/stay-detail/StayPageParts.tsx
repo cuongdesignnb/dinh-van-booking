@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Image from '@/components/ui/ManagedImage';
 import { AdvisorMonogram } from '@/components/home/HomeArt';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
+import { ChatCta, useChatEnabled } from '@/components/chat/ChatCta';
 import { useSiteData } from '@/components/site/SiteDataProvider';
 import type { RichDocument } from '@/lib/content/rich-document';
 import { richDocumentToText } from '@/lib/content/rich-document';
@@ -89,14 +90,17 @@ export function useAdvisorAskLabel(): string {
   return name ? `Nhờ ${name} tư vấn` : 'Nhờ tư vấn';
 }
 
-/** Closing advisor band: Zalo first, then phone, then the contact form. */
-export function AdvisorBand({ contactHref }: { contactHref: string }) {
+/** Closing advisor band: the live chat when it is on; otherwise Zalo, then phone, then the contact form. */
+export function AdvisorBand({ contactHref, draft }: { contactHref: string; draft?: string }) {
   const { site, enabled, name, title, note, description, image } = useAdvisor();
+  const chat = useChatEnabled();
   if (!enabled || !title) return null;
   const zalo = site.contact.zaloUrl;
   const phone = site.contact.phone;
   const label = name ? `Trao đổi cùng ${name}` : 'Liên hệ tư vấn';
-  const cta = zalo
+  const cta = chat
+    ? <ChatCta className="btn btn--primary stp-band__btn" href={contactHref} draft={draft}><MessageCircle size={18} aria-hidden="true" /> {label} <ArrowRight size={17} aria-hidden="true" /></ChatCta>
+    : zalo
     ? <a className="btn btn--primary stp-band__btn" href={zalo} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" /> {label} <ArrowRight size={17} aria-hidden="true" /></a>
     : phone
       ? <a className="btn btn--primary stp-band__btn" href={`tel:${phone}`}><MessageCircle size={18} aria-hidden="true" /> {label} <ArrowRight size={17} aria-hidden="true" /></a>

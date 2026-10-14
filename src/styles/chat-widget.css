@@ -181,10 +181,20 @@
 .chatm--visitor { align-self: flex-end; align-items: flex-end; }
 
 .chatm__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin: 0 0 3px 4px;
   color: var(--dvb-forest-700);
   font-size: 11.5px;
   font-weight: 600;
+}
+
+.chatm__avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .chatm__bubble {
