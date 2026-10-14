@@ -15,6 +15,7 @@ import { AdminOperationsModule } from './admin-operations/admin-operations.modul
 import { loadConfig } from './common/config/env';
 import { PartnerModule } from './partners/partner.module';
 import { SheetsModule } from './sheets/sheets.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SheetsModule } from './sheets/sheets.module';
     AdminOperationsModule,
     PartnerModule,
     SheetsModule,
+    ChatModule,
     HealthModule,
   ],
 })

@@ -39,7 +39,12 @@ async function bootstrapCsrf(): Promise<void> {
   if (!response.ok) throw new ApiError(response.status, payload);
 }
 
-export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+export interface ApiRequestOptions {
+  /** Skip the automatic success toast (chat sends, read receipts). Errors still surface. */
+  quiet?: boolean;
+}
+
+export async function apiRequest<T>(path: string, init: RequestInit = {}, options: ApiRequestOptions = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase();
   const headers = new Headers(init.headers);
   // Let the browser set the multipart boundary for uploads. Setting JSON here
@@ -47,7 +52,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   if (init.body && !isFormData && !headers.has('content-type')) headers.set('content-type', 'application/json');
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    const isPublicMutation = path === '/auth/login' || path === '/inquiries' || path === '/quotes' || path.startsWith('/quotes/');
+    const isPublicMutation = path === '/auth/login' || path === '/inquiries' || path === '/quotes' || path.startsWith('/quotes/') || path.startsWith('/chat/');
     if (!csrfCookie() || isPublicMutation) {
       try { await bootstrapCsrf(); } catch (error) { emitAdminToast(adminErrorToast(error)); throw error; }
     }
@@ -76,7 +81,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     emitAdminToast(adminErrorToast(error));
     throw error;
   }
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !path.startsWith('/auth/')) {
+  if (!options.quiet && !['GET', 'HEAD', 'OPTIONS'].includes(method) && !path.startsWith('/auth/')) {
     emitAdminToast({ tone: path.startsWith('/quotes') ? 'info' : 'success', message: adminMutationSuccess(path, method) });
   }
   return payload as T;

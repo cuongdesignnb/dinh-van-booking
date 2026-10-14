@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ChatLauncher } from '@/components/chat/ChatLauncher';
 import { SiteFooter } from '@/components/home/SiteFooter';
 import { SiteHeader } from '@/components/home/SiteHeader';
 import { DialogHost } from '@/components/ui/DialogHost';
@@ -23,6 +24,7 @@ export async function PageShell({
       <main className={className}>{children}</main>
       <SiteFooter variant={footer} navigation={navigation} />
       <DialogHost />
+      {footer !== 'checkout' && <ChatLauncher />}
       <MotionController />
     </SiteDataProvider>
   );

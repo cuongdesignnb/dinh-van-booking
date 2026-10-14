@@ -17,6 +17,7 @@ import {
   MapPin,
   Menu,
   MessageCircle,
+  MessagesSquare,
   Settings,
   Tag,
   Users,
@@ -36,7 +37,7 @@ export interface AdminNavItem {
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
   permission: string;
   group: 'operations' | 'catalog' | 'customers' | 'content' | 'system';
-  badge?: 'pendingBookings' | 'newInquiries';
+  badge?: 'pendingBookings' | 'newInquiries' | 'waitingChats';
 }
 
 export const ADMIN_NAV: AdminNavItem[] = [
@@ -49,6 +50,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/combo-du-lich', label: 'Combo du lịch', icon: MapIcon, permission: 'catalog.read', group: 'catalog' },
   { href: '/admin/diem-den', label: 'Điểm đến', icon: MapPin, permission: 'catalog.read', group: 'catalog' },
   { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users, permission: 'crm.read', group: 'customers' },
+  { href: '/admin/tin-nhan', label: 'Tin nhắn', icon: MessagesSquare, permission: 'chat.read', group: 'customers', badge: 'waitingChats' },
   { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle, permission: 'crm.read', group: 'customers', badge: 'newInquiries' },
   { href: '/admin/khuyen-mai', label: 'Khuyến mãi', icon: Tag, permission: 'coupon.read', group: 'customers' },
   { href: '/admin/thanh-toan', label: 'Thanh toán', icon: CreditCard, permission: 'finance.read', group: 'customers' },
@@ -80,21 +82,27 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
   const pathname = usePathname();
   const { user } = useAdminSession();
   const active = activeNavHref(pathname);
-  const [counts, setCounts] = useState<{ pendingBookings: number; newInquiries: number }>({ pendingBookings: 0, newInquiries: 0 });
+  const [counts, setCounts] = useState<{ pendingBookings: number; newInquiries: number; waitingChats: number }>({ pendingBookings: 0, newInquiries: 0, waitingChats: 0 });
 
   useEffect(() => {
     let active = true;
     const loadCounts = async () => {
       try {
-        const summary = await apiRequest<{ bookings: { byStatus: Record<string, number> }; newInquiries: number }>('/admin/dashboard/summary');
-        if (active) setCounts({ pendingBookings: summary.bookings.byStatus.pending_confirmation ?? 0, newInquiries: summary.newInquiries });
+        const summary = await apiRequest<{ bookings: { byStatus: Record<string, number> }; newInquiries: number; waitingChats?: number }>('/admin/dashboard/summary');
+        if (active) setCounts((current) => ({ pendingBookings: summary.bookings.byStatus.pending_confirmation ?? 0, newInquiries: summary.newInquiries, waitingChats: summary.waitingChats ?? current.waitingChats }));
       } catch {
         // Navigation stays usable when a role can read its page but not the dashboard summary.
       }
     };
     if (user.permissions.includes('dashboard.read')) void loadCounts();
     const timer = window.setInterval(() => { if (user.permissions.includes('dashboard.read')) void loadCounts(); }, 60_000);
-    return () => { active = false; window.clearInterval(timer); };
+    // The chat inbox pushes its live count so the badge does not wait for the next poll.
+    const onChatCounts = (event: Event) => {
+      const waiting = (event as CustomEvent<{ waitingChats?: number }>).detail?.waitingChats;
+      if (typeof waiting === 'number') setCounts((current) => ({ ...current, waitingChats: waiting }));
+    };
+    window.addEventListener('dvb:chat-counts', onChatCounts);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('dvb:chat-counts', onChatCounts); };
   }, [user.id, user.permissions]);
 
   const visibleItems = ADMIN_NAV.filter((item) => user.permissions.includes(item.permission));

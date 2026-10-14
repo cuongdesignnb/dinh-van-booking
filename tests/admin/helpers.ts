@@ -156,3 +156,45 @@ $cleanup$;
     { input: sql, encoding: 'utf8', stdio: ['pipe', 'ignore', 'pipe'] },
   );
 }
+
+/** Remove only the synthetic live-chat conversation (and its inquiry/customer) created by the local E2E. */
+export function cleanupLocalTestChat(input: { marker: string; phone: string }): void {
+  if (!/^LIVECHAT-QA-\d+$/.test(input.marker) || !/^09\d{8}$/.test(input.phone)) {
+    throw new Error('Refusing chat cleanup: marker fields are not an exact local E2E identity.');
+  }
+  const sql = `
+DO $cleanup$
+DECLARE
+  target record;
+BEGIN
+  FOR target IN
+    SELECT c.id, c.inquiry_id, c.customer_id
+    FROM public.chat_conversations c
+    WHERE EXISTS (SELECT 1 FROM public.chat_messages m WHERE m.conversation_id = c.id AND position('${input.marker}' in m.body) > 0)
+  LOOP
+    DELETE FROM public.audit_logs WHERE entity_type = 'chat_conversation' AND entity_id = target.id;
+    DELETE FROM public.chat_conversations WHERE id = target.id;
+    IF target.inquiry_id IS NOT NULL THEN
+      DELETE FROM public.audit_logs WHERE entity_type = 'inquiry' AND entity_id = target.inquiry_id;
+      DELETE FROM public.inquiries WHERE id = target.inquiry_id AND source = 'chat';
+    END IF;
+    IF target.customer_id IS NOT NULL THEN
+      DELETE FROM public.customers
+      WHERE id = target.customer_id
+        AND phone_normalized = '${input.phone}'
+        AND NOT EXISTS (SELECT 1 FROM public.inquiries WHERE customer_id = target.customer_id)
+        AND NOT EXISTS (SELECT 1 FROM public.bookings WHERE customer_id = target.customer_id)
+        AND NOT EXISTS (SELECT 1 FROM public.booking_quotes WHERE customer_id = target.customer_id)
+        AND NOT EXISTS (SELECT 1 FROM public.customer_tags WHERE customer_id = target.customer_id)
+        AND NOT EXISTS (SELECT 1 FROM public.reviews WHERE customer_id = target.customer_id);
+    END IF;
+  END LOOP;
+END
+$cleanup$;
+`;
+  execFileSync(
+    'docker',
+    ['exec', '-i', 'dvb-booking-postgres-1', 'sh', '-lc', 'psql -X -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"'],
+    { input: sql, encoding: 'utf8', stdio: ['pipe', 'ignore', 'pipe'] },
+  );
+}

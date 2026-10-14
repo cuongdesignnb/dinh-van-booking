@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   mediaDelete: 'media.delete',
   crmRead: 'crm.read',
   crmWrite: 'crm.write',
+  chatRead: 'chat.read',
+  chatWrite: 'chat.write',
   couponRead: 'coupon.read',
   couponWrite: 'coupon.write',
   financeRead: 'finance.read',
@@ -44,6 +46,7 @@ export const PERMISSION_MODULES: Record<PermissionCode, string> = {
   'content.read': 'content', 'content.write': 'content', 'content.publish': 'content',
   'media.read': 'media', 'media.write': 'media', 'media.delete': 'media',
   'crm.read': 'crm', 'crm.write': 'crm',
+  'chat.read': 'chat', 'chat.write': 'chat',
   'coupon.read': 'coupon', 'coupon.write': 'coupon',
   'finance.read': 'finance', 'finance.write': 'finance', 'refund.approve': 'finance',
   'report.read': 'report',
@@ -69,14 +72,14 @@ export const ROLE_PERMISSIONS: Record<string, PermissionCode[]> = {
   operator: [
     'dashboard.read', 'booking.read', 'booking.write', 'booking.cancel', 'inventory.read', 'inventory.write',
     'catalog.read', 'catalog.write', 'content.read', 'media.read', 'media.write',
-    'crm.read', 'crm.write', 'coupon.read', 'coupon.write', 'settings.read',
+    'crm.read', 'crm.write', 'chat.read', 'chat.write', 'coupon.read', 'coupon.write', 'settings.read',
   ],
   editor: [
     'dashboard.read', 'content.read', 'content.write', 'content.publish', 'catalog.read',
     'media.read', 'media.write', 'media.delete', 'settings.read', 'booking.read',
   ],
   accountant: ['dashboard.read', 'finance.read', 'finance.write', 'refund.approve', 'report.read', 'coupon.read', 'booking.read', 'crm.read', 'settings.read', 'audit.read'],
-  viewer: ['dashboard.read', 'booking.read', 'inventory.read', 'catalog.read', 'content.read', 'media.read', 'crm.read', 'coupon.read', 'settings.read'],
+  viewer: ['dashboard.read', 'booking.read', 'inventory.read', 'catalog.read', 'content.read', 'media.read', 'crm.read', 'chat.read', 'coupon.read', 'settings.read'],
 };
 
 export const ROLE_LABELS: Record<string, string> = {

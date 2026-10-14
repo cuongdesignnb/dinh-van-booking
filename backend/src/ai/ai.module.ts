@@ -3,5 +3,5 @@ import { MediaModule } from '../media/media.module';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 
-@Module({ imports: [MediaModule], controllers: [AiController], providers: [AiService] })
+@Module({ imports: [MediaModule], controllers: [AiController], providers: [AiService], exports: [AiService] })
 export class AiModule {}
