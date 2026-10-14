@@ -78,8 +78,8 @@ export class MediaService {
   async ingest(
     file: { buffer: Buffer; filename: string; mimetype: string },
     meta: { altText?: string; caption?: string },
-    userId: string,
-    ownership: { organizationId?: string; visibility?: 'public' | 'private' } = {},
+    userId: string | null,
+    ownership: { organizationId?: string; visibility?: 'public' | 'private'; dedupe?: boolean } = {},
   ): Promise<MediaView> {
     const rules = await this.settings.get<MediaProcessingSettings>('media.processing');
 
@@ -105,7 +105,8 @@ export class MediaService {
     const uploadMetadata = normalizeUploadMetadata(file.filename, meta.altText, meta.caption);
 
     // The same picture uploaded twice reuses one file instead of filling the volume.
-    const existing = await this.prisma.mediaAsset.findFirst({ where: {
+    // Guest review photos opt out: they must stay private copies until a moderator approves them.
+    const existing = ownership.dedupe === false ? null : await this.prisma.mediaAsset.findFirst({ where: {
       sha256: sha,
       ...(ownership.visibility === 'private' && ownership.organizationId ? {
         OR: [{ visibility: 'public' }, { visibility: 'private', ownerOrganizationId: ownership.organizationId }],
@@ -182,15 +183,19 @@ export class MediaService {
   }): Promise<Paginated<MediaView>> {
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 24));
-    const where = params.search
-      ? {
-          OR: [
-            { originalFilename: { contains: params.search, mode: 'insensitive' as const } },
-            { altText: { contains: params.search, mode: 'insensitive' as const } },
-            { caption: { contains: params.search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    // Guest review photos are moderated in the reviews screen, not the shared library.
+    const where = {
+      reviewMedia: { none: {} },
+      ...(params.search
+        ? {
+            OR: [
+              { originalFilename: { contains: params.search, mode: 'insensitive' as const } },
+              { altText: { contains: params.search, mode: 'insensitive' as const } },
+              { caption: { contains: params.search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
 
     const [rows, total] = await Promise.all([
       this.prisma.mediaAsset.findMany({
@@ -234,7 +239,7 @@ export class MediaService {
   }
 
   /** Refuses to delete an asset still referenced by content or public settings. */
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, userId: string | null): Promise<void> {
     const asset = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!asset) throw new NotFoundException('Không tìm thấy ảnh');
     const useCount = (await this.usageCounts([id])).get(id) ?? 0;
@@ -276,8 +281,12 @@ export class MediaService {
     const counts = new Map(uniqueIds.map((id) => [id, 0]));
     if (!uniqueIds.length) return counts;
 
-    const [contentMedia, openGraphContent, settings] = await Promise.all([
+    const [contentMedia, reviewMedia, openGraphContent, settings] = await Promise.all([
       this.prisma.contentMedia.findMany({
+        where: { mediaId: { in: uniqueIds } },
+        select: { mediaId: true },
+      }),
+      this.prisma.reviewMedia.findMany({
         where: { mediaId: { in: uniqueIds } },
         select: { mediaId: true },
       }),
@@ -291,7 +300,7 @@ export class MediaService {
       }),
     ]);
 
-    for (const reference of contentMedia) {
+    for (const reference of [...contentMedia, ...reviewMedia]) {
       counts.set(reference.mediaId, (counts.get(reference.mediaId) ?? 0) + 1);
     }
     for (const reference of openGraphContent) {

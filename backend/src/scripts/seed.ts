@@ -38,6 +38,8 @@ async function main(): Promise<void> {
     'crm.write': 'Sửa khách hàng, ghi nhận trao đổi',
     'chat.read': 'Xem hộp thư chat với khách',
     'chat.write': 'Tham gia, trả lời và xử lý phiên chat',
+    'review.read': 'Xem đánh giá của khách',
+    'review.write': 'Duyệt, từ chối, trả lời và xoá đánh giá',
     'coupon.read': 'Xem mã khuyến mãi và lịch sử sử dụng',
     'coupon.write': 'Tạo, sửa và tắt mã khuyến mãi',
     'finance.read': 'Xem thanh toán, hoàn tiền, báo cáo',

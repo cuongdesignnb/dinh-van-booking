@@ -133,6 +133,12 @@ type PublicReview = {
   body: string;
   stayedAt: Date | null;
   contentId: string;
+  isVerified: boolean;
+  source: string;
+  ownerReply: string | null;
+  ownerReplyAt: Date | null;
+  createdAt: Date;
+  media?: Array<{ position: number; media: { storageKey: string; altText: string | null; originalFilename: string; width: number | null; height: number | null; visibility: string; processingStatus: string; isDemo: boolean } }>;
 };
 
 const NODE_INCLUDE = {
@@ -757,7 +763,8 @@ export class PublicCatalogService {
       where: {
         moderation: 'approved',
         isDemo: false,
-        ...(contentId ? { contentId } : {}),
+        // A malformed id simply matches nothing instead of surfacing a database type error.
+        ...(contentId ? { contentId: /^[0-9a-f-]{36}$/i.test(contentId) ? contentId : '00000000-0000-0000-0000-000000000000' } : {}),
         content: {
           publicationStatus: 'published',
           isDemo: false,
@@ -766,6 +773,12 @@ export class PublicCatalogService {
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
+      include: {
+        media: {
+          orderBy: { position: 'asc' },
+          select: { position: true, media: { select: { storageKey: true, altText: true, originalFilename: true, width: true, height: true, visibility: true, processingStatus: true, isDemo: true } } },
+        },
+      },
     });
     return { items: rows.map((row) => this.toReview(row as unknown as PublicReview)), generatedAt: new Date().toISOString() };
   }
@@ -813,6 +826,7 @@ export class PublicCatalogService {
     const location = property.area || property.address;
     return {
       id: property.id,
+      contentId: node.id,
       slug: node.slugSource ?? node.routes[0]?.path.split('/').pop() ?? property.id,
       publicPath: node.routes[0]?.path ?? `/phong-nghi/${node.slugSource ?? property.id}`,
       name: node.title,
@@ -952,14 +966,28 @@ export class PublicCatalogService {
     };
   }
 
+  /** Public shape: never the reviewer's phone, and only photos that moderation made public. */
   private toReview(row: PublicReview) {
+    const photos = (row.media ?? [])
+      .filter((link) => link.media.visibility === 'public' && link.media.processingStatus === 'ready' && !link.media.isDemo)
+      .map((link) => ({
+        src: `/media/${link.media.storageKey}`,
+        alt: link.media.altText ?? `Ảnh khách ${row.authorName} chia sẻ`,
+        width: link.media.width ?? 1200,
+        height: link.media.height ?? 900,
+      }));
     return {
       id: row.id,
       author: row.authorName,
       rating: row.rating,
       quote: row.body,
       date: row.stayedAt?.toISOString().slice(0, 10),
+      createdAt: row.createdAt?.toISOString(),
       avatar: null,
+      photos,
+      verified: row.isVerified === true,
+      ownerReply: row.ownerReply ?? null,
+      ownerReplyAt: row.ownerReplyAt?.toISOString() ?? null,
       isDemo: false,
     };
   }

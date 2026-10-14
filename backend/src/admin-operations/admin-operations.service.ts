@@ -132,6 +132,7 @@ export class AdminOperationsService {
       bookings: { total: Object.values(byStatus(bookings)).reduce((sum, count) => sum + count, 0), byStatus: byStatus(bookings) },
       newInquiries: inquiries,
       waitingChats,
+      pendingReviews: await this.prisma.review.count({ where: { moderation: 'pending', isDemo: false } }),
       customers,
       published: { stays: publishedStays, combos: publishedCombos, destinations: publishedDestinations },
       content: { draft: contentByStatus.draft ?? 0, review: contentByStatus.review ?? 0, published: contentByStatus.published ?? 0 },

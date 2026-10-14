@@ -19,7 +19,8 @@ import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { RichContentRenderer } from '@/components/content/RichContentRenderer';
 import { BookingCard, MobileBookingBar, ROOMS_ANCHOR } from '@/components/stay-detail/BookingCard';
 import { BookingProvider } from '@/components/stay-detail/BookingContext';
-import { HostCard, ReviewCards, ShareSave } from '@/components/stay-detail/DetailWidgets';
+import { HostCard, ShareSave } from '@/components/stay-detail/DetailWidgets';
+import { StayReviews } from '@/components/stay-detail/StayReviews';
 import { PropertyGallery } from '@/components/stay-detail/PropertyGallery';
 import { RoomTypes } from '@/components/stay-detail/RoomTypes';
 import { AdvisorBand, SectionTabs } from '@/components/stay-detail/StayPageParts';
@@ -69,7 +70,7 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
   const stay = await getPublicStay(slug);
   if (!stay) notFound();
   if (stay.publicPath && stay.publicPath !== `/phong-nghi/${slug}`) permanentRedirect(stay.publicPath);
-  const [reviews, site] = await Promise.all([getPublicReviews(stay.id), getPublicSite()]);
+  const [reviews, site] = await Promise.all([stay.contentId ? getPublicReviews(stay.contentId) : Promise.resolve([]), getPublicSite()]);
   const structuredData = isSeoSchemaAllowed(site, stay.publicPath ?? `/phong-nghi/${slug}`, {
     eligible: !!stay.image && stay.roomTypes.length > 0 && isSubstantivePublicContent(stay.descriptionDocument ?? stay.description),
     noindex: stay.noindex,
@@ -116,6 +117,7 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
     stay.roomTypes.length ? { id: ROOMS_ANCHOR, label: 'Hạng phòng' } : null,
     amenityItems.length ? { id: 'tien-nghi', label: 'Tiện nghi' } : null,
     infoCards.length ? { id: 'chinh-sach', label: 'Chính sách' } : null,
+    { id: 'danh-gia', label: stay.reviewCount > 0 ? `Đánh giá (${stay.reviewCount})` : 'Đánh giá' },
     stay.address ? { id: 'vi-tri', label: 'Vị trí' } : null,
   ].filter((tab): tab is { id: string; label: string } => !!tab);
 
@@ -148,10 +150,10 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
                 </a>
               )}
               {stay.reviewCount > 0 && (
-                <span className="stp-head__rating">
+                <a href="#danh-gia" className="stp-head__rating">
                   <Star size={16} className="star" aria-hidden="true" />
                   <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
-                </span>
+                </a>
               )}
             </p>
           </div>
@@ -236,11 +238,14 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
           </section>
         )}
 
-        {stay.reviewCount > 0 && (
-          <div className="stp-section">
-            <ReviewCards reviews={reviews} total={stay.reviewCount} title={publicText(detail.reviewsTitle)} />
-          </div>
-        )}
+        <StayReviews
+          reviews={reviews}
+          rating={stay.rating}
+          count={stay.reviewCount}
+          title={publicText(detail.reviewsTitle)}
+          stayName={stay.name}
+          slug={stay.slug}
+        />
 
         {stay.address && (
           <section className="stp-section" id="vi-tri" aria-labelledby="map-t">

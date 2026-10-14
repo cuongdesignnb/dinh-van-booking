@@ -470,8 +470,8 @@ async function loadPublicArticle(slug: string): Promise<PublicArticleRecord | nu
 export const getPublicArticle = cache(loadPublicArticle);
 
 export async function getPublicReviews(contentId?: string): Promise<Review[]> {
-  const response = await serverApiRequest<{ items?: Array<{ id: string; author: string; rating: number; quote: string; date?: string }> }>(`/public/reviews${contentId ? `?contentId=${encodeURIComponent(contentId)}` : ''}`);
-  return (response?.items ?? []).map((item) => ({ ...item, avatar: null, isDemo: false }));
+  const response = await serverApiRequest<{ items?: Array<{ id: string; author: string; rating: number; quote: string; date?: string; createdAt?: string; photos?: Review['photos']; verified?: boolean; ownerReply?: string | null; ownerReplyAt?: string | null }> }>(`/public/reviews${contentId ? `?contentId=${encodeURIComponent(contentId)}` : ''}`);
+  return (response?.items ?? []).map((item) => ({ ...item, photos: item.photos ?? [], avatar: null, isDemo: false }));
 }
 
 export interface PublicNavigationItem {
