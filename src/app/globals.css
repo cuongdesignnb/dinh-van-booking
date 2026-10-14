@@ -456,7 +456,9 @@ svg {
   overflow: hidden;
 }
 
-.dialog__close {
+/* Two classes so the shared `.icon-btn` (position: relative, 36px), which
+   loads later, cannot pull the close button into the content flow. */
+.dialog .dialog__close {
   position: absolute;
   top: 14px;
   right: 14px;
