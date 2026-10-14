@@ -18,6 +18,8 @@ export const PERMISSIONS = {
   crmWrite: 'crm.write',
   chatRead: 'chat.read',
   chatWrite: 'chat.write',
+  reviewRead: 'review.read',
+  reviewWrite: 'review.write',
   couponRead: 'coupon.read',
   couponWrite: 'coupon.write',
   financeRead: 'finance.read',
@@ -47,6 +49,7 @@ export const PERMISSION_MODULES: Record<PermissionCode, string> = {
   'media.read': 'media', 'media.write': 'media', 'media.delete': 'media',
   'crm.read': 'crm', 'crm.write': 'crm',
   'chat.read': 'chat', 'chat.write': 'chat',
+  'review.read': 'review', 'review.write': 'review',
   'coupon.read': 'coupon', 'coupon.write': 'coupon',
   'finance.read': 'finance', 'finance.write': 'finance', 'refund.approve': 'finance',
   'report.read': 'report',
@@ -72,14 +75,14 @@ export const ROLE_PERMISSIONS: Record<string, PermissionCode[]> = {
   operator: [
     'dashboard.read', 'booking.read', 'booking.write', 'booking.cancel', 'inventory.read', 'inventory.write',
     'catalog.read', 'catalog.write', 'content.read', 'media.read', 'media.write',
-    'crm.read', 'crm.write', 'chat.read', 'chat.write', 'coupon.read', 'coupon.write', 'settings.read',
+    'crm.read', 'crm.write', 'chat.read', 'chat.write', 'review.read', 'review.write', 'coupon.read', 'coupon.write', 'settings.read',
   ],
   editor: [
     'dashboard.read', 'content.read', 'content.write', 'content.publish', 'catalog.read',
-    'media.read', 'media.write', 'media.delete', 'settings.read', 'booking.read',
+    'media.read', 'media.write', 'media.delete', 'settings.read', 'booking.read', 'review.read', 'review.write',
   ],
   accountant: ['dashboard.read', 'finance.read', 'finance.write', 'refund.approve', 'report.read', 'coupon.read', 'booking.read', 'crm.read', 'settings.read', 'audit.read'],
-  viewer: ['dashboard.read', 'booking.read', 'inventory.read', 'catalog.read', 'content.read', 'media.read', 'crm.read', 'chat.read', 'coupon.read', 'settings.read'],
+  viewer: ['dashboard.read', 'booking.read', 'inventory.read', 'catalog.read', 'content.read', 'media.read', 'crm.read', 'chat.read', 'review.read', 'coupon.read', 'settings.read'],
 };
 
 export const ROLE_LABELS: Record<string, string> = {

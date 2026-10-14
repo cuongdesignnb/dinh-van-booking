@@ -52,7 +52,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, option
   const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   if (init.body && !isFormData && !headers.has('content-type')) headers.set('content-type', 'application/json');
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    const isPublicMutation = path === '/auth/login' || path === '/inquiries' || path === '/quotes' || path.startsWith('/quotes/') || path.startsWith('/chat/');
+    const isPublicMutation = path === '/auth/login' || path === '/inquiries' || path === '/quotes' || path.startsWith('/quotes/') || path.startsWith('/chat/') || path === '/reviews';
     if (!csrfCookie() || isPublicMutation) {
       try { await bootstrapCsrf(); } catch (error) { emitAdminToast(adminErrorToast(error)); throw error; }
     }

@@ -16,6 +16,7 @@ import { loadConfig } from './common/config/env';
 import { PartnerModule } from './partners/partner.module';
 import { SheetsModule } from './sheets/sheets.module';
 import { ChatModule } from './chat/chat.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ChatModule } from './chat/chat.module';
     PartnerModule,
     SheetsModule,
     ChatModule,
+    ReviewsModule,
     HealthModule,
   ],
 })

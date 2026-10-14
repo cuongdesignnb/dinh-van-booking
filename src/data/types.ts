@@ -62,6 +62,11 @@ export interface Review {
   quote: string;
   avatar: ImageAsset | null;
   photos?: ImageAsset[];
+  /** Booked this stay through the website (matched by phone, stay ended). */
+  verified?: boolean;
+  ownerReply?: string | null;
+  ownerReplyAt?: string | null;
+  createdAt?: string;
   isDemo?: boolean;
 }
 

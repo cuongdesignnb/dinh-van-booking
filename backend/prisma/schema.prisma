@@ -37,6 +37,8 @@ model User {
   inquiryReads  InquiryRead[]
   chatConversations ChatConversation[] @relation("ChatAssignee")
   chatMessages      ChatMessage[]      @relation("ChatAuthor")
+  moderatedReviews  Review[]           @relation("ReviewModerator")
+  repliedReviews    Review[]           @relation("ReviewReplier")
   bookingEvents BookingEvent[]
   payments      Payment[]     @relation("PaymentVerifier")
   refunds       Refund[]      @relation("RefundApprover")
@@ -170,6 +172,7 @@ model MediaAsset {
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   contentMedia ContentMedia[]
+  reviewMedia  ReviewMedia[]
   ogForContent ContentNode[]  @relation("ContentOgMedia")
   ownerOrganization PartnerOrganization? @relation(fields: [ownerOrganizationId], references: [id], onDelete: SetNull)
 
@@ -398,17 +401,51 @@ model Review {
   rating      Int
   body        String
   stayedAt    DateTime? @map("stayed_at") @db.Date
+  /// pending | approved | rejected
   moderation  String    @default("pending")
   isVerified  Boolean   @default(false) @map("is_verified")
   isDemo      Boolean   @default(false) @map("is_demo")
+  /// Normalised phone of an anonymous reviewer; staff-only, never public.
+  reviewerPhone  String?   @map("reviewer_phone")
+  /// website | invite
+  source         String    @default("website")
+  ipHash         String?   @map("ip_hash")
+  guestSessionId String?   @map("guest_session_id") @db.Uuid
+  moderatedAt    DateTime? @map("moderated_at") @db.Timestamptz(3)
+  moderatedById  String?   @map("moderated_by_id") @db.Uuid
+  rejectReason   String?   @map("reject_reason")
+  ownerReply     String?   @map("owner_reply")
+  ownerReplyAt   DateTime? @map("owner_reply_at") @db.Timestamptz(3)
+  ownerReplyById String?   @map("owner_reply_by_id") @db.Uuid
+  version        Int       @default(1)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  content  ContentNode @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  customer Customer?   @relation(fields: [customerId], references: [id])
-  booking  Booking?    @relation(fields: [bookingId], references: [id])
+  content     ContentNode   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  customer    Customer?     @relation(fields: [customerId], references: [id])
+  booking     Booking?      @relation(fields: [bookingId], references: [id])
+  moderatedBy User?         @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  ownerReplyBy User?        @relation("ReviewReplier", fields: [ownerReplyById], references: [id], onDelete: SetNull)
+  media       ReviewMedia[]
 
   @@index([contentId, moderation])
+  @@index([moderation, createdAt])
+  @@index([contentId, reviewerPhone])
   @@map("reviews")
+}
+
+/// Guest photos attached to a review. Stored private until the review is approved.
+model ReviewMedia {
+  reviewId String @map("review_id") @db.Uuid
+  mediaId  String @map("media_id") @db.Uuid
+  position Int    @default(0)
+
+  review Review     @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  media  MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@id([reviewId, mediaId])
+  @@index([mediaId])
+  @@map("review_media")
 }
 
 /* ---------------------------------------------------------------- catalog */

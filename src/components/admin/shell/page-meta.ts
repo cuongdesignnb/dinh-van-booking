@@ -75,6 +75,11 @@ const META: Record<string, AdminPageMeta> = {
     title: 'Menu website',
     subtitle: 'Sắp xếp liên kết đầu trang và thêm chuyên trang đã xuất bản vào menu chính.',
   },
+  '/admin/danh-gia': {
+    section: 'Khách hàng',
+    title: 'Đánh giá',
+    subtitle: 'Kiểm duyệt đánh giá khách gửi cho từng nơi lưu trú; chỉ đánh giá đã duyệt mới hiển thị và được tính điểm.',
+  },
   '/admin/tin-nhan': {
     section: 'Khách hàng',
     title: 'Tin nhắn',

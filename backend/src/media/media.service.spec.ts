@@ -56,6 +56,7 @@ function createService(references: {
       delete: async () => { deleted = true; return asset; },
     },
     contentMedia: { findMany: async () => references.contentMedia ?? [] },
+    reviewMedia: { findMany: async () => [] },
     contentNode: { findMany: async () => references.openGraphContent ?? [] },
     setting: { findMany: async () => references.settings ?? [] },
     auditLog: { create: async () => ({}) },

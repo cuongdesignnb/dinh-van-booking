@@ -18,6 +18,7 @@ import {
   Menu,
   MessageCircle,
   MessagesSquare,
+  Star,
   Settings,
   Tag,
   Users,
@@ -37,7 +38,7 @@ export interface AdminNavItem {
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
   permission: string;
   group: 'operations' | 'catalog' | 'customers' | 'content' | 'system';
-  badge?: 'pendingBookings' | 'newInquiries' | 'waitingChats';
+  badge?: 'pendingBookings' | 'newInquiries' | 'waitingChats' | 'pendingReviews';
 }
 
 export const ADMIN_NAV: AdminNavItem[] = [
@@ -51,6 +52,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/diem-den', label: 'Điểm đến', icon: MapPin, permission: 'catalog.read', group: 'catalog' },
   { href: '/admin/khach-hang', label: 'Khách hàng', icon: Users, permission: 'crm.read', group: 'customers' },
   { href: '/admin/tin-nhan', label: 'Tin nhắn', icon: MessagesSquare, permission: 'chat.read', group: 'customers', badge: 'waitingChats' },
+  { href: '/admin/danh-gia', label: 'Đánh giá', icon: Star, permission: 'review.read', group: 'customers', badge: 'pendingReviews' },
   { href: '/admin/yeu-cau-tu-van', label: 'Yêu cầu tư vấn', icon: MessageCircle, permission: 'crm.read', group: 'customers', badge: 'newInquiries' },
   { href: '/admin/khuyen-mai', label: 'Khuyến mãi', icon: Tag, permission: 'coupon.read', group: 'customers' },
   { href: '/admin/thanh-toan', label: 'Thanh toán', icon: CreditCard, permission: 'finance.read', group: 'customers' },
@@ -82,14 +84,14 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
   const pathname = usePathname();
   const { user } = useAdminSession();
   const active = activeNavHref(pathname);
-  const [counts, setCounts] = useState<{ pendingBookings: number; newInquiries: number; waitingChats: number }>({ pendingBookings: 0, newInquiries: 0, waitingChats: 0 });
+  const [counts, setCounts] = useState<{ pendingBookings: number; newInquiries: number; waitingChats: number; pendingReviews: number }>({ pendingBookings: 0, newInquiries: 0, waitingChats: 0, pendingReviews: 0 });
 
   useEffect(() => {
     let active = true;
     const loadCounts = async () => {
       try {
-        const summary = await apiRequest<{ bookings: { byStatus: Record<string, number> }; newInquiries: number; waitingChats?: number }>('/admin/dashboard/summary');
-        if (active) setCounts((current) => ({ pendingBookings: summary.bookings.byStatus.pending_confirmation ?? 0, newInquiries: summary.newInquiries, waitingChats: summary.waitingChats ?? current.waitingChats }));
+        const summary = await apiRequest<{ bookings: { byStatus: Record<string, number> }; newInquiries: number; waitingChats?: number; pendingReviews?: number }>('/admin/dashboard/summary');
+        if (active) setCounts((current) => ({ pendingBookings: summary.bookings.byStatus.pending_confirmation ?? 0, newInquiries: summary.newInquiries, waitingChats: summary.waitingChats ?? current.waitingChats, pendingReviews: summary.pendingReviews ?? current.pendingReviews }));
       } catch {
         // Navigation stays usable when a role can read its page but not the dashboard summary.
       }
@@ -101,8 +103,18 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
       const waiting = (event as CustomEvent<{ waitingChats?: number }>).detail?.waitingChats;
       if (typeof waiting === 'number') setCounts((current) => ({ ...current, waitingChats: waiting }));
     };
+    const onReviewCounts = (event: Event) => {
+      const pending = (event as CustomEvent<{ pendingReviews?: number }>).detail?.pendingReviews;
+      if (typeof pending === 'number') setCounts((current) => ({ ...current, pendingReviews: pending }));
+    };
     window.addEventListener('dvb:chat-counts', onChatCounts);
-    return () => { active = false; window.clearInterval(timer); window.removeEventListener('dvb:chat-counts', onChatCounts); };
+    window.addEventListener('dvb:review-counts', onReviewCounts);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('dvb:chat-counts', onChatCounts);
+      window.removeEventListener('dvb:review-counts', onReviewCounts);
+    };
   }, [user.id, user.permissions]);
 
   const visibleItems = ADMIN_NAV.filter((item) => user.permissions.includes(item.permission));

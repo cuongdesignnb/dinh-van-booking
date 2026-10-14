@@ -38,6 +38,8 @@ export interface Stay {
   availabilityStatus?: 'available' | 'sold_out' | 'unknown';
   availabilityAsOf?: string | null;
   id: string;
+  /** CMS content node id; reviews are keyed by it. */
+  contentId?: string;
   slug: string;
   publicPath?: string;
   metaTitle?: string | null;

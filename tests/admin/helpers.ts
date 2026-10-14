@@ -157,6 +157,17 @@ $cleanup$;
   );
 }
 
+/** Reset the local DB rate-limit buckets for the given scopes so repeated local E2E runs are not throttled. */
+export function resetLocalRateLimits(scopes: string[]): void {
+  if (!scopes.every((scope) => /^[a-z0-9-]+$/.test(scope))) throw new Error('Refusing rate-limit reset: invalid scope name.');
+  const list = scopes.map((scope) => `'${scope}'`).join(', ');
+  execFileSync(
+    'docker',
+    ['exec', '-i', 'dvb-booking-postgres-1', 'sh', '-lc', 'psql -X -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"'],
+    { input: `DELETE FROM public.auth_rate_limits WHERE scope IN (${list});`, encoding: 'utf8', stdio: ['pipe', 'ignore', 'pipe'] },
+  );
+}
+
 /** Remove only the synthetic live-chat conversation (and its inquiry/customer) created by the local E2E. */
 export function cleanupLocalTestChat(input: { marker: string; phone: string }): void {
   if (!/^LIVECHAT-QA-\d+$/.test(input.marker) || !/^09\d{8}$/.test(input.phone)) {
