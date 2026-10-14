@@ -1665,9 +1665,7 @@
 }
 
 /* ==========================================================================
-   Layout v3 — balanced detail page
-   Head (title + share) → full-width gallery → two columns (content | sticky
-   booking) → advisor band. Declared last so it settles every breakpoint.
+   Shared gallery (stay + destination detail): one large photo + 2×2 grid
    ========================================================================== */
 
 .detail-shell {
@@ -1675,67 +1673,29 @@
   margin-inline: auto;
 }
 
-.stay-detail {
-  padding-bottom: 64px;
-}
-
-/* ---------- Head ---------- */
-
-.detail-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 14px 32px;
-  padding: 4px 0 20px;
-}
-
-.detail-head__main {
-  flex: 1 1 520px;
-  min-width: 0;
-}
-
-.detail-head__title {
-  margin-top: 6px;
-  font-size: clamp(28px, 3vw, 40px);
-  line-height: 1.15;
-}
-
-.detail-head__meta {
-  margin-top: 8px;
-  font-size: 15px;
-}
-
-.detail-head .share-save {
-  margin: 0;
-  flex: none;
-}
-
-/* ---------- Gallery: fills the width whatever the photo count ---------- */
-
 .gallery {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  height: clamp(280px, 36vw, 470px);
+  height: clamp(300px, 35vw, 500px);
 }
 
 .gallery__main,
 .gallery__thumb {
-  border-radius: 14px;
+  border-radius: 10px;
+  aspect-ratio: auto;
 }
 
 .gallery__main {
   grid-column: 1;
   grid-row: 1 / -1;
-  aspect-ratio: auto;
 }
 
 .gallery__thumb {
   grid-column: auto;
   grid-row: auto;
-  aspect-ratio: auto;
 }
 
 .gallery--1 {
@@ -1765,8 +1725,11 @@
   inset: auto 14px 14px auto;
   height: 36px;
   padding: 0 14px;
-  border-radius: var(--dvb-r-pill);
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 8px;
+  background: rgb(20 30 22 / 62%);
   font-size: 13.5px;
+  font-weight: 600;
 }
 
 .gallery__note {
@@ -1775,285 +1738,31 @@
 
 .gallery--empty {
   height: clamp(220px, 28vw, 360px);
-  border-radius: 14px;
-}
-
-/* ---------- Body: content | sticky booking ---------- */
-
-.sd-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  grid-template-areas: 'main aside';
-  align-items: start;
-  gap: 48px;
-  margin-top: 32px;
-}
-
-.detail-top__info {
-  grid-area: main;
-  min-width: 0;
-}
-
-.detail-top__book {
-  grid-area: aside;
-  position: sticky;
-  top: calc(var(--header-h, 80px) + 16px);
-  z-index: 2;
-  display: grid;
-  gap: 16px;
-  margin: 0;
-}
-
-.sd-main > * + * {
-  margin-top: 36px;
-  padding-top: 36px;
-  border-top: 1px solid var(--dvb-hairline);
-}
-
-.sd-main > .sd-summary + * {
-  margin-top: 30px;
-  padding-top: 0;
-  border-top: 0;
-}
-
-.sd-summary {
-  padding: 20px 24px;
-  border-radius: 16px;
-  background: var(--dvb-brand-tint);
-  border: 1px solid var(--dvb-brand-soft);
-}
-
-.sd-summary .detail-head__tagline {
-  display: -webkit-box;
-  margin: 0;
-  max-width: none;
-  overflow: hidden;
-  font-size: 16.5px;
-  line-height: 1.6;
-  color: var(--dvb-ink);
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
-
-.sd-summary .detail-head__hl {
-  gap: 8px 20px;
-  margin-top: 14px;
-}
-
-.sd-summary .detail-head__tagline + .detail-head__hl {
-  padding-top: 14px;
-  border-top: 1px dashed var(--dvb-brand-soft);
-}
-
-.sd-summary .detail-head__hl li {
-  font-size: 14.5px;
-}
-
-.sd-main .dsec-title {
-  margin-bottom: 14px;
-}
-
-/* Amenities: even grid instead of hand-sized chips. */
-.amen__list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 10px;
-}
-
-.amen__chip {
-  width: auto !important;
-  margin-right: 0 !important;
-}
-
-/* Rooms: two per row; a lone room becomes a wide horizontal card. */
-.rooms__list {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-}
-
-.rooms__list:has(> .rtype:only-child) {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.rtype:only-child {
-  flex-direction: row;
-  min-height: 0;
-}
-
-.rtype:only-child .rtype__media {
-  flex: 0 0 44%;
-  height: auto;
-  min-height: 240px;
-  aspect-ratio: auto;
-}
-
-.rtype:only-child .rtype__body {
-  flex: 1;
-  justify-content: center;
-}
-
-/* Stay facts, notes and rules as one row of matching cards. */
-.sd-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
-  gap: 16px;
-}
-
-.sd-info:empty {
-  display: none;
-}
-
-.sd-info > .facts,
-.sd-info > .notes,
-.sd-info > .rules {
-  margin: 0;
-  padding: 20px 22px;
-  border: 1px solid var(--dvb-hairline);
-  border-radius: 16px;
-  background: #fff;
-}
-
-.sd-info .dsec-title,
-.sd-info .notes__title {
-  margin-bottom: 12px;
-  font-size: 19px;
-}
-
-/* ---------- Advisor band ---------- */
-
-.sd-support {
-  margin-top: 56px;
-}
-
-.sd-support:empty {
-  display: none;
-}
-
-.sd-support .support {
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  min-height: 0;
-  border-radius: 18px;
-}
-
-.sd-support .support__img {
-  height: 100%;
-  min-height: 240px;
-  max-height: 340px;
-  object-fit: cover;
-}
-
-.sd-support .support__body {
-  justify-content: center;
-  gap: 10px;
-  padding: 32px 40px;
-}
-
-.sd-support .support__title {
-  font-size: clamp(22px, 2vw, 28px);
-}
-
-.sd-support .support__text {
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.sd-support .support__actions {
-  margin-top: 8px;
-}
-
-.sd-support .support__btn {
-  min-height: 44px;
-  padding: 0 18px;
-  font-size: 14.5px;
-}
-
-/* ---------- Responsive ---------- */
-
-@media (max-width: 1023px) {
-  .sd-body {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'aside'
-      'main';
-    gap: 32px;
-    margin-top: 24px;
-  }
-
-  .detail-top__book {
-    position: static;
-  }
-
-  .gallery {
-    height: clamp(260px, 52vw, 440px);
-  }
+  border-radius: 10px;
 }
 
 @media (max-width: 767px) {
-  .detail-head {
-    align-items: flex-start;
-    padding-bottom: 14px;
-  }
-
+  /* Main photo full width, the thumbnails share one row below it. */
   .gallery {
+    display: flex;
+    flex-wrap: wrap;
     height: auto;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: auto;
     gap: 6px;
   }
 
   .gallery__main {
-    grid-column: 1 / -1 !important;
-    grid-row: auto !important;
+    flex: 1 1 100%;
     aspect-ratio: 4 / 3;
   }
 
   .gallery__thumb {
-    grid-column: auto !important;
-    grid-row: auto !important;
-    aspect-ratio: 4 / 3;
-  }
-
-  .gallery--2 .gallery__thumb {
-    grid-column: 1 / -1 !important;
+    flex: 1 1 0;
+    min-width: 0;
+    aspect-ratio: 1;
   }
 
   .gallery__all {
     inset: 10px 10px auto auto;
     height: 32px;
-  }
-
-  .sd-main > * + * {
-    margin-top: 28px;
-    padding-top: 28px;
-  }
-
-  .sd-summary {
-    padding: 16px 18px;
-  }
-
-  .rtype:only-child {
-    flex-direction: column;
-  }
-
-  .rtype:only-child .rtype__media {
-    flex-basis: auto;
-    min-height: 0;
-    aspect-ratio: 16 / 10;
-  }
-
-  .sd-support {
-    margin-top: 36px;
-  }
-
-  .sd-support .support {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sd-support .support__img {
-    min-height: 0;
-    max-height: 220px;
-  }
-
-  .sd-support .support__body {
-    padding: 20px;
   }
 }
