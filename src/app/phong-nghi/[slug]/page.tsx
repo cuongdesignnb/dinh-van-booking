@@ -95,39 +95,27 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
         />
       </div>
 
-      <div className="detail-top detail-shell">
+      <div className="detail-shell stay-detail">
         <header className="detail-head">
-          {stay.badge && (
-            <p className="detail-head__badge">
-              <span className="detail-head__pill">
-                <Leaf size={12} aria-hidden="true" fill="currentColor" /> {stay.badge}
+          <div className="detail-head__main">
+            {stay.badge && (
+              <p className="detail-head__badge">
+                <span className="detail-head__pill">
+                  <Leaf size={12} aria-hidden="true" fill="currentColor" /> {stay.badge}
+                </span>
+              </p>
+            )}
+            <h1 className="detail-head__title">{stay.name}</h1>
+            <p className="detail-head__meta">
+              <span>
+                <MapPin size={16} aria-hidden="true" /> {stay.address}
               </span>
+              {stay.reviewCount > 0 && <span className="detail-head__rating">
+                <Star size={17} className="star" aria-hidden="true" />
+                <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
+              </span>}
             </p>
-          )}
-          <h1 className="detail-head__title">{stay.name}</h1>
-          <p className="detail-head__meta">
-            <span>
-              <MapPin size={16} aria-hidden="true" /> {stay.address}
-            </span>
-            {stay.reviewCount > 0 && <span className="detail-head__rating">
-              <Star size={17} className="star" aria-hidden="true" />
-              <strong>{formatRating(stay.rating)}</strong> ({stay.reviewCount} đánh giá)
-            </span>}
-          </p>
-          <p className="detail-head__tagline">“{stay.tagline}”</p>
-          <ul className="detail-head__hl">
-            {stay.highlights.map((h, i) => {
-              const Icon = HIGHLIGHT_ICONS[i % HIGHLIGHT_ICONS.length];
-              return (
-                <li key={h}>
-                  <span aria-hidden="true">
-                    <Icon size={16} />
-                  </span>
-                  {h}
-                </li>
-              );
-            })}
-          </ul>
+          </div>
           <ShareSave id={stay.id} name={stay.name} />
         </header>
 
@@ -135,43 +123,59 @@ export default async function StayDetailPage({ params, searchParams }: Params) {
           <PropertyGallery images={stay.gallery} note={stay.galleryNote} name={stay.name} />
         </div>
 
-        <aside className="detail-top__book" aria-label="Đặt phòng">
-          <BookingCard />
-        </aside>
+        <div className="sd-body">
+          <aside className="detail-top__book" aria-label="Đặt phòng">
+            <BookingCard />
+            {stay.host && <div className="detail-top__host"><HostCard host={stay.host} /></div>}
+          </aside>
 
-        {stay.host && <div className="detail-top__host"><HostCard host={stay.host} /></div>}
+          <div className="detail-top__info sd-main">
+            {(stay.tagline || stay.highlights.length > 0) && <div className="sd-summary">
+              {stay.tagline && <p className="detail-head__tagline">“{stay.tagline}”</p>}
+              {stay.highlights.length > 0 && <ul className="detail-head__hl">
+                {stay.highlights.map((h, i) => {
+                  const Icon = HIGHLIGHT_ICONS[i % HIGHLIGHT_ICONS.length];
+                  return (
+                    <li key={h}>
+                      <span aria-hidden="true">
+                        <Icon size={16} />
+                      </span>
+                      {h}
+                    </li>
+                  );
+                })}
+              </ul>}
+            </div>}
 
-        <div className="detail-top__info">
-          <section className="intro" aria-labelledby="intro-t">
-            {introTitle && <h2 className="dsec-title" id="intro-t">{introTitle}</h2>}
-            {stay.descriptionDocument ? <RichContentRenderer document={stay.descriptionDocument} className="intro__text" /> : <p className="intro__text">{stay.description}</p>}
-            {richDocumentHasContent(detail.introQuote) && <figure className="intro__quote"><blockquote><RichContentRenderer document={detail.introQuote as RichDocument} /></blockquote>{quoteAuthor && <figcaption>{quoteAuthor}</figcaption>}</figure>}
-          </section>
+            <section className="intro" aria-labelledby="intro-t">
+              <h2 className="dsec-title" id="intro-t">{introTitle || 'Giới thiệu'}</h2>
+              {stay.descriptionDocument ? <RichContentRenderer document={stay.descriptionDocument} className="intro__text" /> : <p className="intro__text">{stay.description}</p>}
+              {richDocumentHasContent(detail.introQuote) && <figure className="intro__quote"><blockquote><RichContentRenderer document={detail.introQuote as RichDocument} /></blockquote>{quoteAuthor && <figcaption>{quoteAuthor}</figcaption>}</figure>}
+            </section>
+
             <Amenities amenities={stay.amenities} labels={stay.amenityLabels} title={publicText(detail.amenitiesTitle)} />
-        </div>
-      </div>
 
-      <div className="detail-lower detail-shell">
-        <div className="detail-lower__left">
-          <RoomTypes title={publicText(detail.roomsTitle)} />
-          <ReviewCards reviews={reviews} total={stay.reviewCount} title={publicText(detail.reviewsTitle)} />
+            <RoomTypes title={publicText(detail.roomsTitle)} />
+
+            <div className="sd-info">
+              {(factsTitle || checkInLabel || checkOutLabel || breakfastLabel) && <section className="facts" aria-labelledby={factsTitle ? 'facts-t' : undefined} aria-label={factsTitle ? undefined : 'Thông tin lưu trú'}>
+                {factsTitle && <h2 className="dsec-title" id="facts-t">{factsTitle}</h2>}
+                <ul className="facts__list">
+                  {checkInLabel && stay.checkInTime && <li><span className="facts__ic" aria-hidden="true"><Clock3 size={18} /></span><span><b>{checkInLabel}:</b> {stay.checkInTime}</span></li>}
+                  {checkOutLabel && stay.checkOutTime && <li><span className="facts__ic" aria-hidden="true"><CalendarCheck size={17} /></span><span><b>{checkOutLabel}:</b> {stay.checkOutTime}</span></li>}
+                  {breakfastLabel && <li><span className="facts__ic" aria-hidden="true"><Coffee size={17} /></span><span><b>{breakfastLabel}:</b> {breakfastValue}</span></li>}
+                </ul>
+              </section>}
+              <NotesPaper notes={stay.notes ?? []} title={publicText(detail.notesTitle)} thanks={publicText(detail.notesThanks)} />
+              <HouseRules rules={stay.houseRules ?? []} title={publicText(detail.houseRulesTitle)} />
+            </div>
+
+            <ReviewCards reviews={reviews} total={stay.reviewCount} title={publicText(detail.reviewsTitle)} />
+          </div>
         </div>
-        <div className="detail-lower__right">
-          <div className="facts-row">
-            {(factsTitle || checkInLabel || checkOutLabel || breakfastLabel) && <section className="facts" aria-labelledby={factsTitle ? 'facts-t' : undefined} aria-label={factsTitle ? undefined : 'Thông tin lưu trú'}>
-              {factsTitle && <h2 className="dsec-title" id="facts-t">{factsTitle}</h2>}
-              <ul className="facts__list">
-                {checkInLabel && stay.checkInTime && <li><span className="facts__ic" aria-hidden="true"><Clock3 size={18} /></span><span><b>{checkInLabel}:</b> {stay.checkInTime}</span></li>}
-                {checkOutLabel && stay.checkOutTime && <li><span className="facts__ic" aria-hidden="true"><CalendarCheck size={17} /></span><span><b>{checkOutLabel}:</b> {stay.checkOutTime}</span></li>}
-                {breakfastLabel && <li><span className="facts__ic" aria-hidden="true"><Coffee size={17} /></span><span><b>{breakfastLabel}:</b> {breakfastValue}</span></li>}
-              </ul>
-            </section>}
-            <NotesPaper notes={stay.notes ?? []} title={publicText(detail.notesTitle)} thanks={publicText(detail.notesThanks)} />
-          </div>
-          <div className="rules-row">
-            <HouseRules rules={stay.houseRules ?? []} title={publicText(detail.houseRulesTitle)} />
-            <SupportCard />
-          </div>
+
+        <div className="sd-support">
+          <SupportCard />
         </div>
       </div>
       <MobileBookingBar />
