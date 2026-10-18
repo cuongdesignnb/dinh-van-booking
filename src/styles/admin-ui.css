@@ -1173,6 +1173,21 @@ textarea.ainput {
 }
 
 /* Structured "Về mình" (about.page) form. */
+.about-form__sample {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--dvb-line-strong);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-sage-50);
+}
+
+.about-form__sample .ahint { flex: 1 1 320px; margin: 0; }
+
 .about-form__nav {
   position: sticky;
   top: 0;

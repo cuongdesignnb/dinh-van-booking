@@ -63,3 +63,24 @@ test('text fields are trimmed, length-checked, and unknown keys are dropped', ()
   assert.equal(normalize({ ...bootstrap(), enabled: false, title: '' }).title, null);
   assert.throws(() => normalize([]), BadRequestException);
 });
+
+test('mockup blocks: highlights, story photos and services are validated', () => {
+  const opts = { allowedBlocks: ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote'] };
+  const base = { enabled: true, title: 'Đinh Vân – Người kể chuyện du lịch Cúc Phương' };
+  const ok = normalizeAboutPage({
+    ...base,
+    primaryCtaTarget: '/phong-nghi',
+    highlights: [{ icon: 'zap', title: 'Hỗ trợ nhanh', text: 'Trả lời qua Zalo' }],
+    storyPhotos: [{ imageMediaId: '11111111-1111-4111-8111-111111111111', caption: 'Rừng quê mình' }],
+    services: [{ icon: 'bed', title: 'Tư vấn phòng nghỉ', text: 'Gợi ý chỗ nghỉ', linkTarget: '/phong-nghi' }],
+    contactNote: 'Phản hồi từ 7:00 – 22:00 hằng ngày',
+  }, opts);
+  assert.equal((ok.highlights as unknown[]).length, 1);
+  assert.equal((ok.services as Array<{ linkTarget: string }>)[0].linkTarget, '/phong-nghi');
+  assert.equal(ok.contactNote, 'Phản hồi từ 7:00 – 22:00 hằng ngày');
+  assert.throws(() => normalizeAboutPage({ ...base, highlights: Array.from({ length: 4 }, () => ({ title: 'x' })) }, opts), /tối đa 3/);
+  assert.throws(() => normalizeAboutPage({ ...base, services: [{ title: 'x', linkTarget: 'https://evil.example' }] }, opts), /nội bộ/);
+  assert.throws(() => normalizeAboutPage({ ...base, primaryCtaTarget: '//evil.example' }, opts), /nội bộ/);
+  assert.throws(() => normalizeAboutPage({ ...base, storyPhotos: [{ imageMediaId: 'not-a-uuid' }] }, opts), /Media Library/);
+  assert.throws(() => normalizeAboutPage({ ...base, services: [{ icon: 'rocket', title: 'x' }] }, opts), /biểu tượng/);
+});

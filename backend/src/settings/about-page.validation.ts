@@ -12,7 +12,9 @@ import { sanitizeDocument, type RichNode } from '../content/document';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ITEM_ID = /^[a-z0-9][a-z0-9-]{0,47}$/;
 
-export const ABOUT_VALUE_ICONS = ['check', 'message', 'shield', 'phone', 'heart', 'leaf', 'map', 'house'] as const;
+export const ABOUT_VALUE_ICONS = ['check', 'message', 'shield', 'phone', 'heart', 'leaf', 'map', 'house', 'users'] as const;
+export const ABOUT_HIGHLIGHT_ICONS = ['heart', 'leaf', 'zap', 'check', 'map', 'phone', 'users'] as const;
+export const ABOUT_SERVICE_ICONS = ['bed', 'pin', 'leaf', 'gear', 'compass', 'car', 'ticket', 'users'] as const;
 export const ABOUT_AREA_ICONS = ['trees', 'mountain', 'house', 'waves', 'map'] as const;
 
 /** field -> [Vietnamese label, max length] */
@@ -22,6 +24,19 @@ const TEXT_FIELDS: Record<string, [string, number]> = {
   phoneCtaLabel: ['Nhãn nút gọi điện', 60],
   zaloCtaLabel: ['Nhãn nút Zalo', 60],
   contactCtaLabel: ['Nhãn nút gửi yêu cầu', 60],
+  primaryCtaLabel: ['Nhãn nút chính', 60],
+  heroScript: ['Dòng chữ viết tay trên ảnh', 120],
+  heroNote: ['Ghi chú trên ảnh', 200],
+  storyEyebrow: ['Nhãn nhỏ câu chuyện', 40],
+  valuesEyebrow: ['Nhãn nhỏ khối giá trị', 40],
+  servicesTitle: ['Tiêu đề khối hỗ trợ', 120],
+  servicesIntro: ['Mô tả khối hỗ trợ', 300],
+  faqIntro: ['Mô tả FAQ', 200],
+  contactEyebrow: ['Nhãn nhỏ khối liên hệ', 40],
+  contactTitle: ['Tiêu đề khối liên hệ', 120],
+  contactText: ['Nội dung khối liên hệ', 300],
+  contactZaloLabel: ['Nhãn nút Zalo khối liên hệ', 40],
+  contactNote: ['Ghi chú giờ phản hồi', 120],
   storyTitle: ['Tiêu đề câu chuyện', 120],
   greeting: ['Lời chào viết tay', 120],
   signatureNote: ['Dòng chữ ký', 120],
@@ -49,6 +64,7 @@ const MEDIA_FIELDS: Record<string, string> = {
   heroImageMediaId: 'Ảnh đầu trang',
   portraitMediaId: 'Ảnh chân dung',
   ogImageMediaId: 'Ảnh chia sẻ',
+  contactImageMediaId: 'Ảnh nền khối liên hệ',
 };
 
 type Rec = Record<string, unknown>;
@@ -136,6 +152,23 @@ export function normalizeAboutPage(input: unknown, options: { allowedBlocks: str
   for (const [key, label] of Object.entries(RICH_FIELDS)) out[key] = rich(input[key], label, allowedBlocks);
   for (const [key, label] of Object.entries(MEDIA_FIELDS)) out[key] = mediaId(input[key], label);
   if (out.enabled && !out.title) fail('Tiêu đề trang (H1) không được để trống khi trang đang bật.');
+  out.primaryCtaTarget = internalPath(input.primaryCtaTarget, 'Đường dẫn nút chính');
+
+  out.highlights = list(input.highlights, 'Điểm nổi bật', 3, 'highlight', (row, name) => ({
+    icon: icon(row.icon, ABOUT_HIGHLIGHT_ICONS, 'heart', name),
+    title: requiredTitle(row.title, name, 60),
+    text: text(row.text, `${name} – mô tả`, 80) ?? '',
+  }));
+  out.storyPhotos = list(input.storyPhotos, 'Ảnh câu chuyện', 2, 'photo', (row, name) => ({
+    imageMediaId: mediaId(row.imageMediaId, `${name} – ảnh`),
+    caption: text(row.caption, `${name} – chú thích`, 80) ?? '',
+  }));
+  out.services = list(input.services, 'Hỗ trợ', 4, 'service', (row, name) => ({
+    icon: icon(row.icon, ABOUT_SERVICE_ICONS, 'bed', name),
+    title: requiredTitle(row.title, name, 80),
+    text: text(row.text, `${name} – mô tả`, 300) ?? '',
+    linkTarget: internalPath(row.linkTarget, `${name} – đường dẫn`),
+  }));
 
   out.values = list(input.values, 'Giá trị', 8, 'value', (row, name) => ({
     icon: icon(row.icon, ABOUT_VALUE_ICONS, 'check', name),
