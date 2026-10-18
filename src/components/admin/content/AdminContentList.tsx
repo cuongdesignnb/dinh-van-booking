@@ -444,7 +444,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
             <button type="button" className="cedit__back" onClick={closeEditor} disabled={saving} aria-label="Quay lại danh sách"><ArrowLeft size={18} aria-hidden="true" /></button>
             <div className="cedit__crumb">
               <span>{title}</span>
-              <strong>{form.title.trim() || (form.id ? 'Chưa đặt tiêu đề' : `Tạo ${kindLower}`)}</strong>
+              <h2>{form.title.trim() || (form.id ? 'Chưa đặt tiêu đề' : `Tạo ${kindLower}`)}</h2>
             </div>
             <span className={`cedit__state${dirty ? ' cedit__state--dirty' : ''}`}>
               {saving ? 'Đang lưu…' : dirty ? 'Có thay đổi chưa lưu' : savedAt ? `Đã lưu · ${relativeTime(savedAt)}` : 'Chưa lưu'}

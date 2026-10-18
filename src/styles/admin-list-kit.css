@@ -26,7 +26,7 @@
 }
 
 /* Editors bring their own bar (back, title, save), so the page title would repeat it. */
-.ashell__main:has(.content-manager--editing) .atop__head {
+.ashell__main:has(.content-manager--editing, .admin-editing) .atop__head {
   display: none;
 }
 
@@ -246,6 +246,24 @@
   font-weight: 600;
 }
 
+.arow__tag {
+  padding: 1px 8px;
+  border-radius: var(--dvb-r-pill);
+  background: var(--dvb-clay-500);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prop-rooms {
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+}
+
+a.arow__main {
+  text-decoration: none;
+}
+
 .arow__title {
   overflow: hidden;
   color: var(--dvb-ink-900);
@@ -337,8 +355,12 @@
   font-weight: 600;
 }
 
+.dvb-admin .cedit__crumb h2,
 .cedit__crumb strong {
+  margin: 0;
   overflow: hidden;
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-weight: 700;
   max-width: 52ch;
   color: var(--dvb-ink-900);
   font-size: 17px;
