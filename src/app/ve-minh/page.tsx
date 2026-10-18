@@ -173,16 +173,14 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
   const storyTitle = publicText(page.storyTitle);
   const storyEyebrow = publicText(page.storyEyebrow);
   const showStory = !!(storyTitle && (richDocumentHasContent(page.story) || publicText(page.story)));
-  const storyPhotos = rows(page.storyPhotos).map((item, index) => ({
+  const photoRows = rows(page.storyPhotos).map((item, index) => ({
     id: publicText(item.id) || `photo-${index}`,
     image: publicAsset(site, item.imageMediaId),
     caption: publicText(item.caption),
   })).slice(0, 2);
-  // Without uploaded story photos the advisor portrait stands in, so the collage is never empty.
-  if (!storyPhotos.some((photo) => photo.image) && about.portrait) {
-    if (storyPhotos.length) storyPhotos[0] = { ...storyPhotos[0], image: about.portrait };
-    else storyPhotos.push({ id: 'portrait', image: about.portrait, caption: '' });
-  }
+  // Only polaroids with a picture are shown; with none uploaded the advisor portrait stands in.
+  const storyPhotos = photoRows.filter((photo) => photo.image);
+  if (!storyPhotos.length && about.portrait) storyPhotos.push({ id: 'portrait', image: about.portrait, caption: photoRows[0]?.caption ?? '' });
 
   const valuesTitle = publicText(page.valuesTitle);
   const values = rows(page.values).flatMap((item, index) => {
