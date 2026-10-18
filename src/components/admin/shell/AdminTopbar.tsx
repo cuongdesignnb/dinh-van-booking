@@ -1,7 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronRight, LogOut, Menu } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronDown, ExternalLink, LogOut, Menu, Search } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Popover } from '@/components/ui/Popover';
 import { useAdminSession } from '../AdminAuthGate';
@@ -15,7 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
   viewer: 'Chỉ xem',
 };
 
-export function AdminTopbar({ meta, onMenu, menuOpen }: { meta: AdminPageMeta; onMenu: () => void; menuOpen?: boolean }) {
+export function AdminTopbar({ meta, onMenu, menuOpen, onSearch }: { meta: AdminPageMeta; onMenu: () => void; menuOpen?: boolean; onSearch?: () => void }) {
   const { user, logout } = useAdminSession();
   const userRef = useRef<HTMLButtonElement>(null);
   const [userOpen, setUserOpen] = useState(false);
@@ -48,10 +47,17 @@ export function AdminTopbar({ meta, onMenu, menuOpen }: { meta: AdminPageMeta; o
         <button type="button" className="atop__menu" onClick={onMenu} aria-label="Mở menu quản trị" aria-controls="admin-sidebar" aria-expanded={!!menuOpen}>
           <Menu size={20} aria-hidden="true" />
         </button>
-        <nav className="atop__crumbs" aria-label="Vị trí">
-          <Link href="/admin">Quản trị</Link>
-          {meta.section && <><ChevronRight size={14} aria-hidden="true" /><span>{meta.section}</span></>}
-        </nav>
+        {onSearch && (
+          <button type="button" className="atop__command" onClick={onSearch} aria-label="Tìm nhanh trong quản trị">
+            <Search size={16} aria-hidden="true" />
+            <span>Tìm trang, chức năng…</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+        )}
+        <a className="atop__site" href="/" target="_blank" rel="noreferrer">
+          <ExternalLink size={16} aria-hidden="true" />
+          <span>Xem website</span>
+        </a>
         <button
           type="button"
           className="atop__user"
@@ -69,9 +75,13 @@ export function AdminTopbar({ meta, onMenu, menuOpen }: { meta: AdminPageMeta; o
         </button>
       </div>
 
-      <div className="atop__titles">
-        <h1 className="atop__title">{meta.title}</h1>
-        <p className="atop__subtitle">{meta.subtitle}</p>
+      <div className="atop__head">
+        <div className="atop__titles">
+          <h1 className="atop__title">{meta.title}</h1>
+          <p className="atop__subtitle">{meta.subtitle}</p>
+        </div>
+        {/* Screens portal their main actions here (see PageActions). */}
+        <div className="atop__actions" id="admin-page-actions" />
       </div>
 
       <Popover anchorRef={userRef} open={userOpen} onClose={() => setUserOpen(false)} label="Tài khoản" id="admin-user" align="end">

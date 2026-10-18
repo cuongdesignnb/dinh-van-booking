@@ -1,0 +1,679 @@
+/* ==========================================================================
+   Admin list + editor layout (shared by content, stays, bookings screens).
+   One page header (title left, main actions right), one list card
+   (status tabs, search, rows, footer), and a two-column editor.
+   ========================================================================== */
+
+/* --------------------------------------------- page header + actions */
+
+.atop__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.atop__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.atop__actions:empty {
+  display: none;
+}
+
+/* Editors bring their own bar (back, title, save), so the page title would repeat it. */
+.ashell__main:has(.content-manager--editing, .admin-editing) .atop__head {
+  display: none;
+}
+
+/* ------------------------------------------------------------- list card */
+
+.alist {
+  overflow: hidden;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+  box-shadow: var(--dvb-shadow-xs);
+}
+
+.alist__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.alist__tabs {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.alist__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--dvb-r-sm);
+  background: transparent;
+  color: var(--dvb-ink-600);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.alist__tab:hover {
+  background: var(--dvb-cream-100);
+  color: var(--dvb-ink-900);
+}
+
+.alist__tab--on,
+.alist__tab--on:hover {
+  background: var(--dvb-sage-100);
+  color: var(--dvb-forest-900);
+}
+
+.alist__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--dvb-r-pill);
+  background: var(--dvb-cream-100);
+  color: var(--dvb-ink-600);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.alist__tab--on .alist__count {
+  background: var(--dvb-forest-600);
+  color: #fff;
+}
+
+.alist__reload {
+  flex: none;
+}
+
+.alist__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--dvb-line);
+}
+
+.alist__search {
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-surface-1);
+  color: var(--dvb-ink-500);
+}
+
+.alist__search:focus-within {
+  border-color: var(--dvb-forest-600);
+  box-shadow: 0 0 0 3px rgb(38 111 62 / 12%);
+}
+
+.alist__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--dvb-ink-900);
+  font: inherit;
+  font-size: 14px;
+}
+
+.alist__toolbar .ainput {
+  width: auto;
+  min-height: 40px;
+}
+
+.alist__state {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 36px 16px;
+  color: var(--dvb-ink-500);
+  font-size: 14px;
+  text-align: center;
+}
+
+.alist__state strong {
+  color: var(--dvb-ink-900);
+}
+
+.alist__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alist__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--dvb-line);
+  color: var(--dvb-ink-500);
+  font-size: 13px;
+}
+
+/* One row: thumbnail + text (clickable, opens the item) + one quick action + the "..." menu. */
+.arow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 0 0;
+  border-bottom: 1px solid var(--dvb-line);
+  transition: background-color var(--dvb-dur-fast) ease;
+}
+
+.arow:last-child {
+  border-bottom: 0;
+}
+
+.arow:hover {
+  background: var(--dvb-cream-50);
+}
+
+.arow__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px 0 12px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.arow__main:focus-visible {
+  outline: 2px solid var(--dvb-forest-600);
+  outline-offset: -2px;
+}
+
+.arow__thumb {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 88px;
+  height: 60px;
+  border-radius: 10px;
+  background: var(--dvb-cream-100) center / cover no-repeat;
+  color: var(--dvb-ink-400);
+}
+
+.arow__text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.arow__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.arow__warn {
+  color: var(--dvb-clay-600);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.arow__tag {
+  padding: 1px 8px;
+  border-radius: var(--dvb-r-pill);
+  background: var(--dvb-clay-500);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prop-rooms {
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+}
+
+a.arow__main {
+  text-decoration: none;
+}
+
+.arow__title {
+  overflow: hidden;
+  color: var(--dvb-ink-900);
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arow__main:hover .arow__title {
+  color: var(--dvb-forest-700);
+}
+
+.arow__text small {
+  overflow: hidden;
+  color: var(--dvb-ink-500);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arow__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .arow {
+    flex-wrap: wrap;
+    padding: 0 12px 12px 0;
+  }
+
+  .arow__thumb {
+    width: 64px;
+    height: 48px;
+  }
+
+  .arow__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ------------------------------------------------ table inside a list */
+
+.alist .admin-operations__table-wrap {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.alist .atable th {
+  background: transparent;
+  color: var(--dvb-ink-500);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.alist .atable td small {
+  display: block;
+  color: var(--dvb-ink-500);
+  font-size: 12.5px;
+}
+
+.atable__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.booking-table tbody tr {
+  cursor: pointer;
+}
+
+.booking-table tbody tr:hover,
+.booking-table tbody tr.is-selected {
+  background: var(--dvb-cream-50);
+}
+
+.alist__foot .apager,
+.alist__foot nav {
+  margin: 0;
+}
+
+.alist .atable .atable__num {
+  text-align: right;
+}
+
+.booking-table .admin-operations__row-link {
+  color: var(--dvb-forest-700);
+  font-weight: 700;
+}
+
+/* -------------------------------------------- booking detail (drawer) */
+
+.dialog.dialog--side {
+  width: min(520px, 96vw);
+}
+
+/* Admin dialogs render outside .dvb-admin, so the primary/danger button colours are repeated here. */
+.dialog--admin .abtn--primary {
+  border-color: var(--dvb-forest-700);
+  background: var(--dvb-forest-700);
+  color: #fff;
+}
+
+.dialog--admin .abtn--primary:hover:not(:disabled) {
+  border-color: var(--dvb-forest-800);
+  background: var(--dvb-forest-800);
+}
+
+.dialog--admin .abtn--danger {
+  border-color: var(--dvb-danger-bg);
+  background: var(--dvb-danger-bg);
+  color: var(--dvb-danger);
+}
+
+.dialog--side .dialog__panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog--side .dialog__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0;
+}
+
+.dialog--side .adrawer__foot {
+  bottom: 0;
+  z-index: 2;
+  margin-top: 16px;
+  padding-bottom: 16px;
+  box-shadow: 0 -8px 16px -12px rgb(0 0 0 / 25%);
+}
+
+.dialog--side .adrawer__head h2 {
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.dialog--side .bdetail__facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bdetail {
+  display: grid;
+  gap: 16px;
+}
+
+.bdetail__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-cream-50);
+}
+
+.bdetail__facts > div {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+}
+
+.bdetail__facts span,
+.bdetail__total span {
+  color: var(--dvb-ink-500);
+  font-size: 12.5px;
+}
+
+.bdetail__block {
+  display: grid;
+  gap: 6px;
+}
+
+.dvb-admin .bdetail__block h3,
+.dialog--admin .bdetail__block h3 {
+  margin: 0;
+  color: var(--dvb-ink-900);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bdetail__block p {
+  margin: 0;
+}
+
+.bdetail__lines {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bdetail__lines li,
+.bdetail__total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bdetail__total {
+  padding-top: 8px;
+  border-top: 1px dashed var(--dvb-line);
+}
+
+.bdetail__total strong {
+  font-size: 16px;
+}
+
+.bdetail__total--sub {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.bdetail__total--sub strong {
+  font-size: 14px;
+}
+
+.bdetail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.bdetail__actions .abtn--danger {
+  margin-right: auto;
+}
+
+/* ------------------------------------------------- editor (2 columns) */
+
+.cedit__bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin: 0 0 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--dvb-line);
+  background: var(--dvb-cream-50);
+}
+
+.cedit__back {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-surface-1);
+  color: var(--dvb-ink-700);
+  cursor: pointer;
+}
+
+.cedit__back:hover {
+  border-color: var(--dvb-sage-300);
+  color: var(--dvb-forest-800);
+}
+
+.cedit__crumb {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cedit__crumb span {
+  color: var(--dvb-ink-500);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dvb-admin .cedit__crumb h2,
+.cedit__crumb strong {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-weight: 700;
+  max-width: 52ch;
+  color: var(--dvb-ink-900);
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cedit__state {
+  color: var(--dvb-ink-500);
+  font-size: 13px;
+}
+
+.cedit__state--dirty {
+  color: var(--dvb-clay-600);
+  font-weight: 600;
+}
+
+.cedit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.cedit__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.cedit__main {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+}
+
+.cedit__title {
+  width: 100%;
+  padding: 4px 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--dvb-line);
+  outline: 0;
+  background: transparent;
+  color: var(--dvb-ink-900);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.cedit__title:focus {
+  border-bottom-color: var(--dvb-forest-600);
+}
+
+.cedit__side {
+  position: sticky;
+  top: 72px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+}
+
+.cside {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+}
+
+.dvb-admin .cside h3 {
+  margin: 0;
+  color: var(--dvb-ink-900);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cside__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--dvb-ink-600);
+  font-size: 13px;
+}
+
+.cside__count {
+  margin-left: 6px;
+  color: var(--dvb-ink-400);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cside__toggle {
+  align-items: flex-start;
+}
+
+.cside__full {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 1180px) {
+  .cedit__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cedit__side {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}

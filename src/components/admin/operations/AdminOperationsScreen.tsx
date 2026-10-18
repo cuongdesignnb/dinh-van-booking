@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, BedDouble, CalendarClock, Check, CircleDollarSign,
+  Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, ArrowRight, BedDouble, CalendarClock, Check, CircleCheck, CircleDollarSign,
   ClipboardList, CreditCard, FileBarChart2, Plus, RefreshCw, Search, Tag, Users,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
@@ -10,7 +10,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api/client';
 import { useAdminSession } from '@/components/admin/AdminAuthGate';
 import { useAdminToast } from '@/components/admin/toast/useAdminToast';
-import { AdminPagination, EmptyState, ErrorState, Panel, StatCard, StatusBadge } from '../shared/ui';
+import { AdminPagination, EmptyState, ErrorState, FormDrawer, Panel, StatCard, StatusBadge } from '../shared/ui';
+import { ListCard, ListFooter, PageActions, StatusTabs } from '../shared/ListKit';
 
 type Section = 'dashboard' | 'bookings' | 'inventory' | 'customers' | 'coupons' | 'payments' | 'reports';
 type Page<T> = { items: T[]; total: number; page: number; pageSize: number };
@@ -30,13 +31,9 @@ type Coupon = { id: string; code: string; name: string; discountType: string; pe
 type Payment = { id: string; bookingId: string; method: string; provider: string | null; externalReference: string | null; status: string; amountVnd: string; postedAt: string; note: string | null; verifiedBy?: { fullName: string } | null; booking: { id: string; publicCode: string; customer: { fullName: string; phone?: string | null } }; refunds?: Array<{ id: string; amountVnd: string; status: string }> };
 type Refund = { id: string; paymentId: string; amountVnd: string; reason: string; status: string; createdAt: string; payment: { booking: { publicCode: string; customer: { fullName: string } } } };
 type InventoryRow = { roomTypeId: string; stayDate: string; onSale: boolean; capacity: number | null; blockedCount: number | null; heldCount: number | null; reservedCount: number | null; stopSell: boolean; available: number | null; version: number | null };
-type Dashboard = { generatedAt: string; sources: Record<string, string>; bookings: { total: number; byStatus: Record<string, number> }; newInquiries: number; customers: number; published: { stays: number; combos: number; destinations: number }; content: { draft: number; review: number; published: number }; inventoryAlerts: number; holdsExpiringWithinHour: number; payments: Record<string, number>; refunds: Record<string, number>; recordedPaymentsVnd: string };
+type Dashboard = { waitingChats?: number; pendingReviews?: number; generatedAt: string; sources: Record<string, string>; bookings: { total: number; byStatus: Record<string, number> }; newInquiries: number; customers: number; published: { stays: number; combos: number; destinations: number }; content: { draft: number; review: number; published: number }; inventoryAlerts: number; holdsExpiringWithinHour: number; payments: Record<string, number>; refunds: Record<string, number>; recordedPaymentsVnd: string };
 type Report = { from: string; toExclusive: string; timezone: string; bookingSummary: { total: number; byStatus: Array<{ status: string; count: number; bookingValueVnd: string }> }; revenueSummary: { postedPaymentsVnd: string; settledRefundsVnd: string; netCashVnd: string; paymentCount: number; refundCount: number }; inquiryConversion: { total: number; won: number; conversionBps: number; byStage: Array<{ stage: string; count: number }> }; inventory: { listedRoomNights: string; capacity: string; blocked: string; held: string; reserved: string; available: string }; customerAcquisition: { total: number; bySource: Array<{ source: string; count: number }> }; contentPublication: Record<string, number>; scope: { bookingsPaymentsRefundsInventory: { propertyId: string | null; roomTypeId: string | null }; inquiryCustomerContent: string } };
 
-const SECTION_TITLE: Record<Section, string> = {
-  dashboard: 'Chỉ số chính', bookings: 'Đặt phòng', inventory: 'Quỹ phòng', customers: 'Khách hàng',
-  coupons: 'Khuyến mãi', payments: 'Thanh toán & hoàn tiền', reports: 'Báo cáo vận hành',
-};
 const SOURCE_LABEL: Record<string, string> = { website: 'Website', phone: 'Điện thoại', zalo: 'Zalo', referral: 'Giới thiệu', facebook: 'Facebook', walk_in: 'Đến trực tiếp', partner: 'Đối tác', other: 'Khác' };
 const STATUS_LABEL: Record<string, string> = {
   pending_confirmation: 'Chờ xác nhận', confirmed: 'Đã xác nhận', checked_in: 'Đang lưu trú', completed: 'Hoàn tất',
@@ -102,6 +99,7 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
   const inventoryIdempotency = useRef<{ fingerprint: string; key: string } | null>(null);
   const [stopSell, setStopSell] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [bookingCounts, setBookingCounts] = useState<Record<string, number> | null>(null);
   const [bookingForm, setBookingForm] = useState({ roomTypeId: '', checkIn: todayInVietnam(), checkOut: shiftDay(todayInVietnam(), 1), quantity: '1', adults: '2', children: '0', fullName: '', phone: '', email: '', couponCode: '', note: '' });
   const [note, setNote] = useState('');
   const [interaction, setInteraction] = useState('');
@@ -134,6 +132,9 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
           apiRequest<{ items: RoomType[] }>('/admin/inventory/room-types'),
         ]);
         setBookings(result); setRoomTypes(rooms.items);
+        if (user.permissions.includes('dashboard.read')) {
+          apiRequest<Dashboard>('/admin/dashboard/summary').then((summary) => setBookingCounts(summary.bookings.byStatus)).catch(() => setBookingCounts(null));
+        }
         if (!bookingForm.roomTypeId && rooms.items[0]) setBookingForm((old) => ({ ...old, roomTypeId: rooms.items[0].id }));
       } else if (section === 'inventory') {
         const result = await apiRequest<{ items: RoomType[] }>('/admin/inventory/room-types');
@@ -185,7 +186,7 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
     } catch (reason) {
       setError(errorMessage(reason));
     } finally { setLoading(false); }
-  }, [section, page, search, status, bookingFrom, bookingTo, bookingPropertyId, roomTypeId, inventoryFrom, bookingForm.roomTypeId, customer?.id, rangeFrom, rangeTo, reportPropertyId, reportRoomTypeId, reportStatus, paymentStatus, refundStatus]);
+  }, [section, page, search, status, bookingFrom, bookingTo, bookingPropertyId, roomTypeId, inventoryFrom, bookingForm.roomTypeId, customer?.id, rangeFrom, rangeTo, reportPropertyId, reportRoomTypeId, reportStatus, paymentStatus, refundStatus, user.permissions]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -399,11 +400,17 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
 
   return (
     <section className="admin-operations" data-admin-section={section}>
-      <header className="admin-operations__head">
-        <div><h2>{section === 'bookings' && bookingCreateMode ? 'Tạo yêu cầu đặt phòng' : section === 'bookings' && bookingId ? 'Chi tiết đặt phòng' : SECTION_TITLE[section]}</h2><p>Số liệu lấy trực tiếp từ hệ thống, bấm “Tải lại” để cập nhật.</p></div>
-        {(bookingCreateMode || bookingId) && <button type="button" className="abtn abtn--ghost" onClick={() => router.push('/admin/dat-phong')}><ArrowLeft size={15} aria-hidden="true" /> Quay lại danh sách</button>}
+      {section === 'dashboard' && <header className="admin-operations__head">
+        <div><h2>{`Xin chào, ${user.fullName.trim().split(/\s+/).slice(-1)[0] || 'bạn'}`}</h2><p>Việc cần xử lý và tình hình đặt phòng, tư vấn, nội dung hôm nay.</p></div>
+        {can('content.write') && <Link href="/admin/noi-dung/them" className="abtn abtn--ghost"><Plus size={15} aria-hidden="true" /> Bài viết mới</Link>}
+        {can('catalog.write') && <Link href="/admin/phong-nghi/them" className="abtn abtn--primary"><Plus size={15} aria-hidden="true" /> Thêm nơi lưu trú</Link>}
         <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
-      </header>
+      </header>}
+      {section !== 'dashboard' && <PageActions>
+        {bookingCreateMode && <button type="button" className="abtn abtn--ghost" onClick={() => router.push('/admin/dat-phong')}><ArrowLeft size={15} aria-hidden="true" /> Quay lại danh sách</button>}
+        <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
+        {section === 'bookings' && !bookingCreateMode && can('booking.write') && <Link href="/admin/dat-phong/them" className="abtn abtn--primary"><Plus size={15} aria-hidden="true" /> Tạo yêu cầu</Link>}
+      </PageActions>}
       {error && <ErrorState title="Không thực hiện được" text={error} onRetry={() => void load()} />}
       {notice && <p className="admin-operations__notice" role="status"><Check size={16} aria-hidden="true" /> {notice}</p>}
       {loading && <div className="acard admin-operations__loading" role="status">Đang tải dữ liệu…</div>}
@@ -418,6 +425,20 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
             <StatCard icon={<CircleDollarSign size={20} />} tone="green" label="Đã ghi nhận" value={money(dashboard.recordedPaymentsVnd)} caption="Tổng tiền khách đã thanh toán" href="/admin/thanh-toan" />
           </div>
           <div className="admin-operations__grid">
+            <Panel icon={<CircleCheck size={18} />} title="Việc cần làm" className="otodo-panel">
+              {(() => {
+                const todo = [
+                  { key: 'pending', label: 'Đặt phòng chờ xác nhận', value: dashboard.bookings.byStatus.pending_confirmation ?? 0, href: '/admin/dat-phong', perm: 'booking.read' },
+                  { key: 'inq', label: 'Yêu cầu tư vấn mới', value: dashboard.newInquiries, href: '/admin/yeu-cau-tu-van', perm: 'crm.read' },
+                  { key: 'chat', label: 'Hội thoại chờ người tiếp quản', value: dashboard.waitingChats ?? 0, href: '/admin/tin-nhan', perm: 'chat.read' },
+                  { key: 'rev', label: 'Đánh giá chờ duyệt', value: dashboard.pendingReviews ?? 0, href: '/admin/danh-gia', perm: 'review.read' },
+                  { key: 'hold', label: 'Giữ chỗ sắp hết hạn (60 phút)', value: dashboard.holdsExpiringWithinHour, href: '/admin/dat-phong', perm: 'booking.read' },
+                  { key: 'stock', label: 'Cảnh báo tồn phòng', value: dashboard.inventoryAlerts, href: '/admin/ton-phong', perm: 'inventory.read' },
+                  { key: 'draft', label: 'Bài/trang đang nháp hoặc chờ duyệt', value: dashboard.content.draft + dashboard.content.review, href: '/admin/noi-dung', perm: 'content.read' },
+                ].filter((item) => item.value > 0 && can(item.perm));
+                return todo.length ? <ul className="otodo">{todo.map((item) => <li key={item.key}><Link href={item.href}><span>{item.label}</span><b>{number(item.value)}</b><ArrowRight size={15} aria-hidden="true" /></Link></li>)}</ul> : <EmptyState title="Không có việc tồn đọng." text="Khi có đơn chờ xác nhận, yêu cầu mới hay đánh giá cần duyệt, chúng sẽ hiện ở đây." />;
+              })()}
+            </Panel>
             <Panel icon={<ClipboardList size={18} />} title="Đặt phòng theo trạng thái">
               <div className="admin-operations__status-list">{Object.entries(dashboard.bookings.byStatus).length ? Object.entries(dashboard.bookings.byStatus).map(([key, value]) => <div key={key}><StatusBadge label={statusLabel(key)} tone={STATUS_TONE[key] ?? 'gray'} /><strong>{number(value)}</strong></div>) : <EmptyState title="Chưa có booking." text="Khi có đơn thật, số lượng sẽ xuất hiện tại đây." />}</div>
             </Panel>
@@ -433,7 +454,7 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
       </>}
 
       {!loading && section === 'bookings' && <>
-        {!bookingId && <Panel icon={<ClipboardList size={18} />} title={bookingCreateMode || showCreate ? 'Tạo yêu cầu đặt phòng' : 'Danh sách yêu cầu đặt phòng'} action={can('booking.write') && !bookingCreateMode ? <Link href="/admin/dat-phong/them" className="abtn abtn--primary abtn--sm"><Plus size={15} /> Tạo yêu cầu</Link> : undefined}>
+        {(bookingCreateMode || showCreate) && <Panel icon={<ClipboardList size={18} />} title="Tạo yêu cầu đặt phòng">
           {(bookingCreateMode || showCreate) && can('booking.write') && <form className="admin-operations__form" onSubmit={createBookingQuote}>
             <label className="afield"><span>Hạng phòng</span><select className="ainput" required value={bookingForm.roomTypeId} onChange={(e) => updateBookingForm({ roomTypeId: e.target.value })}><option value="">Chọn hạng phòng…</option>{roomTypes.map((room) => <option key={room.id} value={room.id}>{room.propertyName} · {room.name}</option>)}</select></label>
             <label className="afield"><span>Nhận phòng</span><input className="ainput" required type="date" value={bookingForm.checkIn} onChange={(e) => updateBookingForm({ checkIn: e.target.value })} /></label>
@@ -449,22 +470,33 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
             {bookingQuote && <div className="admin-operations__span admin-operations__quote"><div><span>Báo giá máy chủ</span><strong>{bookingQuote.snapshot.propertyName} · {bookingQuote.snapshot.roomName}</strong></div><div><span>Tạm tính</span><strong>{money(bookingQuote.subtotalVnd)}</strong></div><div><span>Giảm giá</span><strong>−{money(bookingQuote.discountVnd)}</strong></div><div><span>Tổng tiền</span><strong>{money(bookingQuote.totalVnd)}</strong></div><div><span>Cần thanh toán ban đầu</span><strong>{money(bookingQuote.dueNowVnd)}</strong></div><small>Báo giá giữ trong thời gian ngắn đến {dateTimeLabel(bookingQuote.expiresAt)}. Chỉ giữ chỗ sau khi bạn bấm xác nhận.</small></div>}
             <div className="admin-operations__span admin-operations__form-actions"><button type="button" className="abtn abtn--ghost" onClick={() => { setShowCreate(false); setBookingQuote(null); router.push('/admin/dat-phong'); }}>Quay lại danh sách</button><button type="submit" className="abtn abtn--ghost" disabled={busy || !roomTypes.length}>Kiểm tra giá & tồn</button>{bookingQuote && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void createBooking()}>Xác nhận tạo yêu cầu & giữ chỗ</button>}<small>Đơn tạo ra ở trạng thái chờ xác nhận; chưa phải thanh toán.</small></div>
           </form>}
-          {!bookingCreateMode && !showCreate && <>
-          <div className="admin-operations__filters"><label className="admin-operations__search"><Search size={16} /><input aria-label="Tìm booking" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder="Mã đơn, tên khách, số điện thoại" /></label><select className="ainput" aria-label="Lọc trạng thái" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}><option value="">Tất cả trạng thái</option>{['pending_confirmation', 'confirmed', 'checked_in', 'completed', 'cancelled', 'expired', 'no_show'].map((item) => <option key={item} value={item}>{statusLabel(item)}</option>)}</select><select className="ainput" aria-label="Lọc cơ sở lưu trú" value={bookingPropertyId} onChange={(e) => { setPage(1); setBookingPropertyId(e.target.value); }}><option value="">Tất cả nơi lưu trú</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select><label className="afield"><span>Nhận phòng từ</span><input className="ainput" type="date" value={bookingFrom} onChange={(e) => { setPage(1); setBookingFrom(e.target.value); }} /></label><label className="afield"><span>Đến ngày</span><input className="ainput" type="date" min={bookingFrom || undefined} value={bookingTo} onChange={(e) => { setPage(1); setBookingTo(e.target.value); }} /></label></div>
-          {bookings?.items.length ? <div className="admin-operations__table-wrap"><table className="atable"><thead><tr><th>Mã đơn / khách</th><th>Ngày nghỉ</th><th>Trạng thái</th><th>Tổng tiền</th><th>Ngày tạo</th><th></th></tr></thead><tbody>{bookings.items.map((item) => <tr key={item.id}><td><button type="button" className="admin-operations__row-link" onClick={() => void openBooking(item.id)}>{item.publicCode}</button><small>{item.customer?.fullName} · {item.customer?.phone ?? 'Chưa có SĐT'}</small></td><td>{dateLabel(item.checkIn)} – {dateLabel(item.checkOut)}</td><td><StatusBadge label={statusLabel(item.bookingStatus)} tone={STATUS_TONE[item.bookingStatus] ?? 'gray'} /></td><td>{money(item.totalVnd)}</td><td>{dateLabel(item.createdAt)}</td><td><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openBooking(item.id)}>Chi tiết</button></td></tr>)}</tbody></table></div> : <EmptyState title="Chưa có yêu cầu đặt phòng." text="Các yêu cầu thật từ website hoặc quản trị sẽ hiển thị tại đây." />}
-          {bookings && <AdminPagination page={bookings.page} pages={pages(bookings)} onChange={setPage} />}
-          </>}
         </Panel>}
-        {bookingId && !booking && <div className="acard apending">{bookingDetailLoading ? 'Đang tải đặt phòng…' : 'Không tìm thấy đặt phòng.'}</div>}
-        {booking && (bookingId || !bookingCreateMode) && <Panel icon={<ClipboardList size={18} />} title={`Chi tiết ${booking.publicCode}`} action={<button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => router.push('/admin/dat-phong')}><ArrowLeft size={14} /> Danh sách</button>}>
-          <div className="admin-operations__detail-grid"><div><span>Khách</span><strong>{booking.customer?.fullName} · {booking.customer?.phone}</strong></div><div><span>Thời gian</span><strong>{dateLabel(booking.checkIn)} – {dateLabel(booking.checkOut)} · {booking.adults} người lớn / {booking.children} trẻ em</strong></div><div><span>Trạng thái</span><strong>{statusLabel(booking.bookingStatus)}</strong></div><div><span>Tổng / cần cọc</span><strong>{money(booking.totalVnd)} / {money(booking.dueNowVnd)}</strong></div><div><span>Giữ chỗ đến</span><strong>{dateLabel(booking.expiresAt)}</strong></div></div>
-          <h3>Dòng dịch vụ</h3><ul className="admin-operations__plain-list">{booking.lines?.map((line) => <li key={line.id}>{line.label} · {line.quantity} · {money(line.netVnd)}</li>)}</ul>
-          <h3>Thanh toán</h3><ul className="admin-operations__plain-list">{booking.payments?.length ? booking.payments.map((item) => <li key={item.id}>{money(item.amountVnd)} · {item.method} · {statusLabel(item.status)}</li>) : <li>Chưa có thanh toán được ghi nhận.</li>}</ul>
-          <h3>Ghi chú nội bộ</h3><ul className="admin-operations__plain-list">{booking.notes?.length ? booking.notes.map((item) => <li key={item.id}>{dateTimeLabel(item.createdAt)} · {item.author?.fullName ?? 'Quản trị viên'} · {item.body}</li>) : <li>Chưa có ghi chú.</li>}</ul>
-          <h3>Lịch sử</h3><ol className="admin-operations__timeline">{booking.events?.map((item) => <li key={item.id}><time>{dateLabel(item.createdAt)}</time><strong>{item.actorLabel} · {item.eventType}</strong>{item.detail && <small>{item.detail}</small>}</li>)}</ol>
-          {can('booking.write') && <form className="admin-operations__inline-form" onSubmit={(event) => { event.preventDefault(); if (!note.trim()) return; void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/notes`, { method: 'POST', body: JSON.stringify({ body: note.trim() }) }); setNote(''); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã thêm ghi chú nội bộ.'); }}><input className="ainput" aria-label="Ghi chú booking" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ghi chú nội bộ…" /><button className="abtn abtn--ghost" type="submit" disabled={busy}>Thêm ghi chú</button></form>}
-          <div className="admin-operations__actions">{can('booking.write') && booking.bookingStatus === 'pending_confirmation' && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'confirmed', expectedVersion: booking.version }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đơn đã xác nhận; tồn được chuyển từ giữ sang đã đặt.')}>Xác nhận đơn</button>}{can('booking.write') && booking.bookingStatus === 'confirmed' && <><button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'checked_in', expectedVersion: booking.version }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã ghi nhận khách nhận phòng.')}>Nhận phòng</button>{booking.checkIn && booking.checkIn.slice(0, 10) <= todayInVietnam() && <button type="button" className="abtn abtn--ghost" disabled={busy} onClick={() => { if (window.confirm('Xác nhận khách không đến?')) void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'no_show', expectedVersion: booking.version, reason: 'Khách không đến nhận phòng.' }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã ghi nhận khách không đến.'); }}>Không đến</button>}</>}{can('booking.write') && booking.bookingStatus === 'checked_in' && booking.checkOut && booking.checkOut.slice(0, 10) <= todayInVietnam() && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'completed', expectedVersion: booking.version }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã hoàn tất kỳ lưu trú.')}>Hoàn tất</button>}{can('booking.cancel') && ['pending_confirmation', 'confirmed'].includes(booking.bookingStatus) && <button type="button" className="abtn abtn--danger" disabled={busy} onClick={() => { const reason = window.prompt('Lý do huỷ đơn?'); if (reason?.trim()) void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/cancel`, { method: 'POST', body: JSON.stringify({ status: 'cancelled', expectedVersion: booking.version, reason }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đơn đã huỷ và quỹ phòng được giải phóng.'); }}>Huỷ đơn</button>}</div>
-        </Panel>}
+        {!bookingCreateMode && !showCreate && <ListCard className="booking-list">
+          <div className="alist__head">
+            <StatusTabs
+              tabs={[{ key: '', label: 'Tất cả', count: bookingCounts ? Object.values(bookingCounts).reduce((sum, value) => sum + value, 0) : undefined },
+                ...['pending_confirmation', 'confirmed', 'checked_in', 'completed', 'cancelled'].map((key) => ({ key, label: statusLabel(key), count: bookingCounts ? bookingCounts[key] ?? 0 : undefined }))]}
+              value={status}
+              onChange={(key) => { setPage(1); setStatus(key); }}
+            />
+          </div>
+          <div className="alist__toolbar">
+            <label className="alist__search"><Search size={16} aria-hidden="true" /><input aria-label="Tìm booking" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder="Mã đơn, tên khách, số điện thoại…" /></label>
+            <select className="ainput" aria-label="Lọc cơ sở lưu trú" value={bookingPropertyId} onChange={(e) => { setPage(1); setBookingPropertyId(e.target.value); }}><option value="">Mọi nơi lưu trú</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select>
+            <input className="ainput" type="date" aria-label="Nhận phòng từ ngày" title="Nhận phòng từ ngày" value={bookingFrom} onChange={(e) => { setPage(1); setBookingFrom(e.target.value); }} />
+            <input className="ainput" type="date" aria-label="Nhận phòng đến ngày" title="Nhận phòng đến ngày" min={bookingFrom || undefined} value={bookingTo} onChange={(e) => { setPage(1); setBookingTo(e.target.value); }} />
+          </div>
+          {bookings?.items.length ? <div className="admin-operations__table-wrap"><table className="atable booking-table"><thead><tr><th>Mã đơn / ngày đặt</th><th>Khách hàng</th><th>Ngày nghỉ</th><th className="atable__num">Tổng tiền</th><th>Trạng thái</th><th><span className="sr-only">Thao tác</span></th></tr></thead><tbody>{bookings.items.map((item) => <tr key={item.id} className={item.id === bookingId ? 'is-selected' : undefined} onClick={(event) => { if (!(event.target as HTMLElement).closest('button, a')) void openBooking(item.id); }}>
+            <td><button type="button" className="admin-operations__row-link" onClick={() => void openBooking(item.id)}>{item.publicCode}</button><small>{dateLabel(item.createdAt)}</small></td>
+            <td><strong>{item.customer?.fullName ?? '—'}</strong><small>{item.customer?.phone ?? 'Chưa có SĐT'}</small></td>
+            <td>{dateLabel(item.checkIn)} – {dateLabel(item.checkOut)}</td>
+            <td className="atable__num"><strong>{money(item.totalVnd)}</strong></td>
+            <td><StatusBadge label={statusLabel(item.bookingStatus)} tone={STATUS_TONE[item.bookingStatus] ?? 'gray'} /></td>
+            <td><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openBooking(item.id)}>Chi tiết</button></td>
+          </tr>)}</tbody></table></div> : <div className="alist__state"><ClipboardList size={22} aria-hidden="true" /><strong>Chưa có yêu cầu đặt phòng</strong><span>Yêu cầu từ website hoặc tạo trong quản trị sẽ hiện ở đây.</span></div>}
+          {bookings && <ListFooter shown={bookings.items.length} total={bookings.total} unit="đơn"><AdminPagination page={bookings.page} pages={pages(bookings)} onChange={setPage} compact /></ListFooter>}
+        </ListCard>}
+
       </>}
 
       {!loading && section === 'inventory' && <Panel icon={<BedDouble size={18} />} title="Lịch tồn theo đêm" headExtra={<span className="ahint">{rangeLabel}</span>} action={can('catalog.read') ? <Link className="abtn abtn--ghost abtn--sm" href="/admin/hang-phong"><BedDouble size={15} aria-hidden="true" /> Quản lý hạng phòng</Link> : undefined}>
@@ -520,6 +552,36 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
         </Panel>
         {report && <div className="admin-operations__grid"><Panel icon={<ClipboardList size={18} />} title="Đặt phòng theo trạng thái"><ul className="admin-operations__plain-list">{report.bookingSummary.byStatus.length ? report.bookingSummary.byStatus.map((row) => <li key={row.status}>{statusLabel(row.status)} · {number(row.count)} · giá trị booking {money(row.bookingValueVnd)}</li>) : <li>Không có booking trong kỳ.</li>}</ul></Panel><Panel icon={<Activity size={18} />} title="Phễu tư vấn"><ul className="admin-operations__plain-list">{report.inquiryConversion.byStage.length ? report.inquiryConversion.byStage.map((row) => <li key={row.stage}>{statusLabel(row.stage)} · {number(row.count)}</li>) : <li>Không có inquiry trong kỳ.</li>}</ul></Panel><Panel icon={<BedDouble size={18} />} title="Quỹ phòng đã mở"><ul className="admin-operations__plain-list"><li>{number(report.inventory.listedRoomNights)} room-night</li><li>Sức chứa {number(report.inventory.capacity)} · khoá {number(report.inventory.blocked)}</li><li>Đang giữ {number(report.inventory.held)} · đã đặt {number(report.inventory.reserved)}</li><li>Còn mở {number(report.inventory.available)}</li></ul></Panel><Panel icon={<Users size={18} />} title="Khách hàng theo nguồn"><ul className="admin-operations__plain-list">{report.customerAcquisition.bySource.length ? report.customerAcquisition.bySource.map((row) => <li key={row.source}>{row.source} · {number(row.count)}</li>) : <li>Không có khách mới trong kỳ.</li>}</ul></Panel></div>}
       </>}
+
+      {section === 'bookings' && bookingId && <FormDrawer
+        open
+        side
+        onClose={() => router.push('/admin/dat-phong')}
+        title={booking ? booking.publicCode : 'Đặt phòng'}
+        subtitle={booking ? `${statusLabel(booking.bookingStatus)} · tạo ${dateTimeLabel(booking.createdAt)}` : undefined}
+        footer={booking ? <div className="bdetail__actions">{can('booking.write') && booking.bookingStatus === 'pending_confirmation' && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'confirmed', expectedVersion: booking.version }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đơn đã xác nhận; tồn được chuyển từ giữ sang đã đặt.')}>Xác nhận đơn</button>}{can('booking.write') && booking.bookingStatus === 'confirmed' && <><button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'checked_in', expectedVersion: booking.version }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã ghi nhận khách nhận phòng.')}>Nhận phòng</button>{booking.checkIn && booking.checkIn.slice(0, 10) <= todayInVietnam() && <button type="button" className="abtn abtn--ghost" disabled={busy} onClick={() => { if (window.confirm('Xác nhận khách không đến?')) void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'no_show', expectedVersion: booking.version, reason: 'Khách không đến nhận phòng.' }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã ghi nhận khách không đến.'); }}>Không đến</button>}</>}{can('booking.write') && booking.bookingStatus === 'checked_in' && booking.checkOut && booking.checkOut.slice(0, 10) <= todayInVietnam() && <button type="button" className="abtn abtn--primary" disabled={busy} onClick={() => void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'completed', expectedVersion: booking.version }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã hoàn tất kỳ lưu trú.')}>Hoàn tất</button>}{can('booking.cancel') && ['pending_confirmation', 'confirmed'].includes(booking.bookingStatus) && <button type="button" className="abtn abtn--danger" disabled={busy} onClick={() => { const reason = window.prompt('Lý do huỷ đơn?'); if (reason?.trim()) void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/cancel`, { method: 'POST', body: JSON.stringify({ status: 'cancelled', expectedVersion: booking.version, reason }) }); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đơn đã huỷ và quỹ phòng được giải phóng.'); }}>Huỷ đơn</button>}</div> : undefined}
+      >
+        {!booking ? <p className="ahint">{bookingDetailLoading ? 'Đang tải đặt phòng…' : 'Không tìm thấy đặt phòng.'}</p> : <div className="bdetail">
+          <div className="bdetail__facts">
+            <div><span>Trạng thái</span><StatusBadge label={statusLabel(booking.bookingStatus)} tone={STATUS_TONE[booking.bookingStatus] ?? 'gray'} /></div>
+            <div><span>Ngày nghỉ</span><strong>{dateLabel(booking.checkIn)} – {dateLabel(booking.checkOut)}</strong></div>
+            <div><span>Số khách</span><strong>{booking.adults} người lớn · {booking.children} trẻ em</strong></div>
+            <div><span>Giữ chỗ đến</span><strong>{dateLabel(booking.expiresAt)}</strong></div>
+          </div>
+          <section className="bdetail__block"><h3>Khách hàng</h3><p><strong>{booking.customer?.fullName ?? '—'}</strong></p><p>{booking.customer?.phone ?? 'Chưa có SĐT'}</p></section>
+          <section className="bdetail__block"><h3>Dịch vụ & thanh toán</h3>
+            <ul className="bdetail__lines">{booking.lines?.map((line) => <li key={line.id}><span>{line.label} × {line.quantity}</span><strong>{money(line.netVnd)}</strong></li>)}</ul>
+            <div className="bdetail__total"><span>Tổng tiền</span><strong>{money(booking.totalVnd)}</strong></div>
+            <div className="bdetail__total bdetail__total--sub"><span>Cần thanh toán ban đầu</span><strong>{money(booking.dueNowVnd)}</strong></div>
+            <ul className="admin-operations__plain-list">{booking.payments?.length ? booking.payments.map((item) => <li key={item.id}>{money(item.amountVnd)} · {item.method} · {statusLabel(item.status)}</li>) : <li>Chưa có thanh toán được ghi nhận.</li>}</ul>
+          </section>
+          <section className="bdetail__block"><h3>Ghi chú nội bộ</h3>
+            <ul className="admin-operations__plain-list">{booking.notes?.length ? booking.notes.map((item) => <li key={item.id}>{dateTimeLabel(item.createdAt)} · {item.author?.fullName ?? 'Quản trị viên'} · {item.body}</li>) : <li>Chưa có ghi chú.</li>}</ul>
+            {can('booking.write') && <form className="admin-operations__inline-form" onSubmit={(event) => { event.preventDefault(); if (!note.trim()) return; void run(async () => { await apiRequest(`/admin/bookings/${booking.id}/notes`, { method: 'POST', body: JSON.stringify({ body: note.trim() }) }); setNote(''); setBooking(await apiRequest<Booking>(`/admin/bookings/${booking.id}`)); }, 'Đã thêm ghi chú nội bộ.'); }}><input className="ainput" aria-label="Ghi chú booking" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ghi chú nội bộ…" /><button className="abtn abtn--ghost" type="submit" disabled={busy}>Thêm ghi chú</button></form>}
+          </section>
+          <section className="bdetail__block"><h3>Lịch sử</h3><ol className="admin-operations__timeline">{booking.events?.map((item) => <li key={item.id}><time>{dateLabel(item.createdAt)}</time><strong>{item.actorLabel} · {item.eventType}</strong>{item.detail && <small>{item.detail}</small>}</li>)}</ol></section>
+        </div>}
+      </FormDrawer>}
     </section>
   );
 }

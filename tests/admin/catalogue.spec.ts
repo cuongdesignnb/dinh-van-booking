@@ -24,7 +24,7 @@ test('chuyên trang dùng editor riêng, Media Library và toast; draft được
     menuLoaded = true;
 
     await page.goto('/admin/chuyen-trang');
-    await page.getByRole('button', { name: 'Tạo mới' }).click();
+    await page.getByRole('button', { name: /^Tạo / }).click();
     await expect(page).toHaveURL('/admin/chuyen-trang/them');
     await page.getByLabel('Tiêu đề *').fill(title);
     await page.getByLabel('Slug đường dẫn').fill(slug);
@@ -83,7 +83,7 @@ test('chuyên trang dùng editor riêng, Media Library và toast; draft được
     await page.locator('.rte [contenteditable="true"]').fill(
       'Bản nội dung đã sửa qua giao diện TipTap; API lưu revision mới và giữ nguyên ảnh từ Media Library.',
     );
-    await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    await page.getByRole('button', { name: /^(Lưu nháp|Cập nhật)$/ }).click();
     await expect(page).toHaveURL(`/admin/chuyen-trang/${contentId}`);
     await expect(page.locator('.admin-toast--success').filter({ hasText: 'Đã lưu nội dung.' })).toBeVisible();
 

@@ -47,6 +47,31 @@ test('đăng nhập hiển thị đúng danh tính API và không còn control d
   expect(anonymous).toBe(401);
 });
 
+test('tìm nhanh (Ctrl+K) mở đúng trang và thanh bên thu gọn được', async ({ page }) => {
+  await signInAsOwner(page);
+  await page.locator('.atop__command').click();
+  const search = page.getByRole('searchbox', { name: 'Tìm trang trong quản trị' });
+  await expect(search).toBeFocused();
+  await search.fill('danh gia');
+  await expect(page.locator('.acmd__item')).toHaveCount(1);
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/admin\/danh-gia$/);
+  await expect(page.locator('.acmd')).toHaveCount(0);
+
+  await page.keyboard.press('Control+k');
+  await expect(page.locator('.acmd')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.acmd')).toHaveCount(0);
+
+  const shell = page.locator('.ashell');
+  await page.getByRole('button', { name: 'Thu gọn thanh bên' }).click();
+  await expect(shell).toHaveClass(/ashell--collapsed/);
+  await page.reload();
+  await expect(shell).toHaveClass(/ashell--collapsed/);
+  await page.getByRole('button', { name: 'Mở rộng thanh bên' }).click();
+  await expect(shell).not.toHaveClass(/ashell--collapsed/);
+});
+
 test('mật khẩu sai không tạo phiên đăng nhập', async ({ page }) => {
   await page.goto('/admin');
   await page.getByLabel('Email').fill('halabcreative@gmail.com');

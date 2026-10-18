@@ -117,7 +117,7 @@ test('bài viết TipTap lưu rich body/media, giữ phiên bản, xuất bản 
 
   try {
     await page.goto('/admin/noi-dung');
-    await page.getByRole('button', { name: 'Tạo mới' }).click();
+    await page.getByRole('button', { name: /^Tạo / }).click();
     await expect(page).toHaveURL(/\/admin\/noi-dung\?action=create/);
     await page.getByLabel('Tiêu đề *').fill(title);
     await page.getByLabel('Slug đường dẫn').fill(slug);
@@ -205,7 +205,7 @@ test('bài viết TipTap lưu rich body/media, giữ phiên bản, xuất bản 
       expectedVersion: draft!.version,
     });
     expect(concurrent.status).toBe(200);
-    await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    await page.getByRole('button', { name: /^(Lưu nháp|Cập nhật)$/ }).click();
     await expect(page.locator('.settings-screen__message--error')).toContainText('Tải lại rồi lưu lại');
     const notOverwritten = await browserApi(page, `/content/${contentId}`);
     expect((notOverwritten.body as ContentRecord).title).toBe(currentTitle);
