@@ -1,9 +1,8 @@
 'use client';
 
 import {
-  Archive,
   ArrowLeft,
-  Copy,
+  ExternalLink,
   FilePenLine,
   ImagePlus,
   Plus,
@@ -25,6 +24,8 @@ import { MediaLibrary, type MediaAsset } from '../media/MediaLibrary';
 import { MediaPicker } from '../media/MediaPicker';
 import { AlbumEditor } from '../media/AlbumEditor';
 import { useAdminToast } from '@/components/admin/toast/useAdminToast';
+import { ListCard, ListFooter, ListToolbar, PageActions, StatusTabs, foldText } from '@/components/admin/shared/ListKit';
+import { RowMenu, StatusBadge } from '@/components/admin/shared/ui';
 
 type ContentKind = 'stay' | 'combo' | 'destination' | 'article' | 'page';
 type MediaRef = { mediaId: string; role: string; position: number; url: string };
@@ -99,6 +100,32 @@ const STATUS_LABEL: Record<string, string> = {
   scheduled: 'Đã hẹn',
   published: 'Đã xuất bản',
   archived: 'Lưu trữ',
+};
+
+const STATUS_TONE: Record<string, string> = {
+  draft: 'muted',
+  review: 'warning',
+  scheduled: 'info',
+  published: 'success',
+  archived: 'muted',
+};
+
+/** Stable form fingerprint for "unsaved changes": the editor adds empty attributes (e.g. textAlign: null) on load. */
+const fingerprint = (value: unknown): string => JSON.stringify(value, (_key, entry: unknown) => {
+  if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+    const kept = Object.entries(entry as Record<string, unknown>).filter(([, inner]) => inner !== null && inner !== undefined);
+    return kept.length ? Object.fromEntries(kept) : undefined;
+  }
+  return entry;
+});
+
+const relativeTime = (value: string) => {
+  const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000);
+  if (minutes < 1) return 'vừa xong';
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  return new Date(value).toLocaleDateString('vi-VN');
 };
 
 const KIND_LABEL: Record<ContentKind, string> = {
@@ -207,6 +234,10 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   const [editorKey, setEditorKey] = useState(0);
   const inlineInsert = useRef<((attrs: { src: string; alt?: string; mediaId?: string }) => void) | null>(null);
   const initializedCreateFor = useRef<string | null>(null);
+  const [tab, setTab] = useState('all');
+  const [search, setSearch] = useState('');
+  const [snapshot, setSnapshot] = useState('');
+  const [savedAt, setSavedAt] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null); setLoadFailed(false);
@@ -231,7 +262,11 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
     }
     if (initializedCreateFor.current === pathname) return;
     initializedCreateFor.current = pathname;
-    setForm((current) => current ?? newForm(kind));
+    setForm((current) => {
+      const next = current ?? newForm(kind);
+      setSnapshot(fingerprint(next));
+      return next;
+    });
     setEditorKey((current) => current + 1);
   }, [createMode, kind, pathname]);
 
@@ -248,7 +283,8 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
 
   const openCreate = () => {
     initializedCreateFor.current = pathname;
-    setForm(newForm(kind)); setEditorKey((current) => current + 1); setError(null); setNotice(null);
+    const next = newForm(kind);
+    setForm(next); setSnapshot(fingerprint(next)); setSavedAt(null); setEditorKey((current) => current + 1); setError(null); setNotice(null);
     router.push(`${basePath}/them`, { scroll: false });
   };
 
@@ -258,7 +294,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
       const full = await apiRequest<ContentItem>(`/content/${encodeURIComponent(item.id)}`);
       const next = formFromItem(full, kind);
       if (duplicate) { next.id = null; next.version = undefined; next.title = `${next.title} (bản sao)`; next.slug = ''; next.media = []; }
-      setForm(next); setEditorKey((current) => current + 1);
+      setForm(next); setSnapshot(duplicate ? '' : fingerprint(next)); setSavedAt(duplicate ? null : full.updatedAt); setEditorKey((current) => current + 1);
       setNotice(duplicate ? 'Đã nạp bản sao. Bấm “Lưu bản nháp” để tạo bản ghi mới.' : null);
       if (navigate) {
         router.push(duplicate ? `${basePath}/them` : `${basePath}/${encodeURIComponent(item.id)}`, { scroll: false });
@@ -280,11 +316,11 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   const updateCombo = (patch: Partial<ComboDetails>) => setForm((current) => current ? { ...current, details: { ...current.details, combo: { ...EMPTY_COMBO, ...current.details.combo, ...patch } } } : current);
   const updateArticle = (patch: Partial<ArticleDetails>) => setForm((current) => current ? { ...current, details: { ...current.details, article: { ...EMPTY_ARTICLE, ...current.details.article, ...patch } } } : current);
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); if (!form) return;
+  const persist = async (): Promise<ContentItem | null> => {
+    if (!form) return null;
     if (!form.title.trim()) {
       const message = 'Nhập tiêu đề trước khi lưu.';
-      setError(message); toast.error(message); return;
+      setError(message); toast.error(message); return null;
     }
     setSaving(true); setError(null); setNotice(null);
     try {
@@ -311,13 +347,18 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
         ? await apiRequest<ContentItem>(`/content/${encodeURIComponent(form.id)}`, { method: 'PUT', body: JSON.stringify({ ...common, expectedVersion: form.version }) })
         : await apiRequest<ContentItem>('/content', { method: 'POST', body: JSON.stringify({ kind, ...common, slug: form.slug || undefined }) });
       setItems((current) => form.id ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]);
-      setForm(formFromItem(saved, kind));
-      setNotice(form.id ? 'Đã lưu thay đổi và tạo revision mới.' : 'Đã tạo bản nháp.');
+      const nextForm = formFromItem(saved, kind);
+      setForm(nextForm); setSnapshot(fingerprint(nextForm)); setSavedAt(saved.updatedAt);
+      setNotice(form.id ? 'Đã lưu thay đổi.' : 'Đã tạo bản nháp.');
       if (!form.id) router.replace(`${basePath}/${encodeURIComponent(saved.id)}`);
+      return saved;
     } catch (reason) {
       setError(errorMessage(reason));
+      return null;
     } finally { setSaving(false); }
   };
+
+  const save = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void persist(); };
 
   const applyGenerated = (result: GenerateSlugResult) => {
     setForm((current) => current ? { ...current, slug: result.slug, version: result.version } : current);
@@ -347,8 +388,15 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
     try {
       const updated = await apiRequest<ContentItem>(`/content/${encodeURIComponent(item.id)}/status`, { method: 'PATCH', body: JSON.stringify({ status, expectedVersion: item.version }) });
       setItems((current) => current.map((entry) => entry.id === updated.id ? updated : entry));
+      setForm((current) => current && current.id === updated.id ? { ...current, version: updated.version } : current);
       setNotice(status === 'published' ? `Đã xuất bản “${item.title}”.` : status === 'archived' ? 'Đã lưu trữ nội dung.' : 'Đã đưa nội dung về bản nháp.');
     } catch (reason) { setError(errorMessage(reason)); } finally { setBusy(null); }
+  };
+
+  const saveAndPublish = async () => {
+    const dirtyNow = !!form && fingerprint(form) !== snapshot;
+    const target = dirtyNow || !form?.id ? await persist() : items.find((entry) => entry.id === form.id) ?? null;
+    if (target) await setStatus(target, 'published');
   };
 
   const remove = async (item: ContentItem) => {
@@ -366,166 +414,229 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   const currentCover = form?.media.find((item) => item.role === 'cover');
   const savedItem = form?.id ? items.find((item) => item.id === form.id) : undefined;
 
+  const dirty = !!form && fingerprint(form) !== snapshot;
+  const counts = items.reduce<Record<string, number>>((acc, item) => { acc[item.publicationStatus] = (acc[item.publicationStatus] ?? 0) + 1; return acc; }, {});
+  const waiting = (counts.review ?? 0) + (counts.scheduled ?? 0);
+  const tabs = [
+    { key: 'all', label: 'Tất cả', count: items.length },
+    { key: 'published', label: 'Đã xuất bản', count: counts.published ?? 0 },
+    { key: 'draft', label: 'Bản nháp', count: counts.draft ?? 0 },
+    ...(waiting > 0 ? [{ key: 'review', label: 'Chờ duyệt / hẹn giờ', count: waiting }] : []),
+    ...((counts.archived ?? 0) > 0 ? [{ key: 'archived', label: 'Lưu trữ', count: counts.archived ?? 0 }] : []),
+  ];
+  const needle = foldText(search.trim());
+  const visible = items.filter((item) => (tab === 'all' || item.publicationStatus === tab || (tab === 'review' && item.publicationStatus === 'scheduled'))
+    && (!needle || foldText(`${item.title} ${item.path ?? ''}`).includes(needle)));
+  const savedStatus = savedItem?.publicationStatus ?? 'draft';
+  const kindLower = KIND_LABEL[kind].toLowerCase();
+
   return (
-    <section className="crm content-manager">
-      {!editorMode && <div className="settings-screen__head">
-        <div><h2>{title}</h2><p className="ahint">Tạo, sửa, lưu bản nháp, chọn ảnh và xuất bản ngay tại đây.</p></div>
-        <div className="content-manager__head-actions">
-          <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || saving || !!busy}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
-          <button type="button" className="abtn abtn--primary" onClick={openCreate} disabled={saving || !!busy}><Plus size={16} aria-hidden="true" /> Tạo mới</button>
-        </div>
-      </div>}
-      {editorMode && <div className="admin-form-page__head">
-        <button type="button" className="abtn abtn--ghost admin-form-page__back" onClick={closeEditor} disabled={saving}>
-          <ArrowLeft size={16} aria-hidden="true" /> Quay lại danh sách
-        </button>
-        <div className="admin-form-page__title">
-          <h2>{form?.id ? 'Chỉnh sửa' : 'Tạo mới'} {title.toLowerCase()}</h2>
-          <p className="ahint">Soạn thảo trên trang riêng; nội dung được lưu theo trạng thái bản nháp, không tự xuất bản.</p>
-        </div>
-      </div>}
+    <section className={`crm content-manager${editorMode ? ' content-manager--editing' : ''}`}>
+      {!editorMode && <PageActions>
+        <button type="button" className="abtn abtn--primary" onClick={openCreate} disabled={saving || !!busy}><Plus size={16} aria-hidden="true" /> Tạo {kindLower}</button>
+      </PageActions>}
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}
 
       {editorMode && form && (
-        <form className="acard content-editor" onSubmit={save}>
-          <div className="content-editor__head"><div><h3>{form.id ? 'Chỉnh sửa' : 'Tạo'} {KIND_LABEL[kind].toLowerCase()}</h3><p className="ahint">Lưu lần đầu là bản nháp. Muốn đưa lên website, hãy bổ sung SEO, ảnh đại diện và nội dung rồi bấm “Xuất bản”.</p></div><button type="button" className="abtn abtn--ghost abtn--sm" onClick={closeEditor} disabled={saving}>Đóng</button></div>
-          <div className="content-editor__grid">
-            <label className="afield content-editor__wide"><span>Tiêu đề *</span><input className="ainput" value={form.title} onChange={(event) => updateForm('title', event.target.value)} required maxLength={300} placeholder="Tiêu đề hiển thị trên website" /></label>
-            {form.id && form.version
-              ? <AdminSlugField
-                  mode="edit" kind={kind} title={form.title} value={form.slug || null}
-                  currentPath={savedItem?.path ?? null} published={savedItem?.publicationStatus === 'published'}
-                  expectedVersion={form.version} endpointBase={`/content/${encodeURIComponent(form.id)}`}
-                  onGenerated={applyGenerated} disabled={saving}
-                />
-              : <AdminSlugField
-                  mode="create" kind={kind} title={form.title} value={form.slug}
-                  onChange={(slug) => setForm((current) => current ? { ...current, slug } : current)}
-                  previewEndpoint="/content/slug/preview" previewBody={{ kind }} disabled={saving}
-                />}
-            <label className="afield"><span>Hiển thị nổi bật</span><span className="atoggle content-editor__toggle"><input type="checkbox" checked={form.featured} onChange={(event) => updateForm('featured', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Đưa lên vị trí nổi bật</strong><small>Chỉ áp dụng khi nội dung đã xuất bản.</small></span></span></label>
-            <label className="afield content-editor__wide"><span>Tóm tắt</span><textarea className="ainput" value={form.excerpt} onChange={(event) => updateForm('excerpt', event.target.value)} maxLength={500} placeholder="Mô tả ngắn dùng cho thẻ danh sách và SEO fallback" /></label>
+        <form className="cedit" onSubmit={save}>
+          <div className="cedit__bar">
+            <button type="button" className="cedit__back" onClick={closeEditor} disabled={saving} aria-label="Quay lại danh sách"><ArrowLeft size={18} aria-hidden="true" /></button>
+            <div className="cedit__crumb">
+              <span>{title}</span>
+              <strong>{form.title.trim() || (form.id ? 'Chưa đặt tiêu đề' : `Tạo ${kindLower}`)}</strong>
+            </div>
+            <span className={`cedit__state${dirty ? ' cedit__state--dirty' : ''}`}>
+              {saving ? 'Đang lưu…' : dirty ? 'Có thay đổi chưa lưu' : savedAt ? `Đã lưu · ${relativeTime(savedAt)}` : 'Chưa lưu'}
+            </span>
+            <div className="cedit__actions">
+              {savedStatus === 'published' && savedItem?.path && <a className="abtn abtn--ghost" href={savedItem.path} target="_blank" rel="noreferrer"><ExternalLink size={15} aria-hidden="true" /> Xem trên web</a>}
+              <button type="submit" className={`abtn ${savedStatus === 'published' ? 'abtn--primary' : 'abtn--ghost'}`} disabled={saving}>{saving ? 'Đang lưu…' : form.id ? (savedStatus === 'published' ? 'Cập nhật' : 'Lưu nháp') : 'Lưu bản nháp'}</button>
+              {savedStatus !== 'published' && <button type="button" className="abtn abtn--primary" onClick={() => void saveAndPublish()} disabled={saving || (!!form.id && busy === form.id)}>Xuất bản</button>}
+            </div>
           </div>
 
-          {kind === 'destination' && destination && <div className="content-editor__section"><h4>Thông tin điểm đến</h4><div className="content-editor__grid">
-            <label className="afield"><span>Nhóm điểm đến *</span><input className="ainput" value={destination.category} onChange={(event) => updateDestination({ category: event.target.value })} required maxLength={100} placeholder="Ví dụ: Sinh thái" /></label>
-            <label className="afield"><span>Khu vực</span><input className="ainput" value={destination.location ?? ''} onChange={(event) => updateDestination({ location: event.target.value })} maxLength={160} placeholder="Ví dụ: Ninh Bình" /></label>
-            <label className="afield"><span>Tọa độ X</span><input className="ainput" type="number" step="0.001" value={destination.mapX ?? ''} onChange={(event) => updateDestination({ mapX: event.target.value ? Number(event.target.value) : null })} /></label>
-            <label className="afield"><span>Tọa độ Y</span><input className="ainput" type="number" step="0.001" value={destination.mapY ?? ''} onChange={(event) => updateDestination({ mapY: event.target.value ? Number(event.target.value) : null })} /></label>
-          </div></div>}
+          <div className="cedit__grid">
+            <div className="cedit__main">
+              <input className="cedit__title" value={form.title} onChange={(event) => updateForm('title', event.target.value)} required maxLength={300} placeholder={`Tiêu đề ${kindLower}…`} aria-label="Tiêu đề *" />
+              <label className="afield"><span>Tóm tắt</span><textarea className="ainput" rows={2} value={form.excerpt} onChange={(event) => updateForm('excerpt', event.target.value)} maxLength={500} placeholder="1–2 câu hiện trên thẻ danh sách và dùng làm mô tả dự phòng" /></label>
 
-          {kind === 'combo' && combo && <div className="content-editor__section"><h4>Thông tin combo và lịch trình</h4><div className="content-editor__grid">
-            <label className="afield"><span>Mã combo *</span><input className="ainput" value={combo.code} onChange={(event) => updateCombo({ code: event.target.value.toUpperCase() })} required maxLength={80} placeholder="DV-COMBO-01" /></label>
-            <label className="afield"><span>Khu vực</span><input className="ainput" value={combo.area ?? ''} onChange={(event) => updateCombo({ area: event.target.value })} maxLength={160} placeholder="Cúc Phương · Tràng An" /></label>
-            <label className="afield"><span>Số ngày *</span><input className="ainput" type="number" min="1" value={combo.durationDays} onChange={(event) => updateCombo({ durationDays: Number(event.target.value) || 1 })} required /></label>
-            <label className="afield"><span>Số đêm *</span><input className="ainput" type="number" min="0" value={combo.durationNights} onChange={(event) => updateCombo({ durationNights: Number(event.target.value) || 0 })} required /></label>
-            <label className="afield"><span>Đơn vị giá</span><select className="ainput" value={combo.pricingUnit} onChange={(event) => updateCombo({ pricingUnit: event.target.value })}><option value="person">/ người</option><option value="booking">/ booking</option><option value="room">/ phòng</option></select></label>
-            <fieldset className="content-editor__wide content-editor__audience"><legend>Nhóm khách phù hợp</legend><p className="ahint">Chọn các nhóm đã xác minh cho combo này. Các nút lọc ngoài website sử dụng chính các lựa chọn này.</p><div className="content-editor__audience-options">{COMBO_AUDIENCE_CHOICES.map((choice) => <label key={choice.id}><input type="checkbox" checked={normalizeComboAudienceTags(combo.audienceTags).includes(choice.id)} onChange={(event) => {
-              const selected = normalizeComboAudienceTags(combo.audienceTags).filter((id) => id !== choice.id);
-              if (event.target.checked) selected.push(choice.id);
-              updateCombo({ audienceTags: [...combo.audienceTags.filter((tag) => !comboAudienceTag(tag)), ...selected] });
-            }} /><span>{choice.label}</span></label>)}</div></fieldset>
-            {combo.audienceTags.some((tag) => !comboAudienceTag(tag)) && <div className="content-editor__wide"><StringListEditor label="Nhãn khách bổ sung" items={combo.audienceTags.filter((tag) => !comboAudienceTag(tag))} onChange={(custom) => updateCombo({ audienceTags: [...normalizeComboAudienceTags(combo.audienceTags), ...custom] })} placeholder="Nhãn nội bộ không dùng để lọc" /><p className="ahint">Nhãn cũ được giữ nguyên để không mất dữ liệu; chỉ bốn nhóm ở trên tham gia bộ lọc public.</p></div>}
-            <div className="content-editor__wide content-editor__days"><div className="content-editor__subhead"><div><strong>Lịch trình ({combo.days.length} ngày)</strong><p className="ahint">Mỗi ngày có tiêu đề, khung giờ và các hoạt động riêng.</p></div><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => updateCombo({ days: [...combo.days, { dayNo: combo.days.length + 1, title: '', timeRange: '', activities: [] }] })}><Plus size={14} aria-hidden="true" /> Thêm ngày</button></div>
-              {combo.days.map((day, dayIndex) => <section className="content-editor__subsection" key={`day-${dayIndex}`}>
-                <div className="content-editor__subhead"><strong>Ngày {day.dayNo || dayIndex + 1}</strong><div className="content-editor__row-actions"><button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ngày ${dayIndex + 1} lên`} disabled={dayIndex === 0} onClick={() => updateCombo({ days: moveItem(combo.days, dayIndex, dayIndex - 1).map((item, index) => ({ ...item, dayNo: index + 1 })) })}>↑</button><button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ngày ${dayIndex + 1} xuống`} disabled={dayIndex === combo.days.length - 1} onClick={() => updateCombo({ days: moveItem(combo.days, dayIndex, dayIndex + 1).map((item, index) => ({ ...item, dayNo: index + 1 })) })}>↓</button><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => updateCombo({ days: combo.days.filter((_, index) => index !== dayIndex).map((item, index) => ({ ...item, dayNo: index + 1 })) })}><Trash2 size={14} aria-hidden="true" /> Xóa ngày</button></div></div>
-                <div className="content-editor__grid"><label className="afield"><span>Tiêu đề ngày</span><input className="ainput" value={day.title} onChange={(event) => updateCombo({ days: combo.days.map((item, index) => index === dayIndex ? { ...item, title: event.target.value } : item) })} placeholder="Ví dụ: Khám phá điểm đến" /></label><label className="afield"><span>Khung giờ (tuỳ chọn)</span><input className="ainput" value={day.timeRange ?? ''} onChange={(event) => updateCombo({ days: combo.days.map((item, index) => index === dayIndex ? { ...item, timeRange: event.target.value } : item) })} placeholder="Ví dụ: Sáng – chiều" /></label></div>
-                <StringListEditor label="Hoạt động trong ngày" items={day.activities.map((activity) => activity.text)} onChange={(activities) => updateCombo({ days: combo.days.map((item, index) => index === dayIndex ? { ...item, activities: activities.map((text, activityIndex) => ({ text, timeText: item.activities[activityIndex]?.timeText ?? '' })) } : item) })} placeholder="Nhập một hoạt động" />
-              </section>)}
+              {kind === 'destination' && destination && <div className="content-editor__section"><h4>Thông tin điểm đến</h4><div className="content-editor__grid">
+                <label className="afield"><span>Nhóm điểm đến *</span><input className="ainput" value={destination.category} onChange={(event) => updateDestination({ category: event.target.value })} required maxLength={100} placeholder="Ví dụ: Sinh thái" /></label>
+                <label className="afield"><span>Khu vực</span><input className="ainput" value={destination.location ?? ''} onChange={(event) => updateDestination({ location: event.target.value })} maxLength={160} placeholder="Ví dụ: Ninh Bình" /></label>
+                <label className="afield"><span>Tọa độ X</span><input className="ainput" type="number" step="0.001" value={destination.mapX ?? ''} onChange={(event) => updateDestination({ mapX: event.target.value ? Number(event.target.value) : null })} /></label>
+                <label className="afield"><span>Tọa độ Y</span><input className="ainput" type="number" step="0.001" value={destination.mapY ?? ''} onChange={(event) => updateDestination({ mapY: event.target.value ? Number(event.target.value) : null })} /></label>
+              </div></div>}
+
+            {kind === 'combo' && combo && <div className="content-editor__section"><h4>Thông tin combo và lịch trình</h4><div className="content-editor__grid">
+              <label className="afield"><span>Mã combo *</span><input className="ainput" value={combo.code} onChange={(event) => updateCombo({ code: event.target.value.toUpperCase() })} required maxLength={80} placeholder="DV-COMBO-01" /></label>
+              <label className="afield"><span>Khu vực</span><input className="ainput" value={combo.area ?? ''} onChange={(event) => updateCombo({ area: event.target.value })} maxLength={160} placeholder="Cúc Phương · Tràng An" /></label>
+              <label className="afield"><span>Số ngày *</span><input className="ainput" type="number" min="1" value={combo.durationDays} onChange={(event) => updateCombo({ durationDays: Number(event.target.value) || 1 })} required /></label>
+              <label className="afield"><span>Số đêm *</span><input className="ainput" type="number" min="0" value={combo.durationNights} onChange={(event) => updateCombo({ durationNights: Number(event.target.value) || 0 })} required /></label>
+              <label className="afield"><span>Đơn vị giá</span><select className="ainput" value={combo.pricingUnit} onChange={(event) => updateCombo({ pricingUnit: event.target.value })}><option value="person">/ người</option><option value="booking">/ booking</option><option value="room">/ phòng</option></select></label>
+              <fieldset className="content-editor__wide content-editor__audience"><legend>Nhóm khách phù hợp</legend><p className="ahint">Chọn các nhóm đã xác minh cho combo này. Các nút lọc ngoài website sử dụng chính các lựa chọn này.</p><div className="content-editor__audience-options">{COMBO_AUDIENCE_CHOICES.map((choice) => <label key={choice.id}><input type="checkbox" checked={normalizeComboAudienceTags(combo.audienceTags).includes(choice.id)} onChange={(event) => {
+                const selected = normalizeComboAudienceTags(combo.audienceTags).filter((id) => id !== choice.id);
+                if (event.target.checked) selected.push(choice.id);
+                updateCombo({ audienceTags: [...combo.audienceTags.filter((tag) => !comboAudienceTag(tag)), ...selected] });
+              }} /><span>{choice.label}</span></label>)}</div></fieldset>
+              {combo.audienceTags.some((tag) => !comboAudienceTag(tag)) && <div className="content-editor__wide"><StringListEditor label="Nhãn khách bổ sung" items={combo.audienceTags.filter((tag) => !comboAudienceTag(tag))} onChange={(custom) => updateCombo({ audienceTags: [...normalizeComboAudienceTags(combo.audienceTags), ...custom] })} placeholder="Nhãn nội bộ không dùng để lọc" /><p className="ahint">Nhãn cũ được giữ nguyên để không mất dữ liệu; chỉ bốn nhóm ở trên tham gia bộ lọc public.</p></div>}
+              <div className="content-editor__wide content-editor__days"><div className="content-editor__subhead"><div><strong>Lịch trình ({combo.days.length} ngày)</strong><p className="ahint">Mỗi ngày có tiêu đề, khung giờ và các hoạt động riêng.</p></div><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => updateCombo({ days: [...combo.days, { dayNo: combo.days.length + 1, title: '', timeRange: '', activities: [] }] })}><Plus size={14} aria-hidden="true" /> Thêm ngày</button></div>
+                {combo.days.map((day, dayIndex) => <section className="content-editor__subsection" key={`day-${dayIndex}`}>
+                  <div className="content-editor__subhead"><strong>Ngày {day.dayNo || dayIndex + 1}</strong><div className="content-editor__row-actions"><button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ngày ${dayIndex + 1} lên`} disabled={dayIndex === 0} onClick={() => updateCombo({ days: moveItem(combo.days, dayIndex, dayIndex - 1).map((item, index) => ({ ...item, dayNo: index + 1 })) })}>↑</button><button type="button" className="abtn abtn--ghost abtn--sm" aria-label={`Chuyển ngày ${dayIndex + 1} xuống`} disabled={dayIndex === combo.days.length - 1} onClick={() => updateCombo({ days: moveItem(combo.days, dayIndex, dayIndex + 1).map((item, index) => ({ ...item, dayNo: index + 1 })) })}>↓</button><button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => updateCombo({ days: combo.days.filter((_, index) => index !== dayIndex).map((item, index) => ({ ...item, dayNo: index + 1 })) })}><Trash2 size={14} aria-hidden="true" /> Xóa ngày</button></div></div>
+                  <div className="content-editor__grid"><label className="afield"><span>Tiêu đề ngày</span><input className="ainput" value={day.title} onChange={(event) => updateCombo({ days: combo.days.map((item, index) => index === dayIndex ? { ...item, title: event.target.value } : item) })} placeholder="Ví dụ: Khám phá điểm đến" /></label><label className="afield"><span>Khung giờ (tuỳ chọn)</span><input className="ainput" value={day.timeRange ?? ''} onChange={(event) => updateCombo({ days: combo.days.map((item, index) => index === dayIndex ? { ...item, timeRange: event.target.value } : item) })} placeholder="Ví dụ: Sáng – chiều" /></label></div>
+                  <StringListEditor label="Hoạt động trong ngày" items={day.activities.map((activity) => activity.text)} onChange={(activities) => updateCombo({ days: combo.days.map((item, index) => index === dayIndex ? { ...item, activities: activities.map((text, activityIndex) => ({ text, timeText: item.activities[activityIndex]?.timeText ?? '' })) } : item) })} placeholder="Nhập một hoạt động" />
+                </section>)}
+              </div>
+              <div className="content-editor__wide content-editor__list-columns"><StringListEditor label="Bao gồm" items={combo.inclusions} onChange={(inclusions) => updateCombo({ inclusions })} placeholder="Một quyền lợi" /><StringListEditor label="Không bao gồm" items={combo.exclusions} onChange={(exclusions) => updateCombo({ exclusions })} placeholder="Một khoản không bao gồm" /></div>
+              <div className="content-editor__wide"><StringListEditor label="Điều khoản" items={combo.terms} onChange={(terms) => updateCombo({ terms })} placeholder="Một điều khoản" /></div>
+            </div><div className="content-editor__subsection"><div className="content-editor__subhead"><div><strong>Lịch khởi hành đầu tiên (tuỳ chọn)</strong><p className="ahint">Thêm ngày và giá để combo có thể hiển thị giá trên website.</p></div></div><div className="content-editor__grid">
+              <label className="afield"><span>Ngày đi</span><input className="ainput" type="date" value={combo.departures[0]?.departureDate ?? ''} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { returnDate: '', capacity: 10, adultPriceVnd: 0 }), departureDate: event.target.value }] })} /></label>
+              <label className="afield"><span>Ngày về</span><input className="ainput" type="date" value={combo.departures[0]?.returnDate ?? ''} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { departureDate: '', capacity: 10, adultPriceVnd: 0 }), returnDate: event.target.value }] })} /></label>
+              <label className="afield"><span>Sức chứa</span><input className="ainput" type="number" min="1" value={combo.departures[0]?.capacity ?? 10} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { departureDate: '', returnDate: '', adultPriceVnd: 0 }), capacity: Number(event.target.value) || 1 }] })} /></label>
+              <label className="afield"><span>Giá người lớn (VND)</span><input className="ainput" type="number" min="0" value={combo.departures[0]?.adultPriceVnd ?? ''} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { departureDate: '', returnDate: '', capacity: 10 }), adultPriceVnd: Number(event.target.value) || 0 }] })} /></label>
+            </div></div></div>}
+
+              <RichTextEditor
+                key={editorKey}
+                value={form.body}
+                label="Nội dung"
+                hint="Chèn ảnh bằng nút ảnh trên thanh công cụ; nút AI tạo bản nháp để bạn duyệt trước khi đưa vào bài."
+                onChange={(body) => updateForm('body', body)}
+                onPickImage={pickInlineImage}
+                aiContext={{ kind, title: form.title, excerpt: form.excerpt, currentContentId: form.id }}
+                onAiGenerated={(generated) => setForm((current) => current ? {
+                  ...current,
+                  title: generated.title,
+                  excerpt: generated.excerpt,
+                  metaTitle: generated.metaTitle,
+                  metaDescription: generated.metaDescription,
+                  media: [
+                    ...current.media,
+                    ...generated.images
+                      .filter((image) => !current.media.some((item) => item.mediaId === image.mediaId))
+                      .map((image, index) => ({ mediaId: image.mediaId, role: 'inline', position: current.media.length + index, url: image.url })),
+                  ],
+                } : current)}
+              />
+              <MediaLibrary
+                mode="modal"
+                open={inlinePickerOpen}
+                onClose={() => {
+                  inlineInsert.current = null;
+                  setInlinePickerOpen(false);
+                }}
+                onSelect={handleInlineImage}
+              />
+              {kind === 'destination' && <div className="content-editor__section"><AlbumEditor label="Album điểm đến" items={form.media.filter((item) => item.role === 'gallery').map((item) => ({ mediaId: item.mediaId, url: item.url }))} onChange={(albumItems) => setForm((current) => current ? { ...current, media: [...current.media.filter((item) => item.role !== 'gallery'), ...albumItems.map((item, position) => ({ mediaId: item.mediaId, url: item.url, role: 'gallery', position: position + 1 }))] } : current)} /></div>}
             </div>
-            <div className="content-editor__wide content-editor__list-columns"><StringListEditor label="Bao gồm" items={combo.inclusions} onChange={(inclusions) => updateCombo({ inclusions })} placeholder="Một quyền lợi" /><StringListEditor label="Không bao gồm" items={combo.exclusions} onChange={(exclusions) => updateCombo({ exclusions })} placeholder="Một khoản không bao gồm" /></div>
-            <div className="content-editor__wide"><StringListEditor label="Điều khoản" items={combo.terms} onChange={(terms) => updateCombo({ terms })} placeholder="Một điều khoản" /></div>
-          </div><div className="content-editor__subsection"><div className="content-editor__subhead"><div><strong>Lịch khởi hành đầu tiên (tuỳ chọn)</strong><p className="ahint">Thêm ngày và giá để combo có thể hiển thị giá trên website.</p></div></div><div className="content-editor__grid">
-            <label className="afield"><span>Ngày đi</span><input className="ainput" type="date" value={combo.departures[0]?.departureDate ?? ''} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { returnDate: '', capacity: 10, adultPriceVnd: 0 }), departureDate: event.target.value }] })} /></label>
-            <label className="afield"><span>Ngày về</span><input className="ainput" type="date" value={combo.departures[0]?.returnDate ?? ''} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { departureDate: '', capacity: 10, adultPriceVnd: 0 }), returnDate: event.target.value }] })} /></label>
-            <label className="afield"><span>Sức chứa</span><input className="ainput" type="number" min="1" value={combo.departures[0]?.capacity ?? 10} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { departureDate: '', returnDate: '', adultPriceVnd: 0 }), capacity: Number(event.target.value) || 1 }] })} /></label>
-            <label className="afield"><span>Giá người lớn (VND)</span><input className="ainput" type="number" min="0" value={combo.departures[0]?.adultPriceVnd ?? ''} onChange={(event) => updateCombo({ departures: [{ ...(combo.departures[0] ?? { departureDate: '', returnDate: '', capacity: 10 }), adultPriceVnd: Number(event.target.value) || 0 }] })} /></label>
-          </div></div></div>}
 
-          {kind === 'article' && article && <div className="content-editor__section"><h4>Thông tin bài viết</h4><div className="content-editor__grid">
-            <label className="afield"><span>Tác giả</span><input className="ainput" value={article.authorName ?? ''} onChange={(event) => updateArticle({ authorName: event.target.value })} maxLength={160} /></label>
-            <label className="afield"><span>Thời gian đọc (phút)</span><input className="ainput" type="number" min="1" value={article.readMinutes ?? ''} onChange={(event) => updateArticle({ readMinutes: event.target.value ? Number(event.target.value) : null })} /></label>
-          </div></div>}
+            <aside className="cedit__side">
+              <section className="cside">
+                <h3>Xuất bản</h3>
+                <div className="cside__row"><span>Trạng thái</span><StatusBadge small label={STATUS_LABEL[savedStatus] ?? savedStatus} tone={STATUS_TONE[savedStatus] ?? 'muted'} /></div>
+                {form.id && form.version
+                  ? <AdminSlugField
+                      mode="edit" kind={kind} title={form.title} value={form.slug || null}
+                      currentPath={savedItem?.path ?? null} published={savedStatus === 'published'}
+                      expectedVersion={form.version} endpointBase={`/content/${encodeURIComponent(form.id)}`}
+                      onGenerated={applyGenerated} disabled={saving}
+                    />
+                  : <AdminSlugField
+                      mode="create" kind={kind} title={form.title} value={form.slug}
+                      onChange={(slug) => setForm((current) => current ? { ...current, slug } : current)}
+                      previewEndpoint="/content/slug/preview" previewBody={{ kind }} disabled={saving}
+                    />}
+                <label className="atoggle cside__toggle"><input type="checkbox" checked={form.featured} onChange={(event) => updateForm('featured', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Nổi bật</strong><small>Ưu tiên hiển thị khi đã xuất bản.</small></span></label>
+                <label className="atoggle cside__toggle"><input type="checkbox" checked={form.noindex} onChange={(event) => updateForm('noindex', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Ẩn khỏi Google</strong><small>Không cho công cụ tìm kiếm lập chỉ mục trang này.</small></span></label>
+                {savedStatus === 'published' && savedItem && <button type="button" className="abtn abtn--ghost abtn--sm cside__full" onClick={() => void setStatus(savedItem, 'draft')} disabled={busy === savedItem.id}>Gỡ xuống, đưa về nháp</button>}
+              </section>
 
-          <RichTextEditor
-            key={editorKey}
-            value={form.body}
-            label="Nội dung chi tiết"
-            hint="Editor lưu TipTap JSON và API sẽ sanitise lại trước khi tạo revision. AI chỉ tạo bản xem trước; bạn duyệt rồi nội dung mới vào biểu mẫu."
-            onChange={(body) => updateForm('body', body)}
-            onPickImage={pickInlineImage}
-            aiContext={{ kind, title: form.title, excerpt: form.excerpt, currentContentId: form.id }}
-            onAiGenerated={(generated) => setForm((current) => current ? {
-              ...current,
-              title: generated.title,
-              excerpt: generated.excerpt,
-              metaTitle: generated.metaTitle,
-              metaDescription: generated.metaDescription,
-              media: [
-                ...current.media,
-                ...generated.images
-                  .filter((image) => !current.media.some((item) => item.mediaId === image.mediaId))
-                  .map((image, index) => ({ mediaId: image.mediaId, role: 'inline', position: current.media.length + index, url: image.url })),
-              ],
-            } : current)}
-          />
-          <MediaLibrary
-            mode="modal"
-            open={inlinePickerOpen}
-            onClose={() => {
-              inlineInsert.current = null;
-              setInlinePickerOpen(false);
-            }}
-            onSelect={handleInlineImage}
-          />
+              <section className="cside">
+                <h3>Ảnh đại diện</h3>
+                <MediaPicker
+                  value={currentCover?.url}
+                  mediaId={currentCover?.mediaId}
+                  label={currentCover ? 'Đổi ảnh' : 'Chọn ảnh đại diện'}
+                  uploadAltText={form.title}
+                  recommendedWidth={kind === 'destination' ? 1200 : 1600}
+                  recommendedHeight={kind === 'destination' ? 800 : 900}
+                  recommendedRatio={kind === 'destination' ? 1.5 : 1.78}
+                  onMediaChange={(asset) => setForm((current) => {
+                    if (!current) return current;
+                    const withoutCover = current.media.filter((item) => item.role !== 'cover');
+                    return asset
+                      ? { ...current, media: [...withoutCover, { mediaId: asset.id, role: 'cover', position: 0, url: asset.url }] }
+                      : { ...current, media: withoutCover };
+                  })}
+                />
+                <p className="ahint"><ImagePlus size={14} aria-hidden="true" /> Bắt buộc để xuất bản. Ảnh mới được chuyển WebP khi lưu.</p>
+              </section>
 
-          <div className="content-editor__section"><h4>SEO và ảnh đại diện</h4><div className="content-editor__grid">
-            <label className="afield"><span>Tiêu đề SEO *</span><input className="ainput" value={form.metaTitle} onChange={(event) => updateForm('metaTitle', event.target.value)} maxLength={200} placeholder="Tối đa khoảng 60 ký tự" /></label>
-            <label className="afield"><span>Mô tả SEO *</span><textarea className="ainput" value={form.metaDescription} onChange={(event) => updateForm('metaDescription', event.target.value)} maxLength={320} placeholder="Mô tả khoảng 120–160 ký tự" /></label>
-          </div><AdminSeoPanel
-            kind={kind} title={form.title} metaTitle={form.metaTitle} metaDescription={form.metaDescription}
-            path={form.slug ? savedItem?.path ?? publicPath(kind, form.slug) : null}
-            hasCover={!!currentCover} bodyText={richDocumentToText(form.body)} noindex={form.noindex}
-            schema={{ itineraryDays: combo?.days.filter((day) => day.title.trim() || day.activities.some((activity) => activity.text.trim())).length, authorName: article?.authorName }}
-          /><div className="content-editor__media">
-            <MediaPicker
-              value={currentCover?.url}
-              mediaId={currentCover?.mediaId}
-              label={currentCover ? 'Đổi ảnh đại diện' : 'Chọn ảnh đại diện'}
-              uploadAltText={form.title}
-              recommendedWidth={kind === 'destination' ? 1200 : 1600}
-              recommendedHeight={kind === 'destination' ? 800 : 900}
-              recommendedRatio={kind === 'destination' ? 1.5 : 1.78}
-              onMediaChange={(asset) => setForm((current) => {
-                if (!current) return current;
-                const withoutCover = current.media.filter((item) => item.role !== 'cover');
-                return asset
-                  ? { ...current, media: [...withoutCover, { mediaId: asset.id, role: 'cover', position: 0, url: asset.url }] }
-                  : { ...current, media: withoutCover };
-              })}
-            />
-            <p className="ahint"><ImagePlus size={14} aria-hidden="true" /> Ảnh đại diện và ảnh trong bài đều chọn từ Media Library; ảnh mới được chuyển WebP trước khi lưu.</p>
-          </div><label className="atoggle content-editor__noindex"><input type="checkbox" checked={form.noindex} onChange={(event) => updateForm('noindex', event.target.checked)} /><span className="atoggle__track"><span className="atoggle__thumb" /></span><span className="atoggle__text"><strong>Không cho công cụ tìm kiếm lập chỉ mục</strong><small>Dùng khi trang chưa sẵn sàng xuất hiện trên Google; trang chỉ công khai sau khi xuất bản.</small></span></label></div>
-          {kind === 'destination' && <div className="content-editor__section"><AlbumEditor label="Album điểm đến" items={form.media.filter((item) => item.role === 'gallery').map((item) => ({ mediaId: item.mediaId, url: item.url }))} onChange={(items) => setForm((current) => current ? { ...current, media: [...current.media.filter((item) => item.role !== 'gallery'), ...items.map((item, position) => ({ mediaId: item.mediaId, url: item.url, role: 'gallery', position: position + 1 }))] } : current)} /></div>}
-          <div className="content-editor__actions"><button type="button" className="abtn abtn--ghost" onClick={closeEditor} disabled={saving}>Hủy</button><button type="submit" className="abtn abtn--primary" disabled={saving}>{saving ? 'Đang lưu…' : form.id ? 'Lưu thay đổi' : 'Lưu bản nháp'}</button></div>
+              {kind === 'article' && article && <section className="cside">
+                <h3>Thông tin bài viết</h3>
+                <label className="afield"><span>Tác giả</span><input className="ainput" value={article.authorName ?? ''} onChange={(event) => updateArticle({ authorName: event.target.value })} maxLength={160} /></label>
+                <label className="afield"><span>Thời gian đọc (phút)</span><input className="ainput" type="number" min="1" value={article.readMinutes ?? ''} onChange={(event) => updateArticle({ readMinutes: event.target.value ? Number(event.target.value) : null })} /></label>
+              </section>}
+
+              <section className="cside">
+                <h3>SEO</h3>
+                <label className="afield"><span>Tiêu đề SEO * <small className="cside__count">{form.metaTitle.length}/60</small></span><input className="ainput" value={form.metaTitle} onChange={(event) => updateForm('metaTitle', event.target.value)} maxLength={200} placeholder="Khoảng 50–60 ký tự" /></label>
+                <label className="afield"><span>Mô tả SEO * <small className="cside__count">{form.metaDescription.length}/160</small></span><textarea className="ainput" rows={3} value={form.metaDescription} onChange={(event) => updateForm('metaDescription', event.target.value)} maxLength={320} placeholder="Khoảng 120–160 ký tự" /></label>
+                <AdminSeoPanel
+                  kind={kind} title={form.title} metaTitle={form.metaTitle} metaDescription={form.metaDescription}
+                  path={form.slug ? savedItem?.path ?? publicPath(kind, form.slug) : null}
+                  hasCover={!!currentCover} bodyText={richDocumentToText(form.body)} noindex={form.noindex}
+                  schema={{ itineraryDays: combo?.days.filter((day) => day.title.trim() || day.activities.some((activity) => activity.text.trim())).length, authorName: article?.authorName }}
+                />
+              </section>
+            </aside>
+          </div>
         </form>
       )}
 
       {editorMode && !form && <div className="acard apending">{loading || busy ? 'Đang tải dữ liệu…' : 'Không tìm thấy nội dung cần chỉnh sửa.'}</div>}
-      {!editorMode && (loading ? <div className="acard apending">Đang tải dữ liệu…</div> : loadFailed ? <div className="acard apending content-manager__error-state">Không tải được nội dung từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending content-manager__empty"><FilePenLine size={22} aria-hidden="true" /><div><h3>Chưa có {KIND_LABEL[kind].toLowerCase()}</h3><p>Bấm “Tạo mới” để viết bài đầu tiên.</p></div></div> : <div className="settings-screen__list">
-        {items.map((item) => <article className="acard settings-item content-manager__item" key={item.id}>
-          <div className="settings-item__head"><div><h3>{item.title}</h3><code>{item.path ?? item.slug ?? item.id}</code></div><span className="settings-item__meta">{STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus}</span></div>
-          {item.excerpt && <p>{item.excerpt}</p>}<p className="ahint">Cập nhật {new Date(item.updatedAt).toLocaleString('vi-VN')} · {item.media.length} ảnh</p>
-          <div className="content-manager__actions">
-            <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openEdit(item)} disabled={busy === item.id || saving}><FilePenLine size={14} aria-hidden="true" /> Sửa</button>
-            <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void openEdit(item, true)} disabled={busy === item.id || saving}><Copy size={14} aria-hidden="true" /> Nhân bản</button>
-            {item.publicationStatus === 'published' ? <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void setStatus(item, 'archived')} disabled={busy === item.id}><Archive size={14} aria-hidden="true" /> Lưu trữ</button> : <button type="button" className="abtn abtn--primary abtn--sm" onClick={() => void setStatus(item, 'published')} disabled={busy === item.id}>{busy === item.id ? 'Đang xử lý…' : 'Xuất bản'}</button>}
-            {item.publicationStatus !== 'draft' && item.publicationStatus !== 'published' && <button type="button" className="abtn abtn--ghost abtn--sm" onClick={() => void setStatus(item, 'draft')} disabled={busy === item.id}>Đưa về nháp</button>}
-            {item.publicationStatus !== 'published' && <button type="button" className="abtn abtn--danger abtn--sm" onClick={() => void remove(item)} disabled={busy === item.id}><Trash2 size={14} aria-hidden="true" /> Xoá</button>}
-          </div>
-        </article>)}
-      </div>)}
+      {!editorMode && <ListCard>
+        <div className="alist__head">
+          <StatusTabs tabs={tabs} value={tab} onChange={setTab} />
+          <button type="button" className="abtn abtn--ghost abtn--sm alist__reload" onClick={() => void load()} disabled={loading || saving || !!busy} aria-label="Tải lại danh sách" title="Tải lại"><RefreshCw size={15} aria-hidden="true" /></button>
+        </div>
+        <ListToolbar search={search} onSearch={setSearch} placeholder={`Tìm ${kindLower} theo tiêu đề hoặc đường dẫn…`} />
+        {loading ? <div className="alist__state">Đang tải dữ liệu…</div>
+          : loadFailed ? <div className="alist__state">Không tải được nội dung. Bấm nút tải lại ở góc phải.</div>
+          : !items.length ? <div className="alist__state"><FilePenLine size={22} aria-hidden="true" /><strong>Chưa có {kindLower} nào</strong><span>Bấm “Tạo {kindLower}” ở góc trên để bắt đầu.</span></div>
+          : !visible.length ? <div className="alist__state">Không có {kindLower} khớp bộ lọc.</div>
+          : <ul className="alist__rows">
+            {visible.map((item) => {
+              const cover = item.media.find((media) => media.role === 'cover');
+              const published = item.publicationStatus === 'published';
+              const menu = [
+                { label: 'Sửa', onSelect: () => void openEdit(item) },
+                { label: 'Nhân bản', onSelect: () => void openEdit(item, true) },
+                ...(published && item.path ? [{ label: 'Xem trên website', onSelect: () => { window.open(item.path ?? '/', '_blank', 'noopener'); } }] : []),
+                ...(item.publicationStatus !== 'draft' ? [{ label: 'Đưa về nháp', onSelect: () => void setStatus(item, 'draft') }] : []),
+                ...(published ? [{ label: 'Lưu trữ', onSelect: () => void setStatus(item, 'archived') }] : []),
+                ...(!published ? [{ label: 'Xoá', tone: 'danger' as const, onSelect: () => void remove(item) }] : []),
+              ];
+              return <li className="arow content-manager__item" key={item.id}>
+                <button type="button" className="arow__main" onClick={() => void openEdit(item)} disabled={busy === item.id}>
+                  <span className="arow__thumb" style={cover ? { backgroundImage: `url(${cover.url})` } : undefined}>{!cover && <FilePenLine size={18} aria-hidden="true" />}</span>
+                  <span className="arow__text">
+                    <span className="arow__meta"><span className="settings-item__meta"><StatusBadge small label={STATUS_LABEL[item.publicationStatus] ?? item.publicationStatus} tone={STATUS_TONE[item.publicationStatus] ?? 'muted'} /></span>{!cover && <span className="arow__warn">Chưa có ảnh đại diện</span>}</span>
+                    <strong className="arow__title">{item.title}</strong>
+                    <small>{item.path ?? 'Chưa tạo đường dẫn'} · Sửa {relativeTime(item.updatedAt)}</small>
+                  </span>
+                </button>
+                <div className="arow__actions">
+                  {published
+                    ? item.path && <a className="abtn abtn--ghost abtn--sm" href={item.path} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Xem</a>
+                    : <button type="button" className="abtn abtn--primary abtn--sm" onClick={() => void setStatus(item, 'published')} disabled={busy === item.id}>{busy === item.id ? 'Đang xử lý…' : 'Xuất bản'}</button>}
+                  <RowMenu label={`Thao tác với “${item.title}”`} items={menu} />
+                </div>
+              </li>;
+            })}
+          </ul>}
+        {!loading && !!items.length && <ListFooter shown={visible.length} total={items.length} unit={kindLower} />}
+      </ListCard>}
     </section>
   );
 }

@@ -170,7 +170,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
 
     for (const record of records) {
       await page.goto(record.route);
-      await page.getByRole('button', { name: 'Tạo mới' }).click();
+      await page.getByRole('button', { name: /^Tạo / }).click();
       await page.getByLabel('Tiêu đề *').fill(record.title);
       await page.getByLabel('Slug đường dẫn').fill(record.slug);
       await page.getByLabel('Tóm tắt').fill(`Bản ghi kiểm thử ${record.kind} được tạo trên PostgreSQL.`);
@@ -228,7 +228,7 @@ test('destination và combo CRUD, publish, public propagation, redirect slug cũ
         response.url().includes(`/api/v1/content/${record.id}`) && response.request().method() === 'PUT',
         { timeout: 10_000 },
       );
-      await page.getByRole('button', { name: 'Lưu thay đổi' }).click({ timeout: 10_000 });
+      await page.getByRole('button', { name: /^(Lưu nháp|Cập nhật)$/ }).click({ timeout: 10_000 });
       const updateResponse = await updateResponsePromise;
       const updateBody = await updateResponse.json().catch(() => null);
       expect(updateResponse.status(), JSON.stringify(updateBody)).toBe(200);

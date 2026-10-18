@@ -1,0 +1,463 @@
+/* ==========================================================================
+   Admin list + editor layout (shared by content, stays, bookings screens).
+   One page header (title left, main actions right), one list card
+   (status tabs, search, rows, footer), and a two-column editor.
+   ========================================================================== */
+
+/* --------------------------------------------- page header + actions */
+
+.atop__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.atop__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.atop__actions:empty {
+  display: none;
+}
+
+/* Editors bring their own bar (back, title, save), so the page title would repeat it. */
+.ashell__main:has(.content-manager--editing) .atop__head {
+  display: none;
+}
+
+/* ------------------------------------------------------------- list card */
+
+.alist {
+  overflow: hidden;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+  box-shadow: var(--dvb-shadow-xs);
+}
+
+.alist__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.alist__tabs {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.alist__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--dvb-r-sm);
+  background: transparent;
+  color: var(--dvb-ink-600);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.alist__tab:hover {
+  background: var(--dvb-cream-100);
+  color: var(--dvb-ink-900);
+}
+
+.alist__tab--on,
+.alist__tab--on:hover {
+  background: var(--dvb-sage-100);
+  color: var(--dvb-forest-900);
+}
+
+.alist__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--dvb-r-pill);
+  background: var(--dvb-cream-100);
+  color: var(--dvb-ink-600);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.alist__tab--on .alist__count {
+  background: var(--dvb-forest-600);
+  color: #fff;
+}
+
+.alist__reload {
+  flex: none;
+}
+
+.alist__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--dvb-line);
+}
+
+.alist__search {
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-surface-1);
+  color: var(--dvb-ink-500);
+}
+
+.alist__search:focus-within {
+  border-color: var(--dvb-forest-600);
+  box-shadow: 0 0 0 3px rgb(38 111 62 / 12%);
+}
+
+.alist__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--dvb-ink-900);
+  font: inherit;
+  font-size: 14px;
+}
+
+.alist__toolbar .ainput {
+  width: auto;
+  min-height: 40px;
+}
+
+.alist__state {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 36px 16px;
+  color: var(--dvb-ink-500);
+  font-size: 14px;
+  text-align: center;
+}
+
+.alist__state strong {
+  color: var(--dvb-ink-900);
+}
+
+.alist__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alist__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--dvb-line);
+  color: var(--dvb-ink-500);
+  font-size: 13px;
+}
+
+/* One row: thumbnail + text (clickable, opens the item) + one quick action + the "..." menu. */
+.arow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 0 0;
+  border-bottom: 1px solid var(--dvb-line);
+  transition: background-color var(--dvb-dur-fast) ease;
+}
+
+.arow:last-child {
+  border-bottom: 0;
+}
+
+.arow:hover {
+  background: var(--dvb-cream-50);
+}
+
+.arow__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px 0 12px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.arow__main:focus-visible {
+  outline: 2px solid var(--dvb-forest-600);
+  outline-offset: -2px;
+}
+
+.arow__thumb {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 88px;
+  height: 60px;
+  border-radius: 10px;
+  background: var(--dvb-cream-100) center / cover no-repeat;
+  color: var(--dvb-ink-400);
+}
+
+.arow__text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.arow__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.arow__warn {
+  color: var(--dvb-clay-600);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.arow__title {
+  overflow: hidden;
+  color: var(--dvb-ink-900);
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arow__main:hover .arow__title {
+  color: var(--dvb-forest-700);
+}
+
+.arow__text small {
+  overflow: hidden;
+  color: var(--dvb-ink-500);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arow__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .arow {
+    flex-wrap: wrap;
+    padding: 0 12px 12px 0;
+  }
+
+  .arow__thumb {
+    width: 64px;
+    height: 48px;
+  }
+
+  .arow__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ------------------------------------------------- editor (2 columns) */
+
+.cedit__bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin: 0 0 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--dvb-line);
+  background: var(--dvb-cream-50);
+}
+
+.cedit__back {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-surface-1);
+  color: var(--dvb-ink-700);
+  cursor: pointer;
+}
+
+.cedit__back:hover {
+  border-color: var(--dvb-sage-300);
+  color: var(--dvb-forest-800);
+}
+
+.cedit__crumb {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cedit__crumb span {
+  color: var(--dvb-ink-500);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cedit__crumb strong {
+  overflow: hidden;
+  max-width: 52ch;
+  color: var(--dvb-ink-900);
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cedit__state {
+  color: var(--dvb-ink-500);
+  font-size: 13px;
+}
+
+.cedit__state--dirty {
+  color: var(--dvb-clay-600);
+  font-weight: 600;
+}
+
+.cedit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.cedit__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.cedit__main {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+}
+
+.cedit__title {
+  width: 100%;
+  padding: 4px 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--dvb-line);
+  outline: 0;
+  background: transparent;
+  color: var(--dvb-ink-900);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.cedit__title:focus {
+  border-bottom-color: var(--dvb-forest-600);
+}
+
+.cedit__side {
+  position: sticky;
+  top: 72px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+}
+
+.cside {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+}
+
+.dvb-admin .cside h3 {
+  margin: 0;
+  color: var(--dvb-ink-900);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cside__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--dvb-ink-600);
+  font-size: 13px;
+}
+
+.cside__count {
+  margin-left: 6px;
+  color: var(--dvb-ink-400);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cside__toggle {
+  align-items: flex-start;
+}
+
+.cside__full {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 1180px) {
+  .cedit__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cedit__side {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}

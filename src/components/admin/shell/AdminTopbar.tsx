@@ -75,9 +75,13 @@ export function AdminTopbar({ meta, onMenu, menuOpen, onSearch }: { meta: AdminP
         </button>
       </div>
 
-      <div className="atop__titles">
-        <h1 className="atop__title">{meta.title}</h1>
-        <p className="atop__subtitle">{meta.subtitle}</p>
+      <div className="atop__head">
+        <div className="atop__titles">
+          <h1 className="atop__title">{meta.title}</h1>
+          <p className="atop__subtitle">{meta.subtitle}</p>
+        </div>
+        {/* Screens portal their main actions here (see PageActions). */}
+        <div className="atop__actions" id="admin-page-actions" />
       </div>
 
       <Popover anchorRef={userRef} open={userOpen} onClose={() => setUserOpen(false)} label="Tài khoản" id="admin-user" align="end">
