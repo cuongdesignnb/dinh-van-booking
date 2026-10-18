@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, FilePlus2, Link2, Plus, RefreshCw, RotateCcw, Save,
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { apiRequest } from '@/lib/api/client';
+import { PageActions } from '../shared/ListKit';
 
 type MenuItem = {
   id: string;
@@ -154,17 +155,13 @@ export function MenuManager() {
 
   return (
     <section className="menu-manager">
-      <div className="settings-screen__head">
-        <div>
-          <h2>Quản lý Menu website</h2>
-          <p className="ahint">Sắp xếp liên kết hệ thống và chuyên trang trên menu đầu trang. Chuyên trang cần được xuất bản để hiển thị cho khách.</p>
-        </div>
-        <div className="menu-manager__head-actions">
+      <PageActions>
           <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || saving}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
           {!loading && !loadFailed && !isDefault && <button type="button" className="abtn abtn--ghost" onClick={() => void reset()} disabled={saving}><RotateCcw size={15} aria-hidden="true" /> Khôi phục mặc định</button>}
           <button type="button" className="abtn abtn--primary" onClick={() => void save()} disabled={loading || saving || loadFailed}><Save size={15} aria-hidden="true" /> {saving ? 'Đang lưu…' : 'Lưu Menu'}</button>
-        </div>
-      </div>
+        
+      </PageActions>
+      <p className="ahint menu-manager__intro">Sắp xếp liên kết hệ thống và chuyên trang trên menu đầu trang. Chuyên trang cần được xuất bản để hiển thị cho khách.</p>
 
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {notice && <p className="settings-screen__message settings-screen__message--success" role="status">{notice}</p>}

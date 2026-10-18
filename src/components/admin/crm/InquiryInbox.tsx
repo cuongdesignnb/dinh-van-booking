@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
+import { PageActions } from '../shared/ListKit';
 
 /** 2026-10-13 → 13/10/2026 (date-only values, no timezone shift). */
 const viDate = (value: string) => { const [y, m, d] = value.slice(0, 10).split('-'); return d && m && y ? `${d}/${m}/${y}` : value; };
@@ -83,13 +84,9 @@ export function InquiryInbox() {
 
   return (
     <section className="crm">
-      <div className="settings-screen__head">
-        <div>
-          <h2>Yêu cầu tư vấn</h2>
-          <p className="ahint">Yêu cầu tư vấn mới nhất từ website và các kênh liên hệ.</p>
-        </div>
+      <PageActions>
         <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || !!busy}>Tải lại</button>
-      </div>
+      </PageActions>
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
       {loading ? <div className="acard apending">Đang tải yêu cầu…</div> : loadFailed ? <div className="acard apending inquiry-inbox__error-state">Không tải được yêu cầu từ API. Bấm “Tải lại” để thử lại.</div> : !items.length ? <div className="acard apending">Chưa có yêu cầu tư vấn.</div> : (
         <div className="settings-screen__list">

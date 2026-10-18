@@ -9,6 +9,7 @@ import { apiRequest } from '@/lib/api/client';
 import { KIND_LABEL } from '@/lib/admin/formatters';
 import { roomUnitKindLabel } from '@/lib/room-unit-kind';
 import { RoomTypeEditor, type PropertyRoom } from './RoomTypeEditor';
+import { PageActions } from '../shared/ListKit';
 
 type Property = {
   id: string;
@@ -99,10 +100,9 @@ export function RoomCatalogScreen({ routeMode, routeRoomId }: { routeMode?: 'cre
     {roomId ? <div className="admin-form-page__head">
       <button type="button" className="abtn abtn--ghost admin-form-page__back" onClick={goToList}><ArrowLeft size={16} aria-hidden="true" /> Quay lại danh sách hạng phòng</button>
       <div className="admin-form-page__title"><h2>{chooseExistingFirst ? `Hạng phòng của ${selected?.title ?? 'nơi lưu trú'}` : roomId === 'create' ? `Hạng phòng mới · ${selected?.title ?? 'nơi lưu trú'}` : `Chỉnh sửa hạng phòng · ${selected?.title ?? 'nơi lưu trú'}`}</h2><p>Một nơi lưu trú có nhiều hạng; mỗi hạng có giá, sức chứa, số phòng/căn và album riêng.</p></div>
-    </div> : <div className="settings-screen__head">
-      <div><h2>Hạng phòng</h2><p className="ahint">Quản lý hạng phòng theo từng nơi lưu trú: sức chứa, giá, số phòng và album ảnh. Quỹ phòng theo ngày nằm ở mục “Quỹ phòng”.</p></div>
+    </div> : <PageActions>
       <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
-    </div>}
+    </PageActions>}
 
     {error && <div className="acard room-catalog__error-state" role="alert">
       <p className="settings-screen__message settings-screen__message--error">Không tải được danh sách hạng phòng từ API. {error}</p>
