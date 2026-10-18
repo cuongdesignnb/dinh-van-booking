@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ComponentType } from 'react';
+import { ABOUT_SAMPLE } from '@/lib/about-sample';
 import { richDocumentToText } from '@/lib/content/rich-document';
 
 /**
@@ -13,28 +14,39 @@ import { richDocumentToText } from '@/lib/content/rich-document';
 
 type FieldProps = { settingKey: string; path: string; value: unknown; onChange: (next: unknown) => void; disabled: boolean };
 type Rec = Record<string, unknown>;
-type ListName = 'values' | 'steps' | 'areas' | 'faqs';
+type ListName = 'highlights' | 'storyPhotos' | 'values' | 'services' | 'faqs';
 
 const KEY = 'about.page';
 const BRAND_SUFFIX = ' | Cúc Phương Travel';
 
 const LISTS: Record<ListName, { label: string; item: string; add: string; max: number; prefix: string; fields: string[]; template: () => Rec; titleKey: string }> = {
-  values: { label: 'Các giá trị', item: 'Giá trị', add: '+ Thêm giá trị', max: 8, prefix: 'value', fields: ['enabled', 'icon', 'title', 'text'], titleKey: 'title', template: () => ({ enabled: true, icon: 'check', title: '', text: '' }) },
-  steps: { label: 'Các bước', item: 'Bước', add: '+ Thêm bước', max: 8, prefix: 'step', fields: ['enabled', 'title', 'text'], titleKey: 'title', template: () => ({ enabled: true, title: '', text: '' }) },
-  areas: { label: 'Các thẻ địa phương', item: 'Thẻ', add: '+ Thêm thẻ', max: 8, prefix: 'area', fields: ['enabled', 'icon', 'title', 'text', 'imageMediaId', 'linkLabel', 'linkTarget'], titleKey: 'title', template: () => ({ enabled: true, icon: 'trees', title: '', text: '', linkLabel: '', linkTarget: '', imageMediaId: null }) },
+  highlights: { label: 'Ba điểm nổi bật dưới nút', item: 'Điểm nổi bật', add: '+ Thêm điểm nổi bật', max: 3, prefix: 'highlight', fields: ['enabled', 'icon', 'title', 'text'], titleKey: 'title', template: () => ({ enabled: true, icon: 'heart', title: '', text: '' }) },
+  storyPhotos: { label: 'Ảnh polaroid', item: 'Ảnh', add: '+ Thêm ảnh', max: 2, prefix: 'photo', fields: ['enabled', 'imageMediaId', 'caption'], titleKey: 'caption', template: () => ({ enabled: true, imageMediaId: null, caption: '' }) },
+  values: { label: 'Các giá trị', item: 'Giá trị', add: '+ Thêm giá trị', max: 4, prefix: 'value', fields: ['enabled', 'icon', 'title', 'text'], titleKey: 'title', template: () => ({ enabled: true, icon: 'check', title: '', text: '' }) },
+  services: { label: 'Các thẻ hỗ trợ', item: 'Thẻ hỗ trợ', add: '+ Thêm thẻ', max: 4, prefix: 'service', fields: ['enabled', 'icon', 'title', 'text', 'linkTarget'], titleKey: 'title', template: () => ({ enabled: true, icon: 'bed', title: '', text: '', linkTarget: '' }) },
   faqs: { label: 'Câu hỏi và trả lời', item: 'Câu hỏi', add: '+ Thêm câu hỏi', max: 12, prefix: 'faq', fields: ['enabled', 'question', 'answer'], titleKey: 'question', template: () => ({ enabled: true, question: '', answer: { type: 'doc', content: [{ type: 'paragraph' }] } }) },
 };
 
 const SECTIONS: Array<{ id: string; title: string; hint?: string; fields: string[]; list?: ListName }> = [
-  { id: 'hero', title: 'Đầu trang', hint: 'Tiêu đề H1 nên chứa từ khoá chính, ví dụ “Đặt phòng Cúc Phương”.', fields: ['enabled', 'heroEyebrow', 'title', 'intro', 'heroImageMediaId', 'phoneCtaLabel', 'zaloCtaLabel', 'contactCtaLabel'] },
-  { id: 'story', title: 'Câu chuyện', fields: ['storyTitle', 'greeting', 'story', 'portraitMediaId', 'quote', 'signatureNote'] },
-  { id: 'values', title: 'Giá trị', fields: ['valuesTitle', 'valuesIntro'], list: 'values' },
-  { id: 'steps', title: 'Cách mình đồng hành', fields: ['stepsTitle', 'stepsIntro'], list: 'steps' },
-  { id: 'areas', title: 'Hiểu Cúc Phương như người nhà', hint: 'Chỉ ghi thông tin công khai đã kiểm chứng; liên kết chỉ nhận đường dẫn nội bộ.', fields: ['areasTitle', 'areasIntro'], list: 'areas' },
-  { id: 'faq', title: 'Câu hỏi thường gặp', hint: 'Các câu hỏi đang hiển thị cũng được đưa vào dữ liệu FAQPage cho Google.', fields: ['showFaq', 'faqTitle'], list: 'faqs' },
-  { id: 'cta', title: 'Dải kêu gọi cuối trang', fields: ['ctaTitle', 'ctaText', 'ctaStaysLabel'] },
+  { id: 'hero', title: 'Đầu trang', hint: 'Ảnh lớn bên phải nên là ảnh dọc/ngang chụp chính bạn giữa thiên nhiên Cúc Phương. Tiêu đề H1 nên có từ khoá “Cúc Phương”.', fields: ['enabled', 'title', 'intro', 'heroImageMediaId', 'primaryCtaLabel', 'primaryCtaTarget', 'contactCtaLabel', 'heroScript', 'heroNote'], list: 'highlights' },
+  { id: 'story', title: 'Câu chuyện của mình', hint: 'Kể bằng giọng người bản địa: bạn sinh ra, lớn lên và gắn bó với Cúc Phương thế nào. Hai ảnh polaroid hiện bên trái; chưa có ảnh thì dùng ảnh chân dung người tư vấn.', fields: ['storyEyebrow', 'storyTitle', 'story'], list: 'storyPhotos' },
+  { id: 'values', title: 'Giá trị mình theo đuổi', fields: ['valuesEyebrow', 'valuesTitle', 'valuesIntro'], list: 'values' },
+  { id: 'services', title: 'Mình có thể hỗ trợ bạn điều gì?', hint: 'Chỉ giữ những dịch vụ bạn thực sự cung cấp. Đường dẫn chỉ nhận trang nội bộ, ví dụ /phong-nghi.', fields: ['servicesTitle', 'servicesIntro'], list: 'services' },
+  { id: 'faq', title: 'Câu hỏi thường gặp', hint: 'Các câu hỏi đang hiển thị cũng được đưa vào dữ liệu FAQPage cho Google.', fields: ['showFaq', 'faqTitle', 'faqIntro'], list: 'faqs' },
+  { id: 'contact', title: 'Khối liên hệ', hint: 'Email, Facebook, số điện thoại, Zalo và địa chỉ lấy từ Cài đặt › Thương hiệu (Liên hệ, Mạng xã hội). Chỉ ghi giờ hỗ trợ bạn thực sự trực.', fields: ['contactEyebrow', 'contactTitle', 'contactText', 'contactZaloLabel', 'contactNote', 'contactImageMediaId'] },
   { id: 'seo', title: 'SEO & chia sẻ', fields: ['seoTitle', 'seoDescription', 'ogDescription', 'ogImageMediaId', 'areaServed'] },
 ];
+
+/** Media and on/off state are the owner's; the sample only fills text and lists. */
+function withSample(current: Rec): Rec {
+  const keepMedia = (rows: unknown, sample: unknown) => (Array.isArray(sample) ? sample.map((row, index) => {
+    const existing = Array.isArray(rows) && isRecord(rows[index]) ? rows[index] as Rec : null;
+    return isRecord(row) && existing && 'imageMediaId' in row ? { ...row, imageMediaId: existing.imageMediaId ?? null } : row;
+  }) : sample);
+  const next: Rec = { ...current };
+  for (const [key, value] of Object.entries(ABOUT_SAMPLE)) next[key] = key === 'storyPhotos' ? keepMedia(current.storyPhotos, value) : structuredClone(value);
+  return next;
+}
 
 function isRecord(value: unknown): value is Rec {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -163,6 +175,15 @@ export function AboutPageForm({ value, onChange, disabled, Field }: { value: unk
   const set = (key: string, next: unknown) => onChange({ ...root, [key]: next });
   return (
     <div className="settings-form about-form" data-about-form>
+      <div className="about-form__sample">
+        <p className="ahint">Chưa có nội dung? Điền sẵn nội dung mẫu theo bố cục trang (giọng người bản địa Cúc Phương), rồi sửa lại cho đúng với bạn trước khi lưu. Ảnh và trạng thái bật/tắt được giữ nguyên.</p>
+        <button
+          type="button"
+          className="abtn abtn--ghost abtn--sm"
+          disabled={disabled}
+          onClick={() => { if (window.confirm('Điền nội dung mẫu sẽ thay chữ hiện có trong form (ảnh giữ nguyên). Chưa có gì được lưu cho tới khi bạn bấm Lưu. Tiếp tục?')) onChange(withSample(root)); }}
+        >Điền nội dung mẫu</button>
+      </div>
       <nav className="about-form__nav" aria-label="Các phần của trang Về mình">
         {SECTIONS.map((section, index) => <a key={section.id} href={`#about-form-${section.id}`} onClick={(event) => { event.preventDefault(); jumpTo(`about-form-${section.id}`); }}>{index + 1}. {section.title}</a>)}
         <a href="/ve-minh" target="_blank" rel="noopener">Xem trang ↗</a>
