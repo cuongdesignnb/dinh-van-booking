@@ -1,14 +1,15 @@
 'use client';
 
-import { ArrowRight, Clock3, Info, MapPin, X } from 'lucide-react';
+import { ArrowRight, BedDouble, Clock3, ExternalLink, Info, MapPin, Navigation, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PARK_KIND_LABEL, PARK_MAP_NOTE, PARK_POINTS, type ParkPoint, type ParkPointKind } from '@/data/park-map';
+import { PARK_KIND_LABEL, PARK_MAP_NOTE, PARK_POINTS, PARK_STAYS, type ParkPoint, type ParkPointKind } from '@/data/park-map';
 import { PARK_GEO } from '@/data/park-map-geo';
 
 const { W, H } = PARK_GEO;
 
-const KINDS: Array<'all' | ParkPointKind> = ['all', 'cave', 'tree', 'nature', 'village', 'lake', 'service'];
+const KINDS: Array<'all' | ParkPointKind> = ['all', 'cave', 'tree', 'nature', 'village', 'lake', 'service', 'stay'];
+const ALL_POINTS: ParkPoint[] = [...PARK_POINTS, ...PARK_STAYS];
 
 export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   const [inView, setInView] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const selected = useMemo(() => PARK_POINTS.find((point) => point.id === selectedId) ?? null, [selectedId]);
+  const selected = useMemo(() => ALL_POINTS.find((point) => point.id === selectedId) ?? null, [selectedId]);
   const published = useMemo(() => new Set(publishedSlugs), [publishedSlugs]);
 
   // Draw-in animation starts when the map scrolls into view.
@@ -43,7 +44,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   const zoomStyle = selected
     ? { transform: `translate(${(0.4 - selected.x / W) * 100}%, ${(0.5 - selected.y / H) * 100}%) scale(${zoom})`, transformOrigin: `${(selected.x / W) * 100}% ${(selected.y / H) * 100}%`, '--z': zoom } as React.CSSProperties
     : { '--z': 1 } as React.CSSProperties;
-  const counts = useMemo(() => PARK_POINTS.reduce<Record<string, number>>((acc, point) => { acc[point.kind] = (acc[point.kind] ?? 0) + 1; return acc; }, {}), []);
+  const counts = useMemo(() => ALL_POINTS.reduce<Record<string, number>>((acc, point) => { acc[point.kind] = (acc[point.kind] ?? 0) + 1; return acc; }, {}), []);
 
   return (
     <section ref={rootRef} className={`park-map content-shell${inView ? ' is-in-view' : ''}`} aria-labelledby="park-map-title">
@@ -57,7 +58,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
           {KINDS.map((key) => (
             <button key={key} type="button" className={`park-map__chip park-map__chip--${key}${kind === key ? ' is-on' : ''}`} aria-pressed={kind === key} onClick={() => setKind(key)}>
               {key === 'all' ? 'Tất cả' : PARK_KIND_LABEL[key]}
-              <span>{key === 'all' ? PARK_POINTS.length : counts[key] ?? 0}</span>
+              <span>{key === 'all' ? ALL_POINTS.length : counts[key] ?? 0}</span>
             </button>
           ))}
         </div>
@@ -97,7 +98,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
           </svg>
 
           <ul className="park-map__pins">
-            {PARK_POINTS.map((point, index) => {
+            {ALL_POINTS.map((point, index) => {
               const shown = visible(point);
               const active = point.id === selectedId;
               return (
@@ -119,7 +120,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
                     onBlur={() => setHoverId((current) => current === point.id ? null : current)}
                   >
                     <span className="park-pin__pulse" aria-hidden="true" />
-                    <span className="park-pin__dot" aria-hidden="true">{point.no ?? ''}</span>
+                    <span className="park-pin__dot" aria-hidden="true">{point.kind === 'stay' ? <BedDouble size={12} strokeWidth={2.4} /> : point.no ?? ''}</span>
                   </button>
                   <span className="park-pin__label" aria-hidden="true">{point.name}</span>
                 </li>
@@ -146,11 +147,19 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
               {!!selected.routes?.length && <ul className="park-map__routes">
                 {selected.routes.map((route) => <li key={route}><Clock3 size={15} aria-hidden="true" />{route}</li>)}
               </ul>}
-              <div className="park-map__actions">
-                {selected.destinationSlug && published.has(selected.destinationSlug) && <Link className="park-map__link" href={`/diem-den/${selected.destinationSlug}`}>Xem bài giới thiệu <ArrowRight size={15} aria-hidden="true" /></Link>}
-                <Link className="park-map__link park-map__link--ghost" href="/lien-he">Nhờ Đinh Vân gợi ý lịch trình</Link>
-              </div>
-              <p className="park-map__note"><Info size={14} aria-hidden="true" /> Cần hướng dẫn viên của vườn khi đi các tuyến.</p>
+              {selected.kind === 'stay' ? <>
+                <div className="park-map__actions">
+                  {selected.lat !== undefined && selected.lng !== undefined && <a className="park-map__link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noreferrer"><Navigation size={15} aria-hidden="true" /> Chỉ đường <ExternalLink size={13} aria-hidden="true" /></a>}
+                  <Link className="park-map__link park-map__link--ghost" href="/lien-he">Nhờ Đinh Vân tư vấn chỗ nghỉ</Link>
+                </div>
+                <p className="park-map__note"><Info size={14} aria-hidden="true" /> Dữ liệu từ OpenStreetMap, có thể chưa đầy đủ hoặc đã thay đổi.</p>
+              </> : <>
+                <div className="park-map__actions">
+                  {selected.destinationSlug && published.has(selected.destinationSlug) && <Link className="park-map__link" href={`/diem-den/${selected.destinationSlug}`}>Xem bài giới thiệu <ArrowRight size={15} aria-hidden="true" /></Link>}
+                  <Link className="park-map__link park-map__link--ghost" href="/lien-he">Nhờ Đinh Vân gợi ý lịch trình</Link>
+                </div>
+                <p className="park-map__note"><Info size={14} aria-hidden="true" /> Cần hướng dẫn viên của vườn khi đi các tuyến.</p>
+              </>}
             </div>
           )}
         </div>

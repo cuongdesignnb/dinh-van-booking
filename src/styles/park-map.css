@@ -342,6 +342,16 @@
 .park-pin--nature { --pin: #c7b3ff; }
 .park-pin--lake { --pin: #7cc9ef; }
 .park-pin--service { --pin: #ffffff; }
+.park-pin--stay { --pin: #ffe9c7; }
+
+.park-pin--stay .park-pin__dot {
+  border-radius: 7px;
+  color: #7a3d10;
+}
+
+.park-pin--stay .park-pin__pulse {
+  border-radius: 9px;
+}
 
 .park-pin__btn {
   position: relative;
