@@ -7,6 +7,8 @@ import {
   CalendarRange,
   ChartColumn,
   CreditCard,
+  ChevronsLeft,
+  ChevronsRight,
   ExternalLink,
   FileText,
   Handshake,
@@ -80,7 +82,7 @@ export function activeNavHref(pathname: string) {
   return match?.href ?? '/admin';
 }
 
-export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AdminSidebar({ open, onClose, collapsed = false, onToggleCollapsed }: { open: boolean; onClose: () => void; collapsed?: boolean; onToggleCollapsed?: () => void }) {
   const pathname = usePathname();
   const { user } = useAdminSession();
   const active = activeNavHref(pathname);
@@ -150,6 +152,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
                           href={item.href}
                           className={`anav${isActive ? ' anav--active' : ''}`}
                           aria-current={isActive ? 'page' : undefined}
+                          title={collapsed ? item.label : undefined}
                           onClick={onClose}
                         >
                           <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
@@ -165,10 +168,16 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
           })}
         </nav>
         <div className="asidebar__foot">
-          <a className="asidebar__site" href="/" target="_blank" rel="noreferrer">
+          <a className="asidebar__site" href="/" target="_blank" rel="noreferrer" title={collapsed ? 'Xem website' : undefined}>
             <ExternalLink size={16} aria-hidden="true" />
             <span>Xem website</span>
           </a>
+          {onToggleCollapsed && (
+            <button type="button" className="asidebar__collapse" onClick={onToggleCollapsed} aria-pressed={collapsed} aria-label={collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'} title={collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}>
+              {collapsed ? <ChevronsRight size={16} aria-hidden="true" /> : <ChevronsLeft size={16} aria-hidden="true" />}
+              <span>Thu gọn</span>
+            </button>
+          )}
         </div>
       </div>
     </aside>

@@ -1,0 +1,465 @@
+/* ==========================================================================
+   Admin compact layout (loaded last).
+   Denser sidebar (collapsible), single-row top bar with quick search,
+   smaller page title and KPI cards, and a "to do" list on the dashboard.
+   ========================================================================== */
+
+.dvb-admin {
+  --dvb-admin-sidebar-width: 232px;
+  --dvb-admin-sidebar-collapsed: 68px;
+}
+
+.ashell {
+  transition: grid-template-columns var(--dvb-dur-base) var(--dvb-ease);
+}
+
+/* -------------------------------------------------------------- sidebar */
+
+.asidebar__inner {
+  padding: 14px 10px 10px;
+}
+
+.asidebar__brand {
+  padding: 2px 6px 14px;
+}
+
+.asidebar__mark {
+  width: 34px;
+  height: 34px;
+}
+
+.asidebar__word {
+  font-size: 16px;
+}
+
+.asidebar__tagline {
+  font-size: 10px;
+}
+
+.asidebar__nav {
+  margin-top: 8px;
+}
+
+.asidebar__group + .asidebar__group {
+  margin-top: 10px;
+}
+
+.asidebar__group-label {
+  margin-bottom: 4px;
+  padding: 0 10px;
+  font-size: 10.5px;
+}
+
+.asidebar__nav ul {
+  gap: 1px;
+}
+
+.anav {
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.anav svg {
+  width: 17px;
+  height: 17px;
+}
+
+.anav--active,
+.anav--active:hover {
+  background: var(--dvb-forest-600);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+}
+
+.anav--active svg {
+  color: #fff;
+}
+
+.anav__badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+.asidebar__foot {
+  display: grid;
+  gap: 2px;
+  padding-top: 8px;
+}
+
+.asidebar__site,
+.asidebar__collapse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--dvb-r-sm);
+  background: transparent;
+  color: var(--dvb-sage-200);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.asidebar__collapse:hover {
+  background: rgb(255 255 255 / 7%);
+  color: #fff;
+}
+
+@media (min-width: 1101px) {
+  .ashell--collapsed {
+    grid-template-columns: var(--dvb-admin-sidebar-collapsed) minmax(0, 1fr);
+  }
+
+  .ashell--collapsed .asidebar__inner {
+    padding-inline: 8px;
+  }
+
+  .ashell--collapsed .asidebar__brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .ashell--collapsed .asidebar__brand-text,
+  .ashell--collapsed .anav > span:not(.anav__badge),
+  .ashell--collapsed .asidebar__site span,
+  .ashell--collapsed .asidebar__collapse span {
+    display: none;
+  }
+
+  .ashell--collapsed .asidebar__group-label {
+    height: 1px;
+    margin: 8px 6px;
+    padding: 0;
+    overflow: hidden;
+    background: rgb(255 255 255 / 10%);
+    font-size: 0;
+  }
+
+  .ashell--collapsed .anav,
+  .ashell--collapsed .asidebar__site,
+  .ashell--collapsed .asidebar__collapse {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .ashell--collapsed .anav__badge {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .asidebar__collapse {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------- topbar */
+
+.atop {
+  padding: 10px 0 12px;
+}
+
+.atop__bar {
+  gap: 10px;
+  min-height: 44px;
+  margin-bottom: 8px;
+}
+
+.atop__command {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 280px;
+  max-width: 420px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-surface-1);
+  color: var(--dvb-ink-500);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dvb-dur-fast) ease;
+}
+
+.atop__command:hover {
+  border-color: var(--dvb-sage-300);
+}
+
+.atop__command span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atop__command kbd,
+.acmd__search kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--dvb-line);
+  border-radius: 6px;
+  background: var(--dvb-cream-50);
+  color: var(--dvb-ink-500);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.atop__site {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: var(--dvb-r-md);
+  color: var(--dvb-ink-700);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.atop__site:hover {
+  background: var(--dvb-sage-100);
+  color: var(--dvb-forest-800);
+}
+
+.atop__user {
+  margin-left: 0;
+}
+
+.dvb-admin .atop__title {
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.atop__titles {
+  gap: 2px;
+}
+
+.atop__subtitle {
+  font-size: 14px;
+}
+
+.afooter {
+  margin-top: 24px;
+  padding-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .atop__site span {
+    display: none;
+  }
+
+  .atop__command kbd {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------- quick search dialog */
+
+.acmd {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: 12vh 16px 16px;
+  background: rgb(11 33 22 / 45%);
+}
+
+.acmd__panel {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: 70vh;
+  overflow: hidden;
+  border-radius: var(--dvb-r-lg);
+  background: var(--dvb-surface-1);
+  box-shadow: var(--dvb-shadow-lg);
+}
+
+.acmd__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--dvb-line);
+  color: var(--dvb-ink-500);
+}
+
+.acmd__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--dvb-ink-900);
+  font: inherit;
+  font-size: 15px;
+}
+
+.acmd__list {
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.acmd__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--dvb-r-sm);
+  background: transparent;
+  color: var(--dvb-ink-900);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.acmd__item--on {
+  background: var(--dvb-sage-100);
+  color: var(--dvb-forest-900);
+}
+
+.acmd__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--dvb-cream-100);
+  color: var(--dvb-forest-700);
+}
+
+.acmd__label {
+  flex: 1;
+  font-weight: 600;
+}
+
+.acmd__item small {
+  color: var(--dvb-ink-500);
+  font-size: 12px;
+}
+
+.acmd__empty {
+  padding: 18px 12px;
+  color: var(--dvb-ink-500);
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------ dashboard */
+
+.admin-operations__kpis {
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 10px;
+}
+
+.admin-operations__head {
+  gap: 8px;
+}
+
+.admin-operations__head > div:first-child {
+  margin-right: auto;
+}
+
+.kpi {
+  min-height: 0;
+  padding: 14px 16px;
+  gap: 2px;
+}
+
+.admin-operations__kpis .kpi {
+  min-height: 0;
+}
+
+.kpi__icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+}
+
+.kpi__value strong {
+  font-size: 26px;
+}
+
+.otodo {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.otodo a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-surface-1);
+  color: var(--dvb-ink-900);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color var(--dvb-dur-fast) ease,
+    background-color var(--dvb-dur-fast) ease;
+}
+
+.otodo a:hover {
+  border-color: var(--dvb-sage-300);
+  background: var(--dvb-sage-50);
+}
+
+.otodo span {
+  flex: 1;
+  min-width: 0;
+}
+
+.otodo b {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--dvb-r-pill);
+  background: var(--dvb-clay-500);
+  color: #fff;
+  font-size: 12px;
+}
+
+.otodo svg {
+  color: var(--dvb-ink-400);
+}

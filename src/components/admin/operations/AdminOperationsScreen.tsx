@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, BedDouble, CalendarClock, Check, CircleDollarSign,
+  Activity, AlertTriangle, ArrowDownToLine, ArrowLeft, ArrowRight, BedDouble, CalendarClock, Check, CircleCheck, CircleDollarSign,
   ClipboardList, CreditCard, FileBarChart2, Plus, RefreshCw, Search, Tag, Users,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
@@ -30,7 +30,7 @@ type Coupon = { id: string; code: string; name: string; discountType: string; pe
 type Payment = { id: string; bookingId: string; method: string; provider: string | null; externalReference: string | null; status: string; amountVnd: string; postedAt: string; note: string | null; verifiedBy?: { fullName: string } | null; booking: { id: string; publicCode: string; customer: { fullName: string; phone?: string | null } }; refunds?: Array<{ id: string; amountVnd: string; status: string }> };
 type Refund = { id: string; paymentId: string; amountVnd: string; reason: string; status: string; createdAt: string; payment: { booking: { publicCode: string; customer: { fullName: string } } } };
 type InventoryRow = { roomTypeId: string; stayDate: string; onSale: boolean; capacity: number | null; blockedCount: number | null; heldCount: number | null; reservedCount: number | null; stopSell: boolean; available: number | null; version: number | null };
-type Dashboard = { generatedAt: string; sources: Record<string, string>; bookings: { total: number; byStatus: Record<string, number> }; newInquiries: number; customers: number; published: { stays: number; combos: number; destinations: number }; content: { draft: number; review: number; published: number }; inventoryAlerts: number; holdsExpiringWithinHour: number; payments: Record<string, number>; refunds: Record<string, number>; recordedPaymentsVnd: string };
+type Dashboard = { waitingChats?: number; pendingReviews?: number; generatedAt: string; sources: Record<string, string>; bookings: { total: number; byStatus: Record<string, number> }; newInquiries: number; customers: number; published: { stays: number; combos: number; destinations: number }; content: { draft: number; review: number; published: number }; inventoryAlerts: number; holdsExpiringWithinHour: number; payments: Record<string, number>; refunds: Record<string, number>; recordedPaymentsVnd: string };
 type Report = { from: string; toExclusive: string; timezone: string; bookingSummary: { total: number; byStatus: Array<{ status: string; count: number; bookingValueVnd: string }> }; revenueSummary: { postedPaymentsVnd: string; settledRefundsVnd: string; netCashVnd: string; paymentCount: number; refundCount: number }; inquiryConversion: { total: number; won: number; conversionBps: number; byStage: Array<{ stage: string; count: number }> }; inventory: { listedRoomNights: string; capacity: string; blocked: string; held: string; reserved: string; available: string }; customerAcquisition: { total: number; bySource: Array<{ source: string; count: number }> }; contentPublication: Record<string, number>; scope: { bookingsPaymentsRefundsInventory: { propertyId: string | null; roomTypeId: string | null }; inquiryCustomerContent: string } };
 
 const SECTION_TITLE: Record<Section, string> = {
@@ -400,7 +400,9 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
   return (
     <section className="admin-operations" data-admin-section={section}>
       <header className="admin-operations__head">
-        <div><h2>{section === 'bookings' && bookingCreateMode ? 'Tạo yêu cầu đặt phòng' : section === 'bookings' && bookingId ? 'Chi tiết đặt phòng' : SECTION_TITLE[section]}</h2><p>Số liệu lấy trực tiếp từ hệ thống, bấm “Tải lại” để cập nhật.</p></div>
+        <div><h2>{section === 'dashboard' ? `Xin chào, ${user.fullName.trim().split(/\s+/).slice(-1)[0] || 'bạn'}` : section === 'bookings' && bookingCreateMode ? 'Tạo yêu cầu đặt phòng' : section === 'bookings' && bookingId ? 'Chi tiết đặt phòng' : SECTION_TITLE[section]}</h2><p>{section === 'dashboard' ? 'Việc cần xử lý và tình hình đặt phòng, tư vấn, nội dung hôm nay.' : 'Số liệu lấy trực tiếp từ hệ thống, bấm “Tải lại” để cập nhật.'}</p></div>
+        {section === 'dashboard' && can('content.write') && <Link href="/admin/noi-dung/them" className="abtn abtn--ghost"><Plus size={15} aria-hidden="true" /> Bài viết mới</Link>}
+        {section === 'dashboard' && can('catalog.write') && <Link href="/admin/phong-nghi/them" className="abtn abtn--primary"><Plus size={15} aria-hidden="true" /> Thêm nơi lưu trú</Link>}
         {(bookingCreateMode || bookingId) && <button type="button" className="abtn abtn--ghost" onClick={() => router.push('/admin/dat-phong')}><ArrowLeft size={15} aria-hidden="true" /> Quay lại danh sách</button>}
         <button type="button" className="abtn abtn--ghost" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15} aria-hidden="true" /> Tải lại</button>
       </header>
@@ -418,6 +420,20 @@ export function AdminOperationsScreen({ section, bookingRouteMode, bookingId }: 
             <StatCard icon={<CircleDollarSign size={20} />} tone="green" label="Đã ghi nhận" value={money(dashboard.recordedPaymentsVnd)} caption="Tổng tiền khách đã thanh toán" href="/admin/thanh-toan" />
           </div>
           <div className="admin-operations__grid">
+            <Panel icon={<CircleCheck size={18} />} title="Việc cần làm" className="otodo-panel">
+              {(() => {
+                const todo = [
+                  { key: 'pending', label: 'Đặt phòng chờ xác nhận', value: dashboard.bookings.byStatus.pending_confirmation ?? 0, href: '/admin/dat-phong', perm: 'booking.read' },
+                  { key: 'inq', label: 'Yêu cầu tư vấn mới', value: dashboard.newInquiries, href: '/admin/yeu-cau-tu-van', perm: 'crm.read' },
+                  { key: 'chat', label: 'Hội thoại chờ người tiếp quản', value: dashboard.waitingChats ?? 0, href: '/admin/tin-nhan', perm: 'chat.read' },
+                  { key: 'rev', label: 'Đánh giá chờ duyệt', value: dashboard.pendingReviews ?? 0, href: '/admin/danh-gia', perm: 'review.read' },
+                  { key: 'hold', label: 'Giữ chỗ sắp hết hạn (60 phút)', value: dashboard.holdsExpiringWithinHour, href: '/admin/dat-phong', perm: 'booking.read' },
+                  { key: 'stock', label: 'Cảnh báo tồn phòng', value: dashboard.inventoryAlerts, href: '/admin/ton-phong', perm: 'inventory.read' },
+                  { key: 'draft', label: 'Bài/trang đang nháp hoặc chờ duyệt', value: dashboard.content.draft + dashboard.content.review, href: '/admin/noi-dung', perm: 'content.read' },
+                ].filter((item) => item.value > 0 && can(item.perm));
+                return todo.length ? <ul className="otodo">{todo.map((item) => <li key={item.key}><Link href={item.href}><span>{item.label}</span><b>{number(item.value)}</b><ArrowRight size={15} aria-hidden="true" /></Link></li>)}</ul> : <EmptyState title="Không có việc tồn đọng." text="Khi có đơn chờ xác nhận, yêu cầu mới hay đánh giá cần duyệt, chúng sẽ hiện ở đây." />;
+              })()}
+            </Panel>
             <Panel icon={<ClipboardList size={18} />} title="Đặt phòng theo trạng thái">
               <div className="admin-operations__status-list">{Object.entries(dashboard.bookings.byStatus).length ? Object.entries(dashboard.bookings.byStatus).map(([key, value]) => <div key={key}><StatusBadge label={statusLabel(key)} tone={STATUS_TONE[key] ?? 'gray'} /><strong>{number(value)}</strong></div>) : <EmptyState title="Chưa có booking." text="Khi có đơn thật, số lượng sẽ xuất hiện tại đây." />}</div>
             </Panel>
