@@ -309,6 +309,200 @@ a.arow__main {
   }
 }
 
+/* ------------------------------------------------ table inside a list */
+
+.alist .admin-operations__table-wrap {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.alist .atable th {
+  background: transparent;
+  color: var(--dvb-ink-500);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.alist .atable td small {
+  display: block;
+  color: var(--dvb-ink-500);
+  font-size: 12.5px;
+}
+
+.atable__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.booking-table tbody tr {
+  cursor: pointer;
+}
+
+.booking-table tbody tr:hover,
+.booking-table tbody tr.is-selected {
+  background: var(--dvb-cream-50);
+}
+
+.alist__foot .apager,
+.alist__foot nav {
+  margin: 0;
+}
+
+.alist .atable .atable__num {
+  text-align: right;
+}
+
+.booking-table .admin-operations__row-link {
+  color: var(--dvb-forest-700);
+  font-weight: 700;
+}
+
+/* -------------------------------------------- booking detail (drawer) */
+
+.dialog.dialog--side {
+  width: min(520px, 96vw);
+}
+
+/* Admin dialogs render outside .dvb-admin, so the primary/danger button colours are repeated here. */
+.dialog--admin .abtn--primary {
+  border-color: var(--dvb-forest-700);
+  background: var(--dvb-forest-700);
+  color: #fff;
+}
+
+.dialog--admin .abtn--primary:hover:not(:disabled) {
+  border-color: var(--dvb-forest-800);
+  background: var(--dvb-forest-800);
+}
+
+.dialog--admin .abtn--danger {
+  border-color: var(--dvb-danger-bg);
+  background: var(--dvb-danger-bg);
+  color: var(--dvb-danger);
+}
+
+.dialog--side .dialog__panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog--side .dialog__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0;
+}
+
+.dialog--side .adrawer__foot {
+  bottom: 0;
+  z-index: 2;
+  margin-top: 16px;
+  padding-bottom: 16px;
+  box-shadow: 0 -8px 16px -12px rgb(0 0 0 / 25%);
+}
+
+.dialog--side .adrawer__head h2 {
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.dialog--side .bdetail__facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bdetail {
+  display: grid;
+  gap: 16px;
+}
+
+.bdetail__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--dvb-line);
+  border-radius: var(--dvb-r-md);
+  background: var(--dvb-cream-50);
+}
+
+.bdetail__facts > div {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+}
+
+.bdetail__facts span,
+.bdetail__total span {
+  color: var(--dvb-ink-500);
+  font-size: 12.5px;
+}
+
+.bdetail__block {
+  display: grid;
+  gap: 6px;
+}
+
+.dvb-admin .bdetail__block h3,
+.dialog--admin .bdetail__block h3 {
+  margin: 0;
+  color: var(--dvb-ink-900);
+  font-family: var(--font-dvb-ui), Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bdetail__block p {
+  margin: 0;
+}
+
+.bdetail__lines {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bdetail__lines li,
+.bdetail__total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bdetail__total {
+  padding-top: 8px;
+  border-top: 1px dashed var(--dvb-line);
+}
+
+.bdetail__total strong {
+  font-size: 16px;
+}
+
+.bdetail__total--sub {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.bdetail__total--sub strong {
+  font-size: 14px;
+}
+
+.bdetail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.bdetail__actions .abtn--danger {
+  margin-right: auto;
+}
+
 /* ------------------------------------------------- editor (2 columns) */
 
 .cedit__bar {

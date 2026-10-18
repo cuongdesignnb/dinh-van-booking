@@ -297,6 +297,7 @@ export function FormDrawer({
   children,
   footer,
   wide,
+  side,
   dirty,
 }: {
   open: boolean;
@@ -306,6 +307,8 @@ export function FormDrawer({
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  /** Slide in from the right edge (detail panes opened from a list). */
+  side?: boolean;
   /** Ask before discarding unsaved edits. */
   dirty?: boolean;
 }) {
@@ -314,7 +317,7 @@ export function FormDrawer({
   const close = () => (dirty ? setConfirm(true) : onClose());
   return (
     <>
-      <Modal open={open} onClose={close} labelledBy={id} className={`dialog--admin dialog--drawer-right${wide ? ' is-wide' : ''}`} size="xl">
+      <Modal open={open} onClose={close} labelledBy={id} className={side ? 'dialog--admin dialog--drawer dialog--side' : `dialog--admin dialog--drawer-right${wide ? ' is-wide' : ''}`} size={side ? 'md' : 'xl'}>
         <header className="adrawer__head">
           <h2 id={id}>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
