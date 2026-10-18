@@ -23,6 +23,7 @@ import '@/styles/admin-partners.css';
 import '@/styles/admin-refresh.css';
 import '@/styles/admin-compact.css';
 import '@/styles/admin-list-kit.css';
+import '@/styles/admin-font.css';
 
 // The admin is never indexed (noindex, nofollow; robots.txt also disallows it); this is not an access control.
 export function generateMetadata(): Promise<Metadata> {
