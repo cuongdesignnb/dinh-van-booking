@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { DestinationExplorer } from '@/components/destinations/DestinationExplorer';
+import { ParkMap } from '@/components/destinations/ParkMap';
 import { DestinationNote, ItineraryTabs, Seasons } from '@/components/destinations/DiscoveryLower';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHero } from '@/components/site/PageHero';
@@ -14,6 +15,7 @@ import { buildCollectionGraph } from '@/lib/seo/schema';
 import { publicAsset, publicRecord, publicSetting, publicText, richDocumentHasContent } from '@/lib/public-content';
 import type { RichDocument } from '@/lib/content/rich-document';
 import '@/styles/destinations.css';
+import '@/styles/park-map.css';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
   const query = await searchParams;
@@ -64,6 +66,8 @@ export default async function DestinationsPage({ searchParams }: { searchParams:
       {heroTitle && <PageHero id="dest-h1" title={heroTitle} eyebrow={heroKicker} lead={page.heroDescription} image={heroImage} crumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Cẩm nang' }]}>
         {richDocumentHasContent(page.heroQuote) && <div className="cp-page-hero__quote"><RichContentRenderer document={page.heroQuote as RichDocument} /></div>}
       </PageHero>}
+
+      <ParkMap publishedSlugs={destinations.flatMap((destination) => destination.publicPath ? [destination.publicPath.split('/').filter(Boolean).pop() ?? ''] : [])} />
 
       <DestinationExplorer destinations={destinations} config={page} />
 
