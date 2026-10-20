@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { DestinationExplorer } from '@/components/destinations/DestinationExplorer';
 import { ParkMap } from '@/components/destinations/ParkMap';
+import { PARK_POINTS, PARK_STAYS, type ParkPhoto } from '@/data/park-map';
 import { DestinationNote, ItineraryTabs, Seasons } from '@/components/destinations/DiscoveryLower';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHero } from '@/components/site/PageHero';
@@ -59,6 +60,19 @@ export default async function DestinationsPage({ searchParams }: { searchParams:
   });
   const showItinerary = !!publicText(page.itineraryTitle) && itineraries.length > 0;
   const showSeasons = !!publicText(page.seasonsTitle) && seasons.length > 0;
+  // Albums from Admin › Điểm đến › Ảnh trên bản đồ: [{ pointId, photos: [{ mediaId }] }].
+  const mapPhotos: Record<string, ParkPhoto[]> = {};
+  for (const value of Array.isArray(page.mapPoints) ? page.mapPoints : []) {
+    const entry = publicRecord(value);
+    const pointId = publicText(entry.pointId);
+    const point = [...PARK_POINTS, ...PARK_STAYS].find((candidate) => candidate.id === pointId);
+    if (!point) continue;
+    const photos = (Array.isArray(entry.photos) ? entry.photos : []).flatMap((photo): ParkPhoto[] => {
+      const asset = publicAsset(site, publicRecord(photo).mediaId);
+      return asset ? [{ src: asset.src, alt: asset.alt || asset.caption || point.name, width: asset.width ?? 1200, height: asset.height ?? 800 }] : [];
+    });
+    if (photos.length) mapPhotos[pointId] = photos;
+  }
   const showNote = !!publicText(page.noteTitle) || richDocumentHasContent(page.noteBody) || !!noteImage?.src;
 
   return (
@@ -67,7 +81,7 @@ export default async function DestinationsPage({ searchParams }: { searchParams:
         {richDocumentHasContent(page.heroQuote) && <div className="cp-page-hero__quote"><RichContentRenderer document={page.heroQuote as RichDocument} /></div>}
       </PageHero>}
 
-      <ParkMap publishedSlugs={destinations.flatMap((destination) => destination.publicPath ? [destination.publicPath.split('/').filter(Boolean).pop() ?? ''] : [])} />
+      <ParkMap photos={mapPhotos} publishedSlugs={destinations.flatMap((destination) => destination.publicPath ? [destination.publicPath.split('/').filter(Boolean).pop() ?? ''] : [])} />
 
       <DestinationExplorer destinations={destinations} config={page} />
 

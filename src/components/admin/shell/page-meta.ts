@@ -40,6 +40,11 @@ const META: Record<string, AdminPageMeta> = {
     title: 'Điểm đến',
     subtitle: 'Hồ sơ điểm đến, hình ảnh và trạng thái xuất bản trên website.',
   },
+  '/admin/diem-den/ban-do': {
+    section: 'Điểm đến',
+    title: 'Ảnh trên bản đồ',
+    subtitle: 'Album ảnh cho từng điểm của bản đồ tham quan Cúc Phương ở trang /diem-den.',
+  },
   '/admin/noi-dung': {
     section: 'Website',
     title: 'Nội dung website',

@@ -201,3 +201,32 @@ export const PARK_STAYS: ParkPoint[] = OSM_STAYS.map((stay) => {
 });
 
 export const PARK_MAP_NOTE = 'Vị trí và thời gian đi bộ tham khảo theo sơ đồ tham quan của Vườn quốc gia Cúc Phương. Các tuyến đi phải có hướng dẫn viên của vườn đi cùng; hãy hỏi ban quản lý vườn về tuyến đang mở trước khi đi.';
+
+/** A photo of a map point. Admin-managed albums come first; these are the fallback. */
+export interface ParkPhoto {
+  src: string;
+  /** Small version for the pin and the thumbnail strip. */
+  thumb?: string;
+  alt: string;
+  width: number;
+  height: number;
+  /** Author · licence · source, required for Commons photos. */
+  credit?: string;
+  href?: string;
+}
+
+/* Freely licensed photos from Wikimedia Commons that are verifiably of the point itself
+   (file title or description names the place). Places without such a photo get none:
+   a generic forest or cave picture would mislead visitors. */
+export const PARK_COMMONS_PHOTOS: Record<string, ParkPhoto[]> = {
+  'cay-nghin-nam': [
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Thousand_year_old_tree_in_Cuc_Phuong_National_Park%2C_Vietnam.jpg/960px-Thousand_year_old_tree_in_Cuc_Phuong_National_Park%2C_Vietnam.jpg', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Thousand_year_old_tree_in_Cuc_Phuong_National_Park%2C_Vietnam.jpg/330px-Thousand_year_old_tree_in_Cuc_Phuong_National_Park%2C_Vietnam.jpg', alt: 'Cây nghìn năm tuổi trong Vườn quốc gia Cúc Phương', width: 960, height: 1280, credit: 'TomFitzhenry · CC BY-SA 4.0 · Wikimedia Commons', href: 'https://commons.wikimedia.org/wiki/File:Thousand_year_old_tree_in_Cuc_Phuong_National_Park,_Vietnam.jpg' },
+  ],
+  'cuu-ho-linh-truong': [
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/2024-03-28-Pygathrix_nemaeus-3147.jpg/960px-2024-03-28-Pygathrix_nemaeus-3147.jpg', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/2024-03-28-Pygathrix_nemaeus-3147.jpg/330px-2024-03-28-Pygathrix_nemaeus-3147.jpg', alt: 'Voọc chà vá chân nâu tại Trung tâm Cứu hộ Linh trưởng Nguy cấp', width: 960, height: 1440, credit: 'Superbass · CC BY-SA 4.0 · Wikimedia Commons', href: 'https://commons.wikimedia.org/wiki/File:2024-03-28-Pygathrix_nemaeus-3147.jpg' },
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627417282%29.jpg/960px-Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627417282%29.jpg', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627417282%29.jpg/330px-Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627417282%29.jpg', alt: 'Các cá thể linh trưởng tại trung tâm cứu hộ', width: 960, height: 720, credit: 'U.S. Government Accountability Office · Public domain · Wikimedia Commons', href: 'https://commons.wikimedia.org/wiki/File:Primates_-_Endangered_Primate_Rescue_Center,_Cuc_Phuong_National_Park_(37627417282).jpg' },
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610607266%29.jpg/960px-Primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610607266%29.jpg', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610607266%29.jpg/330px-Primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610607266%29.jpg', alt: 'Một cá thể linh trưởng tại trung tâm cứu hộ', width: 960, height: 720, credit: 'U.S. Government Accountability Office · Public domain · Wikimedia Commons', href: 'https://commons.wikimedia.org/wiki/File:Primate_-_Endangered_Primate_Rescue_Center,_Cuc_Phuong_National_Park_(37610607266).jpg' },
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610616456%29.jpg/960px-Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610616456%29.jpg', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610616456%29.jpg/330px-Primates_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837610616456%29.jpg', alt: 'Linh trưởng tại Trung tâm Cứu hộ Linh trưởng Nguy cấp', width: 960, height: 720, credit: 'U.S. Government Accountability Office · Public domain · Wikimedia Commons', href: 'https://commons.wikimedia.org/wiki/File:Primates_-_Endangered_Primate_Rescue_Center,_Cuc_Phuong_National_Park_(37610616456).jpg' },
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Baby_primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627416892%29.jpg/960px-Baby_primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627416892%29.jpg', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Baby_primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627416892%29.jpg/330px-Baby_primate_-_Endangered_Primate_Rescue_Center%2C_Cuc_Phuong_National_Park_%2837627416892%29.jpg', alt: 'Linh trưởng con tại trung tâm cứu hộ', width: 960, height: 1280, credit: 'U.S. Government Accountability Office · Public domain · Wikimedia Commons', href: 'https://commons.wikimedia.org/wiki/File:Baby_primate_-_Endangered_Primate_Rescue_Center,_Cuc_Phuong_National_Park_(37627416892).jpg' },
+  ],
+};

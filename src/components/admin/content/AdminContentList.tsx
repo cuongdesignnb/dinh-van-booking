@@ -5,10 +5,12 @@ import {
   ExternalLink,
   FilePenLine,
   ImagePlus,
+  Images,
   Plus,
   RefreshCw,
   Trash2,
 } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, apiRequest } from '@/lib/api/client';
@@ -433,6 +435,7 @@ export function AdminContentList({ kind, title, routeMode, routeId, basePath: re
   return (
     <section className={`crm content-manager${editorMode ? ' content-manager--editing' : ''}`}>
       {!editorMode && <PageActions>
+        {kind === 'destination' && <Link className="abtn abtn--ghost" href="/admin/diem-den/ban-do"><Images size={16} aria-hidden="true" /> Ảnh trên bản đồ</Link>}
         <button type="button" className="abtn abtn--primary" onClick={openCreate} disabled={saving || !!busy}><Plus size={16} aria-hidden="true" /> Tạo {kindLower}</button>
       </PageActions>}
       {error && <p className="settings-screen__message settings-screen__message--error" role="alert">{error}</p>}
