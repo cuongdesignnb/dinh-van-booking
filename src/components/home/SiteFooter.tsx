@@ -20,32 +20,36 @@ export function SiteFooter({ variant = 'default', navigation }: { variant?: 'def
   return (
     <footer className={`sf sf--${variant}`}>
       <div className="sf__inner">
-        <Link href="/" className="sf__brand" aria-label="Về trang chủ">
-          <BrandLogo variant="footer" />
-        </Link>
+        <div className="sf__col sf__col--brand">
+          <Link href="/" className="sf__brand" aria-label="Về trang chủ">
+            <BrandLogo variant="footer" />
+          </Link>
+          {motto && <p className="sf__motto script">{motto}</p>}
+          {(activeSocial.length > 0 || contact.zaloUrl) && <ul className="sf__social" aria-label="Mạng xã hội">
+            {activeSocial.map((name) => (
+              <li key={name}>
+                <a href={social[name] ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={brandTitle(name)}>
+                  <BrandIcon name={name} size={18} />
+                </a>
+              </li>
+            ))}
+            {contact.zaloUrl && <li><a className="sf__zalo" href={contact.zaloUrl} target="_blank" rel="noopener noreferrer" aria-label="Nhắn Zalo">Zalo</a></li>}
+          </ul>}
+        </div>
 
-        {navigation.length > 0 && <nav className="sf__nav" aria-label="Liên kết chân trang">
+        {navigation.length > 0 && <nav className="sf__col sf__nav" aria-label="Liên kết chân trang">
+          <p className="sf__heading">Khám phá</p>
           <ul>{navigation.map((item) => <li key={`${item.href}-${item.label}`}><Link href={item.href}>{item.label}</Link></li>)}</ul>
         </nav>}
 
-        {(phone || contact.email || contact.address) && <ul className="sf__contact" aria-label="Thông tin liên hệ">
-          {phone && <li><Phone size={16} aria-hidden="true" /><a href={`tel:${phone.replace(/\s+/g, '')}`}>{phone}</a></li>}
-          {contact.email && <li><Mail size={16} aria-hidden="true" /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>}
-          {contact.address && <li><MapPin size={16} aria-hidden="true" />{contact.mapUrl ? <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer">{contact.address}</a> : <span>{contact.address}</span>}</li>}
-        </ul>}
-
-        {(activeSocial.length > 0 || contact.zaloUrl) && <ul className="sf__social" aria-label="Mạng xã hội">
-          {activeSocial.map((name) => (
-            <li key={name}>
-              <a href={social[name] ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={brandTitle(name)}>
-                <BrandIcon name={name} size={18} />
-              </a>
-            </li>
-          ))}
-          {contact.zaloUrl && <li><a href={contact.zaloUrl} target="_blank" rel="noopener noreferrer" aria-label="Zalo"><BrandIcon name="zalo" size={18} /></a></li>}
-        </ul>}
-
-        {motto && <p className="sf__motto script">{motto}</p>}
+        {(phone || contact.email || contact.address) && <div className="sf__col">
+          <p className="sf__heading">Liên hệ</p>
+          <ul className="sf__contact" aria-label="Thông tin liên hệ">
+            {phone && <li><Phone size={16} aria-hidden="true" /><a href={`tel:${phone.replace(/\s+/g, '')}`}>{phone}</a></li>}
+            {contact.email && <li><Mail size={16} aria-hidden="true" /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>}
+            {contact.address && <li><MapPin size={16} aria-hidden="true" />{contact.mapUrl ? <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer">{contact.address}</a> : <span>{contact.address}</span>}</li>}
+          </ul>
+        </div>}
       </div>
       {copyright && <p className="sf__copy">{copyright}</p>}
     </footer>

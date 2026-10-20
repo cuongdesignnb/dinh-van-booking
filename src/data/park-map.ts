@@ -117,6 +117,53 @@ export const PARK_POINTS: ParkPoint[] = [
     id: 'ban-khanh', no: 19, name: 'Bản Khanh', alt: 'Village de Khanh', kind: 'village', x: 344, y: 166,
     summary: 'Bản làng ở thuỳ tây bắc của vườn, có homestay đón khách đi bộ đường dài.',
       },
+  {
+    id: 'ban-cao-dang', no: 23, name: 'Bản Cao Đăng', alt: 'Village de Cao Dang', kind: 'village', x: 110, y: 255, approx: true,
+    summary: 'Bản làng ở cực tây của vườn, gần Thác Mây.',
+    routes: ['Đến Trung tâm du lịch số 2: khoảng 2 giờ'],
+  },
+  {
+    id: 'thac-may', no: 24, name: 'Thác Mây', alt: 'Cascade May · May waterfall', kind: 'nature', x: 170, y: 290, approx: true,
+    summary: 'Thác nước ở khu vực phía tây vườn, gần Bản Cao Đăng.',
+  },
+  {
+    id: 'trung-tam-du-lich-2', name: 'Trung tâm du lịch số 2', alt: 'Centre de tourisme Nº2', kind: 'service', x: 222, y: 342, approx: true,
+    summary: 'Điểm dịch vụ ở phía tây vườn, đầu tuyến đi Bản Cao Đăng.',
+    routes: ['Đến Bản Cao Đăng: khoảng 2 giờ'],
+  },
+  {
+    id: 'ban-bien', no: 22, name: 'Bản Biện', alt: 'Village de Bien', kind: 'village', x: 340, y: 250, approx: true,
+    summary: 'Bản làng phía tây vườn, trên tuyến đi bộ dài nối với Trung tâm Bống và Bản Khanh.',
+    routes: ['Đến Bản Khanh: khoảng 1 giờ', 'Đến Cây Nhội cổ thụ: khoảng 5 giờ'],
+  },
+  {
+    id: 'ban-trac', no: 21, name: 'Bản Trạc', alt: 'Village de Trac', kind: 'village', x: 505, y: 92, approx: true,
+    summary: 'Bản làng ở rìa phía bắc vườn, về phía Hòa Bình.',
+    routes: ['Đến Bản Khanh: khoảng 6 giờ'],
+  },
+  {
+    id: 'cay-sau', no: 14, name: 'Cây Sấu cổ thụ', alt: 'Arbre centenaire · Ancient tree', kind: 'tree', x: 766, y: 354, approx: true,
+    summary: 'Cây cổ thụ gần Trung tâm Bống.',
+    routes: ['Từ Trung tâm Bống: khoảng 30 phút đi bộ'],
+  },
+  {
+    id: 'cay-dang-dong-dau', no: 18, name: 'Cây Dăng Đồng Dâu', alt: 'Arbre centenaire de Dong Dau · Dong Dau ancient tree', kind: 'tree', x: 862, y: 332, approx: true,
+    summary: 'Cây cổ thụ nằm giữa Đỉnh Mây Bạc và đường rừng Cúc Phương.',
+    routes: ['Từ Đỉnh Mây Bạc: khoảng 1 giờ 30 phút', 'Xuống đường ô tô: khoảng 1 giờ'],
+  },
+  {
+    id: 'tram-kiem-lam-1', name: 'Trạm kiểm lâm số 1', alt: 'Poste de rangers Nº1', kind: 'service', x: 912, y: 482, approx: true,
+    summary: 'Trạm kiểm lâm trên đường rừng Cúc Phương, gần lối lên tuyến Cây Dăng Đồng Dâu.',
+  },
+  {
+    id: 'tram-kiem-lam-dang', name: 'Trạm kiểm lâm Dang', alt: 'Poste de rangers Dang', kind: 'service', x: 1236, y: 772, approx: true,
+    summary: 'Trạm kiểm lâm trên đường rừng, đoạn giữa Động Người Xưa và khu trung tâm du khách.',
+    routes: ['Đến Cây Đăng cổ thụ (11): khoảng 1 giờ 30 phút đi bộ'],
+  },
+  {
+    id: 'xuong-hoa-thach', name: 'Bộ xương hóa thạch', alt: 'Fossile de dinosaure · Dinosaur fossil', kind: 'nature', x: 912, y: 772, approx: true,
+    summary: 'Điểm có dấu tích hóa thạch, đánh dấu trên sơ đồ tham quan của vườn.',
+  },
 ];
 
 /* Lodging around the park as mapped in OpenStreetMap (named places only), for reference.
