@@ -5,7 +5,9 @@ export const STANDARD_PRIMARY_MENU = [
   { label: 'Phòng nghỉ', externalUrl: '/phong-nghi' },
   { label: 'Combo du lịch', externalUrl: '/combo-du-lich' },
   { label: 'Điểm đến', externalUrl: '/diem-den' },
+  { label: 'Bài viết', externalUrl: '/bai-viet' },
   { label: 'Tra cứu phòng', externalUrl: '/lich-phong' },
+  { label: 'Về mình', externalUrl: '/ve-minh' },
   { label: 'Liên hệ', externalUrl: '/lien-he' },
 ] as const;
 
