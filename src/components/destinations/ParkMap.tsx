@@ -1,9 +1,11 @@
 'use client';
 
-import { ArrowRight, BedDouble, Clock3, ExternalLink, Info, LocateFixed, MapPin, Minus, Navigation, Plus, X } from 'lucide-react';
+import { ArrowRight, BedDouble, Clock3, ExternalLink, Images, Info, LocateFixed, MapPin, Minus, Navigation, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
-import { PARK_KIND_LABEL, PARK_MAP_NOTE, PARK_POINTS, PARK_STAYS, type ParkPoint, type ParkPointKind } from '@/data/park-map';
+import Image from '@/components/ui/ManagedImage';
+import { GalleryDialog } from '@/components/stay-detail/PropertyGallery';
+import { PARK_COMMONS_PHOTOS, PARK_KIND_LABEL, PARK_MAP_NOTE, PARK_POINTS, PARK_STAYS, type ParkPhoto, type ParkPoint, type ParkPointKind } from '@/data/park-map';
 import { PARK_GEO } from '@/data/park-map-geo';
 
 const { W, H } = PARK_GEO;
@@ -17,7 +19,11 @@ type Box = { cw: number; ch: number; ww: number; wh: number; ox: number; oy: num
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
+/**
+ * @param photos Albums the team picked in Admin › Điểm đến › Ảnh trên bản đồ, keyed by point id.
+ *   A point without its own album falls back to verified Wikimedia Commons photos, if any.
+ */
+export function ParkMap({ publishedSlugs, photos = {} }: { publishedSlugs: string[]; photos?: Record<string, ParkPhoto[]> }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [kind, setKind] = useState<'all' | ParkPointKind>('all');
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -26,6 +32,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   const [animate, setAnimate] = useState(false);
   const [box, setBox] = useState<Box | null>(null);
   const [wheelHint, setWheelHint] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const rootRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -33,6 +40,8 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   const gesture = useRef<{ x: number; y: number; view: View; dist?: number; moved: boolean } | null>(null);
   const selected = useMemo(() => ALL_POINTS.find((point) => point.id === selectedId) ?? null, [selectedId]);
   const published = useMemo(() => new Set(publishedSlugs), [publishedSlugs]);
+  const photosFor = useCallback((id: string): ParkPhoto[] => (photos[id]?.length ? photos[id] : PARK_COMMONS_PHOTOS[id] ?? []), [photos]);
+  const selectedPhotos = selected ? photosFor(selected.id) : [];
   const counts = useMemo(() => ALL_POINTS.reduce<Record<string, number>>((acc, point) => { acc[point.kind] = (acc[point.kind] ?? 0) + 1; return acc; }, {}), []);
 
   // Draw-in animation starts when the map scrolls into view.
@@ -87,8 +96,10 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   const focusPoint = useCallback((point: ParkPoint) => {
     if (!box) return;
     const z = Math.max(view.z, 2.6);
-    const wide = box.cw > 760;
-    const targetX = (wide ? box.cw * 0.36 : box.cw * 0.5) - box.ox;
+    // Centre the point in the area the info card leaves free (the card sits on the right).
+    const wide = box.cw > 560;
+    const card = wide ? Math.min(360, box.cw - 32) + 16 : 0;
+    const targetX = (box.cw - card) / 2 - box.ox;
     const targetY = (wide ? box.ch * 0.5 : box.ch * 0.42) - box.oy;
     setAnimate(true);
     setView(limit({ z, x: targetX - (point.x / W) * box.ww * z, y: targetY - (point.y / H) * box.wh * z }));
@@ -96,6 +107,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
 
   const select = useCallback((point: ParkPoint | null) => {
     setSelectedId(point?.id ?? null);
+    setGalleryIndex(null);
     if (point) focusPoint(point);
   }, [focusPoint]);
 
@@ -104,7 +116,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
   useEffect(() => {
     if (!selected) return;
     panelRef.current?.focus({ preventScroll: true });
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setSelectedId(null); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape' && !document.querySelector('.dialog--gallery[open]')) setSelectedId(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
@@ -201,6 +213,7 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
                 <button type="button" className={`park-map__item${point.id === selectedId ? ' is-on' : ''}`} onClick={() => select(point)} onMouseEnter={() => setHoverId(point.id)} onMouseLeave={() => setHoverId(null)}>
                   <i className={`park-map__badge park-map__badge--${point.kind}${point.approx ? ' is-approx' : ''}`} aria-hidden="true">{point.kind === 'stay' ? <BedDouble size={11} strokeWidth={2.4} /> : point.no ?? ''}</i>
                   <span><strong>{point.name}</strong><small>{PARK_KIND_LABEL[point.kind]}{point.approx ? ' · vị trí gần đúng' : ''}</small></span>
+                  {photosFor(point.id)[0] && <Image className="park-map__thumb" src={photosFor(point.id)[0].thumb ?? photosFor(point.id)[0].src} alt="" width={44} height={44} loading="lazy" />}
                 </button>
               </li>
             ))}
@@ -251,10 +264,11 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
                 {ALL_POINTS.map((point, index) => {
                   const shown = visible(point);
                   const active = point.id === selectedId;
+                  const cover = photosFor(point.id)[0];
                   return (
                     <li
                       key={point.id}
-                      className={`park-pin park-pin--${point.kind} park-pin--label-${point.labelSide ?? 'bottom'}${point.approx ? ' is-approx' : ''}${active ? ' is-active' : ''}${shown ? '' : ' is-dim'}${(point.pinned && view.z < 2) || active || hoverId === point.id ? ' has-label' : ''}`}
+                      className={`park-pin park-pin--${point.kind} park-pin--label-${point.labelSide ?? 'bottom'}${point.approx ? ' is-approx' : ''}${cover ? ' has-photo' : ''}${active ? ' is-active' : ''}${shown ? '' : ' is-dim'}${(point.pinned && view.z < 2) || active || hoverId === point.id ? ' has-label' : ''}`}
                       style={{ left: `${(point.x / W) * 100}%`, top: `${(point.y / H) * 100}%`, animationDelay: `${1.2 + index * 0.04}s` }}
                     >
                       <button
@@ -270,7 +284,9 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
                         onBlur={() => setHoverId((current) => current === point.id ? null : current)}
                       >
                         <span className="park-pin__pulse" aria-hidden="true" />
-                        <span className="park-pin__dot" aria-hidden="true">{point.kind === 'stay' ? <BedDouble size={12} strokeWidth={2.4} /> : point.no ?? ''}</span>
+                        <span className="park-pin__dot" aria-hidden="true" style={cover ? { backgroundImage: `url("${cover.thumb ?? cover.src}")` } : undefined}>
+                          {cover ? (point.no ? <span className="park-pin__no">{point.no}</span> : null) : point.kind === 'stay' ? <BedDouble size={12} strokeWidth={2.4} /> : point.no ?? ''}
+                        </span>
                       </button>
                       <span className="park-pin__label" aria-hidden="true">{point.name}</span>
                     </li>
@@ -298,6 +314,21 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
             {selected && (
               <div ref={panelRef} className="park-map__panel" role="dialog" aria-modal="false" aria-labelledby="park-map-panel-title" tabIndex={-1}>
                 <button type="button" className="park-map__close" onClick={() => setSelectedId(null)} aria-label="Đóng thông tin"><X size={18} aria-hidden="true" /></button>
+                {selectedPhotos.length > 0 && <div className="park-map__media">
+                  <button type="button" className="park-map__cover" onClick={() => setGalleryIndex(0)} aria-label={`Xem album ảnh ${selected.name} (${selectedPhotos.length} ảnh)`}>
+                    <Image key={selectedPhotos[0].src} src={selectedPhotos[0].src} alt={selectedPhotos[0].alt} fill sizes="360px" />
+                    <span className="park-map__count"><Images size={14} aria-hidden="true" /> {selectedPhotos.length > 1 ? `Xem album · ${selectedPhotos.length} ảnh` : 'Xem ảnh lớn'}</span>
+                  </button>
+                  {selectedPhotos.length > 1 && <ul className="park-map__strip" aria-label="Ảnh khác">
+                    {selectedPhotos.slice(1, 5).map((photo, index) => <li key={photo.src}>
+                      <button type="button" onClick={() => setGalleryIndex(index + 1)} aria-label={`Xem ảnh ${index + 2}: ${photo.alt}`}>
+                        <Image src={photo.thumb ?? photo.src} alt="" fill sizes="80px" />
+                        {index === 3 && selectedPhotos.length > 5 && <span>+{selectedPhotos.length - 5}</span>}
+                      </button>
+                    </li>)}
+                  </ul>}
+                  {selectedPhotos[0].credit && <p className="park-map__credit">Ảnh: {selectedPhotos[0].href ? <a href={selectedPhotos[0].href} target="_blank" rel="noreferrer">{selectedPhotos[0].credit}</a> : selectedPhotos[0].credit}</p>}
+                </div>}
                 <p className={`park-map__kind park-map__kind--${selected.kind}`}>{PARK_KIND_LABEL[selected.kind]}{selected.no ? ` · Điểm ${selected.no}` : ''}</p>
                 <h3 id="park-map-panel-title">{selected.name}</h3>
                 {selected.alt && <p className="park-map__alt">{selected.alt}</p>}
@@ -322,6 +353,12 @@ export function ParkMap({ publishedSlugs }: { publishedSlugs: string[] }) {
               </div>
             )}
           </div>
+          {selected && selectedPhotos.length > 0 && <GalleryDialog
+            images={selectedPhotos.map((photo) => ({ src: photo.src, alt: photo.alt, width: photo.width, height: photo.height, caption: photo.credit ? `${photo.alt} — Ảnh: ${photo.credit}` : photo.alt }))}
+            index={galleryIndex}
+            onIndex={setGalleryIndex}
+            name={selected.name}
+          />}
           <p className="park-map__source"><MapPin size={14} aria-hidden="true" /><span>{PARK_MAP_NOTE} Nền bản đồ: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors.</span></p>
         </div>
       </div>

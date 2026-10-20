@@ -5,6 +5,7 @@ import Image from '@/components/ui/ManagedImage';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import type { ImageAsset } from '@/data/types';
+import '@/styles/gallery-dialog.css';
 
 /**
  * Large image + up to four thumbnails (2×2). Counts ("+N", "Xem tất cả N ảnh")

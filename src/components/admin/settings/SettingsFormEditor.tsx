@@ -24,6 +24,8 @@ type FieldMeta = {
   recommendedWidth?: number;
   recommendedHeight?: number;
   recommendedRatio?: number;
+  /** Edited on its own admin screen; not shown in this generic form. */
+  hidden?: boolean;
 };
 
 const SECTIONS: Option[] = [
@@ -445,6 +447,7 @@ const FIELD_META: Record<string, FieldMeta> = {
   'catalog.destinationsPage.heroDescription': { label: 'Mô tả Hero', kind: 'rich' },
   'catalog.destinationsPage.heroQuote': { label: 'Trích dẫn Hero', kind: 'rich' },
   'catalog.destinationsPage.heroImageMediaId': { label: 'Ảnh Hero điểm đến', kind: 'media', recommendedWidth: 1600, recommendedHeight: 900, recommendedRatio: 1.78 },
+  'catalog.destinationsPage.mapPoints': { label: 'Ảnh các điểm trên bản đồ', hidden: true },
   'catalog.destinationsPage.listTitle': { label: 'Tiêu đề danh sách điểm đến' },
   'catalog.destinationsPage.listSubtitle': { label: 'Mô tả danh sách điểm đến', kind: 'rich' },
   'catalog.destinationsPage.advisorCtaLabel': { label: 'Nhãn nút nhờ tư vấn điểm đến' },
@@ -763,7 +766,7 @@ function ValueField({
   }
 
   if (isRecord(value)) {
-    const fields = Object.entries(value).map(([key, child]) => {
+    const fields = Object.entries(value).filter(([key]) => !pathMeta(settingKey, path ? `${path}.${key}` : key)?.hidden).map(([key, child]) => {
       const childPath = path ? `${path}.${key}` : key;
       return <ValueField key={childPath} settingKey={settingKey} path={childPath} value={child} onChange={(next) => onChange({ ...value, [key]: next })} disabled={disabled} />;
     });

@@ -7,8 +7,9 @@ import { MediaLibrary, type MediaAsset } from './MediaLibrary';
 
 export type AlbumItem = { mediaId: string; url: string; alt?: string };
 
-export function AlbumEditor({ label, items, onChange }: {
+export function AlbumEditor({ label, items, onChange, hint = 'Ảnh trong album có thể dùng lại từ thư viện; kéo thứ tự bằng các nút mũi tên. Ảnh bìa được quản lý riêng.' }: {
   label: string;
+  hint?: string;
   items: AlbumItem[];
   onChange: (items: AlbumItem[]) => void;
 }) {
@@ -26,7 +27,7 @@ export function AlbumEditor({ label, items, onChange }: {
     setOpen(false);
   };
   return <section className="album-editor" aria-label={label}>
-    <div className="album-editor__head"><div><h4><Images size={18} aria-hidden="true" /> {label}</h4><p className="ahint">Ảnh trong album có thể dùng lại từ thư viện; kéo thứ tự bằng các nút mũi tên. Ảnh bìa được quản lý riêng.</p></div><button type="button" className="abtn abtn--ghost" onClick={() => setOpen(true)}><Plus size={15} aria-hidden="true" /> Thêm ảnh</button></div>
+    <div className="album-editor__head"><div><h4><Images size={18} aria-hidden="true" /> {label}</h4><p className="ahint">{hint}</p></div><button type="button" className="abtn abtn--ghost" onClick={() => setOpen(true)}><Plus size={15} aria-hidden="true" /> Thêm ảnh</button></div>
     {items.length ? <ol className="album-editor__list">{items.map((item, index) => <li key={item.mediaId}>
       <Image src={item.url} alt={item.alt || `Ảnh album ${index + 1}`} width={112} height={76} unoptimized />
       <span className="album-editor__name">{item.alt || `Ảnh ${index + 1}`}</span>
